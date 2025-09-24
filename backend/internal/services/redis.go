@@ -8,7 +8,9 @@ import (
 
 func NewRedis(url string) *redis.Client {
 	opt, err := redis.ParseURL(url)
-	if err != nil { return nil }
+	if err != nil {
+		return nil
+	}
 	return redis.NewClient(opt)
 }
 

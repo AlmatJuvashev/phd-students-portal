@@ -1,20 +1,19 @@
 package handlers
 
 import (
-	"github.com/redis/go-redis/v9"
 	"encoding/json"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 	"time"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	"phd-portal/backend/internal/config"
-	"phd-portal/backend/internal/logging"
-	"phd-portal/backend/internal/services"
 )
 
 type MeHandler struct {
-	db *sqlx.DB
+	db  *sqlx.DB
 	cfg config.AppConfig
 	rdb *redis.Client
 }
@@ -37,16 +36,17 @@ func (h *MeHandler) Me(c *gin.Context) {
 	}
 
 	// query DB
-	var row struct{
-		ID string `db:"id" json:"id"`
-		Username string `db:"username" json:"username"`
-		Email string `db:"email" json:"email"`
+	var row struct {
+		ID        string `db:"id" json:"id"`
+		Username  string `db:"username" json:"username"`
+		Email     string `db:"email" json:"email"`
 		FirstName string `db:"first_name" json:"first_name"`
-		LastName string `db:"last_name" json:"last_name"`
-		Role string `db:"role" json:"role"`
+		LastName  string `db:"last_name" json:"last_name"`
+		Role      string `db:"role" json:"role"`
 	}
 	if err := h.db.Get(&row, `SELECT id, username, email, first_name, last_name, role FROM users WHERE id=$1`, sub); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error":"user not found"}); return
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
 	}
 	b, _ := json.Marshal(row)
 	if h.rdb != nil {

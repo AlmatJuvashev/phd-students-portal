@@ -20,18 +20,22 @@ func NewRedis() *redis.Client {
 	}
 	c := redis.NewClient(opt)
 	// quick ping
-	_ = c.WithContext(context.Background()).Ping(context.Background()).Err()
+	_ = c.Ping(context.Background()).Err()
 	return c
 }
 
 // CacheSet sets a key with TTL.
 func CacheSet(r *redis.Client, key string, val string, ttl time.Duration) {
-	if r == nil { return }
+	if r == nil {
+		return
+	}
 	_ = r.Set(context.Background(), key, val, ttl).Err()
 }
 
 // CacheGet gets a key.
 func CacheGet(r *redis.Client, key string) (string, error) {
-	if r == nil { return "", redis.Nil }
+	if r == nil {
+		return "", redis.Nil
+	}
 	return r.Get(context.Background(), key).Result()
 }

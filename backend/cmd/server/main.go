@@ -1,23 +1,23 @@
 package main
 
 import (
-	"phd-portal/backend/internal/logging"
 	"flag"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/logging"
 	"log"
-	"os"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/db"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/seed"
 	"github.com/joho/godotenv"
-	"phd-portal/backend/internal/config"
-	"phd-portal/backend/internal/db"
-	"phd-portal/backend/internal/handlers"
-	"phd-portal/backend/internal/seed"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Entry point that wires configuration, DB, routes.
 // Flags:
-//   --seed : runs checklist seeding and exits
+//
+//	--seed : runs checklist seeding and exits
 func main() {
 	_ = godotenv.Load()
 

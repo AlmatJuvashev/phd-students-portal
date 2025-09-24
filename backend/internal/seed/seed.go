@@ -26,9 +26,13 @@ func Run(db *sqlx.DB) error {
 	here, _ := os.Getwd()
 	path := filepath.Join(here, "internal", "seed", "algorithm.json")
 	b, err := os.ReadFile(path)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	var p Payload
-	if err := json.Unmarshal(b, &p); err != nil { return err }
+	if err := json.Unmarshal(b, &p); err != nil {
+		return err
+	}
 
 	tx := db.MustBegin()
 	// insert modules
@@ -43,7 +47,9 @@ func Run(db *sqlx.DB) error {
 	var rows []Row
 	tx.Select(&rows, `SELECT id, code FROM checklist_modules`)
 	idBy := map[string]string{}
-	for _, r := range rows { idBy[r.Code]=r.ID }
+	for _, r := range rows {
+		idBy[r.Code] = r.ID
+	}
 
 	// insert steps
 	for _, m := range p.Modules {

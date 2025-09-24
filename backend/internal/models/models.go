@@ -3,12 +3,13 @@ package models
 import "time"
 
 type Role string
+
 const (
 	RoleSuperAdmin Role = "superadmin"
-	RoleAdmin Role = "admin"
-	RoleStudent Role = "student"
-	RoleAdvisor Role = "advisor"
-	RoleChair Role = "chair"
+	RoleAdmin      Role = "admin"
+	RoleStudent    Role = "student"
+	RoleAdvisor    Role = "advisor"
+	RoleChair      Role = "chair"
 )
 
 type User struct {

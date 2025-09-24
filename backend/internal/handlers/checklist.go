@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"net/http"
 	"strings"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	"phd-portal/backend/internal/config"
-	"database/sql"
-
 )
 
 type ChecklistHandler struct {
@@ -23,10 +20,10 @@ func NewChecklistHandler(db *sqlx.DB, cfg config.AppConfig) *ChecklistHandler {
 // ListModules returns I..VII modules.
 func (h *ChecklistHandler) ListModules(c *gin.Context) {
 	var rows []struct {
-		ID string `db:"id" json:"id"`
-		Code string `db:"code" json:"code"`
+		ID    string `db:"id" json:"id"`
+		Code  string `db:"code" json:"code"`
 		Title string `db:"title" json:"title"`
-		Sort int `db:"sort_order" json:"sort_order"`
+		Sort  int    `db:"sort_order" json:"sort_order"`
 	}
 	_ = h.db.Select(&rows, `SELECT id, code, title, sort_order FROM checklist_modules ORDER BY sort_order`)
 	c.JSON(200, rows)
@@ -36,11 +33,11 @@ func (h *ChecklistHandler) ListModules(c *gin.Context) {
 func (h *ChecklistHandler) ListStepsByModule(c *gin.Context) {
 	mod := strings.TrimSpace(c.Query("module"))
 	var rows []struct {
-		ID string `db:"id" json:"id"`
-		Code string `db:"code" json:"code"`
-		Title string `db:"title" json:"title"`
-		RequiresUpload bool `db:"requires_upload" json:"requires_upload"`
-		Sort int `db:"sort_order" json:"sort_order"`
+		ID             string `db:"id" json:"id"`
+		Code           string `db:"code" json:"code"`
+		Title          string `db:"title" json:"title"`
+		RequiresUpload bool   `db:"requires_upload" json:"requires_upload"`
+		Sort           int    `db:"sort_order" json:"sort_order"`
 	}
 	_ = h.db.Select(&rows, `SELECT id, code, title, requires_upload, sort_order FROM checklist_steps
 		WHERE module_id = (SELECT id FROM checklist_modules WHERE code=$1) ORDER BY sort_order`, mod)
@@ -59,8 +56,8 @@ func (h *ChecklistHandler) ListStudentSteps(c *gin.Context) {
 }
 
 type updStepReq struct {
-	Status string `json:"status" binding:"required"`
-	Data map[string]any `json:"data"`
+	Status string         `json:"status" binding:"required"`
+	Data   map[string]any `json:"data"`
 }
 
 // UpdateStudentStep changes status/data (submitted/needs_changes/done).
@@ -69,23 +66,27 @@ func (h *ChecklistHandler) UpdateStudentStep(c *gin.Context) {
 	step := c.Param("stepId")
 	var req updStepReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error":err.Error()}); return
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
 	}
 	_, err := h.db.Exec(`INSERT INTO student_steps (user_id, step_id, status, data)
 		VALUES ($1,$2,$3,$4)
 		ON CONFLICT (user_id, step_id) DO UPDATE SET status=$3, data=$4, updated_at=now()`, uid, step, req.Status, req.Data)
-	if err != nil { c.JSON(500, gin.H{"error":"update failed"}); return }
+	if err != nil {
+		c.JSON(500, gin.H{"error": "update failed"})
+		return
+	}
 	c.JSON(200, gin.H{"ok": true})
 }
 
 // AdvisorInbox: returns list of submitted steps needing review.
 func (h *ChecklistHandler) AdvisorInbox(c *gin.Context) {
 	type Row struct {
-		StudentID string `db:"user_id" json:"student_id"`
+		StudentID   string `db:"user_id" json:"student_id"`
 		StudentName string `db:"name" json:"student_name"`
-		StepID string `db:"step_id" json:"step_id"`
-		StepCode string `db:"code" json:"step_code"`
-		StepTitle string `db:"title" json:"step_title"`
+		StepID      string `db:"step_id" json:"step_id"`
+		StepCode    string `db:"code" json:"step_code"`
+		StepTitle   string `db:"title" json:"step_title"`
 	}
 	var rows []Row
 	_ = h.db.Select(&rows, `
@@ -100,9 +101,8 @@ func (h *ChecklistHandler) AdvisorInbox(c *gin.Context) {
 	c.JSON(200, rows)
 }
 
-
 type reviewReq struct {
-	Comment string `json:"comment"`
+	Comment  string   `json:"comment"`
 	Mentions []string `json:"mentions"`
 }
 

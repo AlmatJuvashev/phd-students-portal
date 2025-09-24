@@ -10,8 +10,8 @@ import (
 )
 
 var words = []string{
-	"river","silver","captain","forest","rocket","amber","pioneer","sunset",
-	"harbor","island","novel","canvas","granite","thunder","meadow","pluto",
+	"river", "silver", "captain", "forest", "rocket", "amber", "pioneer", "sunset",
+	"harbor", "island", "novel", "canvas", "granite", "thunder", "meadow", "pluto",
 }
 
 // GeneratePass returns human-readable passphrase with two digits at end.
