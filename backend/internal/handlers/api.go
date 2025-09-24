@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
-	"net/http"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 )
@@ -13,6 +16,16 @@ import (
 // BuildAPI wires routes and returns a *gin.Engine
 func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
 	r.Use(middleware.RequestLogger())
+	// CORS for frontend dev and configured origin
+	allowed := []string{cfg.FrontendBase, "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"}
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     allowed,
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
+	}))
 	api := r.Group("/api")
 
 	api.GET("/me", func(c *gin.Context) {
