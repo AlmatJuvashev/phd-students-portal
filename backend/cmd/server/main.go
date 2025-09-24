@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/logging"
 	"log"
+
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/logging"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/db"
@@ -22,6 +23,7 @@ func main() {
 	_ = godotenv.Load()
 
 	seedFlag := flag.Bool("seed", false, "seed checklist and exit")
+	bootstrapAdmin := flag.Bool("bootstrap-admin", false, "create/update superadmin from ADMIN_EMAIL/ADMIN_PASSWORD and exit")
 	flag.Parse()
 
 	cfg := config.MustLoad()
@@ -33,6 +35,24 @@ func main() {
 		}
 		log.Println("Seed completed successfully")
 		return
+	}
+
+	if *bootstrapAdmin {
+		if gen, err := seed.EnsureSuperAdmin(conn, cfg); err != nil {
+			log.Fatal(err)
+		} else if gen != "" {
+			log.Printf("Superadmin '%s' created with password: %s", cfg.AdminEmail, gen)
+		} else {
+			log.Printf("Superadmin ensured for '%s' (password unchanged)", cfg.AdminEmail)
+		}
+		return
+	}
+
+	// Ensure superadmin exists
+	if gen, err := seed.EnsureSuperAdmin(conn, cfg); err != nil {
+		log.Printf("superadmin ensure failed: %v", err)
+	} else if gen != "" {
+		log.Printf("Superadmin '%s' created with password: %s", cfg.AdminEmail, gen)
 	}
 
 	r := gin.Default()

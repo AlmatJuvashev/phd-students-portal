@@ -22,6 +22,8 @@ type AppConfig struct {
 	SMTPPass     string
 	SMTPFrom     string
 	FrontendBase string
+	AdminEmail   string
+	AdminPassword string
 }
 
 // MustLoad loads configuration from environment variables.
@@ -40,6 +42,8 @@ func MustLoad() AppConfig {
 		SMTPPass:     get("SMTP_PASS", ""),
 		SMTPFrom:     get("SMTP_FROM", "PhD Portal <no-reply@local>"),
 		FrontendBase: get("FRONTEND_BASE_URL", "http://localhost:5173"),
+		AdminEmail:   get("ADMIN_EMAIL", ""),
+		AdminPassword: get("ADMIN_PASSWORD", ""),
 	}
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")
