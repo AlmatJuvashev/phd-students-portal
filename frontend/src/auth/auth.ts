@@ -1,4 +1,3 @@
-import { createRootRouteWithContext } from '@tanstack/react-router'
 
 export type Role = 'superadmin'|'admin'|'advisor'|'chair'|'student'
 export type AuthState = { token: string|null, role: Role|null }

@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Breadcrumbs } from '../components/ui/breadcrumbs'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -9,7 +9,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: ()=> api('/me') })
   const authed = !!me
   const role = me?.role
-  const pathname = location.pathname
+  const { pathname } = useLocation()
   const active = (p:string) => pathname===p ? 'font-semibold underline' : 'underline'
 
   return (
@@ -18,9 +18,9 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         <h1 className="font-semibold">{APP_NAME}</h1>
         <nav className="flex gap-3 text-sm">
           {authed && <Link to="/" className={active("/")}>Home</Link>}
-          {authed && <Link to="/checklist" className={active("/")}>Checklist</Link>}
-          {authed && (role==='advisor' || role==='chair' || role==='admin' || role==='superadmin') && <Link to="/advisor/inbox" className={active("/")}>Inbox</Link>}
-          {authed && (role==='admin' || role==='superadmin') && <Link to="/admin/users" className={active("/")}>Admin</Link>}
+          {authed && <Link to="/checklist" className={active("/checklist")}>Checklist</Link>}
+          {authed && (role==='advisor' || role==='chair' || role==='admin' || role==='superadmin') && <Link to="/advisor/inbox" className={active("/advisor/inbox")}>Inbox</Link>}
+          {authed && (role==='admin' || role==='superadmin') && <Link to="/admin/users" className={active("/admin/users")}>Admin</Link>}
           {authed ? (
             <button
               className={active("/")}
@@ -33,7 +33,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       </header>
       <main>
         <Breadcrumbs />
-        {children}
+        {children ?? <Outlet />}
       </main>
     </div>
   )

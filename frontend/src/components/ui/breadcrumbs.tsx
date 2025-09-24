@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Link, useMatches } from '@tanstack/react-router'
+import { Link, useMatches } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../../api/client'
 
@@ -12,12 +12,12 @@ const labels: Record<string,string> = {
 }
 
 export function Breadcrumbs() {
-  const matches = useMatches()
+  const matches = useMatches() as Array<{ pathname: string }>
   const { data: me } = useQuery({ queryKey:['me'], queryFn: ()=> api('/me') })
   const role = me?.role
   const items = matches
-    .filter(m => m.pathname !== '/')
-    .map(m => {
+    .filter((m) => m.pathname !== '/')
+    .map((m) => {
       const p = m.pathname
       let label = labels[p] || p
       if (p.startsWith('/documents/')) label = 'Document'
