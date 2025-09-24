@@ -1,0 +1,31 @@
+{
+  "family": "phd-portal-frontend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "REPLACE_ME",
+  "taskRoleArn": "REPLACE_ME",
+  "containerDefinitions": [
+    {
+      "name": "frontend",
+      "image": "YOUR_ECR/phd-portal-frontend:latest",
+      "portMappings": [
+        {
+          "containerPort": 5173,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/phd-portal",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "frontend"
+        }
+      }
+    }
+  ]
+}

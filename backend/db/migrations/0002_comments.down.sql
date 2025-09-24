@@ -1,0 +1,2 @@
+ALTER TABLE comments DROP COLUMN IF EXISTS mentions;
+ALTER TABLE comments DROP COLUMN IF EXISTS parent_id;

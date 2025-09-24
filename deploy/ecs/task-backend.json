@@ -1,0 +1,49 @@
+{
+  "family": "phd-portal-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "REPLACE_ME",
+  "taskRoleArn": "REPLACE_ME",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "YOUR_ECR/phd-portal-backend:latest",
+      "portMappings": [
+        {
+          "containerPort": 8280,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "APP_PORT",
+          "value": "8280"
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "REPLACE_ME"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://REPLACE_REDIS:6379/0"
+        },
+        {
+          "name": "FRONTEND_BASE_URL",
+          "value": "https://portal.example.com"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/phd-portal",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "backend"
+        }
+      }
+    }
+  ]
+}

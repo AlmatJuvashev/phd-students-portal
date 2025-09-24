@@ -1,0 +1,6 @@
+apiVersion: v2
+name: phd-portal
+description: PhD Student Portal (backend + frontend)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

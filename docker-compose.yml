@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: phd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      APP_PORT: 8280
+      APP_ENV: development
+      JWT_SECRET: change-me
+      JWT_EXP_DAYS: 180
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/phd?sslmode=disable
+      UPLOAD_DIR: /app/uploads
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_FROM: "PhD Portal <no-reply@phd.local>"
+      FRONTEND_BASE_URL: http://localhost:5173
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+      - mailpit
+    ports:
+      - "8280:8280"
+    volumes:
+      - backend_uploads:/app/uploads
+
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm i && VITE_API_URL=http://localhost:8280/api npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_uploads:

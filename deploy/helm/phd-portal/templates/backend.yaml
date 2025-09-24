@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phd-portal-backend
+spec:
+  replicas: {{ .Values.replicaCount.backend }}
+  selector:
+    matchLabels: { app: phd-portal-backend }
+  template:
+    metadata:
+      labels: { app: phd-portal-backend }
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.image.backend }}
+          imagePullPolicy: IfNotPresent
+          env: {{- toYaml .Values.env.backend | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.service.backend.port }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.backend.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.backend.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: phd-portal-backend
+spec:
+  selector: { app: phd-portal-backend }
+  ports:
+    - port: 8280
+      targetPort: {{ .Values.service.backend.port }}
+      protocol: TCP

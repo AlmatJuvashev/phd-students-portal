@@ -1,0 +1,42 @@
+image:
+  backend: your-registry/phd-portal-backend:latest
+  frontend: your-registry/phd-portal-frontend:latest
+
+replicaCount:
+  backend: 2
+  frontend: 1
+
+service:
+  backend:
+    port: 8280
+  frontend:
+    port: 5173
+
+ingress:
+  enabled: false
+  className: ""
+  hosts:
+    - host: portal.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+env:
+  backend:
+    - name: APP_PORT
+      value: "8280"
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: phd-portal-secrets
+          key: DATABASE_URL
+    - name: REDIS_URL
+      value: "redis://redis:6379/0"
+    - name: SMTP_HOST
+      value: "mailpit"
+    - name: SMTP_PORT
+      value: "1025"
+    - name: FRONTEND_BASE_URL
+      value: "http://portal.example.com"
+
+resources: {}

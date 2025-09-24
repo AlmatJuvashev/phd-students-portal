@@ -1,0 +1,24 @@
+{
+  "serviceName": "phd-portal-backend",
+  "cluster": "REPLACE_CLUSTER_ARN",
+  "taskDefinition": "phd-portal-backend",
+  "desiredCount": 2,
+  "launchType": "FARGATE",
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "assignPublicIp": "ENABLED",
+      "subnets": [
+        "REPLACE_SUBNET_1",
+        "REPLACE_SUBNET_2"
+      ],
+      "securityGroups": [
+        "REPLACE_SG"
+      ]
+    }
+  },
+  "loadBalancers": [],
+  "deploymentConfiguration": {
+    "maximumPercent": 200,
+    "minimumHealthyPercent": 50
+  }
+}

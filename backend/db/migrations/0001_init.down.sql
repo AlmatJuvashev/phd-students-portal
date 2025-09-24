@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS document_versions;
+DROP TABLE IF EXISTS documents;
+DROP TABLE IF EXISTS student_steps;
+DROP TABLE IF EXISTS checklist_steps;
+DROP TABLE IF EXISTS checklist_modules;
+DROP TABLE IF EXISTS password_reset_tokens;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS user_role;
+DROP TYPE IF EXISTS step_status;
+DROP TYPE IF EXISTS doc_kind;
