@@ -1,4 +1,4 @@
-DB_URL?=postgres://postgres:postgres@localhost:5432/phd?sslmode=disable
+DB_URL?=postgres://postgres:postgres@localhost:5435/phd?sslmode=disable
 AIR?=air
 
 .PHONY: run migrate-up migrate-down seed dev

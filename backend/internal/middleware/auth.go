@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"strings"
 
+	"time"
+
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/db"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 // AuthRequired validates JWT and attaches claims + current user (cached) in context.

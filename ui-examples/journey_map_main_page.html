@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PhD Journey Map - Modular</title>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#607AFB", "background-light": "#f5f6f8", "background-dark": "#0f1323", "card-light": "#ffffff", "card-dark": "#1c2a33"}, fontFamily: {display: "Manrope"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, keyframes: {glow: {"0%, 100%": {boxShadow: "0 0 5px #fde047, 0 0 10px #fde047"}, "50%": {boxShadow: "0 0 10px #fde047, 0 0 20px #fde047"}}}, animation: {glow: "glow 2s ease-in-out infinite"}}}};</script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+    .path-line {
+      position: absolute;
+      left: 31px;top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #e2e8f0;
+      z-index: 0;
+    }
+    .dark .path-line {
+      background-color: #334155;
+    }
+    .boss-node::before {
+      content: '🏆';
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+    .world-transition {
+      position: relative;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .world-transition::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      transform: translateX(-50%);
+      background-image: repeating-linear-gradient(to bottom, #cbd5e1, #cbd5e1 4px, transparent 4px, transparent 8px);
+    }
+    .dark .world-transition::before {
+       background-image: repeating-linear-gradient(to bottom, #475569, #475569 4px, transparent 4px, transparent 8px);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#1c2a33] dark:text-[#cdd7df]">
+<div class="flex flex-col min-h-screen">
+<header class="sticky top-0 z-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm shadow-sm">
+<div class="px-4 py-3">
+<div class="flex items-center justify-between">
+<div class="w-10"></div>
+<h1 class="text-lg font-bold text-center">My Journey</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10">
+<span class="material-symbols-outlined">
+              settings
+            </span>
+</button>
+</div>
+</div>
+<div class="px-4 pb-3">
+<div class="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+<span class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2">Progress:</span>
+<div class="flex-grow bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mx-3">
+<div class="bg-primary h-2.5 rounded-full" style="width: 45%"></div>
+</div>
+<span class="text-sm font-bold text-primary mr-2">45%</span>
+</div>
+</div>
+</header>
+<main class="flex-grow p-4 space-y-4">
+<div class="bg-card-light dark:bg-card-dark rounded-xl shadow-md overflow-hidden">
+<div class="p-4 border-b border-gray-200 dark:border-gray-700">
+<div class="flex items-center justify-between">
+<h2 class="text-lg font-bold text-primary">World I: Foundations</h2>
+<div class="bg-green-500/20 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-xs font-semibold">3/3 Done</div>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Laying the groundwork for your research.</p>
+</div>
+<div class="p-6 relative">
+<div class="path-line"></div>
+<div class="space-y-8">
+<div class="flex items-center gap-4 relative">
+<div class="z-10 w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg border-4 border-card-light dark:border-card-dark">
+<span class="material-symbols-outlined">school</span>
+</div>
+<div>
+<h3 class="font-bold">Introduction</h3>
+<div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 inline-block">Done</div>
+</div>
+</div>
+<div class="flex items-center gap-4 relative">
+<div class="z-10 w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg border-4 border-card-light dark:border-card-dark">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div>
+<h3 class="font-bold">Literature Review</h3>
+<div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 inline-block">Done</div>
+</div>
+</div>
+<div class="flex items-center gap-4 relative">
+<div class="z-10 w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg border-4 border-card-light dark:border-card-dark">
+<span class="material-symbols-outlined">assignment</span>
+</div>
+<div>
+<h3 class="font-bold">Research Proposal</h3>
+<div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 inline-block">Done</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="world-transition">
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-500 bg-background-light dark:bg-background-dark px-2 z-10">arrow_downward</span>
+</div>
+<div class="bg-card-light dark:bg-card-dark rounded-xl shadow-md overflow-hidden">
+<div class="p-4 border-b border-gray-200 dark:border-gray-700">
+<div class="flex items-center justify-between">
+<h2 class="text-lg font-bold text-primary">World II: Execution</h2>
+<div class="bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 px-3 py-1 rounded-full text-xs font-semibold">1/3 Done</div>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Collecting and analyzing your data.</p>
+</div>
+<div class="p-6 relative">
+<div class="path-line"></div>
+<div class="space-y-8">
+<div class="flex items-center gap-4 relative">
+<div class="z-10 w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg border-4 border-card-light dark:border-card-dark">
+<span class="material-symbols-outlined">database</span>
+</div>
+<div>
+<h3 class="font-bold">Data Collection</h3>
+<div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 inline-block">Done</div>
+</div>
+</div>
+<div class="flex items-center gap-4 relative">
+<div class="z-10 w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center shadow-xl border-4 border-card-light dark:border-card-dark ring-4 ring-primary/30 animate-pulse">
+<span class="material-symbols-outlined">query_stats</span>
+</div>
+<div>
+<h3 class="font-bold text-primary">Data Analysis</h3>
+<div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/20 text-primary inline-block">Active</div>
+</div>
+</div>
+<div class="flex items-center gap-4 relative opacity-60">
+<div class="z-10 relative transform scale-110">
+<div class="absolute -inset-1.5 rounded-full bg-yellow-400 animate-glow"></div>
+<div class="relative w-16 h-16 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center shadow-md boss-node border-4 border-card-light dark:border-card-dark">
+<span class="material-symbols-outlined !text-4xl">workspace_premium</span>
+</div>
+</div>
+<div class="ml-1">
+<h3 class="font-bold">NK Hearing</h3>
+<div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">lock</span> Locked
+                </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="world-transition">
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-500 bg-background-light dark:bg-background-dark px-2 z-10">arrow_downward</span>
+</div>
+<div class="bg-card-light dark:bg-card-dark rounded-xl shadow-md overflow-hidden opacity-50">
+<div class="p-4 border-b border-gray-200 dark:border-gray-700">
+<div class="flex items-center justify-between">
+<h2 class="text-lg font-bold text-gray-500 dark:text-gray-400">World III: Synthesis</h2>
+<div class="bg-gray-500/20 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-xs font-semibold">0/3 Done</div>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Bringing it all together.</p>
+</div>
+<div class="p-6 relative">
+<div class="path-line"></div>
+<div class="space-y-8">
+<div class="flex items-center gap-4 relative">
+<div class="z-10 w-16 h-16 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 flex items-center justify-center shadow-lg border-4 border-card-light dark:border-card-dark">
+<span class="material-symbols-outlined">upload_file</span>
+</div>
+<div>
+<h3 class="font-bold">Draft Submission</h3>
+<div class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">lock</span> Locked
+                </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="p-4 mt-4">
+<div class="bg-card-light dark:bg-card-dark rounded-lg p-4 shadow-md">
+<h3 class="font-bold mb-2 text-sm">Legend</h3>
+<div class="grid grid-cols-2 gap-2 text-xs">
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-full bg-green-500"></div>
+<span>Done</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-full bg-primary animate-pulse"></div>
+<span>Active</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+<span>Locked</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-full bg-yellow-400 relative boss-node !before:top-[-8px] !before:text-base !before:left-[6px]"></div>
+<span>Boss Node</span>
+</div>
+</div>
+</div>
+</footer>
+</div>
+</body></html>
