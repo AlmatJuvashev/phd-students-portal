@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
@@ -17,9 +18,23 @@ import (
 func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
 	r.Use(middleware.RequestLogger())
 	// CORS for frontend dev and configured origin
-	allowed := []string{cfg.FrontendBase, "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"}
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     allowed,
+		AllowOriginFunc: func(origin string) bool {
+			if origin == "" {
+				return false
+			}
+			if origin == cfg.FrontendBase {
+				return true
+			}
+			// allow any localhost/127.0.0.1 port for dev
+			if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "https://localhost:") {
+				return true
+			}
+			if strings.HasPrefix(origin, "http://127.0.0.1:") || strings.HasPrefix(origin, "https://127.0.0.1:") {
+				return true
+			}
+			return false
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -86,7 +101,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
 	admin.Use(middleware.RequireRoles("admin", "superadmin"))
 	admin.GET("/users", users.ListUsers)
 	admin.POST("/users", users.CreateUser)
-	admin.PATCH("/users/:id/password", users.ResetPasswordForUser)
+	admin.PUT("/users/:id", users.UpdateUser)
+	admin.POST("/users/:id/reset-password", users.ResetPasswordForUser)
 	admin.PATCH("/users/:id/active", users.SetActive)
 
 	// Self-service password change

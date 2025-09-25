@@ -79,3 +79,13 @@ CREATE TABLE document_versions (
 ALTER TABLE documents
   ADD CONSTRAINT fk_current_version
   FOREIGN KEY (current_version_id) REFERENCES document_versions(id);
+
+-- Comments system
+CREATE TABLE comments (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  document_id uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  content text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

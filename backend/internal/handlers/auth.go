@@ -26,11 +26,11 @@ func NewAuthHandler(db *sqlx.DB, cfg config.AppConfig) *AuthHandler {
 }
 
 type loginReq struct {
-	Email    string `json:"email" binding:"required,email"`
+	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-// Login with email + password. Returns JWT if ok.
+// Login with username + password. Returns JWT if ok.
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -38,7 +38,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 	var id, hash, role string
-	err := h.db.QueryRowx(`SELECT id, password_hash, role FROM users WHERE email=$1 AND is_active=true`, req.Email).Scan(&id, &hash, &role)
+	err := h.db.QueryRowx(`SELECT id, password_hash, role FROM users WHERE username=$1 AND is_active=true`, req.Username).Scan(&id, &hash, &role)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return

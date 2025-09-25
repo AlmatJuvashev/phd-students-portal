@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/redis/go-redis/v9"
 	"net/http"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"

@@ -73,6 +73,50 @@ type resetPwReq struct {
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
+type updateUserReq struct {
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Role      string `json:"role" binding:"required,oneof=student advisor chair admin"`
+}
+
+// UpdateUser allows admin to update user details (except superadmin)
+func (h *UsersHandler) UpdateUser(c *gin.Context) {
+	id := c.Param("id")
+	
+	// Check if target user is superadmin
+	var role string
+	err := h.db.QueryRowx(`SELECT role FROM users WHERE id=$1`, id).Scan(&role)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "user not found"})
+		return
+	}
+	if role == "superadmin" {
+		c.JSON(403, gin.H{"error": "cannot edit superadmin"})
+		return
+	}
+
+	var req updateUserReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Don't allow creating superadmin through update
+	if req.Role == "superadmin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "cannot assign superadmin role"})
+		return
+	}
+
+	_, err = h.db.Exec(`UPDATE users SET first_name=$1, last_name=$2, email=$3, role=$4, updated_at=now() WHERE id=$5`, 
+		req.FirstName, req.LastName, req.Email, req.Role, id)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "update failed"})
+		return
+	}
+	c.JSON(200, gin.H{"ok": true})
+}
+
 // ChangeOwnPassword allows any logged-in user to change their password.
 func (h *UsersHandler) ChangeOwnPassword(c *gin.Context) {
 	var req resetPwReq
@@ -96,30 +140,32 @@ func (h *UsersHandler) ChangeOwnPassword(c *gin.Context) {
 }
 
 // ResetPasswordForUser allows admin to reset others' passwords, but NOT superadmin.
+// Generates a new temporary password automatically.
 func (h *UsersHandler) ResetPasswordForUser(c *gin.Context) {
 	id := c.Param("id")
-	var role string
-	err := h.db.QueryRowx(`SELECT role FROM users WHERE id=$1`, id).Scan(&role)
+	var role, username string
+	err := h.db.QueryRowx(`SELECT role, username FROM users WHERE id=$1`, id).Scan(&role, &username)
 	if err != nil {
 		c.JSON(404, gin.H{"error": "user not found"})
 		return
 	}
 	if role == "superadmin" {
-		c.JSON(403, gin.H{"error": "cannot change superadmin password"})
+		c.JSON(403, gin.H{"error": "cannot reset superadmin password"})
 		return
 	}
-	var req resetPwReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	hash, _ := auth.HashPassword(req.NewPassword)
+	
+	// Generate new temporary password
+	tempPassword := auth.GeneratePass()
+	hash, _ := auth.HashPassword(tempPassword)
+	
 	_, err = h.db.Exec(`UPDATE users SET password_hash=$1, updated_at=now() WHERE id=$2`, hash, id)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "update failed"})
 		return
 	}
-	c.JSON(200, gin.H{"ok": true})
+	
+	// Return the new credentials
+	c.JSON(200, gin.H{"username": username, "temp_password": tempPassword})
 }
 
 type setActiveReq struct {
