@@ -2,8 +2,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { NodeVM, UploadDef } from "@/lib/playbook";
+import { NodeVM, UploadDef, t as tLabel } from "@/lib/playbook";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AssetsDownloads } from "../AssetsDownloads";
 
 type FileState = { def: UploadDef; file?: File | null };
@@ -20,6 +21,7 @@ export function UploadTaskDetails({
   const defs = node.requirements?.uploads ?? [];
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const { t: T } = useTranslation("common");
 
   function pick(key: string, file: File | null) {
     setFiles((prev) => ({ ...prev, [key]: file ?? null }));
@@ -36,7 +38,7 @@ export function UploadTaskDetails({
       <div className="space-y-3">
         {defs.map((u) => {
           const accept = u.accept ?? u.mime?.join(",") ?? undefined;
-          const label = u.label?.ru ?? u.label?.en ?? u.key;
+          const labelText = tLabel(u.label as any, u.key);
           return (
             <div
               key={u.key}
@@ -44,14 +46,14 @@ export function UploadTaskDetails({
             >
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">
-                  {label}{" "}
+                  {labelText}{" "}
                   {u.required ? (
                     <span className="text-destructive">*</span>
                   ) : null}
                 </div>
                 {u.mime?.length ? (
                   <div className="text-xs text-muted-foreground">
-                    Допустимые типы: {u.mime.join(", ")}
+                    {T("upload.allowed_types")}: {u.mime.join(", ")}
                   </div>
                 ) : null}
               </div>
@@ -69,10 +71,10 @@ export function UploadTaskDetails({
                   onClick={() => inputs.current[u.key]?.click()}
                   disabled={!canEdit}
                 >
-                  Выбрать файл
+                  {T("upload.select_file")}
                 </Button>
                 <div className="w-40 truncate text-xs text-muted-foreground">
-                  {files[u.key]?.name ?? "Нет файла"}
+                  {files[u.key]?.name ?? T("upload.no_file")}
                 </div>
               </div>
             </div>
@@ -84,7 +86,7 @@ export function UploadTaskDetails({
         <>
           <Separator />
           <div>
-            <div className="mb-2 font-medium">Автопроверки</div>
+            <div className="mb-2 font-medium">{T("forms.validations_title")}</div>
             <ul className="list-inside list-disc text-sm">
               {node.requirements.validations!.map((v, i) => (
                 <li key={i}>
@@ -101,9 +103,7 @@ export function UploadTaskDetails({
       <AssetsDownloads node={node} />
 
       {canEdit && (
-        <Button onClick={() => onSubmit?.({ files })}>
-          Загрузить и Отправить
-        </Button>
+        <Button onClick={() => onSubmit?.({ files })}>{T("upload.submit")}</Button>
       )}
     </Card>
   );

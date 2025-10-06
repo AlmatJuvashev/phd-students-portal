@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "PhD Портал"
+  },
+  "nav": {
+    "home": "Басты бет",
+    "journey": "Жол картасы",
+    "inbox": "Кіріс жәшігі",
+    "admin": "Админ",
+    "login": "Кіру",
+    "logout": "Шығу"
+  },
+  "auth": {
+    "login_title": "Кіру",
+    "username": "Логин",
+    "password": "Құпиясөз",
+    "signin": "Кіру",
+    "forgot": "Құпиясөзді ұмыттыңыз ба?",
+    "failed": "Кіру қатесі"
+  },
+  "templates": {
+    "heading": "Үлгілер"
+  },
+  "forms": {
+    "validations_title": "Тексерулер",
+    "save_submit": "Сақтау және жіберу",
+    "save_draft": "Жоба ретінде сақтау"
+  },
+  "upload": {
+    "allowed_types": "Рұқсат етілген түрлері",
+    "select_file": "Файл таңдау",
+    "no_file": "Файл жоқ",
+    "submit": "Жүктеп жіберу"
+  },
+  "external": {
+    "checklist_title": "Әрекеттер тізімі",
+    "mark_done": "Орындалды деп белгілеу"
+  },
+  "breadcrumbs": {
+    "home": "Басты бет",
+    "journey": "Жол картасы",
+    "advisor_inbox": "Кеңесші кірісі",
+    "admin_users": "Админ • Пайдаланушылар",
+    "document": "Құжат"
+  },
+  "common": {
+    "loading": "Жүктелуде…"
+  }
+}
+

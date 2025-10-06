@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { createBrowserRouter, redirect, useParams } from "react-router-dom";
 import { AppLayout } from "./pages/layout";
 import { LoginPage } from "./pages/login";
@@ -41,12 +42,11 @@ function guardRole(allowed: Role[]) {
 }
 
 function Forbidden() {
+  const { t: T } = useTranslation("common");
   return (
     <div className="max-w-lg mx-auto mt-10">
       <h2 className="text-xl font-semibold">403 — Forbidden</h2>
-      <p className="text-sm text-gray-600">
-        You don’t have access to this page.
-      </p>
+      <p className="text-sm text-gray-600">You don’t have access to this page.</p>
     </div>
   );
 }

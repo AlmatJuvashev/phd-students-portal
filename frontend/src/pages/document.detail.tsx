@@ -10,12 +10,14 @@ import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { Button } from '../components/ui/button'
 import { MentionChips, MentionResults, type Mention } from '../components/mentions'
+import { useTranslation } from 'react-i18next'
 
 type Version = { id:string; storage_path?:string; mime_type?:string; size_bytes?:number }
 type Doc = { id:string; title:string; kind:string }
 type Comment = { id:string; body:string; author_id:string; resolved:boolean; parent_id?:string|null; mentions?:string[] }
 
 export function DocumentDetail({ docId }: { docId: string }) {
+  const { t: T } = useTranslation('common')
   const [doc, setDoc] = useState<Doc | null>(null)
   const [versions, setVersions] = useState<Version[]>([])
   const [comments, setComments] = useState<Comment[]>([])
@@ -89,7 +91,7 @@ export function DocumentDetail({ docId }: { docId: string }) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader><CardTitle>Document</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{T('breadcrumbs.document')}</CardTitle></CardHeader>
         <CardContent>
           <div className="text-sm">Title: {doc?.title}</div>
           <div className="text-sm">Kind: {doc?.kind}</div>

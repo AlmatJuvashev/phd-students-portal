@@ -6,6 +6,7 @@ import { api } from "../api/client";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { useToast } from "../components/toast";
+import { useTranslation } from "react-i18next";
 
 const Schema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -14,6 +15,7 @@ const Schema = z.object({
 type Form = z.infer<typeof Schema>;
 
 export function LoginPage() {
+  const { t: T } = useTranslation("common");
   const {
     register,
     handleSubmit,
@@ -29,19 +31,19 @@ export function LoginPage() {
       localStorage.setItem("token", res.token);
       location.href = "/";
     } catch (e: any) {
-      push({ title: "Login failed", description: e.message });
+      push({ title: T("auth.failed"), description: e.message });
     }
   };
   return (
     <div className="max-w-sm mx-auto mt-10">
-      <h2 className="text-xl font-semibold mb-4">Login</h2>
+      <h2 className="text-xl font-semibold mb-4">{T("auth.login_title")}</h2>
       <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
-        <Input placeholder="Username" {...register("username")} />
+        <Input placeholder={T("auth.username")} {...register("username")} />
         {errors.username && (
           <div className="text-xs text-rose-600">{errors.username.message}</div>
         )}
         <Input
-          placeholder="Password"
+          placeholder={T("auth.password")}
           type="password"
           {...register("password")}
         />
@@ -49,12 +51,12 @@ export function LoginPage() {
           <div className="text-xs text-rose-600">{errors.password.message}</div>
         )}
         <Button className="w-full" disabled={isSubmitting}>
-          Sign in
+          {T("auth.signin")}
         </Button>
       </form>
       <div className="mt-3 text-sm">
         <a href="/forgot-password" className="underline">
-          Forgot password?
+          {T("auth.forgot")}
         </a>
       </div>
     </div>

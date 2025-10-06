@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { NodeVM } from "@/lib/playbook";
 import { UploadTaskDetails } from "./UploadTaskDetails";
 import { AssetsDownloads } from "../AssetsDownloads";
+import { useTranslation } from "react-i18next";
 
 export function ExternalProcessDetails({
   node,
@@ -13,6 +14,7 @@ export function ExternalProcessDetails({
   node: NodeVM;
   onComplete?: (payload: any) => void;
 }) {
+  const { t: T } = useTranslation("common");
   const hasUploads = !!node.requirements?.uploads?.length;
   return (
     <Card className="p-4 space-y-4">
@@ -27,7 +29,7 @@ export function ExternalProcessDetails({
 
       {!!node.requirements?.checklist?.length && (
         <div>
-          <div className="mb-2 font-medium">Чек-лист действий</div>
+          <div className="mb-2 font-medium">{T("external.checklist_title")}</div>
           <ul className="list-inside list-disc text-sm">
             {node.requirements.checklist.map((s, i) => (
               <li key={i}>{s}</li>
@@ -48,7 +50,7 @@ export function ExternalProcessDetails({
 
       {!hasUploads && (
         <Button onClick={() => onComplete?.({ completed: true })}>
-          Отметить выполненным
+          {T("external.mark_done")}
         </Button>
       )}
     </Card>

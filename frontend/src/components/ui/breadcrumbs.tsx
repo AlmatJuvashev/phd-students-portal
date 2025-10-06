@@ -2,16 +2,12 @@ import * as React from "react";
 import { Link, useMatches } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
+import { useTranslation } from "react-i18next";
 
-const labels: Record<string, string> = {
-  "/": "Home",
-  "/login": "Login",
-  "/journey": "Journey",
-  "/advisor/inbox": "Advisor Inbox",
-  "/admin/users": "Admin • Users",
-};
+const paths = ["/", "/login", "/journey", "/advisor/inbox", "/admin/users"] as const;
 
 export function Breadcrumbs() {
+  const { t: T } = useTranslation("common");
   const matches = useMatches() as Array<{ pathname: string }>;
   const { data: me } = useQuery({
     queryKey: ["me"],
@@ -22,8 +18,12 @@ export function Breadcrumbs() {
     .filter((m) => m.pathname !== "/")
     .map((m) => {
       const p = m.pathname;
-      let label = labels[p] || p;
-      if (p.startsWith("/documents/")) label = "Document";
+      let label = p;
+      if (p === "/login") label = T("nav.login");
+      if (p === "/journey") label = T("breadcrumbs.journey");
+      if (p === "/advisor/inbox") label = T("breadcrumbs.advisor_inbox");
+      if (p === "/admin/users") label = T("breadcrumbs.admin_users");
+      if (p.startsWith("/documents/")) label = T("breadcrumbs.document");
       if (p.startsWith("/admin") && role !== "admin" && role !== "superadmin")
         return null;
       if (

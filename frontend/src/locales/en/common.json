@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "PhD Portal"
+  },
+  "nav": {
+    "home": "Home",
+    "journey": "Journey",
+    "inbox": "Inbox",
+    "admin": "Admin",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login_title": "Login",
+    "username": "Username",
+    "password": "Password",
+    "signin": "Sign in",
+    "forgot": "Forgot password?",
+    "failed": "Login failed"
+  },
+  "templates": {
+    "heading": "Templates"
+  },
+  "forms": {
+    "validations_title": "Validations",
+    "save_submit": "Save and Submit",
+    "save_draft": "Save Draft"
+  },
+  "upload": {
+    "allowed_types": "Allowed types",
+    "select_file": "Choose file",
+    "no_file": "No file",
+    "submit": "Upload and Submit"
+  },
+  "external": {
+    "checklist_title": "Action checklist",
+    "mark_done": "Mark as done"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "journey": "Journey",
+    "advisor_inbox": "Advisor Inbox",
+    "admin_users": "Admin • Users",
+    "document": "Document"
+  },
+  "common": {
+    "loading": "Loading…"
+  }
+}
+
