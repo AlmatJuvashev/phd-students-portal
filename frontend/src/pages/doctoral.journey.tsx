@@ -1,18 +1,38 @@
 // pages/doctoral.journey.tsx
 import { WorldMap } from "@/components/map/WorldMap";
 import playbook from "@/playbooks/phd-doctorant.kz-v1.json";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/api/client";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export function DoctoralJourney() {
-  // Example: hydrate with some fake node states; replace with real data from your backend
-  const stateByNodeId = {
-    S1_profile: "done",
-    S1_text_ready: "done",
-    S1_antiplag: "submitted",
-    S1_publications_list: "active",
-    E2_wait_30_days: "waiting",
-  } as const;
+  const { t: T } = useTranslation("common");
+  const qc = useQueryClient();
+  const { data: state = {}, refetch, isLoading } = useQuery({
+    queryKey: ["journey", "state"],
+    queryFn: () => api("/journey/state"),
+  });
 
   return (
-    <WorldMap playbook={playbook as any} stateByNodeId={stateByNodeId as any} />
+    <div>
+      <WorldMap
+        playbook={playbook as any}
+        stateByNodeId={state as any}
+        onStateChanged={() => refetch()}
+      />
+      <div className="p-4">
+        <Button
+          variant="secondary"
+          onClick={async () => {
+            if (!confirm(T("journey.reset_confirm", { defaultValue: "Reset your journey progress?" }))) return;
+            await api("/journey/reset", { method: "POST" });
+            await refetch();
+          }}
+        >
+          {T("journey.reset", { defaultValue: "Reset Journey" })}
+        </Button>
+      </div>
+    </div>
   );
 }
