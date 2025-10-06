@@ -24,7 +24,8 @@
   "forms": {
     "validations_title": "Валидации",
     "save_submit": "Сохранить и Отправить",
-    "save_draft": "Сохранить черновик"
+    "save_draft": "Сохранить черновик",
+    "array_hint": "по одному в строке"
   },
   "upload": {
     "allowed_types": "Допустимые типы",
@@ -47,4 +48,3 @@
     "loading": "Загрузка…"
   }
 }
-

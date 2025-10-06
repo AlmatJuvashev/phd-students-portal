@@ -92,15 +92,51 @@ export function NodeDetailSwitch({ node, role = "student", onEvent }: Props) {
     );
   }
 
-  // Fallback: render in priority order
-  const order = [
-    "outcome",
-    "upload",
-    "form",
-    "external",
-    "wait",
-    "gateway",
-  ] as const;
+  // Fallback: render in priority order (no recursion)
+  const order = ["outcome", "upload", "form", "external", "wait", "gateway"] as const;
   const first = order.find((k) => kinds.includes(k as any)) ?? "gateway";
-  return <NodeDetailSwitch node={node} role={role} onEvent={onEvent} />;
+  switch (first) {
+    case "form":
+      return (
+        <FormTaskDetails
+          node={node}
+          canEdit
+          onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+        />
+      );
+    case "upload":
+      return (
+        <UploadTaskDetails
+          node={node}
+          canEdit
+          onSubmit={(payload) => onEvent?.({ type: "submit-upload", payload })}
+        />
+      );
+    case "outcome":
+      return (
+        <OutcomeReviewDetails
+          node={node}
+          canDecide={canDecide}
+          canUpload={canUpload}
+          onFinalize={(payload) => onEvent?.({ type: "finalize-outcome", payload })}
+        />
+      );
+    case "external":
+      return (
+        <ExternalProcessDetails
+          node={node}
+          onComplete={(payload) => onEvent?.({ type: "complete-external", payload })}
+        />
+      );
+    case "wait":
+      return (
+        <WaitLockDetails
+          node={node}
+          onSubscribe={() => onEvent?.({ type: "subscribe-timer" })}
+        />
+      );
+    case "gateway":
+    default:
+      return <GatewayInfoDetails node={node} onContinue={() => onEvent?.({ type: "continue" })} />;
+  }
 }

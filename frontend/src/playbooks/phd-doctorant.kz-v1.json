@@ -269,12 +269,21 @@
                 "key": "pubs[]",
                 "type": "array",
                 "required": true,
-                "label": {}
+                "label": {
+                  "ru": "Публикации",
+                  "kz": "Жарияланымдар",
+                  "en": "Publications"
+                }
               },
               {
                 "key": "proof_scans[]",
                 "type": "array",
-                "required": false
+                "required": false,
+                "label": {
+                  "ru": "Сканы подтверждений",
+                  "kz": "Растаулардың скандары",
+                  "en": "Proof scans"
+                }
               }
             ]
           },

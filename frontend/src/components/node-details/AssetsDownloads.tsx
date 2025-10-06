@@ -29,31 +29,22 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
       <div className="space-y-2">
         {order.map((g) => {
           const items = groups[g];
-          // prefer current locale first
-          const sorted = items.slice().sort((a, b) => {
-            const la = a.id.includes(`_${locale}`) ? 0 : 1;
-            const lb = b.id.includes(`_${locale}`) ? 0 : 1;
-            if (la !== lb) return la - lb;
-            return a.id.localeCompare(b.id);
-          });
+          const preferred =
+            items.find((a) => a.id.toLowerCase().includes(`_${locale}`)) ||
+            items.find((a) => a.title?.[locale as any]) ||
+            items[0];
+          if (!preferred) return null;
+          const label = preferred.title?.[locale as any] || t(preferred.title, preferred.id);
           return (
             <div key={g} className="flex flex-wrap items-center gap-2">
-              <div className="min-w-40 text-sm font-medium capitalize">
-                {g.replace("app", "Appendix ")}
-              </div>
-              {sorted.map((a) => (
-                <a
-                  key={a.id}
-                  href={`/${a.storage.key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                >
-                  <Button variant="outline" size="sm">
-                    {a.title[locale] || t(a.title, a.id)}
-                  </Button>
-                </a>
-              ))}
+              <a
+                href={`/${preferred.storage.key}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+              >
+                <Button variant="outline" size="sm">{label}</Button>
+              </a>
             </div>
           );
         })}
