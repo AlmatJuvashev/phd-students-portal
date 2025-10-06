@@ -66,6 +66,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
 	api.POST("/auth/reset", auth.ResetPassword)   // reset with token
 
 	users := NewUsersHandler(db, cfg)
+	journey := NewJourneyHandler(db, cfg)
 	_ = NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL)) // TODO: use me handler for routes
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 
@@ -107,6 +108,13 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
 
 	// Self-service password change
 	api.PATCH("/me/password", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.ChangeOwnPassword)
+
+	// Journey state (per-user)
+	js := api.Group("/journey")
+	js.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	js.GET("/state", journey.GetState)
+	js.PUT("/state", journey.SetState)
+	js.POST("/reset", journey.Reset)
 
 	// TODO: checklist, documents, comments handlers (skeletons for now)
 

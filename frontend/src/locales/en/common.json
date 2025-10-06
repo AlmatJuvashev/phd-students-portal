@@ -45,6 +45,15 @@
     "document": "Document"
   },
   "common": {
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "cancel": "Cancel"
+  },
+  "gateway": {
+    "prompt": "Proceed to the next chapter? You can unlock it now.",
+    "unlock": "Unlock Chapter"
+  },
+  "journey": {
+    "reset": "Reset Journey",
+    "reset_confirm": "Reset your journey progress?"
   }
 }
