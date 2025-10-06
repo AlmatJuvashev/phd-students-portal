@@ -14,6 +14,7 @@ type Props = {
   role?: "student" | "advisor" | "secretary" | "chair" | "admin";
   onEvent?: (evt: { type: string; payload?: any }) => void; // bubble up submit/finalize/etc.
   submission?: NodeSubmissionDTO | null;
+  saving?: boolean;
 };
 
 export function NodeDetailSwitch({
@@ -21,6 +22,7 @@ export function NodeDetailSwitch({
   role = "student",
   onEvent,
   submission,
+  saving = false,
 }: Props) {
   const kinds = detectActionKinds(node);
   const initialForm = submission?.form?.data ?? {};
@@ -43,8 +45,9 @@ export function NodeDetailSwitch({
         return (
           <FormTaskDetails
             node={node}
-            canEdit
+            canEdit={!saving}
             initial={initialForm}
+            disabled={saving}
             onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
           />
         );
@@ -52,7 +55,7 @@ export function NodeDetailSwitch({
         return (
           <UploadTaskDetails
             node={node}
-            canEdit
+            canEdit={!saving}
             existing={attachmentsBySlot}
             onSubmit={(payload) =>
               onEvent?.({ type: "submit-upload", payload })
@@ -124,7 +127,9 @@ export function NodeDetailSwitch({
       return (
         <FormTaskDetails
           node={node}
-          canEdit
+          canEdit={!saving}
+          disabled={saving}
+          initial={initialForm}
           onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
         />
       );
@@ -132,7 +137,8 @@ export function NodeDetailSwitch({
       return (
         <UploadTaskDetails
           node={node}
-          canEdit
+          canEdit={!saving}
+          existing={attachmentsBySlot}
           onSubmit={(payload) => onEvent?.({ type: "submit-upload", payload })}
         />
       );

@@ -12,7 +12,3 @@ CREATE TABLE IF NOT EXISTS playbook_active_version (
   playbook_version_id uuid NOT NULL REFERENCES playbook_versions(id) ON DELETE CASCADE,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
-INSERT INTO playbook_active_version(id, playbook_version_id)
-SELECT TRUE, id FROM playbook_active_version
-ON CONFLICT (id) DO NOTHING;

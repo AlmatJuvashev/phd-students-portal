@@ -149,6 +149,7 @@ export function WorldMap({
       <NodeDetailsSheet
         node={openNode}
         onOpenChange={(o) => !o && setOpenNode(null)}
+        onStateRefresh={onStateChanged}
       />
 
       <GatewayModal

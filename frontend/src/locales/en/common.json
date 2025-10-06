@@ -27,12 +27,6 @@
     "save_draft": "Save Draft",
     "array_hint": "one per line"
   },
-  "upload": {
-    "allowed_types": "Allowed types",
-    "select_file": "Choose file",
-    "no_file": "No file",
-    "submit": "Upload and Submit"
-  },
   "external": {
     "checklist_title": "Action checklist",
     "mark_done": "Mark as done"
@@ -46,7 +40,11 @@
   },
   "common": {
     "loading": "Loading…",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "success": "Saved.",
+    "error": "Error",
+    "info": "Info",
+    "not_implemented": "Action not yet available."
   },
   "gateway": {
     "prompt": "Proceed to the next chapter? You can unlock it now.",
@@ -55,5 +53,12 @@
   "journey": {
     "reset": "Reset Journey",
     "reset_confirm": "Reset your journey progress?"
+  },
+  "upload": {
+    "not_supported": "File uploads will be available soon.",
+    "allowed_types": "Allowed types",
+    "select_file": "Choose file",
+    "no_file": "No file",
+    "submit": "Upload and Submit"
   }
 }

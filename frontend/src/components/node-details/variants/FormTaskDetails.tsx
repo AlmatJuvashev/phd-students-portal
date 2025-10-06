@@ -15,6 +15,7 @@ type Props = {
   onSubmit?: (payload: any) => void;
   initial?: Record<string, any>;
   canEdit?: boolean;
+  disabled?: boolean;
 };
 
 export function FormTaskDetails({
@@ -22,6 +23,7 @@ export function FormTaskDetails({
   initial = {},
   onSubmit,
   canEdit = true,
+  disabled = false,
 }: Props) {
   const [values, setValues] = useState<Record<string, any>>(initial);
   useEffect(() => {
@@ -99,11 +101,12 @@ export function FormTaskDetails({
 
       {canEdit && (
         <div className="flex gap-2">
-          <Button onClick={() => onSubmit?.(values)}>
+          <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
             {T("forms.save_submit")}
           </Button>
           <Button
             variant="secondary"
+            disabled={disabled}
             onClick={() => onSubmit?.({ ...values, __draft: true })}
           >
             {T("forms.save_draft")}
