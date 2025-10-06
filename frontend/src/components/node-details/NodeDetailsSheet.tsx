@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { NodeDetailSwitch } from "./NodeDetailSwitch";
+import { useEffect, useState } from "react";
+import { getNodeSubmission, NodeSubmissionDTO } from "@/api/journey";
+import { useToast } from "@/components/toast";
 
 export function NodeDetailsSheet({
   node,
@@ -24,6 +27,30 @@ export function NodeDetailsSheet({
   role?: "student" | "advisor" | "secretary" | "chair" | "admin";
   onEvent?: (evt: { type: string; payload?: any }) => void;
 }) {
+  const [submission, setSubmission] = useState<NodeSubmissionDTO | null>(null);
+  const { push } = useToast();
+
+  useEffect(() => {
+    let mounted = true;
+    if (node) {
+      getNodeSubmission(node.id)
+        .then((data) => {
+          if (mounted) setSubmission(data);
+        })
+        .catch((err) => {
+          push({
+            title: "Failed to load",
+            description: err.message || String(err),
+          });
+        });
+    } else {
+      setSubmission(null);
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [node]);
+
   return (
     <Sheet open={!!node} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full max-w-full sm:max-w-lg">
@@ -42,7 +69,12 @@ export function NodeDetailsSheet({
             </SheetHeader>
 
             <div className="mt-6">
-              <NodeDetailSwitch node={node} role={role} onEvent={onEvent} />
+              <NodeDetailSwitch
+                node={node}
+                role={role}
+                submission={submission}
+                onEvent={onEvent}
+              />
             </div>
           </>
         )}

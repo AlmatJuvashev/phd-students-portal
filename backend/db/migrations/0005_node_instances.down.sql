@@ -1,0 +1,10 @@
+DROP INDEX IF EXISTS idx_node_events_instance_created_at;
+DROP TABLE IF EXISTS node_events;
+DROP TABLE IF EXISTS node_outcomes;
+DROP INDEX IF EXISTS idx_node_instance_slot_attachments_slot;
+DROP TABLE IF EXISTS node_instance_slot_attachments;
+DROP TABLE IF EXISTS node_instance_slots;
+DROP TABLE IF EXISTS node_instance_form_revisions;
+DROP INDEX IF EXISTS idx_node_instances_user_node;
+DROP TABLE IF EXISTS node_instances;
+DROP TYPE IF EXISTS slot_multiplicity;

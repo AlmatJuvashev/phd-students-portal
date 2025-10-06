@@ -13,10 +13,22 @@ export function UploadTaskDetails({
   node,
   onSubmit,
   canEdit = true,
+  existing,
 }: {
   node: NodeVM;
   onSubmit?: (payload: { files: Record<string, File | null> }) => void;
   canEdit?: boolean;
+  existing?: Map<
+    string,
+    Array<{
+      version_id: string;
+      filename: string;
+      download_url: string;
+      size_bytes: number;
+      is_active: boolean;
+      attached_at?: string;
+    }>
+  >;
 }) {
   const defs = node.requirements?.uploads ?? [];
   const [files, setFiles] = useState<Record<string, File | null>>({});
@@ -39,6 +51,7 @@ export function UploadTaskDetails({
         {defs.map((u) => {
           const accept = u.accept ?? u.mime?.join(",") ?? undefined;
           const labelText = tLabel(u.label as any, u.key);
+          const attachments = existing?.get(u.key) ?? [];
           return (
             <div
               key={u.key}
@@ -51,6 +64,28 @@ export function UploadTaskDetails({
                     <span className="text-destructive">*</span>
                   ) : null}
                 </div>
+                {attachments.length > 0 && (
+                  <div className="mt-1 space-y-1 text-xs">
+                    {attachments.map((att) => (
+                      <div
+                        key={att.version_id}
+                        className="flex items-center gap-1"
+                      >
+                        <a
+                          className="underline"
+                          href={att.download_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {att.filename}
+                        </a>
+                        {!att.is_active && (
+                          <span className="text-muted-foreground">(old)</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {u.mime?.length ? (
                   <div className="text-xs text-muted-foreground">
                     {T("upload.allowed_types")}: {u.mime.join(", ")}
@@ -86,7 +121,9 @@ export function UploadTaskDetails({
         <>
           <Separator />
           <div>
-            <div className="mb-2 font-medium">{T("forms.validations_title")}</div>
+            <div className="mb-2 font-medium">
+              {T("forms.validations_title")}
+            </div>
             <ul className="list-inside list-disc text-sm">
               {node.requirements.validations!.map((v, i) => (
                 <li key={i}>
@@ -103,7 +140,9 @@ export function UploadTaskDetails({
       <AssetsDownloads node={node} />
 
       {canEdit && (
-        <Button onClick={() => onSubmit?.({ files })}>{T("upload.submit")}</Button>
+        <Button onClick={() => onSubmit?.({ files })}>
+          {T("upload.submit")}
+        </Button>
       )}
     </Card>
   );

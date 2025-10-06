@@ -7,15 +7,30 @@ import { WaitLockDetails } from "./variants/WaitLockDetails";
 import { ExternalProcessDetails } from "./variants/ExternalProcessDetails";
 import { GatewayInfoDetails } from "./variants/GatewayInfoDetails";
 import { CompositeTaskDetails } from "./variants/CompositeTaskDetails";
+import type { NodeSubmissionDTO } from "@/api/journey";
 
 type Props = {
   node: NodeVM;
   role?: "student" | "advisor" | "secretary" | "chair" | "admin";
   onEvent?: (evt: { type: string; payload?: any }) => void; // bubble up submit/finalize/etc.
+  submission?: NodeSubmissionDTO | null;
 };
 
-export function NodeDetailSwitch({ node, role = "student", onEvent }: Props) {
+export function NodeDetailSwitch({
+  node,
+  role = "student",
+  onEvent,
+  submission,
+}: Props) {
   const kinds = detectActionKinds(node);
+  const initialForm = submission?.form?.data ?? {};
+  const attachmentsBySlot = new Map<
+    string,
+    NodeSubmissionDTO["slots"][number]["attachments"]
+  >();
+  submission?.slots.forEach((slot) => {
+    attachmentsBySlot.set(slot.key, slot.attachments);
+  });
 
   // permissions (rough defaults, adjust as you wire real RBAC)
   const canDecide = role === "secretary" || role === "chair";
@@ -29,6 +44,7 @@ export function NodeDetailSwitch({ node, role = "student", onEvent }: Props) {
           <FormTaskDetails
             node={node}
             canEdit
+            initial={initialForm}
             onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
           />
         );
@@ -37,6 +53,7 @@ export function NodeDetailSwitch({ node, role = "student", onEvent }: Props) {
           <UploadTaskDetails
             node={node}
             canEdit
+            existing={attachmentsBySlot}
             onSubmit={(payload) =>
               onEvent?.({ type: "submit-upload", payload })
             }
@@ -93,7 +110,14 @@ export function NodeDetailSwitch({ node, role = "student", onEvent }: Props) {
   }
 
   // Fallback: render in priority order (no recursion)
-  const order = ["outcome", "upload", "form", "external", "wait", "gateway"] as const;
+  const order = [
+    "outcome",
+    "upload",
+    "form",
+    "external",
+    "wait",
+    "gateway",
+  ] as const;
   const first = order.find((k) => kinds.includes(k as any)) ?? "gateway";
   switch (first) {
     case "form":
@@ -118,14 +142,18 @@ export function NodeDetailSwitch({ node, role = "student", onEvent }: Props) {
           node={node}
           canDecide={canDecide}
           canUpload={canUpload}
-          onFinalize={(payload) => onEvent?.({ type: "finalize-outcome", payload })}
+          onFinalize={(payload) =>
+            onEvent?.({ type: "finalize-outcome", payload })
+          }
         />
       );
     case "external":
       return (
         <ExternalProcessDetails
           node={node}
-          onComplete={(payload) => onEvent?.({ type: "complete-external", payload })}
+          onComplete={(payload) =>
+            onEvent?.({ type: "complete-external", payload })
+          }
         />
       );
     case "wait":
@@ -137,6 +165,11 @@ export function NodeDetailSwitch({ node, role = "student", onEvent }: Props) {
       );
     case "gateway":
     default:
-      return <GatewayInfoDetails node={node} onContinue={() => onEvent?.({ type: "continue" })} />;
+      return (
+        <GatewayInfoDetails
+          node={node}
+          onContinue={() => onEvent?.({ type: "continue" })}
+        />
+      );
   }
 }
