@@ -1,14 +1,23 @@
 {
   "playbook_id": "phd-doctorant.kz",
-  "version": "1.0.0",
-  "effective_date": "2025-09-01",
+  "version": "1.1.0",
+  "effective_date": "2025-10-06",
   "locale_default": "ru",
-  "locales": ["ru", "kz", "en"],
+  "locales": [
+    "ru",
+    "kz",
+    "en"
+  ],
   "metadata": {
     "jurisdiction": "KZ",
     "owner_org": "KazNMU",
     "created_by": "PMO",
     "changelog": [
+      {
+        "version": "1.1.0",
+        "date": "2025-10-06",
+        "notes": "Enriched defense prep/defense/post-defense nodes with deadlines, multilingual labels, uploads, and validation without changing categories/IDs."
+      },
       {
         "version": "1.0.0",
         "date": "2025-09-01",
@@ -45,75 +54,180 @@
     ]
   },
   "roles": [
-    { "id": "student", "label": { "ru": "Докторант" } },
-    { "id": "advisor", "label": { "ru": "Научный руководитель" } },
-    { "id": "secretary", "label": { "ru": "Секретарь ДС/НК" } },
-    { "id": "chair", "label": { "ru": "Председатель" } },
-    { "id": "admin", "label": { "ru": "Админ" } }
+    {
+      "id": "student",
+      "label": {
+        "ru": "Докторант",
+        "kz": "Докторант",
+        "en": "Student"
+      }
+    },
+    {
+      "id": "advisor",
+      "label": {
+        "ru": "Научный руководитель",
+        "kz": "Ғылыми жетекші",
+        "en": "Advisor"
+      }
+    },
+    {
+      "id": "secretary",
+      "label": {
+        "ru": "Секретарь ДС/НК",
+        "kz": "ДС/ҒК хатшысы",
+        "en": "Secretary (DC/SC)"
+      }
+    },
+    {
+      "id": "chair",
+      "label": {
+        "ru": "Председатель",
+        "kz": "Төраға",
+        "en": "Chair"
+      }
+    },
+    {
+      "id": "admin",
+      "label": {
+        "ru": "Админ",
+        "kz": "Админ",
+        "en": "Admin"
+      }
+    }
   ],
   "conditions": [
     {
       "id": "rp_required",
       "expr": "profile.years_since_graduation > 3",
       "description": {
-        "ru": "Если с момента выпуска прошло более 3 лет — требуется этап RP"
+        "ru": "Если с момента выпуска прошло более 3 лет — требуется этап RP",
+        "kz": "Оқуды бітіргеннен кейін 3 жылдан асса — RP кезеңі қажет",
+        "en": "If >3 years since graduation, the RP stage is required"
       }
     }
   ],
   "worlds": [
     {
       "id": "W1",
-      "title": { "ru": "I — Подготовка" },
+      "title": {
+        "ru": "I — Подготовка",
+        "kz": "I — Дайындық",
+        "en": "I — Preparation"
+      },
       "order": 1,
       "nodes": [
         {
           "id": "S1_profile",
-          "title": { "ru": "Профиль докторанта" },
+          "title": {
+            "ru": "Профиль докторанта",
+            "kz": "Докторант профилі",
+            "en": "Doctoral profile"
+          },
           "type": "form",
-          "who_can_complete": ["student"],
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [],
+          "next": [
+            "S1_text_ready"
+          ],
+          "outcomes": [],
           "requirements": {
             "fields": [
-              { "key": "full_name", "required": true },
-              { "key": "specialty", "required": true },
-              { "key": "program", "required": true },
+              {
+                "key": "full_name",
+                "required": true,
+                "label": {}
+              },
+              {
+                "key": "specialty",
+                "required": true,
+                "label": {}
+              },
+              {
+                "key": "program",
+                "required": true,
+                "label": {}
+              },
               {
                 "key": "years_since_graduation",
                 "required": true,
-                "type": "number"
+                "type": "number",
+                "label": {}
               }
             ]
           },
           "outputs": [
-            { "key": "profile_snapshot.pdf", "type": "auto_generated" }
+            {
+              "key": "profile_snapshot.pdf",
+              "type": "auto_generated"
+            }
           ],
-          "prerequisites": [],
-          "next": ["S1_text_ready"]
+          "actionHints": []
         },
         {
           "id": "S1_text_ready",
-          "title": { "ru": "Текст диссертации подготовлен" },
+          "title": {
+            "ru": "Текст диссертации подготовлен",
+            "kz": "Диссертация мәтіні дайын",
+            "en": "Dissertation draft ready"
+          },
+          "description": {
+            "ru": "Черновик готов к проверкам (оформление/антиплагиат/внутренние согласования).",
+            "kz": "Жоба тексерулерге дайын (рәсімдеу/антиплагиат/ішкі келісімдер).",
+            "en": "Draft ready for checks (formatting/anti-plagiarism/internal approvals)."
+          },
           "type": "decision",
-          "description": { "ru": "Черновик диссертации готов к проверкам" },
-          "who_can_complete": ["student", "advisor"],
-          "prerequisites": ["S1_profile"],
-          "next": ["S1_antiplag"]
+          "who_can_complete": [
+            "student",
+            "advisor"
+          ],
+          "prerequisites": [
+            "S1_profile"
+          ],
+          "next": [
+            "S1_antiplag"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "S1_antiplag",
-          "title": { "ru": "Антиплагиат ≥ 85%" },
+          "title": {
+            "ru": "Антиплагиат ≥ 85%",
+            "kz": "Антиплагиат ≥ 85%",
+            "en": "Anti-plagiarism ≥ 85%"
+          },
           "type": "upload",
-          "who_can_complete": ["student"],
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [
+            "S1_text_ready"
+          ],
+          "next": [
+            "S1_publications_list"
+          ],
+          "outcomes": [],
           "requirements": {
             "uploads": [
               {
                 "key": "antiplag_report.pdf",
-                "mime": ["application/pdf"],
-                "required": true
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true,
+                "label": {}
               },
               {
                 "key": "dissertation_pdf.pdf",
-                "mime": ["application/pdf"],
-                "required": true
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true,
+                "label": {}
               }
             ],
             "validations": [
@@ -123,276 +237,1090 @@
               }
             ]
           },
-          "prerequisites": ["S1_text_ready"],
-          "next": ["S1_publications_list"]
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "S1_publications_list",
-          "title": { "ru": "Список публикаций" },
-          "type": "form",
-          "who_can_complete": ["student"],
-          "requirements": {
-            "fields": [{ "key": "pubs[]", "type": "array", "required": true }]
+          "title": {
+            "ru": "Список публикаций",
+            "kz": "Жарияланымдар тізімі",
+            "en": "Publications list"
           },
-          "prerequisites": ["S1_antiplag"],
-          "next": ["W2_GATE"]
+          "description": {
+            "ru": "Формат Прил. 7: WoS/Scopus, KZ индексируемые, тезисы, ИС. Приложить сканы подтверждений.",
+            "kz": "Қос. 7 форматы: WoS/Scopus, ҚР индекстелетін, тезистер, ЗИЯ. Растаулардың сканын тіркеңіз.",
+            "en": "Appendix 7 format: WoS/Scopus, KZ indexed, abstracts, IP. Attach proof scans."
+          },
+          "type": "form",
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [
+            "S1_antiplag"
+          ],
+          "next": [
+            "W2_GATE"
+          ],
+          "outcomes": [],
+          "requirements": {
+            "fields": [
+              {
+                "key": "pubs[]",
+                "type": "array",
+                "required": true,
+                "label": {}
+              },
+              {
+                "key": "proof_scans[]",
+                "type": "array",
+                "required": false
+              }
+            ]
+          },
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "W2_GATE",
-          "title": { "ru": "Переход к Предв. экспертизе" },
+          "title": {
+            "ru": "Переход к Предв. экспертизе",
+            "kz": "Алдын ала сараптамаға өту",
+            "en": "Go to Pre-examination"
+          },
           "type": "gateway",
-          "who_can_complete": ["student"],
-          "prerequisites": ["S1_publications_list"],
-          "next": ["E1_apply_omid"]
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [
+            "S1_publications_list"
+          ],
+          "next": [
+            "E1_apply_omid"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         }
       ]
     },
     {
       "id": "W2",
-      "title": { "ru": "II — Предварительная экспертиза (НК)" },
+      "title": {
+        "ru": "II — Предварительная экспертиза (НК)",
+        "kz": "II — Алдын ала сараптама (ҒК)",
+        "en": "II — Pre-examination (Scientific Committee)"
+      },
       "order": 2,
       "nodes": [
         {
           "id": "E1_apply_omid",
-          "title": { "ru": "Заявка в ОМиД" },
-          "type": "form",
-          "who_can_complete": ["student"],
-          "requirements": {
-            "fields": [{ "key": "application_form", "required": true }]
+          "title": {
+            "ru": "Заявка в ОМиД",
+            "kz": "ОМиД-ке өтінім",
+            "en": "Apply to Graduate Office"
           },
-          "prerequisites": ["W2_GATE"],
-          "next": ["E2_reviewers_appointed"]
+          "type": "form",
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [
+            "W2_GATE"
+          ],
+          "next": [
+            "E2_reviewers_appointed"
+          ],
+          "outcomes": [],
+          "requirements": {
+            "fields": [
+              {
+                "key": "application_form",
+                "required": true,
+                "label": {}
+              }
+            ],
+            "uploads": [
+              {
+                "key": "draft_dissertation.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "advisor_ok.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": false
+              }
+            ]
+          },
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "E2_reviewers_appointed",
-          "title": { "ru": "Назначение рецензентов" },
+          "title": {
+            "ru": "Назначение рецензентов",
+            "kz": "Рецензенттерді тағайындау",
+            "en": "Reviewers appointed"
+          },
+          "description": {
+            "ru": "Приказ о назначении рецензентов и временных членов (если требуется).",
+            "kz": "Рецензенттер мен уақытша мүшелерді тағайындау туралы бұйрық (қажет болса).",
+            "en": "Order appointing reviewers and temporary members (if required)."
+          },
           "type": "external",
-          "who_can_complete": ["secretary", "chair"],
-          "outputs": [{ "key": "order_reviewers.pdf", "type": "upload" }],
-          "prerequisites": ["E1_apply_omid"],
-          "next": ["E2_wait_30_days"]
+          "who_can_complete": [
+            "secretary",
+            "chair"
+          ],
+          "prerequisites": [
+            "E1_apply_omid"
+          ],
+          "next": [
+            "E2_wait_30_days"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [
+            {
+              "key": "order_reviewers.pdf",
+              "type": "upload"
+            }
+          ],
+          "actionHints": []
         },
         {
           "id": "E2_wait_30_days",
-          "title": { "ru": "Ожидание 30 календарных дней" },
+          "title": {
+            "ru": "Ожидание 30 календарных дней",
+            "kz": "30 күнтізбелік күн күту",
+            "en": "Wait 30 calendar days"
+          },
           "type": "waiting",
+          "who_can_complete": [
+            "system"
+          ],
+          "prerequisites": [
+            "E2_reviewers_appointed"
+          ],
+          "next": [
+            "E3_hearing_nk"
+          ],
+          "outcomes": [],
           "timer": {
             "duration_days": 30,
             "start_on": "completed:E2_reviewers_appointed"
           },
-          "who_can_complete": ["system"],
-          "prerequisites": ["E2_reviewers_appointed"],
-          "next": ["E3_hearing_nk"]
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "E3_hearing_nk",
-          "title": { "ru": "Заседание Научного комитета" },
+          "title": {
+            "ru": "Заседание Научного комитета",
+            "kz": "Ғылыми комитет отырысы",
+            "en": "Scientific Committee hearing"
+          },
           "type": "meeting",
-          "who_can_complete": ["secretary", "chair"],
+          "who_can_complete": [
+            "secretary",
+            "chair"
+          ],
+          "prerequisites": [
+            "E2_wait_30_days"
+          ],
+          "next": [],
+          "outcomes": [
+            {
+              "value": "accepted",
+              "next": [
+                "RP_GATE",
+                "W4_GATE"
+              ],
+              "label": {}
+            },
+            {
+              "value": "fixes_required",
+              "next": [
+                "E3_fix_plan"
+              ],
+              "label": {}
+            }
+          ],
           "requirements": {
             "uploads": [
               {
                 "key": "minutes.pdf",
-                "mime": ["application/pdf"],
-                "required": true
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true,
+                "label": {}
               }
             ]
           },
-          "outcomes": [
-            { "value": "accepted", "next": ["RP_GATE", "W4_GATE"] },
-            { "value": "fixes_required", "next": ["E3_fix_plan"] }
-          ],
-          "prerequisites": ["E2_wait_30_days"]
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "E3_fix_plan",
-          "title": { "ru": "План доработок" },
+          "title": {
+            "ru": "План доработок",
+            "kz": "Доработу жоспары",
+            "en": "Fix plan"
+          },
           "type": "form",
-          "who_can_complete": ["student", "advisor"],
-          "prerequisites": ["E3_hearing_nk"],
-          "next": ["E3_hearing_nk"]
+          "who_can_complete": [
+            "student",
+            "advisor"
+          ],
+          "prerequisites": [
+            "E3_hearing_nk"
+          ],
+          "next": [
+            "E3_hearing_nk"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "RP_GATE",
-          "title": { "ru": "Требуется RP?" },
+          "title": {
+            "ru": "Требуется RP?",
+            "kz": "RP қажет пе?",
+            "en": "RP required?"
+          },
           "type": "gateway",
+          "who_can_complete": [
+            "system"
+          ],
+          "prerequisites": [
+            "E3_hearing_nk"
+          ],
+          "next": [
+            "R1_intro"
+          ],
+          "outcomes": [],
           "condition": "rp_required",
-          "who_can_complete": ["system"],
-          "prerequisites": ["E3_hearing_nk"],
-          "next": ["R1_intro"]
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "W4_GATE",
-          "title": { "ru": "Переход к Подаче в ДС" },
+          "title": {
+            "ru": "Переход к Подаче в ДС",
+            "kz": "ДК-ға тапсыруға өту",
+            "en": "Proceed to DC submission"
+          },
           "type": "gateway",
-          "who_can_complete": ["system"],
-          "prerequisites": ["E3_hearing_nk"],
-          "next": ["D1_normokontrol_ncste"]
+          "who_can_complete": [
+            "system"
+          ],
+          "prerequisites": [
+            "E3_hearing_nk"
+          ],
+          "next": [
+            "D1_normokontrol_ncste"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         }
       ]
     },
     {
       "id": "W3",
-      "title": { "ru": "III — RP (условно)" },
+      "title": {
+        "ru": "III — RP (условно)",
+        "kz": "III — RP (шартты)",
+        "en": "III — RP (conditional)"
+      },
       "order": 3,
       "nodes": [
         {
           "id": "R1_intro",
-          "title": { "ru": "Старт RP-процедуры" },
+          "title": {
+            "ru": "Старт RP-процедуры",
+            "kz": "RP үрдісін бастау",
+            "en": "Start RP procedure"
+          },
           "type": "form",
-          "who_can_complete": ["student"],
-          "prerequisites": ["RP_GATE"],
-          "next": ["R2_complete"]
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [
+            "RP_GATE"
+          ],
+          "next": [
+            "R2_complete"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "R2_complete",
-          "title": { "ru": "Завершение RP" },
+          "title": {
+            "ru": "Завершение RP",
+            "kz": "RP аяқтау",
+            "en": "RP complete"
+          },
           "type": "decision",
-          "who_can_complete": ["secretary", "advisor"],
-          "prerequisites": ["R1_intro"],
-          "next": ["D1_normokontrol_ncste"]
+          "who_can_complete": [
+            "secretary",
+            "advisor"
+          ],
+          "prerequisites": [
+            "R1_intro"
+          ],
+          "next": [
+            "D1_normokontrol_ncste"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         }
       ]
     },
     {
       "id": "W4",
-      "title": { "ru": "IV — Подача в Диссертационный совет (ДС)" },
+      "title": {
+        "ru": "IV — Подача в Диссертационный совет (ДС)",
+        "kz": "IV — Диссертациялық кеңеске тапсыру",
+        "en": "IV — Submission to Dissertation Council"
+      },
       "order": 4,
       "nodes": [
         {
           "id": "D1_normokontrol_ncste",
-          "title": { "ru": "Нормоконтроль НЦГНТЭ" },
+          "title": {
+            "ru": "Нормоконтроль НЦГНТЭ",
+            "kz": "ҰҒТАО нормоконтролі",
+            "en": "NCSTE norm control"
+          },
           "type": "external",
-          "who_can_complete": ["student", "secretary"],
+          "who_can_complete": [
+            "student",
+            "secretary"
+          ],
+          "prerequisites": [
+            "W4_GATE",
+            "R2_complete"
+          ],
+          "next": [
+            "D2_apply_to_ds"
+          ],
+          "outcomes": [],
           "requirements": {
-            "notes": "Подготовить пакет и отправить по email согласно инструкции"
+            "notes": "Подготовить пакет и отправить по email согласно инструкции",
+            "uploads": [
+              {
+                "key": "ncste_request_letter.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": false
+              },
+              {
+                "key": "manuscript_pdf.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              }
+            ]
           },
           "outputs": [
             {
               "key": "ncste_certificate.pdf",
               "type": "upload",
               "required": true
+            },
+            {
+              "key": "ncste_antiplag_result.pdf",
+              "type": "upload",
+              "required": false
             }
           ],
-          "prerequisites": ["W4_GATE", "R2_complete"],
-          "next": ["D2_apply_to_ds"]
+          "actionHints": [],
+          "sla": {
+            "ru": "10 рабочих дней от принятия к защите",
+            "kz": "Қорғауға қабылданғаннан кейін 10 жұмыс күні",
+            "en": "10 business days after acceptance"
+          }
         },
         {
           "id": "D2_apply_to_ds",
-          "title": { "ru": "Заявление ректору и пакет в ДС" },
+          "title": {
+            "ru": "Заявление ректору и пакет в ДС",
+            "kz": "Ректорға өтініш және ДК-ға топтама",
+            "en": "Application to Rector and DC package"
+          },
+          "description": {
+            "ru": "Пакет включает: Прил.5, отзывы консультантов (перевод при зарубежном), выписка НК, диссертация (печатная+PDF), Прил.7, Прил.8, приказ УС, транскрипт, Прил.9 (ЛКБ), характеристика, при необходимости сопроводит. письмо.",
+            "kz": "Топтама: Қос.5, кеңесші пікірлері (шетелдікке аударма), ҒК үзіндісі, диссертация (қағаз+PDF), Қос.7, Қос.8, ҒК/УС бұйрығы, транскрипт, Қос.9 (ЖБК), мінездеме, қажет болса ілеспе хат.",
+            "en": "Package: App.5, advisors’ reviews (translation if foreign), SC extract, dissertation (print+PDF), App.7, App.8, AC order, transcript, App.9 (LBC), character reference, optional cover letter."
+          },
           "type": "upload",
-          "who_can_complete": ["student"],
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [
+            "D1_normokontrol_ncste"
+          ],
+          "next": [
+            "D3_ds_acceptance_boss"
+          ],
+          "outcomes": [],
           "requirements": {
             "uploads": [
               {
                 "key": "ds_package.zip",
-                "mime": ["application/zip"],
+                "mime": [
+                  "application/zip"
+                ],
                 "required": true
+              },
+              {
+                "key": "ds_application_app5.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "advisor_review_domestic.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "advisor_review_foreign.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": false
+              },
+              {
+                "key": "advisor_review_foreign_translation.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": false
+              },
+              {
+                "key": "sc_extract.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "dissertation_pdf.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "publications_app7.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "abstracts_app8.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "academic_council_order.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "transcript.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "lbc_conclusion_app9.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "character_reference.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "cover_letter_external.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": false
               }
             ]
           },
-          "prerequisites": ["D1_normokontrol_ncste"],
-          "next": ["D3_ds_acceptance_boss"]
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "D3_ds_acceptance_boss",
-          "title": { "ru": "Принятие ДС (Boss)" },
+          "title": {
+            "ru": "Принятие ДС (Boss)",
+            "kz": "ДК қабылдауы (Boss)",
+            "en": "DC acceptance (Boss)"
+          },
+          "description": {
+            "ru": "Проверка полноты/соответствия. При замечаниях — возврат на доработку.",
+            "kz": "Толықтық/сәйкестікті тексеру. Ескертулер болса — қайта өңдеуге қайтару.",
+            "en": "Verify completeness/compliance. If issues — return for fixes."
+          },
           "type": "boss",
-          "who_can_complete": ["chair", "secretary"],
-          "outcomes": [
-            { "value": "accepted", "next": ["W6_GATE"] },
-            { "value": "fixes_required", "next": ["D2_apply_to_ds"] }
+          "who_can_complete": [
+            "chair",
+            "secretary"
           ],
-          "prerequisites": ["D2_apply_to_ds"]
+          "prerequisites": [
+            "D2_apply_to_ds"
+          ],
+          "next": [],
+          "outcomes": [
+            {
+              "value": "accepted",
+              "next": [
+                "W6_GATE"
+              ],
+              "label": {}
+            },
+            {
+              "value": "fixes_required",
+              "next": [
+                "D2_apply_to_ds"
+              ],
+              "label": {}
+            }
+          ],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         }
       ]
     },
     {
       "id": "W5",
-      "title": { "ru": "V — Восстановление / Дооформление" },
+      "title": {
+        "ru": "V — Восстановление / Дооформление",
+        "kz": "V — Қалпына келтіру / Құжаттарды толықтыру",
+        "en": "V — Restoration / Completion"
+      },
       "order": 5,
       "nodes": [
         {
           "id": "V1_restore_docs",
-          "title": { "ru": "Восстановление документов (при необходимости)" },
+          "title": {
+            "ru": "Восстановление документов (при необходимости)",
+            "kz": "Құжаттарды қалпына келтіру (қажет болса)",
+            "en": "Restore documents (if needed)"
+          },
           "type": "upload",
-          "who_can_complete": ["student"],
+          "who_can_complete": [
+            "student"
+          ],
+          "prerequisites": [],
+          "next": [
+            "W6_GATE"
+          ],
+          "outcomes": [],
           "requirements": {
             "uploads": [
-              { "key": "restored_docs.zip", "mime": ["application/zip"] }
+              {
+                "key": "restored_docs.zip",
+                "mime": [
+                  "application/zip"
+                ],
+                "label": {}
+              }
             ]
           },
-          "prerequisites": [],
-          "next": ["W6_GATE"]
+          "outputs": [],
+          "actionHints": []
         }
       ]
     },
     {
       "id": "W6",
-      "title": { "ru": "VI — После принятия ДС" },
+      "title": {
+        "ru": "VI — После принятия ДС",
+        "kz": "VI — ДК қабылдағаннан кейін",
+        "en": "VI — After DC acceptance"
+      },
       "order": 6,
       "nodes": [
         {
           "id": "A1_orders_publication",
-          "title": { "ru": "Приказы и публикация пакета" },
+          "title": {
+            "ru": "Приказы и публикация пакета",
+            "kz": "Бұйрықтар және топтаманы жариялау",
+            "en": "Orders & public posting"
+          },
+          "description": {
+            "ru": "Приказы о временных членах и рецензентах; за 1 месяц до защиты опубликовать на сайте извещение, диссертацию PDF (защита от копирования), аннотации KZ/RU/EN, список публикаций (сканы), отзывы консультантов, заключение ЛКБ.",
+            "kz": "Уақытша мүшелер мен рецензенттер туралы бұйрықтар; қорғауға 1 ай қалғанда сайтта: хабарландыру, диссертация PDF (көшіруден қорғ.), KZ/RU/EN аннотациялар, жарияланымдар тізімі (скандар), кеңесші пікірлері, ЖБК қорытындысы.",
+            "en": "Orders for temporary members and reviewers; ≥1 month before defense publish: notice, dissertation PDF (copy-protected), KZ/RU/EN abstracts, publication list (with scans), advisor reviews, LBC conclusion."
+          },
           "type": "external",
-          "who_can_complete": ["secretary"],
-          "prerequisites": ["D3_ds_acceptance_boss", "V1_restore_docs"],
-          "next": ["A2_service_letters"]
+          "who_can_complete": [
+            "secretary"
+          ],
+          "prerequisites": [
+            "D3_ds_acceptance_boss",
+            "V1_restore_docs"
+          ],
+          "next": [
+            "A2_service_letters"
+          ],
+          "outcomes": [],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": [],
+          "deadlines": {
+            "website_package_days_before": 30
+          }
         },
         {
           "id": "A2_service_letters",
-          "title": { "ru": "Служебные письма" },
-          "type": "upload",
-          "who_can_complete": ["secretary"],
-          "requirements": {
-            "uploads": [{ "key": "letters.pdf", "mime": ["application/pdf"] }]
+          "title": {
+            "ru": "Служебные письма",
+            "kz": "Қызметтік хаттар",
+            "en": "Service letters"
           },
-          "prerequisites": ["A1_orders_publication"],
-          "next": ["Z1_defense_boss"]
+          "description": {
+            "ru": "≤5 дней — в министерство; за 1 месяц — письма временным членам и рецензентам; ≤10 рабочих дней — письмо в НЦГНТЭ на антиплагиат (расходы докторанта).",
+            "kz": "≤5 күн — министрлікке; 1 ай бұрын — уақытша мүшелер мен рецензенттерге хаттар; ≤10 жұмыс күні — ҰҒТАО-ға антиплагиатқа хат (шығындар докторантта).",
+            "en": "≤5 days — to the Ministry; 1 month prior — letters to temp members & reviewers; ≤10 business days — anti-plagiarism letter to NCSTE (candidate pays)."
+          },
+          "type": "upload",
+          "who_can_complete": [
+            "secretary"
+          ],
+          "prerequisites": [
+            "A1_orders_publication"
+          ],
+          "next": [
+            "Z1_defense_boss"
+          ],
+          "outcomes": [],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "letters.pdf",
+                "mime": [
+                  "application/pdf"
+                ]
+              },
+              {
+                "key": "letters_ministry.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "letters_reviewers_tmpmembers.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "ncste_antiplag_letter.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": false
+              }
+            ]
+          },
+          "outputs": [],
+          "actionHints": []
         }
       ]
     },
     {
       "id": "W7",
-      "title": { "ru": "VII — Защита и После защиты" },
+      "title": {
+        "ru": "VII — Защита и После защиты",
+        "kz": "VII — Қорғау және Қорғаудан кейін",
+        "en": "VII — Defense & Post-defense"
+      },
       "order": 7,
       "nodes": [
         {
           "id": "Z1_defense_boss",
-          "title": { "ru": "Защита (Boss)" },
+          "title": {
+            "ru": "Защита (Boss)",
+            "kz": "Қорғау (Boss)",
+            "en": "Defense (Boss)"
+          },
+          "description": {
+            "ru": "Открытое заседание; протоколы, бюллетени, явочный лист; обязательна полная видеозапись (без монтажа).",
+            "kz": "Ашық отырыс; хаттамалар, бюллетеньдер, қатысу тізімі; толық бейнежазба (монтажсыз) міндетті.",
+            "en": "Open session; minutes, ballots, attendance list; full unedited video recording is mandatory."
+          },
           "type": "boss",
-          "who_can_complete": ["chair", "secretary"],
-          "prerequisites": ["A2_service_letters"],
-          "outcomes": [{ "value": "defended", "next": ["Z2_post_defence"] }]
+          "who_can_complete": [
+            "chair",
+            "secretary"
+          ],
+          "prerequisites": [
+            "A2_service_letters"
+          ],
+          "next": [],
+          "outcomes": [
+            {
+              "value": "defended",
+              "next": [
+                "Z2_post_defence"
+              ],
+              "label": {}
+            }
+          ],
+          "requirements": {},
+          "outputs": [],
+          "actionHints": []
         },
         {
           "id": "Z2_post_defence",
           "title": {
-            "ru": "После защиты — сдача в библиотеки, госрегистрация"
+            "ru": "После защиты — сдача в библиотеки, госрегистрация",
+            "kz": "Қорғаудан кейін — кітапханаларға тапсыру, мемлекеттік тіркеу",
+            "en": "Post-defense — libraries & state registration"
+          },
+          "description": {
+            "ru": "Видео ≤7 раб. дней; приказ ≤10 раб. дней; в 7 раб. дней — рассылка печатных экз. в библиотеки (получить справки); в 7 календ. дней — пакет в НЦГНТЭ; сдать полный архив в отдел.",
+            "kz": "Видео ≤7 жұмыс күні; бұйрық ≤10 жұмыс күні; 7 жұмыс күнінде — кітапханаларға баспа даналарын жіберу (анықтама алу); 7 күнде — ҰҒТАО-ға топтама; толық мұрағатты бөлімге тапсыру.",
+            "en": "Video ≤7 business days; order ≤10 business days; within 7 business days ship print copies to libraries (get receipts); within 7 calendar days submit NCSTE packet; submit full archive to the office."
           },
           "type": "upload",
-          "who_can_complete": ["student", "secretary"],
+          "who_can_complete": [
+            "student",
+            "secretary"
+          ],
+          "prerequisites": [
+            "Z1_defense_boss"
+          ],
+          "next": [],
+          "outcomes": [],
           "requirements": {
             "uploads": [
               {
                 "key": "video_recording_link.txt",
-                "mime": ["text/plain"],
-                "required": true
+                "mime": [
+                  "text/plain"
+                ],
+                "required": true,
+                "label": {}
               },
               {
                 "key": "attestation_case_list.xlsx",
                 "mime": [
                   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 ],
+                "required": true,
+                "label": {}
+              },
+              {
+                "key": "conferral_order.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
                 "required": true
+              },
+              {
+                "key": "library_receipts.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "ncste_packet_receipt.pdf",
+                "mime": [
+                  "application/pdf"
+                ],
+                "required": true
+              },
+              {
+                "key": "full_meeting_minutes.zip",
+                "mime": [
+                  "application/zip"
+                ],
+                "required": false
               }
             ]
           },
-          "prerequisites": ["Z1_defense_boss"],
-          "next": []
+          "outputs": [],
+          "actionHints": [],
+          "deadlines": {
+            "video_publish_days": 7,
+            "order_publish_days": 10,
+            "libraries_dispatch_days": 7,
+            "ncste_submit_days": 7
+          }
         }
       ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "tpl_app5_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 5 — Заявление",
+        "kz": "Қосымша 5 — Өтініш",
+        "en": "Appendix 5 — Application"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app5.ru.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app6_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 6 — Отзыв консультанта",
+        "kz": "Қосымша 6 — Кеңесші пікірі",
+        "en": "Appendix 6 — Advisor Review"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app6.ru.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app7_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 7 — Список публикаций",
+        "kz": "Қосымша 7 — Жарияланымдар тізімі",
+        "en": "Appendix 7 — Publications List"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app7.ru.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app8_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 8 — Аннотации (RU)",
+        "kz": "Қосымша 8 — Аннотация (KZ)",
+        "en": "Appendix 8 — Abstract (EN)"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app8.ru.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app9_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 9 — Заключение ЛКБ",
+        "kz": "Қосымша 9 — ЖБК қорытындысы",
+        "en": "Appendix 9 — LBC Conclusion"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app9.ru.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app5_kz",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 5 — Заявление",
+        "kz": "Қосымша 5 — Өтініш",
+        "en": "Appendix 5 — Application"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app5.kz.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app6_kz",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 6 — Отзыв консультанта",
+        "kz": "Қосымша 6 — Кеңесші пікірі",
+        "en": "Appendix 6 — Advisor Review"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app6.kz.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app7_kz",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 7 — Список публикаций",
+        "kz": "Қосымша 7 — Жарияланымдар тізімі",
+        "en": "Appendix 7 — Publications List"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app7.kz.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app8_kz",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 8 — Аннотации (RU)",
+        "kz": "Қосымша 8 — Аннотация (KZ)",
+        "en": "Appendix 8 — Abstract (EN)"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app8.kz.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app9_kz",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 9 — Заключение ЛКБ",
+        "kz": "Қосымша 9 — ЖБК қорытындысы",
+        "en": "Appendix 9 — LBC Conclusion"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app9.kz.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app5_en",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 5 — Заявление",
+        "kz": "Қосымша 5 — Өтініш",
+        "en": "Appendix 5 — Application"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app5.en.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app6_en",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 6 — Отзыв консультанта",
+        "kz": "Қосымша 6 — Кеңесші пікірі",
+        "en": "Appendix 6 — Advisor Review"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app6.en.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app7_en",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 7 — Список публикаций",
+        "kz": "Қосымша 7 — Жарияланымдар тізімі",
+        "en": "Appendix 7 — Publications List"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app7.en.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app8_en",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 8 — Аннотации (RU)",
+        "kz": "Қосымша 8 — Аннотация (KZ)",
+        "en": "Appendix 8 — Abstract (EN)"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app8.en.pdf"
+      },
+      "version": "2025-10-06"
+    },
+    {
+      "id": "tpl_app9_en",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 9 — Заключение ЛКБ",
+        "kz": "Қосымша 9 — ЖБК қорытындысы",
+        "en": "Appendix 9 — LBC Conclusion"
+      },
+      "mime": "application/pdf",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app9.en.pdf"
+      },
+      "version": "2025-10-06"
     }
   ]
 }
