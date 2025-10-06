@@ -24,7 +24,8 @@
   "forms": {
     "validations_title": "Validations",
     "save_submit": "Save and Submit",
-    "save_draft": "Save Draft"
+    "save_draft": "Save Draft",
+    "array_hint": "one per line"
   },
   "upload": {
     "allowed_types": "Allowed types",
@@ -47,4 +48,3 @@
     "loading": "Loading…"
   }
 }
-

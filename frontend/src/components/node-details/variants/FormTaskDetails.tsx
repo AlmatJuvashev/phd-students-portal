@@ -46,11 +46,15 @@ export function FormTaskDetails({
               {t(f.label, f.key)}{" "}
               {f.required ? <span className="text-destructive">*</span> : null}
             </Label>
-            {f.type === "textarea" ? (
+            {f.type === "textarea" || f.type === "array" ? (
               <Textarea
                 id={f.key}
                 disabled={!canEdit}
-                placeholder={t(f.placeholder, "")}
+                placeholder={
+                  f.type === "array"
+                    ? T("forms.array_hint")
+                    : t(f.placeholder, "")
+                }
                 value={values[f.key] ?? ""}
                 onChange={(e) => setField(f.key, e.target.value)}
               />
