@@ -8,6 +8,7 @@ import { ExternalProcessDetails } from "./variants/ExternalProcessDetails";
 import { GatewayInfoDetails } from "./variants/GatewayInfoDetails";
 import { CompositeTaskDetails } from "./variants/CompositeTaskDetails";
 import type { NodeSubmissionDTO } from "@/api/journey";
+import { DecisionTaskDetails } from "./variants/DecisionTaskDetails";
 
 type Props = {
   node: NodeVM;
@@ -37,6 +38,7 @@ export function NodeDetailSwitch({
   // permissions (rough defaults, adjust as you wire real RBAC)
   const canDecide = role === "secretary" || role === "chair";
   const canUpload = role !== "admin"; // example
+  const canComplete = node.who_can_complete?.includes(role);
 
   // Single dominant kind
   if (kinds.length === 1) {
@@ -63,6 +65,20 @@ export function NodeDetailSwitch({
           />
         );
       case "outcome":
+        if (node.type === "decision" && canComplete) {
+          return (
+            <DecisionTaskDetails
+              node={node}
+              disabled={saving}
+              onSubmit={() =>
+                onEvent?.({
+                  type: "submit-decision",
+                  payload: { acknowledged: true },
+                })
+              }
+            />
+          );
+        }
         return (
           <OutcomeReviewDetails
             node={node}
@@ -143,6 +159,20 @@ export function NodeDetailSwitch({
         />
       );
     case "outcome":
+      if (node.type === "decision" && canComplete) {
+        return (
+          <DecisionTaskDetails
+            node={node}
+            disabled={saving}
+            onSubmit={() =>
+              onEvent?.({
+                type: "submit-decision",
+                payload: { acknowledged: true },
+              })
+            }
+          />
+        );
+      }
       return (
         <OutcomeReviewDetails
           node={node}

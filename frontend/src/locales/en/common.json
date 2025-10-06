@@ -60,5 +60,9 @@
     "select_file": "Choose file",
     "no_file": "No file",
     "submit": "Upload and Submit"
+  },
+  "decision": {
+    "instructions": "Confirm when this checkpoint is ready.",
+    "submit": "Mark as ready"
   }
 }

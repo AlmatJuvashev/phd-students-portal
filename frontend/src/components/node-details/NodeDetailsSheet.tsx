@@ -108,6 +108,36 @@ export function NodeDetailsSheet({
         }
         break;
       }
+      case "submit-decision": {
+        setSaving(true);
+        try {
+          const res = await saveNodeSubmission(node.id, {
+            form_data: evt.payload ?? {},
+            state: "submitted",
+          });
+          setSubmission(res);
+          push({
+            title: T("decision.submit"),
+            description: T("common.success", { defaultValue: "Saved." }),
+          });
+          onStateRefresh?.();
+          const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
+          onOpenChange(false);
+          if (nextId) {
+            onAdvance?.(nextId);
+          } else {
+            onAdvance?.(null);
+          }
+        } catch (err: any) {
+          push({
+            title: T("common.error", { defaultValue: "Error" }),
+            description: err?.message ?? String(err),
+          });
+        } finally {
+          setSaving(false);
+        }
+        break;
+      }
       case "submit-upload": {
         push({
           title: T("common.info", { defaultValue: "Info" }),

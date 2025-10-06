@@ -3,11 +3,7 @@
   "version": "1.1.0",
   "effective_date": "2025-10-06",
   "locale_default": "ru",
-  "locales": [
-    "ru",
-    "kz",
-    "en"
-  ],
+  "locales": ["ru", "kz", "en"],
   "metadata": {
     "jurisdiction": "KZ",
     "owner_org": "KazNMU",
@@ -124,13 +120,9 @@
             "en": "Doctoral profile"
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
+          "who_can_complete": ["student"],
           "prerequisites": [],
-          "next": [
-            "S1_text_ready"
-          ],
+          "next": ["S1_text_ready"],
           "outcomes": [],
           "requirements": {
             "fields": [
@@ -178,16 +170,9 @@
             "en": "Draft ready for checks (formatting/anti-plagiarism/internal approvals)."
           },
           "type": "decision",
-          "who_can_complete": [
-            "student",
-            "advisor"
-          ],
-          "prerequisites": [
-            "S1_profile"
-          ],
-          "next": [
-            "S1_antiplag"
-          ],
+          "who_can_complete": ["student", "advisor"],
+          "prerequisites": ["S1_profile"],
+          "next": ["S1_antiplag"],
           "outcomes": [],
           "requirements": {},
           "outputs": [],
@@ -200,43 +185,17 @@
             "kz": "Антиплагиат ≥ 85%",
             "en": "Anti-plagiarism ≥ 85%"
           },
-          "type": "upload",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "S1_text_ready"
-          ],
-          "next": [
-            "S1_publications_list"
-          ],
-          "outcomes": [],
-          "requirements": {
-            "uploads": [
-              {
-                "key": "antiplag_report.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
-                "required": true,
-                "label": {}
-              },
-              {
-                "key": "dissertation_pdf.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
-                "required": true,
-                "label": {}
-              }
-            ],
-            "validations": [
-              {
-                "rule": "antiplag_score >= 85",
-                "source": "antiplag_report.pdf"
-              }
-            ]
+          "type": "decision",
+          "description": {
+            "ru": "Проверьте текст в системе Антиплагиат (не менее 85%). Инструкция: https://smart.zhub.kz/api/workflow/_media/file/b71c8r4-bd49-2544-a9cb-210f3c0b4522.pdf. После проверки подтвердите готовность.",
+            "kz": "Антиплагиат жүйесінде мәтінді тексеріңіз (кемінде 85%). Нұсқаулық: https://smart.zhub.kz/api/workflow/_media/file/b71c8r4-bd49-2544-a9cb-210f3c0b4522.pdf. Тексеруден кейін дайын екенін растаңыз.",
+            "en": "Run the dissertation through the Antiplagiat system (85% or higher). Guide: https://smart.zhub.kz/api/workflow/_media/file/b71c8r4-bd49-2544-a9cb-210f3c0b4522.pdf. When ready, confirm completion."
           },
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_text_ready"],
+          "next": ["S1_publications_list"],
+          "outcomes": [],
+          "requirements": {},
           "outputs": [],
           "actionHints": []
         },
@@ -253,15 +212,9 @@
             "en": "Appendix 7 format: WoS/Scopus, KZ indexed, abstracts, IP. Attach proof scans."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "S1_antiplag"
-          ],
-          "next": [
-            "W2_GATE"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_antiplag"],
+          "next": ["W2_GATE"],
           "outcomes": [],
           "requirements": {
             "fields": [
@@ -298,15 +251,9 @@
             "en": "Go to Pre-examination"
           },
           "type": "gateway",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "S1_publications_list"
-          ],
-          "next": [
-            "E1_apply_omid"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_publications_list"],
+          "next": ["E1_apply_omid"],
           "outcomes": [],
           "requirements": {},
           "outputs": [],
@@ -331,15 +278,9 @@
             "en": "Apply to Graduate Office"
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "W2_GATE"
-          ],
-          "next": [
-            "E2_reviewers_appointed"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["W2_GATE"],
+          "next": ["E2_reviewers_appointed"],
           "outcomes": [],
           "requirements": {
             "fields": [
@@ -352,16 +293,12 @@
             "uploads": [
               {
                 "key": "draft_dissertation.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "advisor_ok.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": false
               }
             ]
@@ -382,16 +319,9 @@
             "en": "Order appointing reviewers and temporary members (if required)."
           },
           "type": "external",
-          "who_can_complete": [
-            "secretary",
-            "chair"
-          ],
-          "prerequisites": [
-            "E1_apply_omid"
-          ],
-          "next": [
-            "E2_wait_30_days"
-          ],
+          "who_can_complete": ["secretary", "chair"],
+          "prerequisites": ["E1_apply_omid"],
+          "next": ["E2_wait_30_days"],
           "outcomes": [],
           "requirements": {},
           "outputs": [
@@ -410,15 +340,9 @@
             "en": "Wait 30 calendar days"
           },
           "type": "waiting",
-          "who_can_complete": [
-            "system"
-          ],
-          "prerequisites": [
-            "E2_reviewers_appointed"
-          ],
-          "next": [
-            "E3_hearing_nk"
-          ],
+          "who_can_complete": ["system"],
+          "prerequisites": ["E2_reviewers_appointed"],
+          "next": ["E3_hearing_nk"],
           "outcomes": [],
           "timer": {
             "duration_days": 30,
@@ -436,28 +360,18 @@
             "en": "Scientific Committee hearing"
           },
           "type": "meeting",
-          "who_can_complete": [
-            "secretary",
-            "chair"
-          ],
-          "prerequisites": [
-            "E2_wait_30_days"
-          ],
+          "who_can_complete": ["secretary", "chair"],
+          "prerequisites": ["E2_wait_30_days"],
           "next": [],
           "outcomes": [
             {
               "value": "accepted",
-              "next": [
-                "RP_GATE",
-                "W4_GATE"
-              ],
+              "next": ["RP_GATE", "W4_GATE"],
               "label": {}
             },
             {
               "value": "fixes_required",
-              "next": [
-                "E3_fix_plan"
-              ],
+              "next": ["E3_fix_plan"],
               "label": {}
             }
           ],
@@ -465,9 +379,7 @@
             "uploads": [
               {
                 "key": "minutes.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true,
                 "label": {}
               }
@@ -484,16 +396,9 @@
             "en": "Fix plan"
           },
           "type": "form",
-          "who_can_complete": [
-            "student",
-            "advisor"
-          ],
-          "prerequisites": [
-            "E3_hearing_nk"
-          ],
-          "next": [
-            "E3_hearing_nk"
-          ],
+          "who_can_complete": ["student", "advisor"],
+          "prerequisites": ["E3_hearing_nk"],
+          "next": ["E3_hearing_nk"],
           "outcomes": [],
           "requirements": {},
           "outputs": [],
@@ -507,15 +412,9 @@
             "en": "RP required?"
           },
           "type": "gateway",
-          "who_can_complete": [
-            "system"
-          ],
-          "prerequisites": [
-            "E3_hearing_nk"
-          ],
-          "next": [
-            "R1_intro"
-          ],
+          "who_can_complete": ["system"],
+          "prerequisites": ["E3_hearing_nk"],
+          "next": ["R1_intro"],
           "outcomes": [],
           "condition": "rp_required",
           "requirements": {},
@@ -530,15 +429,9 @@
             "en": "Proceed to DC submission"
           },
           "type": "gateway",
-          "who_can_complete": [
-            "system"
-          ],
-          "prerequisites": [
-            "E3_hearing_nk"
-          ],
-          "next": [
-            "D1_normokontrol_ncste"
-          ],
+          "who_can_complete": ["system"],
+          "prerequisites": ["E3_hearing_nk"],
+          "next": ["D1_normokontrol_ncste"],
           "outcomes": [],
           "requirements": {},
           "outputs": [],
@@ -563,15 +456,9 @@
             "en": "Start RP procedure"
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "RP_GATE"
-          ],
-          "next": [
-            "R2_complete"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["RP_GATE"],
+          "next": ["R2_complete"],
           "outcomes": [],
           "requirements": {},
           "outputs": [],
@@ -585,16 +472,9 @@
             "en": "RP complete"
           },
           "type": "decision",
-          "who_can_complete": [
-            "secretary",
-            "advisor"
-          ],
-          "prerequisites": [
-            "R1_intro"
-          ],
-          "next": [
-            "D1_normokontrol_ncste"
-          ],
+          "who_can_complete": ["secretary", "advisor"],
+          "prerequisites": ["R1_intro"],
+          "next": ["D1_normokontrol_ncste"],
           "outcomes": [],
           "requirements": {},
           "outputs": [],
@@ -619,33 +499,21 @@
             "en": "NCSTE norm control"
           },
           "type": "external",
-          "who_can_complete": [
-            "student",
-            "secretary"
-          ],
-          "prerequisites": [
-            "W4_GATE",
-            "R2_complete"
-          ],
-          "next": [
-            "D2_apply_to_ds"
-          ],
+          "who_can_complete": ["student", "secretary"],
+          "prerequisites": ["W4_GATE", "R2_complete"],
+          "next": ["D2_apply_to_ds"],
           "outcomes": [],
           "requirements": {
             "notes": "Подготовить пакет и отправить по email согласно инструкции",
             "uploads": [
               {
                 "key": "ncste_request_letter.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": false
               },
               {
                 "key": "manuscript_pdf.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               }
             ]
@@ -682,114 +550,80 @@
             "en": "Package: App.5, advisors’ reviews (translation if foreign), SC extract, dissertation (print+PDF), App.7, App.8, AC order, transcript, App.9 (LBC), character reference, optional cover letter."
           },
           "type": "upload",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "D1_normokontrol_ncste"
-          ],
-          "next": [
-            "D3_ds_acceptance_boss"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["D1_normokontrol_ncste"],
+          "next": ["D3_ds_acceptance_boss"],
           "outcomes": [],
           "requirements": {
             "uploads": [
               {
                 "key": "ds_package.zip",
-                "mime": [
-                  "application/zip"
-                ],
+                "mime": ["application/zip"],
                 "required": true
               },
               {
                 "key": "ds_application_app5.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "advisor_review_domestic.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "advisor_review_foreign.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": false
               },
               {
                 "key": "advisor_review_foreign_translation.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": false
               },
               {
                 "key": "sc_extract.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "dissertation_pdf.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "publications_app7.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "abstracts_app8.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "academic_council_order.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "transcript.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "lbc_conclusion_app9.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "character_reference.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "cover_letter_external.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": false
               }
             ]
@@ -810,27 +644,18 @@
             "en": "Verify completeness/compliance. If issues — return for fixes."
           },
           "type": "boss",
-          "who_can_complete": [
-            "chair",
-            "secretary"
-          ],
-          "prerequisites": [
-            "D2_apply_to_ds"
-          ],
+          "who_can_complete": ["chair", "secretary"],
+          "prerequisites": ["D2_apply_to_ds"],
           "next": [],
           "outcomes": [
             {
               "value": "accepted",
-              "next": [
-                "W6_GATE"
-              ],
+              "next": ["W6_GATE"],
               "label": {}
             },
             {
               "value": "fixes_required",
-              "next": [
-                "D2_apply_to_ds"
-              ],
+              "next": ["D2_apply_to_ds"],
               "label": {}
             }
           ],
@@ -857,21 +682,15 @@
             "en": "Restore documents (if needed)"
           },
           "type": "upload",
-          "who_can_complete": [
-            "student"
-          ],
+          "who_can_complete": ["student"],
           "prerequisites": [],
-          "next": [
-            "W6_GATE"
-          ],
+          "next": ["W6_GATE"],
           "outcomes": [],
           "requirements": {
             "uploads": [
               {
                 "key": "restored_docs.zip",
-                "mime": [
-                  "application/zip"
-                ],
+                "mime": ["application/zip"],
                 "label": {}
               }
             ]
@@ -903,16 +722,9 @@
             "en": "Orders for temporary members and reviewers; ≥1 month before defense publish: notice, dissertation PDF (copy-protected), KZ/RU/EN abstracts, publication list (with scans), advisor reviews, LBC conclusion."
           },
           "type": "external",
-          "who_can_complete": [
-            "secretary"
-          ],
-          "prerequisites": [
-            "D3_ds_acceptance_boss",
-            "V1_restore_docs"
-          ],
-          "next": [
-            "A2_service_letters"
-          ],
+          "who_can_complete": ["secretary"],
+          "prerequisites": ["D3_ds_acceptance_boss", "V1_restore_docs"],
+          "next": ["A2_service_letters"],
           "outcomes": [],
           "requirements": {},
           "outputs": [],
@@ -934,43 +746,29 @@
             "en": "≤5 days — to the Ministry; 1 month prior — letters to temp members & reviewers; ≤10 business days — anti-plagiarism letter to NCSTE (candidate pays)."
           },
           "type": "upload",
-          "who_can_complete": [
-            "secretary"
-          ],
-          "prerequisites": [
-            "A1_orders_publication"
-          ],
-          "next": [
-            "Z1_defense_boss"
-          ],
+          "who_can_complete": ["secretary"],
+          "prerequisites": ["A1_orders_publication"],
+          "next": ["Z1_defense_boss"],
           "outcomes": [],
           "requirements": {
             "uploads": [
               {
                 "key": "letters.pdf",
-                "mime": [
-                  "application/pdf"
-                ]
+                "mime": ["application/pdf"]
               },
               {
                 "key": "letters_ministry.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "letters_reviewers_tmpmembers.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "ncste_antiplag_letter.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": false
               }
             ]
@@ -1002,20 +800,13 @@
             "en": "Open session; minutes, ballots, attendance list; full unedited video recording is mandatory."
           },
           "type": "boss",
-          "who_can_complete": [
-            "chair",
-            "secretary"
-          ],
-          "prerequisites": [
-            "A2_service_letters"
-          ],
+          "who_can_complete": ["chair", "secretary"],
+          "prerequisites": ["A2_service_letters"],
           "next": [],
           "outcomes": [
             {
               "value": "defended",
-              "next": [
-                "Z2_post_defence"
-              ],
+              "next": ["Z2_post_defence"],
               "label": {}
             }
           ],
@@ -1036,22 +827,15 @@
             "en": "Video ≤7 business days; order ≤10 business days; within 7 business days ship print copies to libraries (get receipts); within 7 calendar days submit NCSTE packet; submit full archive to the office."
           },
           "type": "upload",
-          "who_can_complete": [
-            "student",
-            "secretary"
-          ],
-          "prerequisites": [
-            "Z1_defense_boss"
-          ],
+          "who_can_complete": ["student", "secretary"],
+          "prerequisites": ["Z1_defense_boss"],
           "next": [],
           "outcomes": [],
           "requirements": {
             "uploads": [
               {
                 "key": "video_recording_link.txt",
-                "mime": [
-                  "text/plain"
-                ],
+                "mime": ["text/plain"],
                 "required": true,
                 "label": {}
               },
@@ -1065,30 +849,22 @@
               },
               {
                 "key": "conferral_order.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "library_receipts.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "ncste_packet_receipt.pdf",
-                "mime": [
-                  "application/pdf"
-                ],
+                "mime": ["application/pdf"],
                 "required": true
               },
               {
                 "key": "full_meeting_minutes.zip",
-                "mime": [
-                  "application/zip"
-                ],
+                "mime": ["application/zip"],
                 "required": false
               }
             ]
