@@ -26,11 +26,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               Home
             </Link>
           )}
-          {authed && (
-            <Link to="/checklist" className={active("/checklist")}>
-              Checklist
-            </Link>
-          )}
+          {/* Checklist removed; Journey is the primary view */}
           {authed && (
             <Link to="/journey" className={active("/journey")}>
               Journey

@@ -6,7 +6,7 @@ import { api } from "../../api/client";
 const labels: Record<string, string> = {
   "/": "Home",
   "/login": "Login",
-  "/checklist": "Checklist",
+  "/journey": "Journey",
   "/advisor/inbox": "Advisor Inbox",
   "/admin/users": "Admin • Users",
 };

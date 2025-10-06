@@ -6,7 +6,6 @@ import { Dashboard } from "./pages/dashboard";
 import { ForgotPassword } from "./pages/forgot";
 import { ResetPassword } from "./pages/reset";
 import { AdminUsers } from "./pages/admin.users";
-import { StudentChecklist } from "./pages/checklist";
 import { AdvisorInbox } from "./pages/advisor.inbox";
 import { DocumentDetail } from "./pages/document.detail";
 import { DoctoralJourney } from "./pages/doctoral.journey";
@@ -62,7 +61,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      { index: true, element: <Dashboard />, loader: guardAuth },
+      { index: true, element: <DoctoralJourney />, loader: guardAuth },
       { path: "login", element: <LoginPage /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
@@ -70,13 +69,6 @@ export const router = createBrowserRouter([
         path: "admin/users",
         element: <AdminUsers />,
         loader: () => guardRole(["admin", "superadmin"]),
-        errorElement: <Forbidden />,
-      },
-      {
-        path: "checklist",
-        element: <StudentChecklist />,
-        loader: () =>
-          guardRole(["student", "advisor", "chair", "admin", "superadmin"]),
         errorElement: <Forbidden />,
       },
       {
