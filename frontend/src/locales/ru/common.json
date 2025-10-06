@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "PhD Portal"
+  },
+  "nav": {
+    "home": "Главная",
+    "journey": "Маршрут",
+    "inbox": "Входящие",
+    "admin": "Админ",
+    "login": "Войти",
+    "logout": "Выйти"
+  },
+  "auth": {
+    "login_title": "Вход",
+    "username": "Логин",
+    "password": "Пароль",
+    "signin": "Войти",
+    "forgot": "Забыли пароль?",
+    "failed": "Ошибка входа"
+  },
+  "templates": {
+    "heading": "Шаблоны"
+  },
+  "forms": {
+    "validations_title": "Валидации",
+    "save_submit": "Сохранить и Отправить",
+    "save_draft": "Сохранить черновик"
+  },
+  "upload": {
+    "allowed_types": "Допустимые типы",
+    "select_file": "Выбрать файл",
+    "no_file": "Нет файла",
+    "submit": "Загрузить и Отправить"
+  },
+  "external": {
+    "checklist_title": "Чек-лист действий",
+    "mark_done": "Отметить выполненным"
+  },
+  "breadcrumbs": {
+    "home": "Главная",
+    "journey": "Маршрут",
+    "advisor_inbox": "Входящие консультанта",
+    "admin_users": "Админ • Пользователи",
+    "document": "Документ"
+  },
+  "common": {
+    "loading": "Загрузка…"
+  }
+}
+

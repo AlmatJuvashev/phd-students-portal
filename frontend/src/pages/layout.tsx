@@ -4,8 +4,10 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { APP_NAME } from "../config";
+import { useTranslation } from "react-i18next";
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
+  const { t: T, i18n } = useTranslation("common");
   const { data: me } = useQuery({
     queryKey: ["me"],
     queryFn: () => api("/me"),
@@ -23,13 +25,13 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         <nav className="flex gap-3 text-sm">
           {authed && (
             <Link to="/" className={active("/")}>
-              Home
+              {T("nav.home")}
             </Link>
           )}
           {/* Checklist removed; Journey is the primary view */}
           {authed && (
             <Link to="/journey" className={active("/journey")}>
-              Journey
+              {T("nav.journey")}
             </Link>
           )}
           {authed &&
@@ -38,12 +40,12 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               role === "admin" ||
               role === "superadmin") && (
               <Link to="/advisor/inbox" className={active("/advisor/inbox")}>
-                Inbox
+                {T("nav.inbox")}
               </Link>
             )}
           {authed && (role === "admin" || role === "superadmin") && (
             <Link to="/admin/users" className={active("/admin/users")}>
-              Admin
+              {T("nav.admin")}
             </Link>
           )}
           {authed ? (
@@ -54,13 +56,22 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
                 location.href = "/login";
               }}
             >
-              Logout
+              {T("nav.logout")}
             </button>
           ) : (
             <Link to="/login" className={active("/")}>
-              Login
+              {T("nav.login")}
             </Link>
           )}
+          <select
+            className="ml-2 border rounded px-1 py-0.5 text-xs"
+            value={i18n.language}
+            onChange={(e) => i18n.changeLanguage(e.target.value)}
+          >
+            <option value="ru">RU</option>
+            <option value="kz">KZ</option>
+            <option value="en">EN</option>
+          </select>
         </nav>
       </header>
       <main>

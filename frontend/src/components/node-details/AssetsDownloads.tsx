@@ -3,20 +3,11 @@ import { assetsForNode, PublicAsset } from "@/lib/assets";
 import { NodeVM, t } from "@/lib/playbook";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
-export function AssetsDownloads({
-  node,
-  locale = "ru",
-  heading = {
-    ru: "Шаблоны",
-    kz: "Үлгілер",
-    en: "Templates",
-  },
-}: {
-  node: NodeVM;
-  locale?: "ru" | "kz" | "en";
-  heading?: Record<string, string>;
-}) {
+export function AssetsDownloads({ node }: { node: NodeVM }) {
+  const { i18n, t: T } = useTranslation("common");
+  const locale = (i18n.language as "ru" | "kz" | "en") || "ru";
   const assets = assetsForNode(node);
   if (!assets.length) return null;
 
@@ -34,7 +25,7 @@ export function AssetsDownloads({
   return (
     <div className="space-y-3">
       <Separator />
-      <div className="font-semibold">{t(heading, "Templates")}</div>
+      <div className="font-semibold">{T("templates.heading")}</div>
       <div className="space-y-2">
         {order.map((g) => {
           const items = groups[g];
@@ -70,4 +61,3 @@ export function AssetsDownloads({
     </div>
   );
 }
-

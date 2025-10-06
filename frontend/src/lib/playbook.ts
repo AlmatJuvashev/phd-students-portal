@@ -75,8 +75,24 @@ export type NodeDef = {
 };
 
 // Simple helper to pick RU title by default
-export const t = (obj?: Record<string, string>, fallback = "") =>
-  obj?.ru ?? obj?.en ?? obj?.kz ?? fallback;
+import i18n from "i18next";
+
+function humanizeKey(key: string) {
+  if (!key) return "";
+  const s = key
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase();
+  return s.replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+}
+
+export const t = (obj?: Record<string, string>, fallback = "") => {
+  const lang = (i18n?.language as "ru" | "kz" | "en") || "ru";
+  const val = obj?.[lang] ?? obj?.en ?? obj?.ru ?? obj?.kz;
+  if (val) return val;
+  // Humanize technical fallback keys like "full_name"
+  return humanizeKey(fallback);
+};
 
 // Build a fast lookup
 export function indexPlaybook(pb: Playbook) {
