@@ -1,6 +1,31 @@
 // lib/playbook.ts
 export type RoleId = "student" | "advisor" | "secretary" | "chair" | "admin";
 
+export type ActionKind =
+  | "form"
+  | "upload"
+  | "outcome"
+  | "wait"
+  | "external"
+  | "gateway"
+  | "composite"; // optional
+
+export type FieldDef = {
+  key: string;
+  required?: boolean;
+  type?: string;
+  label?: Record<string, string>;
+  placeholder?: Record<string, string>;
+};
+
+export type UploadDef = {
+  key: string;
+  mime?: string[];
+  required?: boolean;
+  label?: Record<string, string>;
+  accept?: string;
+};
+
 export type Playbook = {
   playbook_id: string;
   version: string;
@@ -29,16 +54,24 @@ export type NodeDef = {
   who_can_complete: RoleId[];
   prerequisites?: string[];
   next?: string[];
-  outcomes?: Array<{ value: string; next: string[] }>;
+  outcomes?: Array<{
+    value: string;
+    label?: Record<string, string>;
+    next: string[];
+  }>;
   condition?: string; // like "rp_required"
   timer?: { duration_days: number; start_on: string };
   requirements?: {
-    fields?: Array<{ key: string; required?: boolean; type?: string }>;
-    uploads?: Array<{ key: string; mime?: string[]; required?: boolean }>;
+    fields?: FieldDef[];
+    uploads?: UploadDef[];
     validations?: Array<{ rule: string; source?: string }>;
     notes?: string;
+    checklist?: string[]; // external sub-steps
   };
   outputs?: Array<{ key: string; type: "upload" | "auto_generated" }>;
+
+  // NEW (optional) — explicit classification override
+  actionHints?: ActionKind[]; // e.g., ["outcome","upload"] for hearing with minutes
 };
 
 // Simple helper to pick RU title by default
@@ -106,4 +139,37 @@ export function edgesForWorld(pb: Playbook, worldId: string) {
       });
   });
   return edges;
+}
+
+// -------- Action detector (switcher input) ----------
+export function detectActionKinds(n: NodeDef): ActionKind[] {
+  if (n.actionHints?.length) return n.actionHints;
+
+  const kinds: ActionKind[] = [];
+
+  const hasFields = !!n.requirements?.fields?.length;
+  const hasUploads = !!n.requirements?.uploads?.length;
+  const hasOutcomes =
+    !!n.outcomes?.length ||
+    n.type === "decision" ||
+    n.type === "meeting" ||
+    n.type === "boss";
+  const hasTimer = !!n.timer;
+  const isWaiting = n.type === "waiting";
+  const isExternal = n.type === "external";
+  const isGateway = n.type === "gateway";
+
+  if (hasFields) kinds.push("form");
+  if (hasUploads) kinds.push("upload");
+  if (hasOutcomes) kinds.push("outcome");
+  if (hasTimer || isWaiting) kinds.push("wait");
+  if (isExternal) kinds.push("external");
+  if (isGateway) kinds.push("gateway");
+
+  // Composite convenience: outcome + upload, or upload+form in one screen
+  if (kinds.includes("outcome") && kinds.includes("upload")) {
+    return ["composite"]; // prefer composite single-screen UX
+  }
+
+  return kinds.length ? kinds : ["gateway"]; // default read-only
 }
