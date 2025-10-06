@@ -165,12 +165,12 @@
             "en": "Dissertation draft ready"
           },
           "description": {
-            "ru": "Черновик готов к проверкам (оформление/антиплагиат/внутренние согласования).",
-            "kz": "Жоба тексерулерге дайын (рәсімдеу/антиплагиат/ішкі келісімдер).",
-            "en": "Draft ready for checks (formatting/anti-plagiarism/internal approvals)."
+            "ru": "Оформите текст диссертации в соответствии со стандартом. Структура и требования: https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf Перейдите по ссылке и проверьте, что разделы и оформление соответствуют стандартам (титульный лист, аннотация, оглавление, введение, главы, заключение, список литературы, приложения и т.д.). После приведения текста к стандарту нажмите «Готово».",
+            "kz": "Диссертация мәтінін стандартқа сәйкес рәсімдеңіз. Құрылым және талаптар: https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf Сілтеме бойынша өтіп, бөлімдер мен рәсімдеудің стандарттарға сай екеніне көз жеткізіңіз (титул беті, аннотация, мазмұны, кіріспе, тараулар, қорытынды, әдебиеттер тізімі, қосымшалар және т.б.). Стандартқа келтірген соң «Дайын» түймесін басыңыз.",
+            "en": "Format the dissertation text according to the standard. Structure and requirements: https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf Follow the link and ensure sections and formatting meet the standard (title page, abstract, table of contents, introduction, chapters, conclusion, references, appendices, etc.). When ready, click ‘Mark as ready’."
           },
           "type": "decision",
-          "who_can_complete": ["student", "advisor"],
+          "who_can_complete": ["student"],
           "prerequisites": ["S1_profile"],
           "next": ["S1_antiplag"],
           "outcomes": [],
