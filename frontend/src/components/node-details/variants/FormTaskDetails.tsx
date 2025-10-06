@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { NodeVM, FieldDef, t } from "@/lib/playbook";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AssetsDownloads } from "../AssetsDownloads";
 
@@ -24,6 +24,9 @@ export function FormTaskDetails({
   canEdit = true,
 }: Props) {
   const [values, setValues] = useState<Record<string, any>>(initial);
+  useEffect(() => {
+    setValues(initial ?? {});
+  }, [initial]);
   const { t: T } = useTranslation("common");
 
   const fields: FieldDef[] = node.requirements?.fields ?? [];
@@ -79,7 +82,9 @@ export function FormTaskDetails({
         <>
           <Separator />
           <div>
-            <div className="mb-2 font-medium">{T("forms.validations_title")}</div>
+            <div className="mb-2 font-medium">
+              {T("forms.validations_title")}
+            </div>
             <ul className="list-inside list-disc text-sm">
               {node.requirements.validations!.map((v, i) => (
                 <li key={i}>
@@ -94,7 +99,9 @@ export function FormTaskDetails({
 
       {canEdit && (
         <div className="flex gap-2">
-          <Button onClick={() => onSubmit?.(values)}>{T("forms.save_submit")}</Button>
+          <Button onClick={() => onSubmit?.(values)}>
+            {T("forms.save_submit")}
+          </Button>
           <Button
             variant="secondary"
             onClick={() => onSubmit?.({ ...values, __draft: true })}

@@ -9,13 +9,14 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 )
 
 // BuildAPI wires routes and returns a *gin.Engine
-func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
+func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager *pb.Manager) *gin.Engine {
 	r.Use(middleware.RequestLogger())
 	// CORS for frontend dev and configured origin
 	r.Use(cors.New(cors.Config{
@@ -66,7 +67,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
 	api.POST("/auth/reset", auth.ResetPassword)   // reset with token
 
 	users := NewUsersHandler(db, cfg)
-	journey := NewJourneyHandler(db, cfg)
+	journey := NewJourneyHandler(db, cfg, playbookManager)
+	nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
 	_ = NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL)) // TODO: use me handler for routes
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 
@@ -115,6 +117,13 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig) *gin.Engine {
 	js.GET("/state", journey.GetState)
 	js.PUT("/state", journey.SetState)
 	js.POST("/reset", journey.Reset)
+
+	nodes := js.Group("/nodes")
+	nodes.GET("/:nodeId/submission", nodeSubmission.GetSubmission)
+	nodes.PUT("/:nodeId/submission", nodeSubmission.PutSubmission)
+	nodes.POST("/:nodeId/uploads/presign", nodeSubmission.PresignUpload)
+	nodes.POST("/:nodeId/uploads/attach", nodeSubmission.AttachUpload)
+	nodes.PATCH("/:nodeId/state", nodeSubmission.PatchState)
 
 	// TODO: checklist, documents, comments handlers (skeletons for now)
 

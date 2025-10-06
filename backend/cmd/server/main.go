@@ -13,6 +13,8 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 )
 
 // Entry point that wires configuration, DB, routes.
@@ -28,6 +30,11 @@ func main() {
 
 	cfg := config.MustLoad()
 	conn := db.MustOpen(cfg.DatabaseURL)
+
+	pbManager, err := playbook.EnsureActive(conn, cfg.PlaybookPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if *seedFlag {
 		if err := seed.Run(conn); err != nil {
@@ -57,7 +64,7 @@ func main() {
 
 	r := gin.Default()
 
-	api := handlers.BuildAPI(r, conn, cfg)
+	api := handlers.BuildAPI(r, conn, cfg, pbManager)
 
 	logging.Info("API listening", "port", cfg.Port)
 	if err := api.Run(":" + cfg.Port); err != nil {
