@@ -23,11 +23,13 @@ export function NodeDetailsSheet({
   onOpenChange,
   role = "student",
   onStateRefresh,
+  onAdvance,
 }: {
   node: NodeVM | null;
   onOpenChange: (open: boolean) => void;
   role?: "student" | "advisor" | "secretary" | "chair" | "admin";
   onStateRefresh?: () => void;
+  onAdvance?: (nextNodeId: string | null) => void;
 }) {
   const { t: T } = useTranslation("common");
   const [submission, setSubmission] = useState<NodeSubmissionDTO | null>(null);
@@ -88,6 +90,13 @@ export function NodeDetailsSheet({
           });
           if (!isDraft) {
             onStateRefresh?.();
+            const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
+            onOpenChange(false);
+            if (nextId) {
+              onAdvance?.(nextId);
+            } else {
+              onAdvance?.(null);
+            }
           }
         } catch (err: any) {
           push({
