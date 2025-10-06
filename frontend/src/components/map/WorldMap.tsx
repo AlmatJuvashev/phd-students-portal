@@ -33,15 +33,22 @@ export function WorldMap({
 }) {
   const vm = useMemo(
     () => toViewModel(playbook, stateByNodeId),
-    [playbook, stateByNodeId]
+    [playbook, stateByNodeId],
   );
   const [openNode, setOpenNode] = useState<NodeVM | null>(null);
   const [gatewayNode, setGatewayNode] = useState<NodeVM | null>(null);
+  const findNode = (id: string): NodeVM | null => {
+    for (const world of vm.worlds) {
+      const found = world.nodes.find((n) => n.id === id);
+      if (found) return found;
+    }
+    return null;
+  };
 
   const totalNodes = vm.worlds.reduce((acc, w) => acc + w.nodes.length, 0);
   const doneNodes = vm.worlds.reduce(
     (acc, w) => acc + w.nodes.filter((n) => n.state === "done").length,
-    0
+    0,
   );
   const progress =
     totalNodes > 0 ? Math.round((doneNodes / totalNodes) * 100) : 0;
@@ -78,12 +85,16 @@ export function WorldMap({
         const worldDoneNodes = w.nodes.filter((n) => n.state === "done").length;
         const worldProgressText = `${worldDoneNodes}/${w.nodes.length} Done`;
         const isWorldDone = worldDoneNodes === w.nodes.length;
-        const isWorldLocked = wi > 0 && (() => {
-          const prev = vm.worlds[wi - 1];
-          const allDone = prev.nodes.every((n) => n.state === "done");
-          const gatewayDone = prev.nodes.some((n) => n.type === "gateway" && n.state === "done");
-          return !(allDone || gatewayDone);
-        })();
+        const isWorldLocked =
+          wi > 0 &&
+          (() => {
+            const prev = vm.worlds[wi - 1];
+            const allDone = prev.nodes.every((n) => n.state === "done");
+            const gatewayDone = prev.nodes.some(
+              (n) => n.type === "gateway" && n.state === "done",
+            );
+            return !(allDone || gatewayDone);
+          })();
 
         return (
           <div key={w.id}>
@@ -150,6 +161,16 @@ export function WorldMap({
         node={openNode}
         onOpenChange={(o) => !o && setOpenNode(null)}
         onStateRefresh={onStateChanged}
+        onAdvance={(nextId) => {
+          if (nextId) {
+            const nextNode = findNode(nextId);
+            if (nextNode) {
+              setOpenNode(nextNode);
+              return;
+            }
+          }
+          setOpenNode(null);
+        }}
       />
 
       <GatewayModal
