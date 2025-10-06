@@ -1,4 +1,11 @@
-CREATE TYPE slot_multiplicity AS ENUM ('single', 'multi');
+DO $$
+BEGIN
+    CREATE TYPE slot_multiplicity AS ENUM ('single', 'multi');
+EXCEPTION
+    WHEN duplicate_object THEN
+        NULL;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS node_instances (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),

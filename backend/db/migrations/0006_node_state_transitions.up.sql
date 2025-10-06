@@ -10,4 +10,6 @@ INSERT INTO node_state_transitions(from_state, to_state, allowed_roles) VALUES
   ('submitted','needs_fixes', ARRAY['advisor','secretary','chair','admin']),
   ('submitted','done', ARRAY['advisor','secretary','chair','admin']),
   ('needs_fixes','submitted', ARRAY['student']),
-  ('done','submitted', ARRAY['admin']);
+  ('done','submitted', ARRAY['admin'])
+ON CONFLICT (from_state, to_state)
+DO UPDATE SET allowed_roles = EXCLUDED.allowed_roles;
