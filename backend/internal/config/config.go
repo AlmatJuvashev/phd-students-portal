@@ -45,7 +45,7 @@ func MustLoad() AppConfig {
 		FrontendBase:  get("FRONTEND_BASE_URL", "http://localhost:5173"),
 		AdminEmail:    get("ADMIN_EMAIL", ""),
 		AdminPassword: get("ADMIN_PASSWORD", ""),
-		PlaybookPath:  get("PLAYBOOK_PATH", "../frontend/src/playbooks/phd-doctorant.kz-v1.json"),
+		PlaybookPath:  get("PLAYBOOK_PATH", "../frontend/src/playbooks/playbook.json"),
 	}
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")

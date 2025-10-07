@@ -15,7 +15,6 @@ import {
   NodeSubmissionDTO,
   saveNodeSubmission,
 } from "@/api/journey";
-import { useToast } from "@/components/toast";
 import { useTranslation } from "react-i18next";
 
 export function NodeDetailsSheet({
@@ -35,7 +34,6 @@ export function NodeDetailsSheet({
   const [submission, setSubmission] = useState<NodeSubmissionDTO | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { push } = useToast();
 
   useEffect(() => {
     if (!node) {
@@ -53,10 +51,11 @@ export function NodeDetailsSheet({
         }
       } catch (err: any) {
         if (!cancelled) {
-          push({
-            title: T("common.error", { defaultValue: "Error" }),
-            description: err?.message ?? String(err),
-          });
+          // toast removed -> log error instead
+          console.error(
+            T("common.error", { defaultValue: "Error" }),
+            err?.message ?? String(err)
+          );
         }
       } finally {
         if (!cancelled) {
@@ -68,7 +67,7 @@ export function NodeDetailsSheet({
     return () => {
       cancelled = true;
     };
-  }, [node?.id, push, T]);
+  }, [node?.id, T]);
 
   const handleEvent = async (evt: { type: string; payload?: any }) => {
     if (!node || saving) return;
@@ -84,10 +83,11 @@ export function NodeDetailsSheet({
             state: isDraft ? "active" : "submitted",
           });
           setSubmission(res);
-          push({
-            title: isDraft ? T("forms.save_draft") : T("forms.save_submit"),
-            description: T("common.success", { defaultValue: "Saved." }),
-          });
+          // toast removed -> optionally log success
+          console.info(
+            isDraft ? T("forms.save_draft") : T("forms.save_submit"),
+            T("common.success", { defaultValue: "Saved." })
+          );
           if (!isDraft) {
             onStateRefresh?.();
             const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
@@ -99,10 +99,11 @@ export function NodeDetailsSheet({
             }
           }
         } catch (err: any) {
-          push({
-            title: T("common.error", { defaultValue: "Error" }),
-            description: err?.message ?? String(err),
-          });
+          // toast removed -> log error
+          console.error(
+            T("common.error", { defaultValue: "Error" }),
+            err?.message ?? String(err)
+          );
         } finally {
           setSaving(false);
         }
@@ -116,10 +117,11 @@ export function NodeDetailsSheet({
             state: "submitted",
           });
           setSubmission(res);
-          push({
-            title: T("decision.submit"),
-            description: T("common.success", { defaultValue: "Saved." }),
-          });
+          // toast removed -> optionally log success
+          console.info(
+            T("decision.submit"),
+            T("common.success", { defaultValue: "Saved." })
+          );
           onStateRefresh?.();
           const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
           onOpenChange(false);
@@ -129,32 +131,19 @@ export function NodeDetailsSheet({
             onAdvance?.(null);
           }
         } catch (err: any) {
-          push({
-            title: T("common.error", { defaultValue: "Error" }),
-            description: err?.message ?? String(err),
-          });
+          console.error("submit decision failed", err);
         } finally {
           setSaving(false);
         }
         break;
       }
       case "submit-upload": {
-        push({
-          title: T("common.info", { defaultValue: "Info" }),
-          description: T("upload.not_supported", {
-            defaultValue: "File uploads will be available soon.",
-          }),
-        });
+        // deferred; no toast
         break;
       }
       case "finalize-composite":
       case "finalize-outcome":
-        push({
-          title: T("common.info", { defaultValue: "Info" }),
-          description: T("common.not_implemented", {
-            defaultValue: "Action not yet available.",
-          }),
-        });
+        // not implemented; no toast
         break;
       default:
         break;

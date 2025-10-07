@@ -3,7 +3,11 @@
   "version": "1.1.0",
   "effective_date": "2025-10-06",
   "locale_default": "ru",
-  "locales": ["ru", "kz", "en"],
+  "locales": [
+    "ru",
+    "kz",
+    "en"
+  ],
   "worlds": [],
   "assets": [
     {
@@ -37,19 +41,19 @@
       "version": "2025-10-06"
     },
     {
-      "id": "tpl_app7_ru_docx",
+      "id": "tpl_app7_ru",
       "kind": "template",
       "title": {
-        "ru": "Приложение 7 — Список публикаций (DOCX)",
-        "kz": "Қосымша 7 — Жарияланымдар тізімі (DOCX)",
-        "en": "Appendix 7 — Publications list (DOCX)"
+        "ru": "Приложение 7 — Список публикаций",
+        "kz": "Қосымша 7 — Жарияланымдар тізімі",
+        "en": "Appendix 7 — Publications List"
       },
-      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "mime": "application/pdf",
       "storage": {
         "provider": "public",
-        "key": "templates/app7.ru.docx"
+        "key": "templates/app7.ru.pdf"
       },
-      "version": "2025-10-07"
+      "version": "2025-10-06"
     },
     {
       "id": "tpl_app8_ru",
@@ -112,19 +116,19 @@
       "version": "2025-10-06"
     },
     {
-      "id": "tpl_app7_kz_docx",
+      "id": "tpl_app7_kz",
       "kind": "template",
       "title": {
-        "ru": "Приложение 7 — Список публикаций (DOCX)",
-        "kz": "Қосымша 7 — Жарияланымдар тізімі (DOCX)",
-        "en": "Appendix 7 — Publications list (DOCX)"
+        "ru": "Приложение 7 — Список публикаций",
+        "kz": "Қосымша 7 — Жарияланымдар тізімі",
+        "en": "Appendix 7 — Publications List"
       },
-      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "mime": "application/pdf",
       "storage": {
         "provider": "public",
-        "key": "templates/app7.kz.docx"
+        "key": "templates/app7.kz.pdf"
       },
-      "version": "2025-10-07"
+      "version": "2025-10-06"
     },
     {
       "id": "tpl_app8_kz",
@@ -187,19 +191,19 @@
       "version": "2025-10-06"
     },
     {
-      "id": "tpl_app7_en_docx",
+      "id": "tpl_app7_en",
       "kind": "template",
       "title": {
-        "ru": "Приложение 7 — Список публикаций (DOCX)",
-        "kz": "Қосымша 7 — Жарияланымдар тізімі (DOCX)",
-        "en": "Appendix 7 — Publications list (DOCX)"
+        "ru": "Приложение 7 — Список публикаций",
+        "kz": "Қосымша 7 — Жарияланымдар тізімі",
+        "en": "Appendix 7 — Publications List"
       },
-      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "mime": "application/pdf",
       "storage": {
         "provider": "public",
-        "key": "templates/app7.en.docx"
+        "key": "templates/app7.en.pdf"
       },
-      "version": "2025-10-07"
+      "version": "2025-10-06"
     },
     {
       "id": "tpl_app8_en",
