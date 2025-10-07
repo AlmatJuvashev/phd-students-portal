@@ -11,7 +11,8 @@
     "changelog": [
       {
         "version": "1.1.0",
-        "date": "2025-10-06",
+        "type": "form",
+        "actionHints": ["form"],
         "notes": "Enriched defense prep/defense/post-defense nodes with deadlines, multilingual labels, uploads, and validation without changing categories/IDs."
       },
       {
@@ -275,8 +276,7 @@
               }
             ]
           },
-          "outputs": [],
-          "actionHints": []
+          "outputs": []
         },
         {
           "id": "W2_GATE",
@@ -309,37 +309,26 @@
           "id": "E1_apply_omid",
           "title": {
             "ru": "Заявка в ОМиД",
-            "kz": "ОМиД-ке өтінім",
-            "en": "Apply to Graduate Office"
+            "kz": "ОМиД-ке өтініш",
+            "en": "Application to OMiD"
           },
           "type": "form",
+          "actionHints": ["form"],
           "who_can_complete": ["student"],
-          "prerequisites": ["W2_GATE"],
-          "next": ["E2_reviewers_appointed"],
-          "outcomes": [],
+          "description": {
+            "ru": "Готово заявление на предварительную экспертизу в ОМиД?",
+            "kz": "ОМиД-ке алдын ала сараптамаға өтініш дайын ба?",
+            "en": "Is the application for preliminary review to OMiD ready?"
+          },
           "requirements": {
-            "fields": [
-              {
-                "key": "application_form",
-                "required": true,
-                "label": {}
-              }
-            ],
-            "uploads": [
-              {
-                "key": "draft_dissertation.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "advisor_ok.pdf",
-                "mime": ["application/pdf"],
-                "required": false
-              }
+            "templates": [
+              "tpl_omid_application_ru_docx",
+              "tpl_omid_application_kz_docx",
+              "tpl_omid_application_en_docx"
             ]
           },
-          "outputs": [],
-          "actionHints": []
+          "prerequisites": ["W2_GATE"],
+          "next": ["E2_reviewers_appointed"]
         },
         {
           "id": "E2_reviewers_appointed",

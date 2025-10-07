@@ -28,7 +28,10 @@
     "array_hint": "one per line",
     "app7_prompt": "Is the publications list per Appendix 7 prepared and certified by the Publication Activity department?",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "omid_prompt": "Is the application for pre-examination to the Graduate Office (OMiD) ready?",
+    "omid_info_after_yes": "Your application has been submitted. The Graduate Office will send a letter to the Scientific Committee to set the date and appoint two reviewers. The hearing date will be no earlier than 30 calendar days after the reviewers are appointed.",
+    "proceed_next": "Proceed to next step"
   },
   "external": {
     "checklist_title": "Action checklist",
