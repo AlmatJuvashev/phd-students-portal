@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { createBrowserRouter, redirect, useParams } from "react-router-dom";
+import {
+  createBrowserRouter,
+  redirect,
+  useParams,
+  useLocation,
+} from "react-router-dom";
 import { AppLayout } from "./pages/layout";
 import { LoginPage } from "./pages/login";
 import { Dashboard } from "./pages/dashboard";
@@ -11,6 +16,7 @@ import { AdvisorInbox } from "./pages/advisor.inbox";
 import { DocumentDetail } from "./pages/document.detail";
 import { DoctoralJourney } from "./pages/doctoral.journey";
 import type { Role } from "./auth/auth";
+import confetti from "canvas-confetti";
 
 function getAuth() {
   const token = localStorage.getItem("token");
@@ -46,7 +52,9 @@ function Forbidden() {
   return (
     <div className="max-w-lg mx-auto mt-10">
       <h2 className="text-xl font-semibold">403 — Forbidden</h2>
-      <p className="text-sm text-gray-600">You don’t have access to this page.</p>
+      <p className="text-sm text-gray-600">
+        You don’t have access to this page.
+      </p>
     </div>
   );
 }
@@ -94,3 +102,21 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+function AppRouter() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state && location.state.unlocked) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+    }
+  }, [location]);
+
+  return null;
+}
+
+export default AppRouter;

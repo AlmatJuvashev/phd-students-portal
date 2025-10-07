@@ -100,17 +100,40 @@ export function FormTaskDetails({
       )}
 
       {canEdit && (
-        <div className="flex gap-2">
-          <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
-            {T("forms.save_submit")}
-          </Button>
-          <Button
-            variant="secondary"
-            disabled={disabled}
-            onClick={() => onSubmit?.({ ...values, __draft: true })}
-          >
-            {T("forms.save_draft")}
-          </Button>
+        <div className="space-y-2">
+          {node.id === "S1_publications_list" ? (
+            <>
+              <div className="text-sm font-medium">
+                {T("forms.app7_prompt")}{" "}
+                <span className="text-destructive">*</span>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
+                  {T("forms.yes")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={disabled}
+                  onClick={() => onSubmit?.({ ...values, __draft: true })}
+                >
+                  {T("forms.no")}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
+                {T("forms.save_submit")}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={disabled}
+                onClick={() => onSubmit?.({ ...values, __draft: true })}
+              >
+                {T("forms.save_draft")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Card>

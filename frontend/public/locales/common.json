@@ -1,0 +1,21 @@
+{
+  "forms": {
+    "save_submit": {
+      "ru": "Сохранить и отправить",
+      "kz": "Сақтау және жіберу",
+      "en": "Save and Submit"
+    },
+    "save_draft": {
+      "ru": "Сохранить как черновик",
+      "kz": "Қаралым ретінде сақтау",
+      "en": "Save as Draft"
+    }
+  },
+  "templates": {
+    "heading": {
+      "en": "Available Templates",
+      "ru": "Доступные шаблоны",
+      "kz": "Қолжетімді шаблондар"
+    }
+  }
+}

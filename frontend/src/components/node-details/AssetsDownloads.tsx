@@ -21,7 +21,6 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   }
 
   const order = Object.keys(groups).sort();
-
   return (
     <div className="space-y-3">
       <Separator />
@@ -34,7 +33,9 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
             items.find((a) => a.title?.[locale as any]) ||
             items[0];
           if (!preferred) return null;
-          const label = preferred.title?.[locale as any] || t(preferred.title, preferred.id);
+          const label =
+            preferred.title?.[locale as any] ||
+            t(preferred.title, preferred.id);
           return (
             <div key={g} className="flex flex-wrap items-center gap-2">
               <a
@@ -43,7 +44,9 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
                 rel="noopener noreferrer"
                 download
               >
-                <Button variant="outline" size="sm">{label}</Button>
+                <Button variant="outline" size="sm">
+                  {label}
+                </Button>
               </a>
             </div>
           );
