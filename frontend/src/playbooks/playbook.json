@@ -230,20 +230,6 @@
             },
             "fields": [
               {
-                "key": "app7_certified",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Сформирован список публикаций по Приложению 7 и заверен в отделе публикационной активности?",
-                  "kz": "Қосымша 7 бойынша жарияланымдар тізімі жасалды және жарияланымдық белсенділік бөлімімен расталды ма?",
-                  "en": "Has the publications list per Appendix 7 been compiled and certified by the Publication Activity Department?"
-                },
-                "options": {
-                  "true": { "ru": "Да", "kz": "Иә", "en": "Yes" },
-                  "false": { "ru": "Нет", "kz": "Жоқ", "en": "No" }
-                }
-              },
-              {
                 "key": "count_wos_scopus",
                 "type": "number",
                 "min": 0,

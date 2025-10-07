@@ -24,7 +24,9 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   return (
     <div className="space-y-3">
       <Separator />
-      <div className="font-semibold">{T("templates.heading")}</div>
+      <div id="templates-section" className="font-semibold">
+        {T("templates.heading")}
+      </div>
       <div className="space-y-2">
         {order.map((g) => {
           const items = groups[g];

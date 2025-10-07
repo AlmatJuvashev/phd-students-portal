@@ -9,6 +9,7 @@ import { NodeVM, FieldDef, t } from "@/lib/playbook";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AssetsDownloads } from "../AssetsDownloads";
+import { assetsForNode } from "@/lib/assets";
 
 type Props = {
   node: NodeVM;
@@ -29,7 +30,7 @@ export function FormTaskDetails({
   useEffect(() => {
     setValues(initial ?? {});
   }, [initial]);
-  const { t: T } = useTranslation("common");
+  const { t: T, i18n } = useTranslation("common");
 
   const fields: FieldDef[] = node.requirements?.fields ?? [];
 
@@ -114,7 +115,32 @@ export function FormTaskDetails({
                 <Button
                   variant="secondary"
                   disabled={disabled}
-                  onClick={() => onSubmit?.({ ...values, __draft: true })}
+                  onClick={() => {
+                    // open preferred Appendix 7 template in a new tab
+                    const assets = assetsForNode(node);
+                    const lang = (i18n.language as "ru" | "kz" | "en") || "ru";
+                    const preferred =
+                      assets.find(
+                        (a) =>
+                          a.id.toLowerCase().includes("app7") &&
+                          a.id.toLowerCase().includes(`_${lang}`)
+                      ) ||
+                      assets.find((a) => a.id.toLowerCase().includes("app7")) ||
+                      assets[0];
+                    if (preferred?.storage?.key) {
+                      window.open(
+                        `/${preferred.storage.key}`,
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
+                    }
+                    // scroll to templates section to draw attention
+                    document
+                      .getElementById("templates-section")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    // mark as draft so the user can return after preparing the document
+                    onSubmit?.({ ...values, __draft: true });
+                  }}
                 >
                   {T("forms.no")}
                 </Button>
