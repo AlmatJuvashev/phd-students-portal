@@ -21,6 +21,11 @@ export function allAssets(): PublicAsset[] {
 
 // Heuristic mapping from node → related templates (Appendix 5..9)
 const rules: Array<{ match: (s: string, id: string) => boolean; tag: string }> = [
+  // OMiD application (Graduate Office pre-exam application)
+  {
+    match: (s, id) => /omid|омид|омид/.test(id) || /omid|омид|омид|graduate office/.test(s),
+    tag: "omid",
+  },
   {
     match: (s, id) => /publication|публикац|жариялан/.test(s) || id.includes("pub"),
     tag: "app7",

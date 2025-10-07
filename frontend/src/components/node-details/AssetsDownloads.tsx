@@ -11,11 +11,19 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   const assets = assetsForNode(node);
   if (!assets.length) return null;
 
-  // group by base template (appN)
+  // group by logical base template (e.g., app7, omid, etc.) so we show only one button per locale
   const groups: Record<string, PublicAsset[]> = {};
   for (const a of assets) {
-    const m = a.id.match(/(app\d+)/i);
-    const key = m ? m[1].toLowerCase() : a.id;
+    const id = a.id.toLowerCase();
+    // appN (Appendix templates)
+    const m = id.match(/(app\d+)/i);
+    let key = m ? m[1].toLowerCase() : id;
+    // OMiD application and similar localized assets
+    if (!m && id.includes("omid")) key = "omid";
+    // Fallback: strip locale suffix like _ru/_kz/_en and trailing segments
+    if (!m && !id.includes("omid")) {
+      key = id.replace(/_(ru|kz|en)(_.+)?$/, "");
+    }
     groups[key] = groups[key] || [];
     groups[key].push(a);
   }

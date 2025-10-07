@@ -7,6 +7,51 @@
   "worlds": [],
   "assets": [
     {
+      "id": "tpl_omid_application_ru_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Заявление в ОМиД (DOCX)",
+        "kz": "ОМиД өтініші (DOCX)",
+        "en": "OMiD application (DOCX)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/Zayavlenie_v_OMiD_ru.docx"
+      },
+      "version": "2025-10-07"
+    },
+    {
+      "id": "tpl_omid_application_kz_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Заявление в ОМиД (DOCX)",
+        "kz": "ОМиД өтініші (DOCX)",
+        "en": "OMiD application (DOCX)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/Zayavlenie_v_OMiD_kz.docx"
+      },
+      "version": "2025-10-07"
+    },
+    {
+      "id": "tpl_omid_application_en_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Заявление в ОМиД (DOCX)",
+        "kz": "ОМиД өтініші (DOCX)",
+        "en": "OMiD application (DOCX)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/Zayavlenie_v_OMiD_en.docx"
+      },
+      "version": "2025-10-07"
+    },
+    {
       "id": "tpl_app5_ru",
       "kind": "template",
       "title": {

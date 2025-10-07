@@ -27,6 +27,7 @@ export function FormTaskDetails({
   disabled = false,
 }: Props) {
   const [values, setValues] = useState<Record<string, any>>(initial);
+  const [showOmidConfirm, setShowOmidConfirm] = useState(false);
   useEffect(() => {
     setValues(initial ?? {});
   }, [initial]);
@@ -109,7 +110,7 @@ export function FormTaskDetails({
                 <span className="text-destructive">*</span>
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
+                <Button onClick={() => setShowOmidConfirm(true)} disabled={disabled}>
                   {T("forms.yes")}
                 </Button>
                 <Button
@@ -146,6 +147,43 @@ export function FormTaskDetails({
                 </Button>
               </div>
             </>
+          ) : node.id === "E1_apply_omid" ? (
+            <>
+              <div className="text-sm font-medium">
+                {T("forms.omid_prompt")} {" "}
+                <span className="text-destructive">*</span>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
+                  {T("forms.yes")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={disabled}
+                  onClick={() => {
+                    // Open OMiD application template matching current locale
+                    const assets = assetsForNode(node);
+                    const lang = (i18n.language as "ru" | "kz" | "en") || "ru";
+                    const preferred =
+                      assets.find(
+                        (a) =>
+                          a.id.toLowerCase().includes("omid") &&
+                          a.id.toLowerCase().includes(`_${lang}`)
+                      ) ||
+                      assets.find((a) => a.id.toLowerCase().includes("omid")) ||
+                      assets[0];
+                    if (preferred?.storage?.key) {
+                      window.open(`/${preferred.storage.key}`, "_blank", "noopener,noreferrer");
+                    }
+                    // Scroll to templates block and save draft
+                    document.getElementById("templates-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    onSubmit?.({ ...values, __draft: true });
+                  }}
+                >
+                  {T("forms.no")}
+                </Button>
+              </div>
+            </>
           ) : (
             <div className="flex gap-2">
               <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
@@ -160,6 +198,32 @@ export function FormTaskDetails({
               </Button>
             </div>
           )}
+        </div>
+      )}
+      {showOmidConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+            <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
+              {T("forms.omid_info_after_yes")}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowOmidConfirm(false)}
+              >
+                {T("common.cancel")}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowOmidConfirm(false);
+                  onSubmit?.(values);
+                }}
+                disabled={disabled}
+              >
+                {T("forms.proceed_next")}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </Card>
