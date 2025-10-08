@@ -50,7 +50,8 @@ export type NodeDef = {
     | "waiting"
     | "external"
     | "boss"
-    | "gateway";
+    | "gateway"
+    | "confirmTask"; // custom simple confirm step
   who_can_complete: RoleId[];
   prerequisites?: string[];
   next?: string[];

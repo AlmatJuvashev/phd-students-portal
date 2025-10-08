@@ -59,3 +59,12 @@ export function assetsForNode(node: NodeVM): PublicAsset[] {
   if (!tag) return [];
   return allAssets().filter((a) => a.id.toLowerCase().includes(tag));
 }
+
+// Resolve asset URL by id using assets_list.json
+export function getAssetUrl(id: string): string {
+  const asset = allAssets().find((a) => a.id === id);
+  if (!asset) return "#";
+  const key = asset.storage?.key || "";
+  // assets are served from public/ under "/" path
+  return `/${key}`;
+}

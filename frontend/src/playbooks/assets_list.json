@@ -112,6 +112,51 @@
       "version": "2025-10-08"
     },
     {
+      "id": "tpl_letter_rector_defense_request_ru_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Заявление ректору о приёме к защите (Приложение 4)",
+        "kz": "Қорғауға қабылдау туралы ректорға өтініш (Қосымша 4)",
+        "en": "Letter to Rector requesting acceptance for defense (Appendix 4)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_rector_request_defense_ru.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
+      "id": "tpl_letter_rector_defense_request_en_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Заявление ректору о приёме к защите (англ. версия)",
+        "kz": "Қорғауға қабылдау туралы ректорға өтініш (ағылш. нұсқа)",
+        "en": "Letter to Rector requesting acceptance for defense (English)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_rector_request_defense_en.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
+      "id": "tpl_letter_rector_defense_request_kz_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Заявление ректору о приёме к защите (каз. версия)",
+        "kz": "Қорғауға қабылдау туралы ректорға өтініш (қазақша нұсқа)",
+        "en": "Letter to Rector requesting acceptance for defense (Kazakh)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_rector_request_defense_kz.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
       "id": "tpl_app5_ru",
       "kind": "template",
       "title": {
