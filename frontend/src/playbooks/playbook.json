@@ -746,6 +746,145 @@
           }
         },
         {
+          "id": "IV2",
+          "module": "IV",
+          "title": {
+            "ru": "Заявление ректору",
+            "kz": "Ректорға өтініш",
+            "en": "Letter to Rector"
+          },
+          "type": "uploadTask",
+          "screen": {
+            "question": {
+              "ru": "Вы подали заявление на имя Председателя Правления – Ректора на допуск к защите (Приложение 4)?",
+              "kz": "Қорғауға жіберу туралы өтінішті Басқарма Төрағасы – Ректор атына (Қосымша 4) тапсырдыңыз ба?",
+              "en": "Have you submitted the letter to the Chair of the Board – Rector for permission to defend (Appendix 4)?"
+            },
+            "buttons": [
+              {
+                "id": "generate_letter",
+                "label": "Сгенерировать заявление",
+                "action": "show_instructions",
+                "instructions": {
+                  "title": "Как оформить заявление",
+                  "text": [
+                    "Для подачи заявления необходимо подготовить письмо на имя Председателя Правления – Ректора НАО «КазНМУ им. С.Д. Асфендиярова».",
+                    "В письме указывается тема диссертации, специальность и подтверждение выполнения всех требований Положения о Диссертационном совете.",
+                    "Вы можете скачать шаблон письма (Приложение 4) ниже."
+                  ],
+                  "downloads": [
+                    {
+                      "label": "Скачать шаблон (русский)",
+                      "asset_id": "tpl_letter_rector_defense_request_ru_docx"
+                    },
+                    {
+                      "label": "Download template (English)",
+                      "asset_id": "tpl_letter_rector_defense_request_en_docx"
+                    },
+                    {
+                      "label": "Жүктеу үлгісі (қазақша)",
+                      "asset_id": "tpl_letter_rector_defense_request_kz_docx"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "upload_confirmation",
+                "label": "Подтвердить подачу заявления",
+                "action": "confirm_completion",
+                "confirmation_text": "Вы уверены, что подали заявление ректору о приёме к защите?"
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": "Заявление ректору подано. Можно переходить к следующему шагу."
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["generate_letter", "upload_confirmation"]
+            },
+            "in_progress": {
+              "visible_buttons": ["upload_confirmation"]
+            },
+            "completed": {
+              "message": "✅ Заявление ректору подтверждено.",
+              "next_node": "IV3_publication_certificate_ncste"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
+          }
+        },
+        {
+          "id": "IV3_publication_certificate_ncste",
+          "module": "IV",
+          "title": "НЦГНТЭ: справка о публикациях",
+          "type": "confirmTask",
+          "screen": {
+            "question": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?",
+            "buttons": [
+              {
+                "id": "how_to_request",
+                "label": "Как запросить справку",
+                "action": "show_instructions",
+                "instructions": {
+                  "title": "Как получить справку о публикациях",
+                  "text": [
+                    "Для получения справки необходимо написать письмо на адрес astana@ncste.kz (в произвольной форме).",
+                    "В письме указать ФИО всех авторов, выходные данные публикаций (название, журнал, номер, том, год, ISSN, DOI).",
+                    "Приложить удостоверение личности в цифровом формате.",
+                    "После обработки запроса будет отправлен образец заявления, реквизиты для оплаты и перечень документов.",
+                    "Сумма оплаты зависит от количества статей.",
+                    "Справка будет готова через 10 рабочих дней.",
+                    "Забрать справку можно лично, через представителя или курьером (например, CDEK)."
+                  ],
+                  "download": {
+                    "label": "Скачать пример письма в НЦГНТЭ",
+                    "asset_id": "tpl_letter_ncste_publication_certificate_ru_docx"
+                  }
+                }
+              },
+              {
+                "id": "confirm_certificate_received",
+                "label": "Подтвердить получение справки",
+                "action": "confirm_completion",
+                "confirmation_text": "Вы уверены, что получили справку о публикациях из НЦГНТЭ?"
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": "Справка о публикациях получена. Можно переходить к следующему шагу."
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": [
+                "how_to_request",
+                "confirm_certificate_received"
+              ]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_certificate_received"]
+            },
+            "completed": {
+              "message": "✅ Получение справки из НЦГНТЭ подтверждено.",
+              "next_node": "IV4"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
+          }
+        },
+        {
           "id": "D2_apply_to_ds",
           "title": {
             "ru": "Заявление ректору и пакет в ДС",
