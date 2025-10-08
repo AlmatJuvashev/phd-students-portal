@@ -9,6 +9,7 @@ import { GatewayInfoDetails } from "./variants/GatewayInfoDetails";
 import { CompositeTaskDetails } from "./variants/CompositeTaskDetails";
 import type { NodeSubmissionDTO } from "@/api/journey";
 import { DecisionTaskDetails } from "./variants/DecisionTaskDetails";
+import ConfirmTaskDetails from "./variants/ConfirmTaskDetails";
 
 type Props = {
   node: NodeVM;
@@ -121,6 +122,10 @@ export function NodeDetailSwitch({
           />
         );
       case "gateway":
+        // Also support explicit confirmTask node.type that doesn't expose fields/uploads/outcomes
+        if (node.type === "confirmTask") {
+          return <ConfirmTaskDetails node={node} />;
+        }
       default:
         return (
           <GatewayInfoDetails
@@ -216,6 +221,9 @@ export function NodeDetailSwitch({
       );
     case "gateway":
     default:
+      if (node.type === "confirmTask") {
+        return <ConfirmTaskDetails node={node} />;
+      }
       return (
         <GatewayInfoDetails
           node={node}

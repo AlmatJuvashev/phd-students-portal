@@ -25,6 +25,7 @@ const typeIcon: Record<NodeVM["type"], LucideIcon> = {
   external: ExternalLink,
   boss: Trophy,
   gateway: MapPin,
+  confirmTask: Check,
 };
 
 const stateStyles = {
