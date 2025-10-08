@@ -4,36 +4,63 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/toast";
 import { getAssetUrl } from "@/lib/assets";
-import type { NodeVM } from "@/lib/playbook";
 import { t } from "@/lib/playbook";
+import { Accordion, AccordionItem } from "@/components/ui/accordion";
+import type { NodeVM } from "@/lib/playbook";
 
 type ConfirmTaskDetailsProps = {
   node: NodeVM | any;
   onComplete?: () => void;
 };
 
-const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({ node, onComplete }) => {
+const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
+  node,
+  onComplete,
+}) => {
   const { push } = useToast();
-  const [isCompleted, setCompleted] = React.useState(node?.state === "done" || node?.status === "completed");
+  const [isCompleted, setCompleted] = React.useState(
+    node?.state === "done" || node?.status === "completed"
+  );
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
-  const question: string | undefined = node?.screen?.question;
-  const instructions: string[] = node?.screen?.buttons?.[0]?.instructions?.text || [];
-  const instructionsTitle = t(
-    {
-      ru: "Инструкция по прохождению",
-      kz: "Өту бойынша нұсқаулық",
-      en: "How to complete",
-    },
+  // Localized question (string or i18n map)
+  const question: string | undefined = t(node?.screen?.question as any);
+
+  // Primary button (index 0) contains instructions
+  const primaryBtn = Array.isArray(node?.screen?.buttons)
+    ? node.screen.buttons[0]
+    : undefined;
+  const instructions: string[] = primaryBtn?.instructions?.text || [];
+  const download = (primaryBtn?.instructions?.download || undefined) as
+    | { label?: string; asset_id?: string; asset_path?: string }
+    | undefined;
+  const accordionLabel = primaryBtn?.label || t(
+    { ru: "Инструкция по прохождению", kz: "Өту бойынша нұсқаулық", en: "How to complete" },
     "Инструкция по прохождению"
   );
+
+  // Confirmation button (index 1)
+  const confirmBtn = Array.isArray(node?.screen?.buttons)
+    ? node.screen.buttons[1]
+    : undefined;
+  const confirmLabel: string = confirmBtn?.label || t({ ru: "Подтвердить", kz: "Растау", en: "Confirm" }, "Подтвердить");
+  const confirmText: string = confirmBtn?.confirmation_text || t(
+    { ru: "Подтвердить выполнение шага?", kz: "Қадамды орындауды растау?", en: "Confirm completing this step?" },
+    "Подтвердить выполнение шага?"
+  );
+
+  const completedMessage: string =
+    node?.states?.completed?.message || t({ ru: "Шаг подтверждён.", kz: "Қадам расталды.", en: "Step confirmed." }, "Шаг подтверждён.");
 
   const handleConfirm = () => {
     setCompleted(true);
     setConfirmOpen(false);
     push({
-      title: "Нормоконтроль подтверждён",
-      description: "Квитанция получена. Вы можете перейти к следующему шагу.",
+      title: t({ ru: "Шаг подтверждён", kz: "Қадам расталды", en: "Step confirmed" }, "Шаг подтверждён"),
+      description: t(
+        { ru: "Действие успешно отмечено как выполненное.", kz: "Әрекет сәтті аяқталған ретінде белгіленді.", en: "Action marked as completed." },
+        "Действие успешно отмечено как выполненное."
+      ),
     });
     if (onComplete) onComplete();
   };
@@ -45,42 +72,54 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({ node, onComplet
 
         {!isCompleted && (
           <>
-            <div className="divide-y rounded-xl border overflow-hidden">
-              <div className="w-full text-left p-3 font-medium bg-muted">
-                {instructionsTitle}
-              </div>
-              <div className="p-3">
-                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                  {instructions.map((line: string, idx: number) => (
-                    <li key={idx}>{line}</li>
-                  ))}
-                </ul>
-                <div className="mt-3">
-                  <Button asChild variant="secondary">
-                    <a href={getAssetUrl("tpl_ncste_normocontrol_letter_ru_docx")} download>
-                      Скачать пример письма
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Accordion>
+              <AccordionItem header={accordionLabel}>
+                {Array.isArray(instructions) && instructions.length > 0 && (
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                    {instructions.map((line: string, idx: number) => (
+                      <li key={idx}>{line}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {(() => {
+                  if (!download) return null;
+                  const resolved = download.asset_id
+                    ? getAssetUrl(download.asset_id)
+                    : undefined;
+                  const href = resolved && resolved !== "#" ? resolved : download.asset_path;
+                  if (!href) return null;
+                  return (
+                    <div className="mt-3">
+                      <Button asChild variant="secondary">
+                        <a href={href} download target="_blank" rel="noopener noreferrer">
+                          {download.label || t({ ru: "Скачать шаблон", kz: "Үлгіні жүктеу", en: "Download template" }, "Скачать шаблон")}
+                        </a>
+                      </Button>
+                    </div>
+                  );
+                })()}
+              </AccordionItem>
+            </Accordion>
 
             <div className="pt-2">
-              <Button variant="default" className="mt-2" onClick={() => setConfirmOpen(true)}>
-                Подтвердить получение квитанции
+              <Button
+                variant="default"
+                className="mt-2"
+                onClick={() => setConfirmOpen(true)}
+              >
+                {confirmLabel}
               </Button>
             </div>
 
             <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)}>
               <div className="space-y-4">
-                <div className="text-base font-medium">
-                  Вы уверены, что получили квитанцию о прохождении нормоконтроля в НЦГНТЭ?
-                </div>
+                <div className="text-base font-medium">{confirmText}</div>
                 <div className="flex justify-end gap-2">
                   <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-                    Отмена
+                    {t({ ru: "Отмена", kz: "Болдырмау", en: "Cancel" }, "Отмена")}
                   </Button>
-                  <Button onClick={handleConfirm}>Да, подтвердить</Button>
+                  <Button onClick={handleConfirm}>{t({ ru: "Да, подтвердить", kz: "Иә, растау", en: "Yes, confirm" }, "Да, подтвердить")}</Button>
                 </div>
               </div>
             </Modal>
@@ -89,7 +128,7 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({ node, onComplet
 
         {isCompleted && (
           <div className="rounded-2xl bg-emerald-50 p-4 text-emerald-700">
-            ✅ Нормоконтроль пройден и квитанция подтверждена.
+            ✅ {completedMessage}
           </div>
         )}
       </CardContent>
