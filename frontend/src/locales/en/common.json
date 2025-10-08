@@ -31,7 +31,9 @@
     "no": "No",
     "omid_prompt": "Is the application for pre-examination to the Graduate Office (OMiD) ready?",
     "omid_info_after_yes": "Your application has been submitted. The Graduate Office will send a letter to the Scientific Committee to set the date and appoint two reviewers. The hearing date will be no earlier than 30 calendar days after the reviewers are appointed.",
-    "proceed_next": "Proceed to next step"
+    "proceed_next": "Proceed to next step",
+    "nk_required_package_title": "Required document package for SC",
+    "nk_confirm_info": "Please confirm you have prepared and checked the full document package. Continue to scheduling the SC hearing?"
   },
   "external": {
     "checklist_title": "Action checklist",

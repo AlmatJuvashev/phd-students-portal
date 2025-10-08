@@ -1,7 +1,7 @@
 {
   "playbook_id": "phd-doctorant.kz",
   "version": "1.1.0",
-  "effective_date": "2025-10-06",
+  "effective_date": "2025-10-08",
   "locale_default": "ru",
   "locales": ["ru", "kz", "en"],
   "worlds": [],
@@ -50,6 +50,66 @@
         "key": "templates/Zayavlenie_v_OMiD_en.docx"
       },
       "version": "2025-10-07"
+    },
+    {
+      "id": "tpl_lcb_request_ru_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Письмо-запрос в ЛКБ (DOCX)",
+        "kz": "ЛБК-ға өтініш-хат (DOCX)",
+        "en": "Letter to LBC (DOCX)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/Letter_to_LCB_ru.docx"
+      },
+      "version": "2025-10-07"
+    },
+    {
+      "id": "tpl_lcb_request_kz_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Письмо-запрос в ЛКБ (DOCX)",
+        "kz": "ЛБК-ға өтініш-хат (DOCX)",
+        "en": "Letter to LBC (DOCX)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/Letter_to_LCB_kz.docx"
+      },
+      "version": "2025-10-07"
+    },
+    {
+      "id": "tpl_lcb_request_en_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Письмо-запрос в ЛКБ (DOCX)",
+        "kz": "ЛБК-ға өтініш-хат (DOCX)",
+        "en": "Letter to LBC (DOCX)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/Letter_to_LCB_en.docx"
+      },
+      "version": "2025-10-07"
+    },
+    {
+      "id": "tpl_ncste_normocontrol_letter_ru_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Письмо в НЦГНТЭ для нормоконтроля (DOCX)",
+        "kz": "НЦҒНТЭ-ге нормоконтроль хаты (DOCX)",
+        "en": "NCSTE norm control request letter (DOCX)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/normocontrol_letter.docx"
+      },
+      "version": "2025-10-08"
     },
     {
       "id": "tpl_app5_ru",

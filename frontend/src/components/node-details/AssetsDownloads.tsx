@@ -1,5 +1,5 @@
 // components/node-details/AssetsDownloads.tsx
-import { assetsForNode, PublicAsset } from "@/lib/assets";
+import { assetsForNode, PublicAsset, allAssets } from "@/lib/assets";
 import { NodeVM, t } from "@/lib/playbook";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,19 @@ import { useTranslation } from "react-i18next";
 export function AssetsDownloads({ node }: { node: NodeVM }) {
   const { i18n, t: T } = useTranslation("common");
   const locale = (i18n.language as "ru" | "kz" | "en") || "ru";
-  const assets = assetsForNode(node);
+  // Prefer explicit templates listed on the node, fallback to heuristic mapping
+  let assets: PublicAsset[] = [];
+  const explicit = (node.requirements as any)?.templates as
+    | string[]
+    | undefined;
+  if (explicit?.length) {
+    const pool = allAssets();
+    assets = explicit
+      .map((id) => pool.find((a) => a.id === id))
+      .filter(Boolean) as PublicAsset[];
+  } else {
+    assets = assetsForNode(node);
+  }
   if (!assets.length) return null;
 
   // group by logical base template (e.g., app7, omid, etc.) so we show only one button per locale

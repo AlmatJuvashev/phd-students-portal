@@ -328,122 +328,290 @@
             ]
           },
           "prerequisites": ["W2_GATE"],
-          "next": ["E2_reviewers_appointed"]
+          "next": ["NK_package"]
         },
         {
-          "id": "E2_reviewers_appointed",
+          "id": "NK_package",
           "title": {
-            "ru": "Назначение рецензентов",
-            "kz": "Рецензенттерді тағайындау",
-            "en": "Reviewers appointed"
+            "ru": "Пакет на НК",
+            "kz": "ҒК-ға пакет",
+            "en": "Package for SC"
           },
+          "type": "form",
+          "actionHints": ["form"],
           "description": {
-            "ru": "Приказ о назначении рецензентов и временных членов (если требуется).",
-            "kz": "Рецензенттер мен уақытша мүшелерді тағайындау туралы бұйрық (қажет болса).",
-            "en": "Order appointing reviewers and temporary members (if required)."
+            "ru": "Пакет документов собран?",
+            "kz": "Құжаттар топтамасы жиналды ма?",
+            "en": "Is the document package complete?"
           },
-          "type": "external",
-          "who_can_complete": ["secretary", "chair"],
+          "who_can_complete": ["student"],
           "prerequisites": ["E1_apply_omid"],
-          "next": ["E2_wait_30_days"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [
+          "requirements": {
+            "templates": [
+              "tpl_lcb_request_ru_docx",
+              "tpl_lcb_request_kz_docx",
+              "tpl_lcb_request_en_docx"
+            ],
+            "ui_hints": {
+              "buttons": [
+                {
+                  "key": "all_ready",
+                  "label": {
+                    "ru": "Все готово",
+                    "kz": "Барлығы дайын",
+                    "en": "All set"
+                  }
+                },
+                {
+                  "key": "need_lcb_letter",
+                  "label": {
+                    "ru": "Нужен шаблон письма в ЛКБ",
+                    "kz": "ЛБК-ға хат үлгісі керек",
+                    "en": "Need LBC letter template"
+                  }
+                }
+              ],
+              "template_section_title": {
+                "ru": "Загрузить шаблон",
+                "kz": "Үлгіні жүктеу",
+                "en": "Download template"
+              }
+            },
+            "fields": [
+              {
+                "key": "chk_thesis_unbound",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Несброшюрованная диссертация (1 экз.)",
+                  "kz": "Түптелмеген диссертация (1 дана)",
+                  "en": "Unbound thesis (1 copy)"
+                }
+              },
+              {
+                "key": "chk_advisor_reviews",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Отзывы консультантов (+ нотариальный перевод при иностранном языке)",
+                  "kz": "Кеңесшілер пікірлері (+ шетел тіліндегі болса нотариалды аударма)",
+                  "en": "Advisor reviews (+ notarized translation if foreign language)"
+                }
+              },
+              {
+                "key": "chk_pubs_app7",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Список и копии публикаций (по Прил. 7)",
+                  "kz": "Жарияланымдар тізімі мен көшірмелері (Қос. 7 бойынша)",
+                  "en": "List and copies of publications (per App. 7)"
+                }
+              },
+              {
+                "key": "chk_sc_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Выписка Ученого совета о теме и консультантах",
+                  "kz": "Ғылыми кеңес шешімінен үзінді (тақырып/кеңесшілер)",
+                  "en": "Academic Council extract on topic and advisors"
+                }
+              },
+              {
+                "key": "chk_primary_docs",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "Первичные документы (по запросу)",
+                  "kz": "Бастапқы құжаттар (сұрау бойынша)",
+                  "en": "Primary documents (on request)"
+                }
+              },
+              {
+                "key": "chk_lcb_defense",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заключение ЛКБ «на защиту» (запрос на lcb@kaznmu.kz с приложением первоначального заключения)",
+                  "kz": "ЛБК-ның «қорғауға» қорытындысы (алғашқы қорытындыны қоса lcb@kaznmu.kz поштасына сұрау)",
+                  "en": "LBC conclusion “for defense” (email request to lcb@kaznmu.kz with initial conclusion attached)"
+                }
+              }
+            ]
+          },
+          "outcomes": [
             {
-              "key": "order_reviewers.pdf",
-              "type": "upload"
+              "value": "complete",
+              "when": "form.chk_thesis_unbound && form.chk_advisor_reviews && form.chk_pubs_app7 && form.chk_sc_extract && form.chk_lcb_defense",
+              "next": ["E3_hearing_nk"]
+            },
+            {
+              "value": "need_letter",
+              "when": "!form.chk_lcb_defense",
+              "next": ["NK_package"]
             }
-          ],
-          "actionHints": []
-        },
-        {
-          "id": "E2_wait_30_days",
-          "title": {
-            "ru": "Ожидание 30 календарных дней",
-            "kz": "30 күнтізбелік күн күту",
-            "en": "Wait 30 calendar days"
-          },
-          "type": "waiting",
-          "who_can_complete": ["system"],
-          "prerequisites": ["E2_reviewers_appointed"],
-          "next": ["E3_hearing_nk"],
-          "outcomes": [],
-          "timer": {
-            "duration_days": 30,
-            "start_on": "completed:E2_reviewers_appointed"
-          },
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
+          ]
         },
         {
           "id": "E3_hearing_nk",
           "title": {
-            "ru": "Заседание Научного комитета",
-            "kz": "Ғылыми комитет отырысы",
-            "en": "Scientific Committee hearing"
+            "ru": "Заслушивание НК",
+            "kz": "ҒК тыңдауы",
+            "en": "SC Hearing"
           },
-          "type": "meeting",
-          "who_can_complete": ["secretary", "chair"],
-          "prerequisites": ["E2_wait_30_days"],
-          "next": [],
-          "outcomes": [
-            {
-              "value": "accepted",
-              "next": ["RP_GATE", "W4_GATE"],
-              "label": {}
-            },
-            {
-              "value": "fixes_required",
-              "next": ["E3_fix_plan"],
-              "label": {}
-            }
-          ],
+          "type": "form",
+          "actionHints": ["form"],
+          "who_can_complete": ["student"],
+          "description": {
+            "ru": "Подтвердите результаты после заслушивания.",
+            "kz": "Тыңдаудан кейінгі нәтижелерді растаңыз.",
+            "en": "Confirm post-hearing results."
+          },
           "requirements": {
-            "uploads": [
+            "ui_hints": {
+              "cards_layout": {
+                "style": "stacked",
+                "animation": "slideUp",
+                "card_variant": "question"
+              },
+              "buttons_style": "yes_no"
+            },
+            "fields": [
               {
-                "key": "minutes.pdf",
-                "mime": ["application/pdf"],
+                "key": "hearing_happened",
+                "type": "boolean",
                 "required": true,
-                "label": {}
+                "label": {
+                  "ru": "Заслушивание состоялось?",
+                  "kz": "Тыңдау өтті ме?",
+                  "en": "Did the hearing take place?"
+                },
+                "options": {
+                  "true": { "ru": "Да", "kz": "Иә", "en": "Yes" },
+                  "false": { "ru": "Нет", "kz": "Жоқ", "en": "No" }
+                }
+              },
+              {
+                "key": "hearing_reminder",
+                "type": "note",
+                "visible_when": "form.hearing_happened == false",
+                "label": {
+                  "ru": "Назначьте и проведите заслушивание НК. Вернитесь к этому шагу после завершения.",
+                  "kz": "ҒК тыңдауын жоспарлап, өткізіңіз. Аяқтаған соң осы қадамға қайта оралыңыз.",
+                  "en": "Schedule and complete the SC hearing. Return to this step afterward."
+                }
+              },
+              {
+                "key": "remarks_exist",
+                "type": "boolean",
+                "required": false,
+                "visible_when": "form.hearing_happened == true",
+                "label": {
+                  "ru": "Имеются зафиксированные замечания рецензентов/членов НК?",
+                  "kz": "Рецензенттер/ҒК мүшелерінің тіркелген ескертпелері бар ма?",
+                  "en": "Are there recorded remarks from reviewers/SC members?"
+                },
+                "options": {
+                  "true": { "ru": "Да", "kz": "Иә", "en": "Yes" },
+                  "false": { "ru": "Нет", "kz": "Жоқ", "en": "No" }
+                }
+              },
+              {
+                "key": "plan_prepared",
+                "type": "boolean",
+                "required": false,
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true",
+                "label": {
+                  "ru": "Подготовлен план исправлений?",
+                  "kz": "Түзетулер жоспары дайын ба?",
+                  "en": "Is a fixes plan prepared?"
+                },
+                "options": {
+                  "true": { "ru": "Да", "kz": "Иә", "en": "Yes" },
+                  "false": { "ru": "Нет", "kz": "Жоқ", "en": "No" }
+                }
+              },
+              {
+                "key": "plan_reminder",
+                "type": "note",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared != true",
+                "label": {
+                  "ru": "Сначала создайте план исправлений и вернитесь к этому шагу.",
+                  "kz": "Алдымен түзетулер жоспарын жасаңыз да, осы қадамға оралыңыз.",
+                  "en": "Create a fixes plan first, then return to this step."
+                }
+              },
+              {
+                "key": "remarks_resolved",
+                "type": "boolean",
+                "required": false,
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared == true",
+                "label": {
+                  "ru": "Все замечания устранены?",
+                  "kz": "Барлық ескертпелер жойылды ма?",
+                  "en": "Have all remarks been resolved?"
+                },
+                "options": {
+                  "true": { "ru": "Да", "kz": "Иә", "en": "Yes" },
+                  "false": { "ru": "Нет", "kz": "Жоқ", "en": "No" }
+                }
+              },
+              {
+                "key": "resolve_reminder",
+                "type": "note",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved != true",
+                "label": {
+                  "ru": "Устраните все замечания согласно плану, затем подтвердите «Да».",
+                  "kz": "Жоспар бойынша барлық ескертпелерді жойып, содан кейін «Иә» деп растаңыз.",
+                  "en": "Resolve all remarks per the plan, then confirm “Yes”."
+                }
+              }
+            ],
+            "actions": [
+              {
+                "key": "go_to_ds_no_remarks",
+                "kind": "navigate",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == false",
+                "label": {
+                  "ru": "Переход к подаче документов к ДС",
+                  "kz": "ДС-ке құжат тапсыруға өту",
+                  "en": "Proceed to submit to the DC"
+                },
+                "to": "W4_GATE"
+              },
+              {
+                "key": "go_to_ds_all_resolved",
+                "kind": "navigate",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true",
+                "label": {
+                  "ru": "Переход к подаче документов к ДС",
+                  "kz": "ДС-ке құжат тапсыруға өту",
+                  "en": "Proceed to submit to the DC"
+                },
+                "to": "W4_GATE"
               }
             ]
           },
-          "outputs": [],
-          "actionHints": []
-        },
-        {
-          "id": "E3_fix_plan",
-          "title": {
-            "ru": "План доработок",
-            "kz": "Доработу жоспары",
-            "en": "Fix plan"
-          },
-          "type": "form",
-          "who_can_complete": ["student", "advisor"],
-          "prerequisites": ["E3_hearing_nk"],
-          "next": ["E3_hearing_nk"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
-        },
-        {
-          "id": "RP_GATE",
-          "title": {
-            "ru": "Требуется RP?",
-            "kz": "RP қажет пе?",
-            "en": "RP required?"
-          },
-          "type": "gateway",
-          "who_can_complete": ["system"],
-          "prerequisites": ["E3_hearing_nk"],
-          "next": ["R1_intro"],
-          "outcomes": [],
-          "condition": "rp_required",
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
+          "next": ["W4_GATE"],
+
+          "outcomes": [
+            {
+              "value": "proceed",
+              "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
+              "next": ["W4_GATE"]
+            },
+            {
+              "value": "needs_plan",
+              "when": "form.remarks_exist == true && form.plan_prepared != true",
+              "next": ["E3_hearing_nk"]
+            },
+            {
+              "value": "needs_resolution",
+              "when": "form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved != true",
+              "next": ["E3_hearing_nk"]
+            }
+          ]
         },
         {
           "id": "W4_GATE",
@@ -517,48 +685,64 @@
       "nodes": [
         {
           "id": "D1_normokontrol_ncste",
-          "title": {
-            "ru": "Нормоконтроль НЦГНТЭ",
-            "kz": "ҰҒТАО нормоконтролі",
-            "en": "NCSTE norm control"
-          },
-          "type": "external",
-          "who_can_complete": ["student", "secretary"],
-          "prerequisites": ["W4_GATE", "R2_complete"],
-          "next": ["D2_apply_to_ds"],
-          "outcomes": [],
-          "requirements": {
-            "notes": "Подготовить пакет и отправить по email согласно инструкции",
-            "uploads": [
+          "module": "IV",
+          "title": "НЦГНТЭ: нормоконтроль",
+          "type": "confirmTask",
+          "screen": {
+            "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
+            "buttons": [
               {
-                "key": "ncste_request_letter.pdf",
-                "mime": ["application/pdf"],
-                "required": false
+                "id": "how_to",
+                "label": "Как пройти",
+                "action": "show_instructions",
+                "instructions": {
+                  "title": "Как пройти нормоконтроль",
+                  "text": [
+                    "Для прохождения нормоконтроля необходимо направить письмо на адрес astana@ncste.kz (в произвольной форме).",
+                    "Сроки: около 10 рабочих дней.",
+                    "Формат файлов: DOCX.",
+                    "Стоимость: 18 200 тг.",
+                    "Оплата: через банк или Kaspi (Платежи → Доп. образование → филиал АО «НЦГНТЭ» г. Астана).",
+                    "К письму необходимо приложить: 1) файл диссертации в формате DOCX, 2) квитанцию об оплате услуги нормоконтроля.",
+                    "После проверки Вы получите подтверждение от НЦГНТЭ по электронной почте."
+                  ],
+                  "download": {
+                    "label": "Скачать пример письма",
+                    "asset_id": "normocontrol_letter.docx",
+                    "asset_path": "/assets/templates/normocontrol_letter.docx"
+                  }
+                }
               },
               {
-                "key": "manuscript_pdf.pdf",
-                "mime": ["application/pdf"],
-                "required": true
+                "id": "confirm_passed",
+                "label": "Подтвердить получение квитанции",
+                "action": "confirm_completion",
+                "confirmation_text": "Вы уверены, что получили квитанцию о прохождении нормоконтроля в НЦГНТЭ?"
               }
-            ]
-          },
-          "outputs": [
-            {
-              "key": "ncste_certificate.pdf",
-              "type": "upload",
-              "required": true
-            },
-            {
-              "key": "ncste_antiplag_result.pdf",
-              "type": "upload",
-              "required": false
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": "Нормоконтроль пройден и квитанция получена. Можно переходить к следующему шагу."
             }
-          ],
-          "actionHints": [],
-          "sla": {
-            "ru": "10 рабочих дней от принятия к защите",
-            "kz": "Қорғауға қабылданғаннан кейін 10 жұмыс күні",
-            "en": "10 business days after acceptance"
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["how_to", "confirm_passed"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_passed"]
+            },
+            "completed": {
+              "message": "✅ Нормоконтроль пройден и подтверждён.",
+              "next_node": "IV2"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
           }
         },
         {

@@ -40,6 +40,21 @@ export function NodeDetailSwitch({
   const canUpload = role !== "admin"; // example
   const canComplete = node.who_can_complete?.includes(role);
 
+  // Prefer rendering a form when node is of type 'form' and includes fields,
+  // even if outcomes also exist (e.g., checklist with completion rule).
+  if (kinds.includes("form") && node.type === "form") {
+    const initialForm = submission?.form?.data ?? {};
+    return (
+      <FormTaskDetails
+        node={node}
+        canEdit={!saving}
+        initial={initialForm}
+        disabled={saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+
   // Single dominant kind
   if (kinds.length === 1) {
     switch (kinds[0]) {
