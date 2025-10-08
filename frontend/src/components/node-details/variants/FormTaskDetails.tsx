@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
 import { AssetsDownloads } from "../AssetsDownloads";
+import { Check } from "lucide-react";
 import { assetsForNode, allAssets } from "@/lib/assets";
 
 type Props = {
@@ -31,6 +32,7 @@ export function FormTaskDetails({
   const [values, setValues] = useState<Record<string, any>>(initial);
   const [showOmidConfirm, setShowOmidConfirm] = useState(false);
   const [showNkConfirm, setShowNkConfirm] = useState(false);
+  const [showD2Confirm, setShowD2Confirm] = useState(false);
   useEffect(() => {
     setValues(initial ?? {});
   }, [initial]);
@@ -78,6 +80,142 @@ export function FormTaskDetails({
       console.error("Error evaluating visibility expression:", expr, e);
       return true;
     }
+  }
+
+  // D2_apply_to_ds: checklist with proceed guard and 60/40 layout
+  if (node.id === "D2_apply_to_ds") {
+    // ready when all required boolean fields are checked true
+    const requiredBools = fields.filter(
+      (f) => f.type === "boolean" && f.required
+    );
+    const ready = requiredBools.every((f) => !!values[f.key]);
+    // choose next target from node.next or outcomes
+    const nextOnComplete =
+      (Array.isArray(node.next) ? node.next[0] : undefined) ||
+      node.outcomes?.[0]?.next?.[0];
+
+    // read-only mode after submission
+    const readOnly =
+      node.state === "submitted" ||
+      node.state === "done" ||
+      Boolean((initial as any)?.__submittedAt);
+    const submittedAt: string | undefined =
+      (initial as any)?.__submittedAt || values?.__submittedAt;
+
+    const guardMessage = t(
+      {
+        ru:
+          "Ученый секретарь Диссертационного совета регистрирует документы в срок не менее 2 (двух) рабочих дней и представляет в Диссертационный совет (Регистрация документов производится протоколом заседания Диссертационного совета). Не позднее 10 (десяти) рабочих дней со дня приема документов Диссертационный совет определяет дату защиты и назначает двух рецензентов и временных членов Диссертационного совета.\n21.\tВ течение 10 (десяти) рабочих дней после приема к защите диссертационный совет направляет диссертацию для проверки на использование докторантом плагиата по отечественным и международным базам данных в Акционерное общество \"Национальный центр государственной научно-технической экспертизы\".",
+        kz:
+          "Диссертациялық кеңестің ғылыми хатшысы құжаттарды кемінде 2 (екі) жұмыс күні ішінде тіркейді және Диссертациялық кеңеске ұсынады (Құжаттарды тіркеу Диссертациялық кеңестің отырыс хаттамасымен жүзеге асырылады). Құжаттарды қабылдаған күннен бастап 10 (он) жұмыс күнінен кешіктірмей Диссертациялық кеңес қорғау күнін белгілейді және екі рецензент пен уақытша мүшелерді тағайындайды.\n21.\tҚорғауға қабылдағаннан кейін 10 (он) жұмыс күні ішінде диссертациялық кеңес диссертацияны докторанттың плагиатты пайдаланғанын тексеру үшін отандық және халықаралық деректер базалары бойынша \"Ұлттық мемлекеттік ғылыми-техникалық сараптама орталығы\" АҚ-ға жолдайды.",
+        en:
+          "The Dissertation Council Secretary registers the documents within at least 2 (two) business days and submits them to the Dissertation Council (registration is recorded in the minutes of the Council meeting). No later than 10 (ten) business days from the date of receipt, the Council sets the defense date and appoints two reviewers and temporary Council members.\n21.\tWithin 10 (ten) business days after admission to defense, the Council sends the dissertation for plagiarism checking across domestic and international databases to the Joint-Stock Company \"National Center for State Scientific and Technical Expertise\" (NCSTE).",
+      },
+      ""
+    );
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
+        {/* Left: Form (<=60%) */}
+        <div className="lg:col-span-3 min-h-0 overflow-auto pr-1 space-y-4">
+          {/* Description (optional) */}
+          {Boolean((node as any)?.description) && (
+            <div className="text-sm text-muted-foreground">
+              {t((node as any).description, "")}
+            </div>
+          )}
+          {/* Checklist */}
+          <div className="space-y-3">
+            {fields.map((f) => (
+              <div key={f.key} className="grid gap-1">
+                {f.type === "boolean" ? (
+                  readOnly ? (
+                    <div className="flex items-start gap-2 text-muted-foreground">
+                      <Check className="h-4 w-4 mt-1 text-green-600" />
+                      <span>{t(f.label, f.key)}</span>
+                    </div>
+                  ) : (
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        id={f.key}
+                        type="checkbox"
+                        checked={!!values[f.key]}
+                        onChange={(e) => setField(f.key, e.target.checked)}
+                      />
+                      <span>
+                        {t(f.label, f.key)}{" "}
+                        {f.required ? (
+                          <span className="text-destructive">*</span>
+                        ) : null}
+                      </span>
+                    </label>
+                  )
+                ) : null}
+              </div>
+            ))}
+          </div>
+          {/* Actions (hidden in read-only) */}
+          {!readOnly && (
+            <div className="flex gap-2 pt-2">
+              <Button onClick={() => setShowD2Confirm(true)} disabled={!ready}>
+                {T("forms.proceed_next")}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => onSubmit?.({ ...values, __draft: true })}
+              >
+                {T("forms.save_draft")}
+              </Button>
+            </div>
+          )}
+
+          {/* Read-only footer info */}
+          {readOnly && (
+            <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
+              {t(
+                {
+                  ru: `Если документы были сданы${submittedAt ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})` : ""}. ${guardMessage}`,
+                  kz: `Егер құжаттар тапсырылған болса${submittedAt ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})` : ""}. ${guardMessage}`,
+                  en: `If the documents were submitted${submittedAt ? ` (date: ${new Date(submittedAt).toLocaleDateString()})` : ""}. ${guardMessage}`,
+                },
+                ""
+              )}
+            </div>
+          )}
+        </div>
+        {/* Right: Templates (40%), sticky */}
+        <div className="lg:col-span-2 border-l pl-4 overflow-auto">
+          <AssetsDownloads node={node} />
+        </div>
+
+        {/* Confirm modal */}
+        <Dialog.Root open={showD2Confirm} onOpenChange={setShowD2Confirm}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
+            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
+              <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">{guardMessage}</div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowD2Confirm(false)}>
+                  {T("common.cancel")}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowD2Confirm(false);
+                    onSubmit?.({
+                      ...values,
+                      __submittedAt: new Date().toISOString(),
+                      __nextOverride: nextOnComplete,
+                    });
+                  }}
+                >
+                  {T("forms.proceed_next")}
+                </Button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      </div>
+    );
   }
 
   // Update setField to include hearing_happened cascading resets
@@ -128,7 +266,9 @@ export function FormTaskDetails({
       h === true && (r === false || (p === true && z === true));
 
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
+        {/* Left: Form (max 60%) */}
+        <div className="lg:col-span-3 min-h-0 overflow-auto pr-1 space-y-3">
         <AnimatePresence initial={false}>
           <motion.div
             key={`nk-step-${currentStep}`}
@@ -322,12 +462,19 @@ export function FormTaskDetails({
             {T("forms.nk.proceed", "Переход к подаче документов к ДС")}
           </Button>
         )}
+        </div>
+        {/* Right: Templates (40%), sticky */}
+        <div className="lg:col-span-2 border-l pl-4 overflow-auto">
+          <AssetsDownloads node={node} />
+        </div>
       </div>
     );
   }
 
   return (
-    <Card className="p-4 space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
+      {/* Left: Form (<=60%) */}
+      <Card className="p-4 space-y-4 lg:col-span-3 min-h-0 overflow-auto">
       {node.requirements?.notes && (
         <p className="text-sm text-muted-foreground">
           {node.requirements.notes}
@@ -608,7 +755,7 @@ export function FormTaskDetails({
       </div>
 
       {/* Templates / Downloads (if any) */}
-      <AssetsDownloads node={node} />
+  {/* Placeholder: Templates rendered on the right column */}
 
       {!!node.requirements?.validations?.length && (
         <>
@@ -814,7 +961,7 @@ export function FormTaskDetails({
           )}
         </div>
       )}
-      <Dialog.Root open={showOmidConfirm} onOpenChange={setShowOmidConfirm}>
+  <Dialog.Root open={showOmidConfirm} onOpenChange={setShowOmidConfirm}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
           <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
@@ -841,7 +988,7 @@ export function FormTaskDetails({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-      {/* NK package confirmation */}
+  {/* NK package confirmation */}
       <Dialog.Root open={showNkConfirm} onOpenChange={setShowNkConfirm}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
@@ -871,6 +1018,11 @@ export function FormTaskDetails({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-    </Card>
+      </Card>
+      {/* Right: Templates (40%), sticky container */}
+      <div className="lg:col-span-2 border-l pl-4 overflow-auto">
+        <AssetsDownloads node={node} />
+      </div>
+    </div>
   );
 }
