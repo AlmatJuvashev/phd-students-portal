@@ -51,7 +51,9 @@ export type NodeDef = {
     | "external"
     | "boss"
     | "gateway"
-    | "confirmTask"; // custom simple confirm step
+    | "info"
+    | "confirmTask" // custom simple confirm step
+    | "uploadTask"; // simplified confirm+download-only upload step
   who_can_complete: RoleId[];
   prerequisites?: string[];
   next?: string[];
@@ -160,6 +162,9 @@ export function edgesForWorld(pb: Playbook, worldId: string) {
 
 // -------- Action detector (switcher input) ----------
 export function detectActionKinds(n: NodeDef): ActionKind[] {
+  // Explicit read-only informational nodes should render like a gateway/info screen
+  if (n.type === "info") return ["gateway"]; // no actions, just read-only content
+
   if (n.actionHints?.length) return n.actionHints;
 
   const kinds: ActionKind[] = [];

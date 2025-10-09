@@ -10,6 +10,8 @@ import { CompositeTaskDetails } from "./variants/CompositeTaskDetails";
 import type { NodeSubmissionDTO } from "@/api/journey";
 import { DecisionTaskDetails } from "./variants/DecisionTaskDetails";
 import ConfirmTaskDetails from "./variants/ConfirmTaskDetails";
+import ConfirmUploadTaskDetails from "./variants/ConfirmUploadTaskDetails";
+import InfoDetails from "./variants/InfoDetails";
 
 type Props = {
   node: NodeVM;
@@ -70,6 +72,10 @@ export function NodeDetailSwitch({
           />
         );
       case "upload":
+        // If this is a simple confirm-style upload task (no real uploads), render ConfirmUploadTaskDetails
+        if (node.type === "uploadTask") {
+          return <ConfirmUploadTaskDetails node={node} />;
+        }
         return (
           <UploadTaskDetails
             node={node}
@@ -122,10 +128,16 @@ export function NodeDetailSwitch({
           />
         );
       case "gateway":
-        // Also support explicit confirmTask node.type that doesn't expose fields/uploads/outcomes
-        if (node.type === "confirmTask") {
-          return <ConfirmTaskDetails node={node} />;
-        }
+        // Support explicit lightweight node types without fields/uploads/outcomes
+        if (node.type === "info")
+          return (
+            <InfoDetails
+              node={node}
+              onContinue={() => onEvent?.({ type: "continue" })}
+            />
+          );
+        if (node.type === "confirmTask") return <ConfirmTaskDetails node={node} />;
+        if (node.type === "uploadTask") return <ConfirmUploadTaskDetails node={node} />;
       default:
         return (
           <GatewayInfoDetails
@@ -170,6 +182,9 @@ export function NodeDetailSwitch({
         />
       );
     case "upload":
+      if (node.type === "uploadTask") {
+        return <ConfirmUploadTaskDetails node={node} />;
+      }
       return (
         <UploadTaskDetails
           node={node}
@@ -221,6 +236,14 @@ export function NodeDetailSwitch({
       );
     case "gateway":
     default:
+      if (node.type === "info") {
+        return (
+          <InfoDetails
+            node={node}
+            onContinue={() => onEvent?.({ type: "continue" })}
+          />
+        );
+      }
       if (node.type === "confirmTask") {
         return <ConfirmTaskDetails node={node} />;
       }
