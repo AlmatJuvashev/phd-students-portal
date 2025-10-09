@@ -531,7 +531,8 @@ export function FormTaskDetails({
       (f) => f.type === "boolean" && f.required
     );
     const ready = requiredBools.every((f) => !!values[f.key]);
-    const nextOnComplete = (Array.isArray(node.next) ? node.next[0] : undefined) || undefined; // likely END
+    const nextOnComplete =
+      (Array.isArray(node.next) ? node.next[0] : undefined) || undefined; // likely END
 
     const readOnly =
       node.state === "submitted" ||
@@ -591,7 +592,10 @@ export function FormTaskDetails({
 
           {!readOnly && (
             <div className="flex gap-2 pt-2">
-              <Button onClick={() => setShowAttestationConfirm(true)} disabled={!ready}>
+              <Button
+                onClick={() => setShowAttestationConfirm(true)}
+                disabled={!ready}
+              >
                 {T("forms.proceed_next")}
               </Button>
               <Button
