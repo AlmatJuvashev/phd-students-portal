@@ -641,20 +641,249 @@
       "order": 3,
       "nodes": [
         {
-          "id": "R1_intro",
+          "id": "RP1_overview_actualization",
+          "module": "III",
           "title": {
-            "ru": "Старт RP-процедуры",
-            "kz": "RP үрдісін бастау",
-            "en": "Start RP procedure"
+            "ru": "Актуализация Research Proposal: обзор и условия",
+            "kz": "Research Proposal өзектендіру: шолу және шарттар",
+            "en": "Research Proposal actualization: overview & conditions"
+          },
+          "type": "info",
+          "description": {
+            "ru": "Если со дня выпуска прошло 3 года и более, допуск к защите возможен только после повторного утверждения Research Proposal на заседании Научного комитета.",
+            "kz": "Бітіру күнінен 3 жыл және одан көп өтсе, қорғауға жіберу тек Ғылыми комитет отырысында Research Proposal қайта бекітілгеннен кейін мүмкін.",
+            "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee."
+          },
+          "who_can_complete": ["student"],
+          "prerequisites": [],
+          "next": ["RP2_sc_hearing_prep"],
+          "requirements": {
+            "fields": [
+              {
+                "key": "note_omid_letter",
+                "type": "note",
+                "label": {
+                  "ru": "ОМиД направляет служебное письмо в Научный комитет по специальности диссертационного исследования.",
+                  "kz": "ОМиД диссертациялық зерттеу мамандығы бойынша Ғылыми комитетке қызметтік хат жібереді.",
+                  "en": "OMiD sends an official letter to the Scientific Committee for your specialty."
+                }
+              },
+              {
+                "key": "note_sc_sets_date",
+                "type": "note",
+                "label": {
+                  "ru": "Научный комитет назначает дату заслушивания.",
+                  "kz": "Ғылыми комитет тыңдау күнін белгілейді.",
+                  "en": "The Scientific Committee schedules the hearing date."
+                }
+              },
+              {
+                "key": "note_student_prepares",
+                "type": "note",
+                "label": {
+                  "ru": "Докторант готовит презентацию и список публикаций к заседанию.",
+                  "kz": "Докторант отырысқа презентация мен жарияланымдар тізімін дайындайды.",
+                  "en": "The candidate prepares a presentation and a publication list for the hearing."
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "RP2_sc_hearing_prep",
+          "module": "III",
+          "title": {
+            "ru": "Заслушивание Research Proposal в Научном комитете",
+            "kz": "Ғылыми комитетте Research Proposal тыңдауы",
+            "en": "SC hearing of the Research Proposal"
+          },
+          "description": {
+            "ru": "Подготовьтесь к заслушиванию: отметьте контрольные пункты и подтвердите получение выписки из протокола.",
+            "kz": "Тыңдауға дайындалыңыз: бақылану тармақтарын белгілеңіз және хаттамадан үзіндіні алғаныңызды растаңыз.",
+            "en": "Prepare for the hearing: check off the milestones and confirm the protocol extract."
           },
           "type": "form",
           "who_can_complete": ["student"],
-          "prerequisites": ["RP_GATE"],
-          "next": ["R2_complete"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
+          "prerequisites": ["RP1_overview_actualization"],
+          "next": ["RP3_pre_expertise_application"],
+          "requirements": {
+            "templates": ["tpl_app7_ru"],
+            "fields": [
+              {
+                "key": "chk_hearing_date_received",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Назначенная дата заслушивания получена",
+                  "kz": "Тыңдау күні алынды",
+                  "en": "Hearing date received"
+                }
+              },
+              {
+                "key": "chk_presentation_ready",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Презентация к заслушиванию подготовлена",
+                  "kz": "Тыңдауға арналған презентация дайын",
+                  "en": "Hearing presentation prepared"
+                }
+              },
+              {
+                "key": "chk_publist_ready",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Список публикаций подготовлен (можно использовать Прил. 7)",
+                  "kz": "Жарияланымдар тізімі дайын (Қос. 7 пайдалануға болады)",
+                  "en": "Publication list prepared (you may use App. 7)"
+                }
+              },
+              {
+                "key": "chk_presented_at_sc",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заслушивание в Научном комитете проведено",
+                  "kz": "Ғылыми комитетте тыңдау өткізілді",
+                  "en": "Presented at the Scientific Committee"
+                }
+              },
+              {
+                "key": "chk_protocol_extract_received",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Получена выписка из протокола об актуальности темы",
+                  "kz": "Тақырыптың өзектілігі туралы хаттамадан үзінді алынды",
+                  "en": "Protocol extract on topic relevance received"
+                }
+              },
+              {
+                "key": "chk_predefense_recommended",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Получена рекомендация пройти предзащиту",
+                  "kz": "Алдын ала қорғаудан өтуге ұсыныс алынды",
+                  "en": "Recommendation to pass pre-defense received"
+                }
+              },
+              {
+                "key": "chk_two_reviewers_assigned",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Назначены 2 рецензента для предзащиты",
+                  "kz": "Алдын ала қорғауға 2 рецензент тағайындалды",
+                  "en": "Two reviewers assigned for pre-defense"
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "RP3_pre_expertise_application",
+          "module": "III",
+          "title": {
+            "ru": "Заявление в ОМиД о прохождении предварительной экспертизы",
+            "kz": "ОМиД-ке алдын ала сараптамадан өту туралы өтініш",
+            "en": "Application to OMiD for preliminary expertise"
+          },
+          "type": "confirmTask",
+          "screen": {
+            "question": {
+              "ru": "Подали ли Вы в ОМиД заявление о прохождении предварительной экспертизы в Научном комитете?",
+              "kz": "Ғылыми комитетте алдын ала сараптамадан өту туралы өтінішті ОМиД-ке тапсырдыңыз ба?",
+              "en": "Have you submitted the application to OMiD for preliminary expertise at the Scientific Committee?"
+            },
+            "buttons": [
+              {
+                "id": "how_to",
+                "label": {
+                  "ru": "Как подать",
+                  "kz": "Қалай тапсыру",
+                  "en": "How to submit"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Заявление в ОМиД",
+                    "kz": "ОМиД-ке өтініш",
+                    "en": "Application to OMiD"
+                  },
+                  "text": {
+                    "ru": [
+                      "Подготовьте заявление о прохождении предварительной экспертизы (в свободной форме или по шаблону вуза).",
+                      "Приложите: презентацию, список публикаций, выписку из протокола об актуальности, рекомендации и сведения о назначенных рецензентах."
+                    ],
+                    "kz": [
+                      "Алдын ала сараптамадан өту туралы өтінішті дайындаңыз (еркін формада немесе университет үлгісімен).",
+                      "Қоса беріңіз: презентация, жарияланымдар тізімі, өзектілік бойынша хаттамадан үзінді, ұсыныстар және тағайындалған рецензенттер туралы мәліметтер."
+                    ],
+                    "en": [
+                      "Prepare the application for preliminary expertise (free form or university template).",
+                      "Attach: presentation, publication list, protocol extract on relevance, recommendations, and details of the assigned reviewers."
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "confirm_submitted",
+                "label": {
+                  "ru": "Подтвердить подачу заявления",
+                  "kz": "Өтініш беруді растау",
+                  "en": "Confirm submission"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Подтверждаете, что заявление подано в ОМиД?",
+                  "kz": "ОМиД-ке өтініш тапсырылғанын растайсыз ба?",
+                  "en": "Do you confirm the application has been submitted to OMiD?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Заявление подано. Перейдите к шагам предзащиты (пп. 7–12).",
+                "kz": "Өтініш берілді. Алдын ала қорғау қадамдарына өтіңіз (7–12-тт.).",
+                "en": "Application submitted. Proceed to the pre-defense steps (items 7–12)."
+              }
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["how_to", "confirm_submitted"]
+            },
+            "in_progress": { "visible_buttons": ["confirm_submitted"] },
+            "completed": {
+              "message": {
+                "ru": "✅ Подано.",
+                "kz": "✅ Тапсырылды.",
+                "en": "✅ Submitted."
+              },
+              "next_node": "NK_package"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
         },
         {
           "id": "R2_complete",
