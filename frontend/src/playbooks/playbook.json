@@ -1339,67 +1339,59 @@
             "kz": "Кітапханаларға баспа даналарын тапсыру",
             "en": "Library deposits of print copies"
           },
-          "type": "confirmTask",
-          "screen": {
-            "question": {
-              "ru": "Печатные экземпляры диссертации сданы в библиотеки и получены справки?",
-              "kz": "Диссертацияның баспа даналары кітапханаларға тапсырылды ма және анықтамалар алынды ма?",
-              "en": "Have the printed copies been deposited to the libraries and receipts obtained?"
-            },
-            "buttons": [
-              {
-                "id": "how_to",
-                "label": { "ru": "Как сдавать", "kz": "Қалай тапсыру", "en": "How to deposit" },
-                "action": "show_instructions",
-                "instructions": {
-                  "title": { "ru": "Инструкция", "kz": "Нұсқаулық", "en": "Instructions" },
-                  "text": {
-                    "ru": [
-                      "Подготовьте требуемое количество печатных экземпляров.",
-                      "Согласуйте перечень библиотек с ученым секретарем.",
-                      "Передайте экземпляры и получите справки/квитанции о приёме."
-                    ],
-                    "kz": [
-                      "Қажетті санды баспа даналарын дайындаңыз.",
-                      "Ғылыми хатшымен кітапханалар тізімін келісіңіз.",
-                      "Даналарды тапсырып, қабылдау туралы анықтамаларды/түбіртектерді алыңыз."
-                    ],
-                    "en": [
-                      "Prepare the required number of printed copies.",
-                      "Align the list of libraries with the Council Secretary.",
-                      "Deposit the copies and obtain receipts/certificates."
-                    ]
-                  }
-                }
-              },
-              {
-                "id": "confirm_done",
-                "label": { "ru": "Подтвердить сдачу", "kz": "Тапсыруды растау", "en": "Confirm deposit" },
-                "action": "confirm_completion",
-                "confirmation_text": {
-                  "ru": "Вы уверены, что сдали печатные экземпляры и получили подтверждающие справки?",
-                  "kz": "Баспа даналарын тапсырғаныңызды және растайтын анықтамаларды алғаныңызды растайсыз ба?",
-                  "en": "Are you sure the printed copies were deposited and receipts obtained?"
-                }
-              }
-            ],
-            "on_confirm": {
-              "status": "completed",
-              "message": {
-                "ru": "Сдача печатных экземпляров подтверждена.",
-                "kz": "Баспа даналарын тапсыру расталды.",
-                "en": "Library deposits confirmed."
-              }
-            }
-          },
-          "states": {
-            "completed": {
-              "message": { "ru": "✅ Сдача подтверждена.", "kz": "✅ Тапсыру расталды.", "en": "✅ Deposit confirmed." },
-              "next_node": "VI3_ncste_state_registration"
-            }
+          "type": "form",
+          "description": {
+            "ru": "Отметьте все действия, затем подтвердите переход к следующему шагу.",
+            "kz": "Барлық әрекеттерді белгілеңіз, содан кейін келесі қадамға өтуді растаңыз.",
+            "en": "Check all actions, then confirm to proceed to the next step."
           },
           "who_can_complete": ["student"],
           "prerequisites": ["VI1_post_defense_overview"],
+          "next": ["VI3_ncste_state_registration"],
+          "requirements": {
+            "fields": [
+              {
+                "key": "chk_prepare_prints",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Подготовлены требуемые печатные экземпляры",
+                  "kz": "Қажетті баспа даналары дайындалды",
+                  "en": "Required printed copies prepared"
+                }
+              },
+              {
+                "key": "chk_align_libraries",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Согласован перечень библиотек с ученым секретарем",
+                  "kz": "Кітапханалар тізімі ғылыми хатшымен келісілді",
+                  "en": "Library list aligned with the Council Secretary"
+                }
+              },
+              {
+                "key": "chk_deposit_made",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Экземпляры переданы в библиотеки",
+                  "kz": "Даналар кітапханаларға тапсырылды",
+                  "en": "Copies deposited to libraries"
+                }
+              },
+              {
+                "key": "chk_receipts_obtained",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Получены справки/квитанции о приёме",
+                  "kz": "Қабылдау туралы анықтамалар/түбіртектер алынды",
+                  "en": "Receipts/certificates obtained"
+                }
+              }
+            ]
+          },
           "meta": { "created_by": "KazNMU PhD Portal", "last_updated": "2025-10-09" }
         },
         {
@@ -1410,67 +1402,49 @@
             "kz": "ҰҒТАО: диссертацияны мемлекеттік тіркеу",
             "en": "NCSTE: state registration of the dissertation"
           },
-          "type": "confirmTask",
-          "screen": {
-            "question": {
-              "ru": "Запрос на государственную регистрацию в НЦГНТЭ выполнен и подтверждён?",
-              "kz": "ҰҒТАО-ға мемлекеттік тіркеуге сұраным орындалып, расталды ма?",
-              "en": "Has the request for state registration with NCSTE been completed and confirmed?"
-            },
-            "buttons": [
-              {
-                "id": "how_to",
-                "label": { "ru": "Как запросить", "kz": "Қалай сұрау", "en": "How to request" },
-                "action": "show_instructions",
-                "instructions": {
-                  "title": { "ru": "Инструкция", "kz": "Нұсқаулық", "en": "Instructions" },
-                  "text": {
-                    "ru": [
-                      "Подготовьте пакет согласно требованиям НЦГНТЭ.",
-                      "Отправьте запрос на государственную регистрацию.",
-                      "Ожидайте подтверждение о принятии."
-                    ],
-                    "kz": [
-                      "ҰҒТАО талаптарына сай топтаманы дайындаңыз.",
-                      "Мемлекеттік тіркеуге сұраным жіберіңіз.",
-                      "Қабылданғаны туралы растауды күтіңіз."
-                    ],
-                    "en": [
-                      "Prepare the package per NCSTE requirements.",
-                      "Submit the state registration request.",
-                      "Wait for acceptance confirmation."
-                    ]
-                  }
-                }
-              },
-              {
-                "id": "confirm_done",
-                "label": { "ru": "Подтвердить регистрацию", "kz": "Тіркеуді растау", "en": "Confirm registration" },
-                "action": "confirm_completion",
-                "confirmation_text": {
-                  "ru": "Вы уверены, что запрос на госрегистрацию выполнен и подтвержден?",
-                  "kz": "Мемтіркеуге сұраным орындалып, расталғанын растайсыз ба?",
-                  "en": "Are you sure the state registration request is completed and confirmed?"
-                }
-              }
-            ],
-            "on_confirm": {
-              "status": "completed",
-              "message": {
-                "ru": "Госрегистрация подтверждена.",
-                "kz": "Мемлекеттік тіркеу расталды.",
-                "en": "State registration confirmed."
-              }
-            }
-          },
-          "states": {
-            "completed": {
-              "message": { "ru": "✅ Госрегистрация подтверждена.", "kz": "✅ Мемтіркеу расталды.", "en": "✅ Registration confirmed." },
-              "next_node": "Z2_post_defence"
-            }
+          "type": "form",
+          "description": {
+            "ru": "Отметьте шаги по подаче на госрегистрацию, затем подтвердите переход.",
+            "kz": "Мемлекеттік тіркеуге тапсыру қадамдарын белгілеңіз, содан кейін өтуді растаңыз.",
+            "en": "Check the state registration steps, then confirm to proceed."
           },
           "who_can_complete": ["student"],
           "prerequisites": ["VI2_library_deposits"],
+          "next": ["Z2_post_defence"],
+          "requirements": {
+            "fields": [
+              {
+                "key": "chk_package_prepared",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Пакет подготовлен по требованиям НЦГНТЭ",
+                  "kz": "ҰҒТАО талаптарына сай топтама дайындалды",
+                  "en": "Package prepared per NCSTE requirements"
+                }
+              },
+              {
+                "key": "chk_request_submitted",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Запрос на госрегистрацию отправлен",
+                  "kz": "Мемтіркеуге сұраным жіберілді",
+                  "en": "State registration request submitted"
+                }
+              },
+              {
+                "key": "chk_confirmation_received",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Получено подтверждение о принятии",
+                  "kz": "Қабылданғаны туралы растау алынды",
+                  "en": "Acceptance confirmation received"
+                }
+              }
+            ]
+          },
           "meta": { "created_by": "KazNMU PhD Portal", "last_updated": "2025-10-09" }
         },
         {
