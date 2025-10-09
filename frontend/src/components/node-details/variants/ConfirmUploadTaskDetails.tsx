@@ -123,11 +123,18 @@ const ConfirmUploadTaskDetails: React.FC<ConfirmUploadTaskDetailsProps> = ({
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
-                    {t({ ru: "Отмена", kz: "Болдырмау", en: "Cancel" }, "Отмена")}
+                    {t(
+                      { ru: "Отмена", kz: "Болдырмау", en: "Cancel" },
+                      "Отмена"
+                    )}
                   </Button>
                   <Button onClick={handleConfirm}>
                     {t(
-                      { ru: "Да, подтвердить", kz: "Иә, растау", en: "Yes, confirm" },
+                      {
+                        ru: "Да, подтвердить",
+                        kz: "Иә, растау",
+                        en: "Yes, confirm",
+                      },
                       "Да, подтвердить"
                     )}
                   </Button>

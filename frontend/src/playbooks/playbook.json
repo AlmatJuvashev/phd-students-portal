@@ -2002,6 +2002,314 @@
             "requires_upload": false,
             "reminder_required": false
           }
+        },
+        {
+          "id": "VI_attestation_file",
+          "module": "VI",
+          "title": {
+            "ru": "Аттестационное дело (≤ 30 календарных дней)",
+            "kz": "Аттестаттау ісі (≤ 30 күн)",
+            "en": "Attestation file (≤ 30 calendar days)"
+          },
+          "description": {
+            "ru": "После защиты в течение 30 календарных дней формируется аттестационное дело докторанта. Отметьте наличие каждого документа.",
+            "kz": "Қорғаудан кейін 30 күн ішінде докторанттың аттестаттау ісі қалыптастырылады. Әр құжаттың бар-жоғын белгілеңіз.",
+            "en": "Within 30 days after defense, the doctoral attestation file is formed. Check the presence of each document."
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["VI3_ncste_state_registration"],
+          "next": ["END"],
+          "requirements": {
+            "fields": [
+              {
+                "key": "chk_inventory",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "1) Опись документов в деле",
+                  "kz": "1) Істегі құжаттардың тізімі",
+                  "en": "1) Inventory of documents in file"
+                }
+              },
+              {
+                "key": "chk_app_to_rector_ds_choice",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "2) Заявление ректору о выборе ДС",
+                  "kz": "2) Ректорға өтініш (ДК таңдау туралы)",
+                  "en": "2) Application to Rector choosing DC"
+                }
+              },
+              {
+                "key": "chk_app_to_ds_accept",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "3) Заявление в ДС о приёме к защите",
+                  "kz": "3) ДК-ге өтініш (қорғауға қабылдау туралы)",
+                  "en": "3) Application to DC for acceptance to defense"
+                }
+              },
+              {
+                "key": "chk_cover_letter_external",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "4) Сопроводительное письмо (для других вузов)",
+                  "kz": "4) Ілеспе хат (басқа ЖОО үшін)",
+                  "en": "4) Cover letter (for external universities)"
+                }
+              },
+              {
+                "key": "chk_app11_student_info",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "5) Сведения о докторанте (Прил. 11)",
+                  "kz": "5) Докторант туралы мәліметтер (Қос. 11)",
+                  "en": "5) Doctoral information (App. 11)"
+                }
+              },
+              {
+                "key": "chk_personal_sheet_hr",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "6) Личный листок, заверенный отделом кадров",
+                  "kz": "6) Кадр бөлімі растаған жеке парақ",
+                  "en": "6) Personal sheet certified by HR"
+                }
+              },
+              {
+                "key": "chk_diplomas_copies_notarized",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "7) Копии дипломов о высшем и послевузовском образовании (нотариально)",
+                  "kz": "7) Жоғары және ЖОО-нан кейінгі дипломдар көшірмесі (нотариалды)",
+                  "en": "7) Notarized copies of diplomas (HE + postgrad)"
+                }
+              },
+              {
+                "key": "chk_transcript_copy",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "8) Копия транскрипта по программе PhD",
+                  "kz": "8) PhD бағдарламасы бойынша транскрипт көшірмесі",
+                  "en": "8) Copy of PhD program transcript"
+                }
+              },
+              {
+                "key": "chk_topic_supervisors_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "9) Выписка из протокола (приказа) об утверждении темы и консультантов",
+                  "kz": "9) Тақырып пен кеңесшілерді бекіту туралы үзінді",
+                  "en": "9) Extract confirming topic & supervisors"
+                }
+              },
+              {
+                "key": "chk_publications_list_copies",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "10) Список и копии научных публикаций",
+                  "kz": "10) Ғылыми еңбектер тізімі мен көшірмелері",
+                  "en": "10) List and copies of publications"
+                }
+              },
+              {
+                "key": "chk_abstracts_3langs",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "11) Аннотации на 3 языках",
+                  "kz": "11) 3 тілдегі аннотациялар",
+                  "en": "11) Abstracts in 3 languages"
+                }
+              },
+              {
+                "key": "chk_sc_positive_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "12) Выписка из протокола Научной комиссии (положительное заключение)",
+                  "kz": "12) Ғылыми комиссия хаттамасынан үзінді (оң қорытынды)",
+                  "en": "12) Scientific Committee extract (positive conclusion)"
+                }
+              },
+              {
+                "key": "chk_ethics_conclusion",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "13) Заключение ЛЭК",
+                  "kz": "13) ЛЭК қорытындысы",
+                  "en": "13) Ethics Committee conclusion"
+                }
+              },
+              {
+                "key": "chk_ncste_antiplag_report",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "14) Справка НЦГНТЭ о проверке на заимствования",
+                  "kz": "14) ҰҒТАО плагиатқа тексеру анықтамасы",
+                  "en": "14) NCSTE plagiarism check certificate"
+                }
+              },
+              {
+                "key": "chk_university_antiplag_report",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "15) Справка вуза о проверке на плагиат",
+                  "kz": "15) Университет плагиат анықтамасы",
+                  "en": "15) University plagiarism check report"
+                }
+              },
+              {
+                "key": "chk_consultant_reviews",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "16) Отзывы научных консультантов (заверенные)",
+                  "kz": "16) Ғылыми кеңесшілердің пікірлері (растаулы)",
+                  "en": "16) Advisor reviews (certified)"
+                }
+              },
+              {
+                "key": "chk_two_reviewer_reports",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "17) Отзывы 2 официальных рецензентов (заверенные)",
+                  "kz": "17) 2 ресми рецензенттің пікірлері (растаулы)",
+                  "en": "17) Two official reviewer reports (certified)"
+                }
+              },
+              {
+                "key": "chk_vote_protocol",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "18) Протокол счётной комиссии",
+                  "kz": "18) Санау комиссиясының хаттамасы",
+                  "en": "18) Counting commission protocol"
+                }
+              },
+              {
+                "key": "chk_ballots",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "19) Бюллетени",
+                  "kz": "19) Бюллетеньдер",
+                  "en": "19) Ballots"
+                }
+              },
+              {
+                "key": "chk_app12_attendance_list",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "20) Явочный лист членов ДС (Прил. 12)",
+                  "kz": "20) ДК мүшелерінің қатысу тізімі (Қос. 12)",
+                  "en": "20) Attendance sheet (App. 12)"
+                }
+              },
+              {
+                "key": "chk_defense_protocol",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "21) Протокол заседания ДС (с подписями)",
+                  "kz": "21) ДК отырысы хаттамасы (қол қойылған)",
+                  "en": "21) Defense meeting protocol (signed)"
+                }
+              },
+              {
+                "key": "chk_video_record_full",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "22) Видеозапись защиты в полном объёме",
+                  "kz": "22) Қорғаудың толық бейнежазбасы",
+                  "en": "22) Full video recording of defense"
+                }
+              },
+              {
+                "key": "chk_app13_reg_card",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "23) Регистрационно-учётная карточка (Прил. 13, каз/рус)",
+                  "kz": "23) Тіркеу есеп картасы (Қос. 13, қаз/орыс)",
+                  "en": "23) Registration card (App. 13, KZ/RU)"
+                }
+              },
+              {
+                "key": "chk_ncste_reg_card",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "24) Учётная карточка с регистрацией в НЦГНТЭ",
+                  "kz": "24) ҰҒТАО-да тіркелген есептік карта",
+                  "en": "24) Account card registered with NCSTE"
+                }
+              },
+              {
+                "key": "chk_library_cert_kaznmu",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "25) Справка Научной библиотеки КазНМУ",
+                  "kz": "25) ҚазҰМУ Ғылыми кітапханасының анықтамасы",
+                  "en": "25) KazNMU Library certificate"
+                }
+              },
+              {
+                "key": "chk_library_cert_nl",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "26) Справка Национальной библиотеки РК",
+                  "kz": "26) ҚР Ұлттық кітапханасының анықтамасы",
+                  "en": "26) National Library certificate"
+                }
+              },
+              {
+                "key": "chk_library_cert_nal",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "27) Справка Национальной академической библиотеки РК",
+                  "kz": "27) ҚР Ұлттық академиялық кітапханасының анықтамасы",
+                  "en": "27) National Academic Library certificate"
+                }
+              },
+              {
+                "key": "chk_final_thesis_cd",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "28) Диссертация в твёрдом переплёте и на CD-диске",
+                  "kz": "28) Қатты түтілген және CD-дағы диссертация",
+                  "en": "28) Dissertation hardbound + CD copy"
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
         }
       ]
     }

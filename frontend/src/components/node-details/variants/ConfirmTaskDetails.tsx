@@ -25,7 +25,10 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   // Localized question (string or i18n map)
-  const question: string | undefined = safeText(node?.screen?.question as any, "");
+  const question: string | undefined = safeText(
+    node?.screen?.question as any,
+    ""
+  );
 
   // Primary button (index 0) contains instructions
   const primaryBtn = Array.isArray(node?.screen?.buttons)
