@@ -35,6 +35,7 @@ export function FormTaskDetails({
   const [showD2Confirm, setShowD2Confirm] = useState(false);
   const [showV1Confirm, setShowV1Confirm] = useState(false);
   const [showRP2Confirm, setShowRP2Confirm] = useState(false);
+  const [showAttestationConfirm, setShowAttestationConfirm] = useState(false);
   useEffect(() => {
     setValues(initial ?? {});
   }, [initial]);
@@ -249,7 +250,7 @@ export function FormTaskDetails({
     const submittedAt: string | undefined =
       (initial as any)?.__submittedAt || values?.__submittedAt;
 
-  const { t: T } = useTranslation("common");
+    const { t: T } = useTranslation("common");
     const guardMessage = t(
       {
         ru: "Пакет на восстановление будет передан на регистрацию у ответственного сотрудника. Убедитесь, что все позиции отмечены и документы готовы. После подтверждения вы перейдёте к следующему шагу.",
@@ -354,7 +355,10 @@ export function FormTaskDetails({
                 {guardMessage}
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowV1Confirm(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowV1Confirm(false)}
+                >
                   {T("common.cancel")}
                 </Button>
                 <Button
@@ -383,7 +387,8 @@ export function FormTaskDetails({
       (f) => f.type === "boolean" && f.required
     );
     const ready = requiredBools.every((f) => !!values[f.key]);
-    const nextOnComplete = (Array.isArray(node.next) ? node.next[0] : undefined) || undefined; // RP3_pre_expertise_application
+    const nextOnComplete =
+      (Array.isArray(node.next) ? node.next[0] : undefined) || undefined; // RP3_pre_expertise_application
 
     const readOnly =
       node.state === "submitted" ||
@@ -489,17 +494,166 @@ export function FormTaskDetails({
         <Dialog.Root open={showRP2Confirm} onOpenChange={setShowRP2Confirm}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w/full max-w-md shadow-lg outline-none">
+            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
               <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
                 {guardMessage}
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowRP2Confirm(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRP2Confirm(false)}
+                >
                   {T("common.cancel")}
                 </Button>
                 <Button
                   onClick={() => {
                     setShowRP2Confirm(false);
+                    onSubmit?.({
+                      ...values,
+                      __submittedAt: new Date().toISOString(),
+                      __nextOverride: nextOnComplete,
+                    });
+                  }}
+                >
+                  {T("forms.proceed_next")}
+                </Button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      </div>
+    );
+  }
+
+  // VI_attestation_file: final checklist (like D2) with guard and read-only
+  if (node.id === "VI_attestation_file") {
+    const requiredBools = fields.filter(
+      (f) => f.type === "boolean" && f.required
+    );
+    const ready = requiredBools.every((f) => !!values[f.key]);
+    const nextOnComplete = (Array.isArray(node.next) ? node.next[0] : undefined) || undefined; // likely END
+
+    const readOnly =
+      node.state === "submitted" ||
+      node.state === "done" ||
+      Boolean((initial as any)?.__submittedAt);
+    const submittedAt: string | undefined =
+      (initial as any)?.__submittedAt || values?.__submittedAt;
+
+    const { t: T } = useTranslation("common");
+    const guardMessage = t(
+      {
+        ru: "Проверьте, что все пункты аттестационного дела отмечены. После подтверждения данные зафиксируются, и маршрут будет завершён.",
+        kz: "Аттестаттау ісіндегі барлық тармақтардың белгіленгенін тексеріңіз. Растағаннан кейін деректер бекітіледі және маршрут аяқталады.",
+        en: "Ensure all attestation file items are checked. After confirming, the data will be saved and the journey will complete.",
+      },
+      ""
+    );
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
+        {/* Left: Form (<=60%) */}
+        <div className="lg:col-span-3 min-h-0 overflow-auto pr-1 space-y-4">
+          {Boolean((node as any)?.description) && (
+            <div className="text-sm text-muted-foreground">
+              {t((node as any).description, "")}
+            </div>
+          )}
+          <div className="space-y-3">
+            {fields.map((f) => (
+              <div key={f.key} className="grid gap-1">
+                {f.type === "boolean" ? (
+                  readOnly ? (
+                    <div className="flex items-start gap-2 text-muted-foreground">
+                      <Check className="h-4 w-4 mt-1 text-green-600" />
+                      <span>{t(f.label, f.key)}</span>
+                    </div>
+                  ) : (
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        id={f.key}
+                        type="checkbox"
+                        checked={!!values[f.key]}
+                        onChange={(e) => setField(f.key, e.target.checked)}
+                      />
+                      <span>
+                        {t(f.label, f.key)}{" "}
+                        {f.required ? (
+                          <span className="text-destructive">*</span>
+                        ) : null}
+                      </span>
+                    </label>
+                  )
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          {!readOnly && (
+            <div className="flex gap-2 pt-2">
+              <Button onClick={() => setShowAttestationConfirm(true)} disabled={!ready}>
+                {T("forms.proceed_next")}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => onSubmit?.({ ...values, __draft: true })}
+              >
+                {T("forms.save_draft")}
+              </Button>
+            </div>
+          )}
+
+          {readOnly && (
+            <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
+              {t(
+                {
+                  ru: `Если аттестационное дело сформировано${
+                    submittedAt
+                      ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})`
+                      : ""
+                  }. ${guardMessage}`,
+                  kz: `Егер аттестаттау ісі қалыптастырылған болса${
+                    submittedAt
+                      ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})`
+                      : ""
+                  }. ${guardMessage}`,
+                  en: `If the attestation file is complete${
+                    submittedAt
+                      ? ` (date: ${new Date(submittedAt).toLocaleDateString()})`
+                      : ""
+                  }. ${guardMessage}`,
+                },
+                ""
+              )}
+            </div>
+          )}
+        </div>
+        {/* Right: Templates (40%), sticky */}
+        <div className="lg:col-span-2 border-l pl-4 overflow-auto">
+          <AssetsDownloads node={node} />
+        </div>
+
+        {/* Confirm modal */}
+        <Dialog.Root
+          open={showAttestationConfirm}
+          onOpenChange={setShowAttestationConfirm}
+        >
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
+            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
+              <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
+                {guardMessage}
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAttestationConfirm(false)}
+                >
+                  {T("common.cancel")}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowAttestationConfirm(false);
                     onSubmit?.({
                       ...values,
                       __submittedAt: new Date().toISOString(),
