@@ -38,7 +38,9 @@ export default function InfoDetails({
           <div className="space-y-3">
             {notes.map((f) => (
               <Card key={f.key} className="p-4 bg-gray-50">
-                <div className="text-sm text-muted-foreground">{t(f.label, f.key)}</div>
+                <div className="text-sm text-muted-foreground">
+                  {t(f.label, f.key)}
+                </div>
               </Card>
             ))}
           </div>
@@ -56,7 +58,9 @@ export default function InfoDetails({
         {/* Continue button if explicit next exists */}
         {hasNext && (
           <div className="pt-2">
-            <Button onClick={() => onContinue?.()}>{T("forms.proceed_next")}</Button>
+            <Button onClick={() => onContinue?.()}>
+              {T("forms.proceed_next")}
+            </Button>
           </div>
         )}
       </div>

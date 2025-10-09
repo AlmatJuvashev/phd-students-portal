@@ -97,6 +97,29 @@ export const t = (obj?: Record<string, string>, fallback = "") => {
   return humanizeKey(fallback);
 };
 
+// safeText: accepts string | string[] | locale-map of strings or string[]
+// Returns a safe string for rendering, picking current locale when applicable.
+export function safeText(
+  value: unknown,
+  fallback = "",
+  joiner: string = "\n"
+): string {
+  const lang = (i18n?.language as "ru" | "kz" | "en") || "ru";
+  if (value == null) return fallback;
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value.filter((x) => typeof x === "string").join(joiner) || fallback;
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, any>;
+    const localized = obj[lang] ?? obj.en ?? obj.ru ?? obj.kz;
+    if (typeof localized === "string") return localized;
+    if (Array.isArray(localized))
+      return localized.filter((x) => typeof x === "string").join(joiner);
+  }
+  return fallback;
+}
+
 // Build a fast lookup
 export function indexPlaybook(pb: Playbook) {
   const nodeById = new Map<string, NodeDef>();

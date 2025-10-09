@@ -157,6 +157,186 @@
       "version": "2025-10-08"
     },
     {
+      "id": "tpl_letter_ncste_publication_certificate_ru_docx",
+      "kind": "template",
+      "title": {
+        "ru": "Письмо в НЦГНТЭ для получения справки о публикациях",
+        "kz": "НЦҒНТЭ-ге жарияланымдар туралы анықтама алу үшін хат",
+        "en": "Letter to NCSTE requesting publication verification certificate"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_ncste_publication_certificate_ru.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
+      "id": "tpl_reinstatement_rector_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Восстановление: заявление ректору (RU)",
+        "kz": "Қалпына келтіру: ректорға өтініш (RU)",
+        "en": "Reinstatement: letter to Rector (RU)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_rector_request_reinstatement_ru.docx"
+      },
+      "version": "2025-10-09"
+    },
+    {
+      "id": "tpl_reinstatement_rector_kz",
+      "kind": "template",
+      "title": {
+        "ru": "Восстановление: заявление ректору (KZ)",
+        "kz": "Қалпына келтіру: ректорға өтініш (KZ)",
+        "en": "Reinstatement: letter to Rector (KZ)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_rector_request_reinstatement_kz.docx"
+      },
+      "version": "2025-10-09"
+    },
+    {
+      "id": "tpl_reinstatement_rector_en",
+      "kind": "template",
+      "title": {
+        "ru": "Восстановление: заявление ректору (EN)",
+        "kz": "Қалпына келтіру: ректорға өтініш (EN)",
+        "en": "Reinstatement: letter to Rector (EN)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_rector_request_reinstatement_en.docx"
+      },
+      "version": "2025-10-09"
+    },
+    {
+      "id": "tpl_reinstatement_dc_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Восстановление: заявление в ДС (RU)",
+        "kz": "Қалпына келтіру: ДК-ға өтініш (RU)",
+        "en": "Reinstatement: letter to DC (RU)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_dissertation_head_request_reinstatement_ru.docx"
+      },
+      "version": "2025-10-09"
+    },
+    {
+      "id": "tpl_reinstatement_dc_kz",
+      "kind": "template",
+      "title": {
+        "ru": "Восстановление: заявление в ДС (KZ)",
+        "kz": "Қалпына келтіру: ДК-ға өтініш (KZ)",
+        "en": "Reinstatement: letter to DC (KZ)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_dissertation_head_request_reinstatement_kz.docx"
+      },
+      "version": "2025-10-09"
+    },
+    {
+      "id": "tpl_reinstatement_dc_en",
+      "kind": "template",
+      "title": {
+        "ru": "Восстановление: заявление в ДС (EN)",
+        "kz": "Қалпына келтіру: ДК-ға өтініш (EN)",
+        "en": "Reinstatement: letter to DC (EN)"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/letter_to_dissertation_head_request_reinstatement_en.docx"
+      },
+      "version": "2025-10-09"
+    },
+    {
+      "id": "tpl_app5_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 5 — Заявление в Диссертационный совет",
+        "kz": "Қосымша 5 — Диссертациялық кеңеске өтініш",
+        "en": "Appendix 5 — Application to Dissertation Council"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app5_ru.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
+      "id": "tpl_app6_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 6 — Отзывы консультантов",
+        "kz": "Қосымша 6 — Кеңесшілер пікірлері",
+        "en": "Appendix 6 — Advisor Reviews"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app6_ru.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
+      "id": "tpl_app7_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 7 — Список научных трудов",
+        "kz": "Қосымша 7 — Ғылыми еңбектер тізімі",
+        "en": "Appendix 7 — List of Scientific Works"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app7_ru.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
+      "id": "tpl_app8_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 8 — Аннотации на казахском, русском и английском языках",
+        "kz": "Қосымша 8 — Қазақ, орыс және ағылшын тілдеріндегі аннотациялар",
+        "en": "Appendix 8 — Abstracts in Kazakh, Russian, and English"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app8_ru.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
+      "id": "tpl_app9_ru",
+      "kind": "template",
+      "title": {
+        "ru": "Приложение 9 — Заключение Локальной комиссии по биоэтике",
+        "kz": "Қосымша 9 — Биоэтика жөніндегі жергілікті комиссия қорытындысы",
+        "en": "Appendix 9 — Local Bioethics Commission Conclusion"
+      },
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "storage": {
+        "provider": "public",
+        "key": "templates/app9_ru.docx"
+      },
+      "version": "2025-10-08"
+    },
+    {
       "id": "tpl_app5_ru",
       "kind": "template",
       "title": {

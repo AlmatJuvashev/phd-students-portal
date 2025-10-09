@@ -152,7 +152,7 @@ export function NodeDetailsSheet({
 
   return (
     <Sheet open={!!node} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-full sm:max-w-lg">
+      <SheetContent side="right" className="w-full max-w-full sm:max-w-6xl">
         {node && (
           <>
             <SheetHeader>
@@ -167,7 +167,7 @@ export function NodeDetailsSheet({
               </SheetTitle>
             </SheetHeader>
 
-            <div className="mt-6 min-h-[120px]">
+            <div className="mt-6 h-[calc(100vh-8rem)] overflow-hidden">
               {loading ? (
                 <div className="text-sm text-muted-foreground">
                   {T("common.loading")}

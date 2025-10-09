@@ -136,8 +136,10 @@ export function NodeDetailSwitch({
               onContinue={() => onEvent?.({ type: "continue" })}
             />
           );
-        if (node.type === "confirmTask") return <ConfirmTaskDetails node={node} />;
-        if (node.type === "uploadTask") return <ConfirmUploadTaskDetails node={node} />;
+        if (node.type === "confirmTask")
+          return <ConfirmTaskDetails node={node} />;
+        if (node.type === "uploadTask")
+          return <ConfirmUploadTaskDetails node={node} />;
       default:
         return (
           <GatewayInfoDetails
