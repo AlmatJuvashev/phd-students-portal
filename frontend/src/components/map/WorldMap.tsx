@@ -72,14 +72,39 @@ export function WorldMap({
     };
   }, []);
 
+  // Stabilize stateByNodeId to prevent unnecessary re-renders
+  // Use a ref to track previous state and only update when actually different
+  const prevStateRef = useRef<Record<string, NodeVM["state"]> | undefined>();
+  const stableStateByNodeId = useMemo(() => {
+    const current = stateByNodeId || {};
+    const prev = prevStateRef.current || {};
+    
+    // Check if states actually changed
+    const keys = new Set([...Object.keys(current), ...Object.keys(prev)]);
+    let hasChanged = false;
+    for (const key of keys) {
+      if (current[key] !== prev[key]) {
+        hasChanged = true;
+        break;
+      }
+    }
+    
+    if (hasChanged) {
+      prevStateRef.current = current;
+      return current;
+    }
+    return prev;
+  }, [stateByNodeId]);
+
   const stateOverride = useMemo(() => {
-    if (!unlockAll) return stateByNodeId;
+    if (!unlockAll) return stableStateByNodeId;
     const m: Record<string, NodeVM["state"]> = {};
     for (const w of playbook.worlds) {
       for (const n of w.nodes) m[n.id] = "active";
     }
     return m;
-  }, [unlockAll, playbook, stateByNodeId]);
+  }, [unlockAll, playbook.worlds, stableStateByNodeId]);
+  
   const vm = useMemo(
     () => toViewModel(playbook, stateOverride),
     [playbook, stateOverride]
@@ -120,19 +145,23 @@ export function WorldMap({
     } catch {}
   }, [progress]);
 
-  // Initialize/refresh expanded state per world
+  // Initialize expanded state per world only once
   useEffect(() => {
-    const next: Record<string, boolean> = { ...expanded };
+    const next: Record<string, boolean> = {};
     vm.worlds.forEach((w) => {
       const worldDone = w.nodes.every((n) => n.state === "done");
-      if (!(w.id in next)) {
+      if (!(w.id in expanded)) {
         next[w.id] = !worldDone; // collapse when already done
+      } else {
+        next[w.id] = expanded[w.id];
       }
     });
-    if (JSON.stringify(next) !== JSON.stringify(expanded)) {
+    const hasNewWorlds = Object.keys(next).length > Object.keys(expanded).length;
+    if (hasNewWorlds) {
       setExpanded(next);
     }
-  }, [vm.worlds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vm.worlds.length]);
 
   // Detect newly completed world -> collapse and scroll next into view
   useEffect(() => {

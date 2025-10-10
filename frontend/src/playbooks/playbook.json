@@ -661,7 +661,6 @@
             "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee."
           },
           "who_can_complete": ["student"],
-          "prerequisites": [],
           "next": ["RP2_sc_hearing_prep"],
           "requirements": {
             "fields": [
@@ -927,7 +926,7 @@
             "en": "NCSTE: dissertation formatting check (norm control)"
           },
           "type": "confirmTask",
-          "prerequisites": ["R2_complete"],
+          "prerequisites": ["E3_hearing_nk"],
           "who_can_complete": ["student"],
           "screen": {
             "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",

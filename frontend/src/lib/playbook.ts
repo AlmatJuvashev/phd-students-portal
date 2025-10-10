@@ -148,17 +148,27 @@ export type NodeVM = NodeDef & { worldId: string; state: NodeState };
 /**
  * Compute node states with automatic unlocking based on prerequisites.
  * If a node is "locked" but all its prerequisites are "done", it becomes "active".
+ * Returns the same object reference if no changes were made to avoid unnecessary re-renders.
  */
 export function computeNodeStates(
   pb: Playbook,
   rawStateByNodeId: Record<string, NodeState> = {}
 ): Record<string, NodeState> {
-  const computed: Record<string, NodeState> = { ...rawStateByNodeId };
-  const { nodeById } = indexPlaybook(pb);
+  let hasChanges = false;
+  const computed: Record<string, NodeState> = {};
+  
+  // Copy all existing states
+  for (const key in rawStateByNodeId) {
+    computed[key] = rawStateByNodeId[key];
+  }
 
   // Helper to check if all prerequisites are done
   const allPrereqsDone = (prereqs: string[] | undefined): boolean => {
-    if (!prereqs || prereqs.length === 0) return true;
+    // Empty array means "no prerequisites required" - can be activated
+    if (prereqs && prereqs.length === 0) return true;
+    // Undefined or missing prerequisites means node is not ready to be auto-activated
+    if (!prereqs) return false;
+    // Check if all prerequisites are completed
     return prereqs.every((prereqId) => computed[prereqId] === "done");
   };
 
@@ -181,13 +191,15 @@ export function computeNodeStates(
           if (allPrereqsDone(node.prerequisites)) {
             computed[node.id] = "active";
             changed = true;
+            hasChanges = true;
           }
         }
       });
     });
   }
 
-  return computed;
+  // Return original object if nothing changed to maintain reference equality
+  return hasChanges ? computed : rawStateByNodeId;
 }
 
 export function toViewModel(
