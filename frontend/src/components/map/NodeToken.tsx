@@ -191,7 +191,7 @@ export function NodeToken({
               "text-green-700 dark:text-green-400": isDone,
               "group-hover:text-primary":
                 isClickable && node.state !== "active" && !isDone,
-              "truncate": !isBossNode,
+              truncate: !isBossNode,
               "line-clamp-2": isBossNode,
             }
           )}

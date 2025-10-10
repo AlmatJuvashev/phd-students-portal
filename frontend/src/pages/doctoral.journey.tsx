@@ -12,9 +12,6 @@ export function DoctoralJourney() {
 
   return (
     <div>
-      <div className="max-w-4xl mx-auto px-4 pt-4">
-        <a href="/" className="text-sm text-muted-foreground hover:underline">← {T("common.back", { defaultValue: "Back" })}</a>
-      </div>
       <WorldMap
         playbook={playbook as any}
         stateByNodeId={state as any}
