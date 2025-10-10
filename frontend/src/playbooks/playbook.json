@@ -1061,9 +1061,11 @@
           "id": "IV3_publication_certificate_ncste",
           "module": "IV",
           "prerequisites": ["IV_rector_application"],
+          "next": ["D2_apply_to_ds"],
+          "who_can_complete": ["student"],
           "title": {
             "ru": "НЦГНТЭ: справка о публикациях (подтверждение в индексируемых журналах)",
-            "kz": "НЦҒНТЭ: жарияланымдар туралы анықтама (индекстелетін журналдар)",
+            "kz": "НЦҒНТЭ: жарияланымдар туралы анықтама (індекстелетін журналдар)",
             "en": "NCSTE: publication certificate (indexed journals)"
           },
           "type": "confirmTask",
