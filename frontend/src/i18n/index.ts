@@ -5,6 +5,9 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import ru from "@/locales/ru/common.json";
 import kz from "@/locales/kz/common.json";
 import en from "@/locales/en/common.json";
+import guides_ru from "@/locales/ru/guides.json";
+import guides_kz from "@/locales/kz/guides.json";
+import guides_en from "@/locales/en/guides.json";
 
 i18n
   .use(LanguageDetector)
@@ -13,9 +16,9 @@ i18n
     fallbackLng: "ru",
     supportedLngs: ["ru", "kz", "en"],
     resources: {
-      ru: { common: ru },
-      kz: { common: kz },
-      en: { common: en },
+      ru: { common: ru, guides: guides_ru },
+      kz: { common: kz, guides: guides_kz },
+      en: { common: en, guides: guides_en },
     },
     interpolation: { escapeValue: false },
     detection: {
@@ -23,8 +26,7 @@ i18n
       caches: ["localStorage"],
     },
     defaultNS: "common",
-    ns: ["common"],
+    ns: ["common", "guides"],
   });
 
 export default i18n;
-

@@ -3,13 +3,16 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { NodeVM, t } from "@/lib/playbook";
 import { useTranslation } from "react-i18next";
+import StickyActions from "@/components/ui/sticky-actions";
 
 export default function InfoDetails({
   node,
   onContinue,
+  renderGuide,
 }: {
   node: NodeVM;
   onContinue?: () => void;
+  renderGuide?: () => React.ReactNode;
 }) {
   const { t: T } = useTranslation("common");
   const fields = node.requirements?.fields ?? [];
@@ -33,6 +36,8 @@ export default function InfoDetails({
             </div>
           </Card>
         )}
+        {/* Optional standardized guide */}
+        {renderGuide ? renderGuide() : null}
         {/* Notes as stacked cards when requested */}
         {layout?.style === "stacked" ? (
           <div className="space-y-3">
@@ -57,11 +62,10 @@ export default function InfoDetails({
         )}
         {/* Continue button if explicit next exists */}
         {hasNext && (
-          <div className="pt-2">
-            <Button onClick={() => onContinue?.()}>
-              {T("forms.proceed_next")}
-            </Button>
-          </div>
+          <StickyActions
+            primaryLabel={T("forms.proceed_next")}
+            onPrimary={() => onContinue?.()}
+          />
         )}
       </div>
     </div>

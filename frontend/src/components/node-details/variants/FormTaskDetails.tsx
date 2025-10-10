@@ -259,14 +259,17 @@ export function FormTaskDetails({
             </motion.div>
           </AnimatePresence>
           {currentStep === "done" && (
-            <Button
-              onClick={() =>
-                onSubmit?.({ ...values, __nextOverride: "D1_normokontrol_ncste" })
-              }
-              disabled={!canProceed}
-            >
-              {T("forms.nk.proceed", "Переход к подаче документов к ДС")}
-            </Button>
+            <div className="pt-2">
+              <Button
+                onClick={() =>
+                  onSubmit?.({ ...values, __nextOverride: "D1_normokontrol_ncste" })
+                }
+                disabled={!canProceed}
+                aria-busy={!canProceed}
+              >
+                {T("forms.nk.proceed", "Переход к подаче документов к ДС")}
+              </Button>
+            </div>
           )}
         </div>
         {/* Right: Templates (40%), sticky */}

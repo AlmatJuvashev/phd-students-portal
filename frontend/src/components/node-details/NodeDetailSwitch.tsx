@@ -15,6 +15,7 @@ import V1ReinstatementScene from "@/features/nodes/scenes/V1ReinstatementScene";
 import RP2HearingPrepScene from "@/features/nodes/scenes/RP2HearingPrepScene";
 import VIAttestationScene from "@/features/nodes/scenes/VIAttestationScene";
 import { FormTaskDetails } from "./variants/FormTaskDetails";
+import useGuideForNode from "@/features/guides/useGuideForNode";
 
 // Lazy heavy variants
 const UploadTaskDetails = React.lazy(() => import("./variants/UploadTaskDetails").then(m => ({ default: m.UploadTaskDetails })));
@@ -38,6 +39,7 @@ export function NodeDetailSwitch({
 }: Props) {
   const kinds = detectActionKinds(node);
   const uiKind = deriveNodeKind(node);
+  const renderGuide = useGuideForNode(node) || undefined;
   const initialForm = submission?.form?.data ?? {};
   const attachmentsBySlot = new Map<
     string,
@@ -166,6 +168,7 @@ export function NodeDetailSwitch({
             <DecisionTaskDetails
               node={node}
               disabled={saving}
+              renderGuide={renderGuide}
               onSubmit={() =>
                 onEvent?.({
                   type: "submit-decision",
@@ -192,6 +195,7 @@ export function NodeDetailSwitch({
           return (
             <InfoDetails
               node={node}
+              renderGuide={renderGuide}
               onContinue={() => onEvent?.({ type: "continue" })}
             />
           );
@@ -275,6 +279,7 @@ export function NodeDetailSwitch({
         return (
           <InfoDetails
             node={node}
+            renderGuide={renderGuide}
             onContinue={() => onEvent?.({ type: "continue" })}
           />
         );
