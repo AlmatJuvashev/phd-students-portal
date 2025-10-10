@@ -225,6 +225,7 @@ export function NodeDetailSwitch({
                   payload: nextOverride ? { __nextOverride: nextOverride } : {},
                 })
               }
+              onReset={() => onEvent?.({ type: "reset-node" })}
             />
           );
         }
@@ -334,6 +335,7 @@ export function NodeDetailSwitch({
                 payload: nextOverride ? { __nextOverride: nextOverride } : {},
               })
             }
+            onReset={() => onEvent?.({ type: "reset-node" })}
           />
         );
       }

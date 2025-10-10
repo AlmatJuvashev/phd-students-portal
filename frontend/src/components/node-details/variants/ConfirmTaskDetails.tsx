@@ -10,11 +10,13 @@ import i18n from "i18next";
 type ConfirmTaskDetailsProps = {
   node: NodeVM | any;
   onComplete?: () => void;
+  onReset?: () => void;
 };
 
 const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
   node,
   onComplete,
+  onReset,
 }) => {
   const [isCompleted, setCompleted] = React.useState(
     node?.state === "done" || node?.status === "completed"
@@ -94,6 +96,11 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
     setConfirmOpen(false);
     // toast removed; keep silent confirmation
     if (onComplete) onComplete();
+  };
+
+  const handleReset = () => {
+    setCompleted(false);
+    if (onReset) onReset();
   };
 
   return (
@@ -263,9 +270,15 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
                   />
                 </svg>
               </div>
-              <span className="text-green-700 dark:text-green-300 font-semibold">
+              <span className="text-green-700 dark:text-green-300 font-semibold flex-1">
                 {completedMessage}
               </span>
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                {t(
+                  { ru: "Сбросить подтверждение", kz: "Растауын жою", en: "Reset confirmation" },
+                  "Сбросить подтверждение"
+                )}
+              </Button>
             </div>
           </div>
         )}
