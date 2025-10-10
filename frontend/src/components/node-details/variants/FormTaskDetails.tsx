@@ -12,7 +12,6 @@ import { assetsForNode, allAssets } from "@/lib/assets";
 import { evalVisible as evalVisibleExpr } from "@/features/forms/Visibility";
 import { FieldRenderer } from "@/features/forms/FieldRenderer";
 import { ActionsBar } from "@/features/forms/ActionsBar";
-import { TemplatesPanel } from "@/features/forms/TemplatesPanel";
 
 type Props = {
   node: NodeVM;
@@ -802,4 +801,3 @@ export function FormTaskDetails({
     </div>
   );
 }
-
