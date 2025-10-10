@@ -10,13 +10,15 @@ import FormEntryDetails from "@/features/nodes/kinds/FormEntryDetails";
 import ChecklistDetails from "@/features/nodes/kinds/ChecklistDetails";
 import CardsDetails from "@/features/nodes/kinds/CardsDetails";
 import React, { Suspense } from "react";
+import D2ApplyToDsScene from "@/features/nodes/scenes/D2ApplyToDsScene";
+import V1ReinstatementScene from "@/features/nodes/scenes/V1ReinstatementScene";
+import RP2HearingPrepScene from "@/features/nodes/scenes/RP2HearingPrepScene";
+import { FormTaskDetails } from "./variants/FormTaskDetails";
 
 // Lazy heavy variants
 const UploadTaskDetails = React.lazy(() => import("./variants/UploadTaskDetails").then(m => ({ default: m.UploadTaskDetails })));
-const CompositeTaskDetails = React.lazy(() => import("./variants/CompositeTaskDetails").then(m => ({ default: m.CompositeTaskDetails })));
 const ConfirmUploadTaskDetails = React.lazy(() => import("./variants/ConfirmUploadTaskDetails").then(m => ({ default: m.default })));
 const ExternalProcessDetails = React.lazy(() => import("./variants/ExternalProcessDetails").then(m => ({ default: m.ExternalProcessDetails })));
-const WaitLockDetails = React.lazy(() => import("./variants/WaitLockDetails").then(m => ({ default: m.WaitLockDetails })));
 
 type Props = {
   node: NodeVM;
@@ -43,6 +45,38 @@ export function NodeDetailSwitch({
   submission?.slots.forEach((slot) => {
     attachmentsBySlot.set(slot.key, slot.attachments);
   });
+
+  // Explicit scenes (specialized UX) by node id
+  if (node.id === "D2_apply_to_ds") {
+    return (
+      <D2ApplyToDsScene
+        node={node}
+        initial={initialForm}
+        disabled={saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+  if (node.id === "V1_reinstatement_package") {
+    return (
+      <V1ReinstatementScene
+        node={node}
+        initial={initialForm}
+        disabled={saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+  if (node.id === "RP2_sc_hearing_prep") {
+    return (
+      <RP2HearingPrepScene
+        node={node}
+        initial={initialForm}
+        disabled={saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
 
   // permissions (rough defaults, adjust as you wire real RBAC)
   const canDecide = role === "secretary" || role === "chair";
@@ -130,25 +164,8 @@ export function NodeDetailSwitch({
             />
           );
         }
-        return (
-          <OutcomeReviewDetails
-            node={node}
-            canDecide={canDecide}
-            canUpload={canUpload}
-            onFinalize={(payload) =>
-              onEvent?.({ type: "finalize-outcome", payload })
-            }
-          />
-        );
-      case "wait":
-        return (
-          <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
-            <WaitLockDetails
-              node={node}
-              onSubscribe={() => onEvent?.({ type: "subscribe-timer" })}
-            />
-          </Suspense>
-        );
+        // no generic outcome renderer needed now
+        break;
       case "external":
         return (
           <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
@@ -182,26 +199,10 @@ export function NodeDetailSwitch({
   }
 
   // Composite preference (outcome + upload)
-  if (kinds.includes("composite")) {
-        return (
-          <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
-            <CompositeTaskDetails
-              node={node}
-              onFinalize={(payload) => onEvent?.({ type: "finalize-composite", payload })}
-            />
-          </Suspense>
-        );
-  }
+  // no composite renderer in current playbook
 
   // Fallback: render in priority order (no recursion)
-  const order = [
-    "outcome",
-    "upload",
-    "form",
-    "external",
-    "wait",
-    "gateway",
-  ] as const;
+  const order = ["upload", "form", "external", "gateway"] as const;
   const first = order.find((k) => kinds.includes(k as any)) ?? "gateway";
   switch (first) {
     case "form":
@@ -242,13 +243,9 @@ export function NodeDetailSwitch({
         );
       }
       return (
-        <OutcomeReviewDetails
+        <GatewayInfoDetails
           node={node}
-          canDecide={canDecide}
-          canUpload={canUpload}
-          onFinalize={(payload) =>
-            onEvent?.({ type: "finalize-outcome", payload })
-          }
+          onContinue={() => onEvent?.({ type: "continue" })}
         />
       );
     case "external":
@@ -260,13 +257,7 @@ export function NodeDetailSwitch({
           }
         />
       );
-    case "wait":
-      return (
-        <WaitLockDetails
-          node={node}
-          onSubscribe={() => onEvent?.({ type: "subscribe-timer" })}
-        />
-      );
+    
     case "gateway":
     default:
       if (node.type === "info") {
