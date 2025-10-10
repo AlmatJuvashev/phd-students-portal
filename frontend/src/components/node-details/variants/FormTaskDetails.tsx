@@ -8,7 +8,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
 import { AssetsDownloads } from "../AssetsDownloads";
-import { Check } from "lucide-react";
 import { assetsForNode, allAssets } from "@/lib/assets";
 import { evalVisible as evalVisibleExpr } from "@/features/forms/Visibility";
 import { FieldRenderer } from "@/features/forms/FieldRenderer";
@@ -33,11 +32,6 @@ export function FormTaskDetails({
   const [values, setValues] = useState<Record<string, any>>(initial);
   const [showOmidConfirm, setShowOmidConfirm] = useState(false);
   const [showNkConfirm, setShowNkConfirm] = useState(false);
-  // extracted scenes handle their own confirmations; keep local ones for legacy variants
-  const [showD2Confirm, setShowD2Confirm] = useState(false);
-  const [showV1Confirm, setShowV1Confirm] = useState(false);
-  const [showRP2Confirm, setShowRP2Confirm] = useState(false);
-  const [showAttestationConfirm, setShowAttestationConfirm] = useState(false);
   useEffect(() => {
     setValues(initial ?? {});
   }, [initial]);
@@ -48,607 +42,7 @@ export function FormTaskDetails({
   const cardsLayout = (node.requirements as any)?.ui_hints?.cards_layout;
   const buttonsStyle = (node.requirements as any)?.ui_hints?.buttons_style;
 
-  useEffect(() => {
-    console.log("Current values:", values);
-  }, [values]);
-
   const evalVisible = (expr?: string) => evalVisibleExpr(values, expr);
-
-  // D2_apply_to_ds handled by a dedicated scene in NodeDetailSwitch
-  if (false && node.id === "D2_apply_to_ds") {
-    // ready when all required boolean fields are checked true
-    const requiredBools = fields.filter(
-      (f) => f.type === "boolean" && f.required
-    );
-    const ready = requiredBools.every((f) => !!values[f.key]);
-    // choose next target from node.next or outcomes
-    const nextOnComplete =
-      (Array.isArray(node.next) ? node.next[0] : undefined) ||
-      node.outcomes?.[0]?.next?.[0];
-
-    // read-only mode after submission
-    const readOnly =
-      node.state === "submitted" ||
-      node.state === "done" ||
-      Boolean((initial as any)?.__submittedAt);
-    const submittedAt: string | undefined =
-      (initial as any)?.__submittedAt || values?.__submittedAt;
-
-    const guardMessage = t(
-      {
-        ru: 'Ученый секретарь Диссертационного совета регистрирует документы в срок не менее 2 (двух) рабочих дней и представляет в Диссертационный совет (Регистрация документов производится протоколом заседания Диссертационного совета). Не позднее 10 (десяти) рабочих дней со дня приема документов Диссертационный совет определяет дату защиты и назначает двух рецензентов и временных членов Диссертационного совета.\n21.\tВ течение 10 (десяти) рабочих дней после приема к защите диссертационный совет направляет диссертацию для проверки на использование докторантом плагиата по отечественным и международным базам данных в Акционерное общество "Национальный центр государственной научно-технической экспертизы".',
-        kz: 'Диссертациялық кеңестің ғылыми хатшысы құжаттарды кемінде 2 (екі) жұмыс күні ішінде тіркейді және Диссертациялық кеңеске ұсынады (Құжаттарды тіркеу Диссертациялық кеңестің отырыс хаттамасымен жүзеге асырылады). Құжаттарды қабылдаған күннен бастап 10 (он) жұмыс күнінен кешіктірмей Диссертациялық кеңес қорғау күнін белгілейді және екі рецензент пен уақытша мүшелерді тағайындайды.\n21.\tҚорғауға қабылдағаннан кейін 10 (он) жұмыс күні ішінде диссертациялық кеңес диссертацияны докторанттың плагиатты пайдаланғанын тексеру үшін отандық және халықаралық деректер базалары бойынша "Ұлттық мемлекеттік ғылыми-техникалық сараптама орталығы" АҚ-ға жолдайды.',
-        en: 'The Dissertation Council Secretary registers the documents within at least 2 (two) business days and submits them to the Dissertation Council (registration is recorded in the minutes of the Council meeting). No later than 10 (ten) business days from the date of receipt, the Council sets the defense date and appoints two reviewers and temporary Council members.\n21.\tWithin 10 (ten) business days after admission to defense, the Council sends the dissertation for plagiarism checking across domestic and international databases to the Joint-Stock Company "National Center for State Scientific and Technical Expertise" (NCSTE).',
-      },
-      ""
-    );
-
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
-        {/* Left: Form (<=60%) */}
-        <div className="lg:col-span-3 min-h-0 overflow-auto pr-1 space-y-4">
-          {/* Description (optional) */}
-          {Boolean((node as any)?.description) && (
-            <div className="text-sm text-muted-foreground">
-              {t((node as any).description, "")}
-            </div>
-          )}
-          {/* Checklist */}
-          <div className="space-y-3">
-            {fields.map((f) => (
-              <div key={f.key} className="grid gap-1">
-                {f.type === "boolean" ? (
-                  readOnly ? (
-                    <div className="flex items-start gap-2 text-muted-foreground">
-                      <Check className="h-4 w-4 mt-1 text-green-600" />
-                      <span>{t(f.label, f.key)}</span>
-                    </div>
-                  ) : (
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        id={f.key}
-                        type="checkbox"
-                        checked={!!values[f.key]}
-                        onChange={(e) => setField(f.key, e.target.checked)}
-                      />
-                      <span>
-                        {t(f.label, f.key)}{" "}
-                        {f.required ? (
-                          <span className="text-destructive">*</span>
-                        ) : null}
-                      </span>
-                    </label>
-                  )
-                ) : null}
-              </div>
-            ))}
-          </div>
-          {/* Actions (hidden in read-only) */}
-          {!readOnly && (
-            <div className="flex gap-2 pt-2">
-              <Button onClick={() => setShowD2Confirm(true)} disabled={!ready} aria-busy={disabled}>
-                {T("forms.proceed_next")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => onSubmit?.({ ...values, __draft: true })}
-                aria-busy={disabled}
-              >
-                {T("forms.save_draft")}
-              </Button>
-            </div>
-          )}
-
-          {/* Read-only footer info */}
-          {readOnly && (
-            <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
-              {t(
-                {
-                  ru: `Если документы были сданы${
-                    submittedAt
-                      ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  kz: `Егер құжаттар тапсырылған болса${
-                    submittedAt
-                      ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  en: `If the documents were submitted${
-                    submittedAt
-                      ? ` (date: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                },
-                ""
-              )}
-            </div>
-          )}
-        </div>
-        {/* Right: Templates (40%), sticky */}
-        <div className="lg:col-span-2 border-l pl-4 overflow-auto">
-          <AssetsDownloads node={node} />
-        </div>
-
-        {/* Confirm modal */}
-        <Dialog.Root open={showD2Confirm} onOpenChange={setShowD2Confirm}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
-              <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
-                {guardMessage}
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowD2Confirm(false)}
-                >
-                  {T("common.cancel")}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowD2Confirm(false);
-                    onSubmit?.({
-                      ...values,
-                      __submittedAt: new Date().toISOString(),
-                      __nextOverride: nextOnComplete,
-                    });
-                  }}
-                  aria-busy={disabled}
-                >
-                  {T("forms.proceed_next")}
-                </Button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-      </div>
-    );
-  }
-
-  // V1_reinstatement_package handled by a dedicated scene in NodeDetailSwitch
-  if (false && node.id === "V1_reinstatement_package") {
-    const requiredBools = fields.filter(
-      (f) => f.type === "boolean" && f.required
-    );
-    const ready = requiredBools.every((f) => !!values[f.key]);
-    const nextOnComplete = "A1_post_acceptance_overview";
-
-    const readOnly =
-      node.state === "submitted" ||
-      node.state === "done" ||
-      Boolean((initial as any)?.__submittedAt);
-    const submittedAt: string | undefined =
-      (initial as any)?.__submittedAt || values?.__submittedAt;
-
-    const { t: T } = useTranslation("common");
-    const guardMessage = t(
-      {
-        ru: "Пакет на восстановление будет передан на регистрацию у ответственного сотрудника. Убедитесь, что все позиции отмечены и документы готовы. После подтверждения вы перейдёте к следующему шагу.",
-        kz: "Қалпына келтіру топтамасы жауапты қызметкерде тіркеуге беріледі. Барлық тармақтардың белгіленгеніне және құжаттардың дайын екеніне көз жеткізіңіз. Растағаннан кейін келесі қадамға өтесіз.",
-        en: "The reinstatement package will be registered by the responsible officer. Ensure all items are checked and documents are ready. After confirming, you will proceed to the next step.",
-      },
-      ""
-    );
-
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
-        {/* Left: Form (<=60%) */}
-        <div className="lg:col-span-3 min-h-0 overflow-auto pr-1 space-y-4">
-          {/* Description (optional) */}
-          {Boolean((node as any)?.description) && (
-            <div className="text-sm text-muted-foreground">
-              {t((node as any).description, "")}
-            </div>
-          )}
-          {/* Checklist */}
-          <div className="space-y-3">
-            {fields.map((f) => (
-              <div key={f.key} className="grid gap-1">
-                {f.type === "boolean" ? (
-                  readOnly ? (
-                    <div className="flex items-start gap-2 text-muted-foreground">
-                      <Check className="h-4 w-4 mt-1 text-green-600" />
-                      <span>{t(f.label, f.key)}</span>
-                    </div>
-                  ) : (
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        id={f.key}
-                        type="checkbox"
-                        checked={!!values[f.key]}
-                        onChange={(e) => setField(f.key, e.target.checked)}
-                      />
-                      <span>
-                        {t(f.label, f.key)}{" "}
-                        {f.required ? (
-                          <span className="text-destructive">*</span>
-                        ) : null}
-                      </span>
-                    </label>
-                  )
-                ) : null}
-              </div>
-            ))}
-          </div>
-          {/* Actions (hidden in read-only) */}
-          {!readOnly && (
-            <div className="flex gap-2 pt-2">
-              <Button onClick={() => setShowV1Confirm(true)} disabled={!ready} aria-busy={disabled}>
-                {T("forms.proceed_next")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => onSubmit?.({ ...values, __draft: true })}
-                aria-busy={disabled}
-              >
-                {T("forms.save_draft")}
-              </Button>
-            </div>
-          )}
-
-          {/* Read-only footer info */}
-          {readOnly && (
-            <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
-              {t(
-                {
-                  ru: `Если пакет на восстановление был подан${
-                    submittedAt
-                      ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  kz: `Егер қалпына келтіру топтамасы тапсырылған болса${
-                    submittedAt
-                      ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  en: `If the reinstatement package was submitted${
-                    submittedAt
-                      ? ` (date: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                },
-                ""
-              )}
-            </div>
-          )}
-        </div>
-        {/* Right: Templates (40%), sticky */}
-        <div className="lg:col-span-2 border-l pl-4 overflow-auto">
-          <AssetsDownloads node={node} />
-        </div>
-
-        {/* Confirm modal */}
-        <Dialog.Root open={showV1Confirm} onOpenChange={setShowV1Confirm}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
-              <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
-                {guardMessage}
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowV1Confirm(false)}
-                >
-                  {T("common.cancel")}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowV1Confirm(false);
-                    onSubmit?.({
-                      ...values,
-                      __submittedAt: new Date().toISOString(),
-                      __nextOverride: nextOnComplete,
-                    });
-                  }}
-                  aria-busy={disabled}
-                >
-                  {T("forms.proceed_next")}
-                </Button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-      </div>
-    );
-  }
-
-  // RP2_sc_hearing_prep handled by a dedicated scene in NodeDetailSwitch
-  if (false && node.id === "RP2_sc_hearing_prep") {
-    const requiredBools = fields.filter(
-      (f) => f.type === "boolean" && f.required
-    );
-    const ready = requiredBools.every((f) => !!values[f.key]);
-    const nextOnComplete =
-      (Array.isArray(node.next) ? node.next[0] : undefined) || undefined; // RP3_pre_expertise_application
-
-    const readOnly =
-      node.state === "submitted" ||
-      node.state === "done" ||
-      Boolean((initial as any)?.__submittedAt);
-    const submittedAt: string | undefined =
-      (initial as any)?.__submittedAt || values?.__submittedAt;
-
-    const { t: T } = useTranslation("common");
-    const guardMessage = t(
-      {
-        ru: "Убедитесь, что все контрольные пункты по подготовке к заслушиванию отмечены. После подтверждения данные будут зафиксированы и вы перейдёте к подаче заявления в ОМиД.",
-        kz: "Тыңдауға дайындық бойынша барлық бақылау тармақтары белгіленгеніне көз жеткізіңіз. Растағаннан кейін деректер бекітіледі және сіз ОМиД-ке өтініш беруге өтесіз.",
-        en: "Make sure all preparation checklist items are checked. After confirming, the data will be saved and you'll proceed to the OMiD application step.",
-      },
-      ""
-    );
-
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
-        {/* Left: Form (<=60%) */}
-        <div className="lg:col-span-3 min-h-0 overflow-auto pr-1 space-y-4">
-          {Boolean((node as any)?.description) && (
-            <div className="text-sm text-muted-foreground">
-              {t((node as any).description, "")}
-            </div>
-          )}
-          <div className="space-y-3">
-            {fields.map((f) => (
-              <div key={f.key} className="grid gap-1">
-                {f.type === "boolean" ? (
-                  readOnly ? (
-                    <div className="flex items-start gap-2 text-muted-foreground">
-                      <Check className="h-4 w-4 mt-1 text-green-600" />
-                      <span>{t(f.label, f.key)}</span>
-                    </div>
-                  ) : (
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        id={f.key}
-                        type="checkbox"
-                        checked={!!values[f.key]}
-                        onChange={(e) => setField(f.key, e.target.checked)}
-                      />
-                      <span>
-                        {t(f.label, f.key)}{" "}
-                        {f.required ? (
-                          <span className="text-destructive">*</span>
-                        ) : null}
-                      </span>
-                    </label>
-                  )
-                ) : null}
-              </div>
-            ))}
-          </div>
-
-          {!readOnly && (
-            <div className="flex gap-2 pt-2">
-              <Button onClick={() => setShowRP2Confirm(true)} disabled={!ready} aria-busy={disabled}>
-                {T("forms.proceed_next")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => onSubmit?.({ ...values, __draft: true })}
-                aria-busy={disabled}
-              >
-                {T("forms.save_draft")}
-              </Button>
-            </div>
-          )}
-
-          {readOnly && (
-            <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
-              {t(
-                {
-                  ru: `Если подготовка к заслушиванию завершена${
-                    submittedAt
-                      ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  kz: `Егер тыңдауға дайындық аяқталған болса${
-                    submittedAt
-                      ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  en: `If the hearing preparation is completed${
-                    submittedAt
-                      ? ` (date: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                },
-                ""
-              )}
-            </div>
-          )}
-        </div>
-        {/* Right: Templates (40%), sticky */}
-        <div className="lg:col-span-2 border-l pl-4 overflow-auto">
-          <AssetsDownloads node={node} />
-        </div>
-
-        {/* Confirm modal */}
-        <Dialog.Root open={showRP2Confirm} onOpenChange={setShowRP2Confirm}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
-              <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
-                {guardMessage}
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowRP2Confirm(false)}
-                >
-                  {T("common.cancel")}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowRP2Confirm(false);
-                    onSubmit?.({
-                      ...values,
-                      __submittedAt: new Date().toISOString(),
-                      __nextOverride: nextOnComplete,
-                    });
-                  }}
-                  aria-busy={disabled}
-                >
-                  {T("forms.proceed_next")}
-                </Button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-      </div>
-    );
-  }
-
-  // VI_attestation_file: final checklist (like D2) with guard and read-only
-  if (node.id === "VI_attestation_file") {
-    const requiredBools = fields.filter(
-      (f) => f.type === "boolean" && f.required
-    );
-    const ready = requiredBools.every((f) => !!values[f.key]);
-    const nextOnComplete =
-      (Array.isArray(node.next) ? node.next[0] : undefined) || undefined; // likely END
-
-    const readOnly =
-      node.state === "submitted" ||
-      node.state === "done" ||
-      Boolean((initial as any)?.__submittedAt);
-    const submittedAt: string | undefined =
-      (initial as any)?.__submittedAt || values?.__submittedAt;
-
-    const { t: T } = useTranslation("common");
-    const guardMessage = t(
-      {
-        ru: "Проверьте, что все пункты аттестационного дела отмечены. После подтверждения данные зафиксируются, и маршрут будет завершён.",
-        kz: "Аттестаттау ісіндегі барлық тармақтардың белгіленгенін тексеріңіз. Растағаннан кейін деректер бекітіледі және маршрут аяқталады.",
-        en: "Ensure all attestation file items are checked. After confirming, the data will be saved and the journey will complete.",
-      },
-      ""
-    );
-
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
-        {/* Left: Form (<=60%) */}
-        <div className="lg:col-span-3 min-h-0 overflow-auto pr-1 space-y-4">
-          {Boolean((node as any)?.description) && (
-            <div className="text-sm text-muted-foreground">
-              {t((node as any).description, "")}
-            </div>
-          )}
-          <div className="space-y-3">
-            {fields.map((f) => (
-              <div key={f.key} className="grid gap-1">
-                {f.type === "boolean" ? (
-                  readOnly ? (
-                    <div className="flex items-start gap-2 text-muted-foreground">
-                      <Check className="h-4 w-4 mt-1 text-green-600" />
-                      <span>{t(f.label, f.key)}</span>
-                    </div>
-                  ) : (
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        id={f.key}
-                        type="checkbox"
-                        checked={!!values[f.key]}
-                        onChange={(e) => setField(f.key, e.target.checked)}
-                      />
-                      <span>
-                        {t(f.label, f.key)}{" "}
-                        {f.required ? (
-                          <span className="text-destructive">*</span>
-                        ) : null}
-                      </span>
-                    </label>
-                  )
-                ) : null}
-              </div>
-            ))}
-          </div>
-
-          {!readOnly && (
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={() => setShowAttestationConfirm(true)}
-                disabled={!ready}
-              >
-                {T("forms.proceed_next")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => onSubmit?.({ ...values, __draft: true })}
-              >
-                {T("forms.save_draft")}
-              </Button>
-            </div>
-          )}
-
-          {readOnly && (
-            <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
-              {t(
-                {
-                  ru: `Если аттестационное дело сформировано${
-                    submittedAt
-                      ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  kz: `Егер аттестаттау ісі қалыптастырылған болса${
-                    submittedAt
-                      ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                  en: `If the attestation file is complete${
-                    submittedAt
-                      ? ` (date: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }. ${guardMessage}`,
-                },
-                ""
-              )}
-            </div>
-          )}
-        </div>
-        {/* Right: Templates (40%), sticky */}
-        <div className="lg:col-span-2 border-l pl-4 overflow-auto">
-          <AssetsDownloads node={node} />
-        </div>
-
-        {/* Confirm modal */}
-        <Dialog.Root
-          open={showAttestationConfirm}
-          onOpenChange={setShowAttestationConfirm}
-        >
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
-            <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
-              <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
-                {guardMessage}
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAttestationConfirm(false)}
-                >
-                  {T("common.cancel")}
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowAttestationConfirm(false);
-                    onSubmit?.({
-                      ...values,
-                      __submittedAt: new Date().toISOString(),
-                      __nextOverride: nextOnComplete,
-                    });
-                  }}
-                >
-                  {T("forms.proceed_next")}
-                </Button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-      </div>
-    );
-  }
 
   // Update setField to include hearing_happened cascading resets
   function setField(k: string, v: any) {
@@ -670,7 +64,7 @@ export function FormTaskDetails({
     });
   }
 
-  // In the E3_hearing_nk branch, add Q0 and full back navigation
+  // E3_hearing_nk: interactive cards with guard; proceed to D1_normokontrol_ncste
   if (node.id === "E3_hearing_nk") {
     const h = values["hearing_happened"];
     const r = values["remarks_exist"];
@@ -772,20 +166,15 @@ export function FormTaskDetails({
                       {T("forms.no")}
                     </Button>
                   </div>
-                  <Button
-                    variant="secondary"
-                    className="mt-2"
-                    onClick={() => setField("hearing_happened", undefined)}
-                    disabled={!canEdit || disabled}
-                  >
-                    {T("forms.nk.back", "Назад")}
-                  </Button>
                 </Card>
               )}
               {currentStep === "q2" && (
                 <Card className="p-4">
                   <div className="mb-2 font-medium">
-                    {T("forms.nk.q2", "Подготовлен план исправлений?")}
+                    {T(
+                      "forms.nk.q2",
+                      "Подготовлен план устранения замечаний?"
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -802,14 +191,6 @@ export function FormTaskDetails({
                       {T("forms.no")}
                     </Button>
                   </div>
-                  <Button
-                    variant="secondary"
-                    className="mt-2"
-                    onClick={() => setField("remarks_exist", undefined)}
-                    disabled={!canEdit || disabled}
-                  >
-                    {T("forms.nk.back", "Назад")}
-                  </Button>
                 </Card>
               )}
               {currentStep === "reminderA" && (
@@ -817,7 +198,7 @@ export function FormTaskDetails({
                   <div className="text-sm text-muted-foreground">
                     {T(
                       "forms.nk.reminder_plan",
-                      "Сначала создайте план исправлений и вернитесь к этому шагу."
+                      "Подготовьте план устранения замечаний и вернитесь к этому шагу."
                     )}
                   </div>
                   <Button
@@ -833,7 +214,10 @@ export function FormTaskDetails({
               {currentStep === "q3" && (
                 <Card className="p-4">
                   <div className="mb-2 font-medium">
-                    {T("forms.nk.q3", "Все замечания устранены?")}
+                    {T(
+                      "forms.nk.q3",
+                      "Замечания устранены согласно плану?"
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -850,17 +234,6 @@ export function FormTaskDetails({
                       {T("forms.no")}
                     </Button>
                   </div>
-                  <Button
-                    variant="secondary"
-                    className="mt-2"
-                    onClick={() => {
-                      setField("plan_prepared", undefined);
-                      setField("remarks_resolved", undefined);
-                    }}
-                    disabled={!canEdit || disabled}
-                  >
-                    {T("forms.nk.back", "Назад")}
-                  </Button>
                 </Card>
               )}
               {currentStep === "reminderB" && (
@@ -889,7 +262,7 @@ export function FormTaskDetails({
           {currentStep === "done" && (
             <Button
               onClick={() =>
-                onSubmit?.({ ...values, __nextOverride: "W4_GATE" })
+                onSubmit?.({ ...values, __nextOverride: "D1_normokontrol_ncste" })
               }
               disabled={!canProceed}
             >
@@ -1429,3 +802,4 @@ export function FormTaskDetails({
     </div>
   );
 }
+
