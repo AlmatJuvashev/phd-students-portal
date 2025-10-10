@@ -16,6 +16,8 @@ export type FieldDef = {
   type?: string;
   label?: Record<string, string>;
   placeholder?: Record<string, string>;
+  options?: Array<{ value: string; label?: Record<string, string> }>;
+  other_key?: string; // for select with 'other'
 };
 
 export type UploadDef = {
@@ -93,6 +95,12 @@ export const t = (obj?: Record<string, string>, fallback = "") => {
   const lang = (i18n?.language as "ru" | "kz" | "en") || "ru";
   const val = obj?.[lang] ?? obj?.en ?? obj?.ru ?? obj?.kz;
   if (val) return val;
+  // Try i18n dictionary fallback for field keys: fields.<key>
+  if (fallback) {
+    const key = `fields.${fallback}`;
+    const dictVal = (i18n as any)?.t?.(key);
+    if (dictVal && dictVal !== key) return dictVal as string;
+  }
   // Humanize technical fallback keys like "full_name"
   return humanizeKey(fallback);
 };

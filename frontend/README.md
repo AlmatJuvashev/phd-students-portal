@@ -83,9 +83,8 @@ Then switch imports to the generated aliases if desired.
 - `src/components/VerticalProgress.tsx` shows a mobile-friendly vertical stepper for a module.
 
 
-## Breadcrumbs & Active Nav
+## Active Nav
 - The top navigation highlights the active route.
-- Breadcrumbs appear under the header and follow TanStack Router matches.
 
 ## Document Detail Linking & PDF Preview
 - Checklist "Open" buttons create/open a document and navigate to `/documents/:docId`.

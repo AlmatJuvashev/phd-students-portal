@@ -1,5 +1,4 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Breadcrumbs } from "../components/ui/breadcrumbs";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
@@ -16,7 +15,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   const role = me?.role;
   const { pathname } = useLocation();
   const active = (p: string) =>
-    pathname === p ? "font-semibold underline" : "underline";
+    pathname === p ? "font-semibold" : "text-muted-foreground hover:underline";
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -50,7 +49,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
           )}
           {authed ? (
             <button
-              className={active("/")}
+              className="text-muted-foreground hover:underline"
               onClick={() => {
                 localStorage.removeItem("token");
                 location.href = "/login";
@@ -59,9 +58,11 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               {T("nav.logout")}
             </button>
           ) : (
-            <Link to="/login" className={active("/")}>
-              {T("nav.login")}
-            </Link>
+            pathname !== "/login" ? (
+              <Link to="/login" className="text-muted-foreground hover:underline">
+                {T("nav.login")}
+              </Link>
+            ) : null
           )}
           <select
             className="ml-2 border rounded px-1 py-0.5 text-xs"
@@ -74,10 +75,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
           </select>
         </nav>
       </header>
-      <main>
-        <Breadcrumbs />
-        {children ?? <Outlet />}
-      </main>
+      <main>{children ?? <Outlet />}</main>
     </div>
   );
 }

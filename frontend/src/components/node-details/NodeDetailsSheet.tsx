@@ -30,6 +30,7 @@ export function NodeDetailsSheet({
 }) {
   const { t: T } = useTranslation("common");
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
   const { submission, isLoading, save } = useSubmission(node?.id || null);
@@ -53,6 +54,7 @@ export function NodeDetailsSheet({
         const payload = { ...(evt.payload ?? {}) };
         const isDraft = !!payload.__draft;
         delete payload.__draft;
+        const nextOverride: string | undefined = (evt.payload && evt.payload.__nextOverride) || undefined;
         setSaving(true);
         try {
           const res = await save.mutateAsync({
@@ -69,7 +71,7 @@ export function NodeDetailsSheet({
             // persist session progress for this node
             patchJourneyState({ [node.id]: "submitted" });
             onStateRefresh?.();
-            const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
+            const nextId = nextOverride || (Array.isArray(node.next) ? node.next[0] : undefined);
             onOpenChange(false);
             if (nextId) {
               onAdvance?.(nextId);
@@ -149,6 +151,23 @@ export function NodeDetailsSheet({
                 <Badge className="capitalize">
                   {node.state?.replace("_", " ")}
                 </Badge>
+                {node.type === "form" && submission?.state === "submitted" && (
+                  !editing ? (
+                    <button
+                      className="ml-2 text-xs text-muted-foreground underline"
+                      onClick={() => setEditing(true)}
+                    >
+                      {T("common.edit", { defaultValue: "Edit" })}
+                    </button>
+                  ) : (
+                    <button
+                      className="ml-2 text-xs text-muted-foreground underline"
+                      onClick={() => setEditing(false)}
+                    >
+                      {T("common.cancel_edit", { defaultValue: "Cancel edit" })}
+                    </button>
+                  )
+                )}
               </SheetTitle>
             </SheetHeader>
 
@@ -173,6 +192,7 @@ export function NodeDetailsSheet({
                   submission={submission}
                   onEvent={handleEvent}
                   saving={saving}
+                  canEdit={editing || submission?.state !== "submitted"}
                 />
               )}
             </div>

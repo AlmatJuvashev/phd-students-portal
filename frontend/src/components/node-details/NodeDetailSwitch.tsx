@@ -28,6 +28,7 @@ type Props = {
   onEvent?: (evt: { type: string; payload?: any }) => void; // bubble up submit/finalize/etc.
   submission?: NodeSubmissionDTO | null;
   saving?: boolean;
+  canEdit?: boolean;
 };
 
 export function NodeDetailSwitch({
@@ -36,6 +37,7 @@ export function NodeDetailSwitch({
   onEvent,
   submission,
   saving = false,
+  canEdit,
 }: Props) {
   const kinds = detectActionKinds(node);
   const uiKind = deriveNodeKind(node);
@@ -91,6 +93,19 @@ export function NodeDetailSwitch({
     );
   }
 
+  // Force E3_hearing_nk to use the specialized flow in FormTaskDetails (yes/no cards, back navigation)
+  if (node.id === "E3_hearing_nk") {
+    return (
+      <FormTaskDetails
+        node={node}
+        canEdit={canEdit ?? !saving}
+        initial={initialForm}
+        disabled={saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+
   // permissions (rough defaults, adjust as you wire real RBAC)
   const canDecide = role === "secretary" || role === "chair";
   const canUpload = role !== "admin"; // example
@@ -104,7 +119,7 @@ export function NodeDetailSwitch({
         <FormEntryDetails
           node={node}
           initial={initialForm}
-          disabled={saving}
+          disabled={saving || canEdit === false}
           onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
         />
       );
@@ -137,7 +152,7 @@ export function NodeDetailSwitch({
         return (
           <FormTaskDetails
             node={node}
-            canEdit={!saving}
+            canEdit={canEdit ?? !saving}
             initial={initialForm}
             disabled={saving}
             onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}

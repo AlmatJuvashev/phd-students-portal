@@ -49,6 +49,11 @@
   "common": {
     "loading": "Loading…",
     "cancel": "Cancel",
+    "back": "Back",
+    "copy": "Copy",
+    "copied": "Copied",
+    "edit": "Edit",
+    "cancel_edit": "Cancel edit",
     "success": "Saved.",
     "error": "Error",
     "info": "Info",
@@ -72,5 +77,28 @@
   "decision": {
     "instructions": "Confirm when this checkpoint is ready.",
     "submit": "Mark as ready"
+  },
+  "forms.nk.done_info": "Answers saved. Proceeding to the next step…",
+  "home": {
+    "journey_hint": "Open your doctoral journey map.",
+    "open_journey": "Open Journey",
+    "supervisors": "Supervisors",
+    "contacts_hint": "Find and copy your supervisors’ contact details.",
+    "open_contacts": "Contacts",
+    "no_contacts": "No contacts available."
+  },
+  "map": {
+    "title": "My Dissertation Map",
+    "progress": "Progress",
+    "done_suffix": "Done"
+  },
+  "fields": {
+    "full_name": "Full name",
+    "specialty": "Specialty",
+    "program": "Program",
+    "graduation_date": "Graduation date",
+    "advisors_full_names": "Advisors' full names",
+    "dissertation_form": "Dissertation form",
+    "dissertation_form_other": "Other (specify)"
   }
 }

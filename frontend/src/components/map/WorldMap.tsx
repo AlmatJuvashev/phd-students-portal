@@ -13,6 +13,7 @@ import { patchJourneyState } from "@/features/journey/session";
 import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
 import { useConditions } from "@/features/journey/useConditions";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -35,6 +36,7 @@ export function WorldMap({
   stateByNodeId?: Record<string, NodeVM["state"]>;
   onStateChanged?: () => void;
 }) {
+  const { t: T } = useTranslation("common");
   const vm = useMemo(
     () => toViewModel(playbook, stateByNodeId),
     [playbook, stateByNodeId],
@@ -100,16 +102,14 @@ export function WorldMap({
       <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm shadow-sm -mx-4 -mt-4 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="w-10"></div>
-          <h1 className="text-lg font-bold text-center">My Journey</h1>
+          <h1 className="text-lg font-bold text-center">{T("map.title", { defaultValue: "My Dissertation Map" })}</h1>
           <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10">
             {/* <Settings /> */}
           </button>
         </div>
         <div className="px-4 pb-1 pt-2">
           <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
-            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2">
-              Progress:
-            </span>
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2">{T("map.progress", { defaultValue: "Progress" })}:</span>
             <div className="flex-grow bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mx-3">
               <div
                 className="bg-primary h-2.5 rounded-full"
@@ -127,7 +127,7 @@ export function WorldMap({
         .filter((w) => (w.id === "W3" ? rp_required : true))
         .map((w, wi, arr) => {
           const worldDoneNodes = w.nodes.filter((n) => n.state === "done").length;
-          const worldProgressText = `${worldDoneNodes}/${w.nodes.length} Done`;
+          const worldProgressText = `${worldDoneNodes}/${w.nodes.length} ${T("map.done_suffix", { defaultValue: "Done" })}`;
           const isWorldDone = worldDoneNodes === w.nodes.length;
           const isWorldLocked =
           wi > 0 &&
