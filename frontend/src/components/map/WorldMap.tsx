@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useSubmission } from "@/features/journey/hooks";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import DevBar from "@/features/journey/components/DevBar";
 import clsx from "clsx";
 
 type Pos = { x: number; y: number };
@@ -42,9 +43,18 @@ export function WorldMap({
   onStateChanged?: () => void;
 }) {
   const { t: T } = useTranslation("common");
+  const unlockAll = (import.meta as any).env?.VITE_UNLOCK_ALL_NODES === "true";
+  const stateOverride = useMemo(() => {
+    if (!unlockAll) return stateByNodeId;
+    const m: Record<string, NodeVM["state"]> = {};
+    for (const w of playbook.worlds) {
+      for (const n of w.nodes) m[n.id] = "active";
+    }
+    return m;
+  }, [unlockAll, playbook, stateByNodeId]);
   const vm = useMemo(
-    () => toViewModel(playbook, stateByNodeId),
-    [playbook, stateByNodeId]
+    () => toViewModel(playbook, stateOverride),
+    [playbook, stateOverride]
   );
   const [openNode, setOpenNode] = useState<NodeVM | null>(null);
   const [gatewayNode, setGatewayNode] = useState<NodeVM | null>(null);
@@ -147,7 +157,7 @@ export function WorldMap({
       </header>
 
       {vm.worlds
-        .filter((w) => (w.id === "W3" ? rp_required : true))
+        .filter((w) => (w.id === "W3" ? unlockAll || rp_required : true))
         .map((w, wi, arr) => {
           const worldDoneNodes = w.nodes.filter(
             (n) => n.state === "done"
@@ -364,6 +374,8 @@ export function WorldMap({
           }
         }}
       />
+
+      {import.meta.env.DEV && <DevBar />}
     </div>
   );
 }

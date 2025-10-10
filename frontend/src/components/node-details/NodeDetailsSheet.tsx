@@ -14,6 +14,7 @@ import { NodeSubmissionDTO } from "@/api/journey";
 import { useSubmission } from "@/features/journey/hooks";
 import { useTranslation } from "react-i18next";
 import { patchJourneyState } from "@/features/journey/session";
+import { api } from "@/api/client";
 
 export function NodeDetailsSheet({
   node,
@@ -60,7 +61,7 @@ export function NodeDetailsSheet({
         try {
           const res = await save.mutateAsync({
             form_data: payload,
-            state: isDraft ? "active" : "submitted",
+            state: isDraft ? "active" : "done",
           });
           // toast removed -> optionally log success
           console.info(
@@ -70,7 +71,15 @@ export function NodeDetailsSheet({
           setErrorMsg(null);
           if (!isDraft) {
             // persist session progress for this node
-            patchJourneyState({ [node.id]: "submitted" });
+            patchJourneyState({ [node.id]: "done" });
+            try {
+              await api("/journey/state", {
+                method: "PUT",
+                body: JSON.stringify({ node_id: node.id, state: "done" }),
+              });
+            } catch (e) {
+              console.warn("state upsert failed", e);
+            }
             onStateRefresh?.();
             const nextId =
               nextOverride ||
@@ -99,7 +108,7 @@ export function NodeDetailsSheet({
         try {
           const res = await save.mutateAsync({
             form_data: evt.payload ?? {},
-            state: "submitted",
+            state: "done",
           });
           // toast removed -> optionally log success
           console.info(
@@ -107,6 +116,17 @@ export function NodeDetailsSheet({
             T("common.success", { defaultValue: "Saved." })
           );
           setErrorMsg(null);
+          if (node) {
+            patchJourneyState({ [node.id]: "done" });
+            try {
+              await api("/journey/state", {
+                method: "PUT",
+                body: JSON.stringify({ node_id: node.id, state: "done" }),
+              });
+            } catch (e) {
+              console.warn("state upsert failed", e);
+            }
+          }
           onStateRefresh?.();
           const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
           onOpenChange(false);
@@ -229,7 +249,9 @@ export function NodeDetailsSheet({
                   onEvent={handleEvent}
                   saving={saving}
                   canEdit={
-                    editing || (submission as any)?.state !== "submitted"
+                    editing || !["submitted", "done"].includes(
+                      (submission as any)?.state as any
+                    )
                   }
                 />
               )}
