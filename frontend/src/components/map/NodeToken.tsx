@@ -73,7 +73,8 @@ const idIcon: Record<string, LucideIcon> = {
 
 const stateStyles = {
   locked: {
-    iconBg: "bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700",
+    iconBg:
+      "bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700",
     iconColor: "text-gray-600 dark:text-gray-400",
     badge: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
     ring: "",
@@ -83,7 +84,7 @@ const stateStyles = {
     iconBg: "bg-gradient-to-br from-primary via-primary to-blue-600",
     iconColor: "text-white",
     badge: "bg-primary/20 text-primary",
-    ring: "ring-4 ring-primary/30 animate-pulse",
+    ring: "ring-4 ring-primary/25 shadow-[0_0_12px_rgba(56,139,253,0.25)]",
     opacity: "",
   },
   submitted: {
@@ -158,7 +159,8 @@ export function NodeToken({
             {
               "shadow-lg hover:shadow-2xl": isClickable,
               "shadow-md": !isClickable,
-              "ring-2 ring-white/50 dark:ring-gray-700/50": !isDone && node.state !== "locked",
+              "ring-2 ring-white/50 dark:ring-gray-700/50":
+                !isDone && node.state !== "locked",
               "ring-2 ring-green-300/60 dark:ring-green-700/60": isDone,
             },
             styles.iconBg,

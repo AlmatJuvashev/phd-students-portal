@@ -33,11 +33,7 @@ export function DevBar() {
       <div className="rounded-lg border bg-background/90 backdrop-blur p-3 text-xs shadow-md">
         <div className="font-semibold mb-2">Dev Tools</div>
         <label className="inline-flex items-center gap-2 mb-2">
-          <input
-            type="checkbox"
-            checked={unlockAll}
-            onChange={toggleUnlock}
-          />
+          <input type="checkbox" checked={unlockAll} onChange={toggleUnlock} />
           <span>Unlock all nodes</span>
         </label>
         <div className="flex gap-2">
@@ -51,4 +47,3 @@ export function DevBar() {
 }
 
 export default DevBar;
-

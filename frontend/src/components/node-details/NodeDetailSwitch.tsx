@@ -214,17 +214,34 @@ export function NodeDetailSwitch({
               onContinue={() => onEvent?.({ type: "continue" })}
             />
           );
-        if (node.type === "confirmTask")
+        if (node.type === "confirmTask") {
+          const nextOverride = (node as any)?.states?.completed?.next_node;
           return (
             <ConfirmTaskDetails
               node={node}
               onComplete={() =>
-                onEvent?.({ type: "submit-decision", payload: {} })
+                onEvent?.({
+                  type: "submit-decision",
+                  payload: nextOverride ? { __nextOverride: nextOverride } : {},
+                })
               }
             />
           );
-        if (node.type === "uploadTask")
-          return <ConfirmUploadTaskDetails node={node} />;
+        }
+        if (node.type === "uploadTask") {
+          const nextOverride = (node as any)?.states?.completed?.next_node;
+          return (
+            <ConfirmUploadTaskDetails
+              node={node}
+              onComplete={() =>
+                onEvent?.({
+                  type: "submit-decision",
+                  payload: nextOverride ? { __nextOverride: nextOverride } : {},
+                })
+              }
+            />
+          );
+        }
       default:
         return (
           <GatewayInfoDetails
@@ -307,11 +324,15 @@ export function NodeDetailSwitch({
         );
       }
       if (node.type === "confirmTask") {
+        const nextOverride = (node as any)?.states?.completed?.next_node;
         return (
           <ConfirmTaskDetails
             node={node}
             onComplete={() =>
-              onEvent?.({ type: "submit-decision", payload: {} })
+              onEvent?.({
+                type: "submit-decision",
+                payload: nextOverride ? { __nextOverride: nextOverride } : {},
+              })
             }
           />
         );

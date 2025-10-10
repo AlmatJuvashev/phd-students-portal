@@ -78,7 +78,7 @@ export function WorldMap({
   const stableStateByNodeId = useMemo(() => {
     const current = stateByNodeId || {};
     const prev = prevStateRef.current || {};
-    
+
     // Check if states actually changed
     const keys = new Set([...Object.keys(current), ...Object.keys(prev)]);
     let hasChanged = false;
@@ -88,7 +88,7 @@ export function WorldMap({
         break;
       }
     }
-    
+
     if (hasChanged) {
       prevStateRef.current = current;
       return current;
@@ -104,7 +104,7 @@ export function WorldMap({
     }
     return m;
   }, [unlockAll, playbook.worlds, stableStateByNodeId]);
-  
+
   const vm = useMemo(
     () => toViewModel(playbook, stateOverride),
     [playbook, stateOverride]
@@ -156,7 +156,8 @@ export function WorldMap({
         next[w.id] = expanded[w.id];
       }
     });
-    const hasNewWorlds = Object.keys(next).length > Object.keys(expanded).length;
+    const hasNewWorlds =
+      Object.keys(next).length > Object.keys(expanded).length;
     if (hasNewWorlds) {
       setExpanded(next);
     }

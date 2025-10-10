@@ -15,6 +15,7 @@ import { useSubmission } from "@/features/journey/hooks";
 import { useTranslation } from "react-i18next";
 import { patchJourneyState } from "@/features/journey/session";
 import { api } from "@/api/client";
+import { useConditions } from "@/features/journey/useConditions";
 
 export function NodeDetailsSheet({
   node,
@@ -35,6 +36,22 @@ export function NodeDetailsSheet({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
   const { submission, isLoading, save } = useSubmission(node?.id || null);
+  const { rp_required } = useConditions();
+
+  // Helper to compute next node based on condition
+  const getConditionalNext = (node: NodeVM): string | undefined => {
+    if (!node.next || !Array.isArray(node.next)) return undefined;
+    
+    // If node has condition "rp_required", choose based on the condition
+    if (node.condition === "rp_required" && node.next.length >= 2) {
+      // First option is for when condition is true (RP required)
+      // Second option is for when condition is false (direct to normokontrol)
+      return rp_required ? node.next[0] : node.next[1];
+    }
+    
+    // Default: first next node
+    return node.next[0];
+  };
 
   useEffect(() => {
     // focus the title on open
@@ -68,7 +85,9 @@ export function NodeDetailsSheet({
             }
           }
           onStateRefresh?.();
-          const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
+          const nextOverride: string | undefined =
+            (evt.payload && (evt.payload as any).__nextOverride) || undefined;
+          const nextId = nextOverride || getConditionalNext(node);
           onOpenChange(false);
           onAdvance?.(nextId ?? null);
         } catch (err: any) {
@@ -109,9 +128,7 @@ export function NodeDetailsSheet({
               console.warn("state upsert failed", e);
             }
             onStateRefresh?.();
-            const nextId =
-              nextOverride ||
-              (Array.isArray(node.next) ? node.next[0] : undefined);
+            const nextId = nextOverride || getConditionalNext(node);
             onOpenChange(false);
             if (nextId) {
               onAdvance?.(nextId);
@@ -156,7 +173,7 @@ export function NodeDetailsSheet({
             }
           }
           onStateRefresh?.();
-          const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
+          const nextId = getConditionalNext(node);
           onOpenChange(false);
           if (nextId) {
             onAdvance?.(nextId);
