@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { NodeSubmissionDTO } from "@/api/journey";
 import { useSubmission } from "@/features/journey/hooks";
 import { useTranslation } from "react-i18next";
+import { patchJourneyState } from "@/features/journey/session";
 
 export function NodeDetailsSheet({
   node,
@@ -65,6 +66,8 @@ export function NodeDetailsSheet({
           );
           setErrorMsg(null);
           if (!isDraft) {
+            // persist session progress for this node
+            patchJourneyState({ [node.id]: "submitted" });
             onStateRefresh?.();
             const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
             onOpenChange(false);

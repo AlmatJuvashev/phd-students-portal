@@ -1,12 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { getNodeSubmission, saveNodeSubmission } from "@/api/journey";
+import { loadJourneyState, saveJourneyState, patchJourneyState } from "./session";
 
 export function useJourneyState() {
   const qc = useQueryClient();
   const query = useQuery({
     queryKey: ["journey", "state"],
-    queryFn: () => api("/journey/state"),
+    queryFn: async () => {
+      const res = await api("/journey/state");
+      // Persist in session for offline fallback
+      if (res && typeof res === "object") saveJourneyState(res);
+      return res;
+    },
+    initialData: loadJourneyState() || undefined,
+    retry: 0,
   });
   const reset = useMutation({
     mutationFn: async () => api("/journey/reset", { method: "POST" }),
@@ -19,7 +27,11 @@ export function useJourneyState() {
         method: "PUT",
         body: JSON.stringify({ node_id, state }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["journey", "state"] }),
+    onSuccess: (_data, vars) => {
+      // Update session copy as well
+      patchJourneyState({ [vars.node_id]: vars.state });
+      qc.invalidateQueries({ queryKey: ["journey", "state"] });
+    },
   });
 
   return {
@@ -53,4 +65,3 @@ export function useAdvance(playbook: any) {
     Array.isArray(node?.next) && node!.next.length > 0 ? node!.next[0] : null;
   return { nextIdOf };
 }
-

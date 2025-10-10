@@ -9,6 +9,7 @@ import { EdgeConnector } from "./EdgeConnector";
 import { ArrowDown, ChevronDown } from "lucide-react";
 import { GatewayModal } from "../node-details/GatewayModal";
 import { api } from "@/api/client";
+import { patchJourneyState } from "@/features/journey/session";
 import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
 import { useConditions } from "@/features/journey/useConditions";
 import { AnimatePresence, motion } from "framer-motion";
@@ -260,6 +261,8 @@ export function WorldMap({
               method: "PUT",
               body: JSON.stringify({ node_id: node.id, state: "done" }),
             });
+            // persist session progress immediately
+            patchJourneyState({ [node.id]: "done" });
             setGatewayNode(null);
             setConfetti(true);
             setTimeout(() => setConfetti(false), 1200);
