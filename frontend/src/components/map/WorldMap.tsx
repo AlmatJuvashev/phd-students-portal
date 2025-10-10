@@ -9,6 +9,8 @@ import { EdgeConnector } from "./EdgeConnector";
 import { ArrowDown } from "lucide-react";
 import { GatewayModal } from "../node-details/GatewayModal";
 import { api } from "@/api/client";
+import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
+import { useConditions } from "@/features/journey/useConditions";
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -37,6 +39,8 @@ export function WorldMap({
   );
   const [openNode, setOpenNode] = useState<NodeVM | null>(null);
   const [gatewayNode, setGatewayNode] = useState<NodeVM | null>(null);
+  const [confetti, setConfetti] = useState(false);
+  const { rp_required } = useConditions();
   const findNode = (id: string): NodeVM | null => {
     for (const world of vm.worlds) {
       const found = world.nodes.find((n) => n.id === id);
@@ -81,14 +85,16 @@ export function WorldMap({
         </div>
       </header>
 
-      {vm.worlds.map((w, wi) => {
-        const worldDoneNodes = w.nodes.filter((n) => n.state === "done").length;
-        const worldProgressText = `${worldDoneNodes}/${w.nodes.length} Done`;
-        const isWorldDone = worldDoneNodes === w.nodes.length;
-        const isWorldLocked =
+      {vm.worlds
+        .filter((w) => (w.id === "W3" ? rp_required : true))
+        .map((w, wi, arr) => {
+          const worldDoneNodes = w.nodes.filter((n) => n.state === "done").length;
+          const worldProgressText = `${worldDoneNodes}/${w.nodes.length} Done`;
+          const isWorldDone = worldDoneNodes === w.nodes.length;
+          const isWorldLocked =
           wi > 0 &&
           (() => {
-            const prev = vm.worlds[wi - 1];
+            const prev = arr[wi - 1];
             const allDone = prev.nodes.every((n) => n.state === "done");
             const gatewayDone = prev.nodes.some(
               (n) => n.type === "gateway" && n.state === "done",
@@ -141,7 +147,7 @@ export function WorldMap({
                 </div>
               </div>
             </Card>
-            {wi < vm.worlds.length - 1 && (
+            {wi < arr.length - 1 && (
               <div className="relative h-16 flex items-center justify-center">
                 <div
                   className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"
@@ -156,6 +162,8 @@ export function WorldMap({
           </div>
         );
       })}
+
+      <ConfettiBurst trigger={confetti} />
 
       <NodeDetailsSheet
         node={openNode}
@@ -184,6 +192,8 @@ export function WorldMap({
               body: JSON.stringify({ node_id: node.id, state: "done" }),
             });
             setGatewayNode(null);
+            setConfetti(true);
+            setTimeout(() => setConfetti(false), 1200);
             onStateChanged?.();
           } catch (e) {
             console.error(e);

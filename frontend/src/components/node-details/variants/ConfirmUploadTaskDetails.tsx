@@ -2,7 +2,6 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { useToast } from "@/components/toast";
 import { getAssetUrl } from "@/lib/assets";
 import type { NodeVM } from "@/lib/playbook";
 import { t, safeText } from "@/lib/playbook";
@@ -17,7 +16,6 @@ const ConfirmUploadTaskDetails: React.FC<ConfirmUploadTaskDetailsProps> = ({
   node,
   onComplete,
 }) => {
-  const { push } = useToast();
   const [isCompleted, setCompleted] = React.useState(
     node?.state === "done" || node?.status === "completed"
   );
@@ -61,10 +59,7 @@ const ConfirmUploadTaskDetails: React.FC<ConfirmUploadTaskDetailsProps> = ({
   const handleConfirm = () => {
     setCompleted(true);
     setConfirmOpen(false);
-    push({
-      title: "Заявление подано",
-      description: "Подача заявления ректору подтверждена.",
-    });
+    // toast removed; keep silent confirmation
     if (onComplete) onComplete();
   };
 

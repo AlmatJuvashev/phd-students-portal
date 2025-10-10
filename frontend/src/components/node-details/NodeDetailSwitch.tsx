@@ -1,17 +1,22 @@
 // components/node-details/NodeDetailSwitch.tsx
 import { NodeVM, detectActionKinds } from "@/lib/playbook";
-import { FormTaskDetails } from "./variants/FormTaskDetails";
-import { UploadTaskDetails } from "./variants/UploadTaskDetails";
-import { OutcomeReviewDetails } from "./variants/OutcomeReviewDetails";
-import { WaitLockDetails } from "./variants/WaitLockDetails";
-import { ExternalProcessDetails } from "./variants/ExternalProcessDetails";
 import { GatewayInfoDetails } from "./variants/GatewayInfoDetails";
-import { CompositeTaskDetails } from "./variants/CompositeTaskDetails";
 import type { NodeSubmissionDTO } from "@/api/journey";
 import { DecisionTaskDetails } from "./variants/DecisionTaskDetails";
 import ConfirmTaskDetails from "./variants/ConfirmTaskDetails";
-import ConfirmUploadTaskDetails from "./variants/ConfirmUploadTaskDetails";
 import InfoDetails from "./variants/InfoDetails";
+import { deriveNodeKind } from "@/features/nodes/deriveNodeKind";
+import FormEntryDetails from "@/features/nodes/kinds/FormEntryDetails";
+import ChecklistDetails from "@/features/nodes/kinds/ChecklistDetails";
+import CardsDetails from "@/features/nodes/kinds/CardsDetails";
+import React, { Suspense } from "react";
+
+// Lazy heavy variants
+const UploadTaskDetails = React.lazy(() => import("./variants/UploadTaskDetails").then(m => ({ default: m.UploadTaskDetails })));
+const CompositeTaskDetails = React.lazy(() => import("./variants/CompositeTaskDetails").then(m => ({ default: m.CompositeTaskDetails })));
+const ConfirmUploadTaskDetails = React.lazy(() => import("./variants/ConfirmUploadTaskDetails").then(m => ({ default: m.default })));
+const ExternalProcessDetails = React.lazy(() => import("./variants/ExternalProcessDetails").then(m => ({ default: m.ExternalProcessDetails })));
+const WaitLockDetails = React.lazy(() => import("./variants/WaitLockDetails").then(m => ({ default: m.WaitLockDetails })));
 
 type Props = {
   node: NodeVM;
@@ -29,6 +34,7 @@ export function NodeDetailSwitch({
   saving = false,
 }: Props) {
   const kinds = detectActionKinds(node);
+  const uiKind = deriveNodeKind(node);
   const initialForm = submission?.form?.data ?? {};
   const attachmentsBySlot = new Map<
     string,
@@ -43,19 +49,38 @@ export function NodeDetailSwitch({
   const canUpload = role !== "admin"; // example
   const canComplete = node.who_can_complete?.includes(role);
 
-  // Prefer rendering a form when node is of type 'form' and includes fields,
-  // even if outcomes also exist (e.g., checklist with completion rule).
-  if (kinds.includes("form") && node.type === "form") {
+  // Prefer UI-specific kinds first for form-like nodes
+  if (node.type === "form") {
     const initialForm = submission?.form?.data ?? {};
-    return (
-      <FormTaskDetails
-        node={node}
-        canEdit={!saving}
-        initial={initialForm}
-        disabled={saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
+    if (uiKind === "formEntry") {
+      return (
+        <FormEntryDetails
+          node={node}
+          initial={initialForm}
+          disabled={saving}
+          onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+        />
+      );
+    }
+    if (uiKind === "checklist") {
+      return (
+        <ChecklistDetails
+          node={node}
+          initial={initialForm}
+          disabled={saving}
+          onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+        />
+      );
+    }
+    if (uiKind === "cards") {
+      return (
+        <CardsDetails
+          node={node}
+          disabled={saving}
+          onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+        />
+      );
+    }
   }
 
   // Single dominant kind
@@ -72,19 +97,23 @@ export function NodeDetailSwitch({
           />
         );
       case "upload":
-        // If this is a simple confirm-style upload task (no real uploads), render ConfirmUploadTaskDetails
+        // Confirm-style upload task (instructions + confirmation only)
         if (node.type === "uploadTask") {
-          return <ConfirmUploadTaskDetails node={node} />;
+          return (
+            <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
+              <ConfirmUploadTaskDetails node={node} />
+            </Suspense>
+          );
         }
         return (
-          <UploadTaskDetails
-            node={node}
-            canEdit={!saving}
-            existing={attachmentsBySlot}
-            onSubmit={(payload) =>
-              onEvent?.({ type: "submit-upload", payload })
-            }
-          />
+          <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
+            <UploadTaskDetails
+              node={node}
+              canEdit={!saving}
+              existing={attachmentsBySlot}
+              onSubmit={(payload) => onEvent?.({ type: "submit-upload", payload })}
+            />
+          </Suspense>
         );
       case "outcome":
         if (node.type === "decision" && canComplete) {
@@ -113,19 +142,21 @@ export function NodeDetailSwitch({
         );
       case "wait":
         return (
-          <WaitLockDetails
-            node={node}
-            onSubscribe={() => onEvent?.({ type: "subscribe-timer" })}
-          />
+          <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
+            <WaitLockDetails
+              node={node}
+              onSubscribe={() => onEvent?.({ type: "subscribe-timer" })}
+            />
+          </Suspense>
         );
       case "external":
         return (
-          <ExternalProcessDetails
-            node={node}
-            onComplete={(payload) =>
-              onEvent?.({ type: "complete-external", payload })
-            }
-          />
+          <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
+            <ExternalProcessDetails
+              node={node}
+              onComplete={(payload) => onEvent?.({ type: "complete-external", payload })}
+            />
+          </Suspense>
         );
       case "gateway":
         // Support explicit lightweight node types without fields/uploads/outcomes
@@ -152,14 +183,14 @@ export function NodeDetailSwitch({
 
   // Composite preference (outcome + upload)
   if (kinds.includes("composite")) {
-    return (
-      <CompositeTaskDetails
-        node={node}
-        onFinalize={(payload) =>
-          onEvent?.({ type: "finalize-composite", payload })
-        }
-      />
-    );
+        return (
+          <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
+            <CompositeTaskDetails
+              node={node}
+              onFinalize={(payload) => onEvent?.({ type: "finalize-composite", payload })}
+            />
+          </Suspense>
+        );
   }
 
   // Fallback: render in priority order (no recursion)

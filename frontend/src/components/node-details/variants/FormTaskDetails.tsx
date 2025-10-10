@@ -157,12 +157,13 @@ export function FormTaskDetails({
           {/* Actions (hidden in read-only) */}
           {!readOnly && (
             <div className="flex gap-2 pt-2">
-              <Button onClick={() => setShowD2Confirm(true)} disabled={!ready}>
+              <Button onClick={() => setShowD2Confirm(true)} disabled={!ready} aria-busy={disabled}>
                 {T("forms.proceed_next")}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => onSubmit?.({ ...values, __draft: true })}
+                aria-busy={disabled}
               >
                 {T("forms.save_draft")}
               </Button>
@@ -224,6 +225,7 @@ export function FormTaskDetails({
                       __nextOverride: nextOnComplete,
                     });
                   }}
+                  aria-busy={disabled}
                 >
                   {T("forms.proceed_next")}
                 </Button>
@@ -303,12 +305,13 @@ export function FormTaskDetails({
           {/* Actions (hidden in read-only) */}
           {!readOnly && (
             <div className="flex gap-2 pt-2">
-              <Button onClick={() => setShowV1Confirm(true)} disabled={!ready}>
+              <Button onClick={() => setShowV1Confirm(true)} disabled={!ready} aria-busy={disabled}>
                 {T("forms.proceed_next")}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => onSubmit?.({ ...values, __draft: true })}
+                aria-busy={disabled}
               >
                 {T("forms.save_draft")}
               </Button>
@@ -370,6 +373,7 @@ export function FormTaskDetails({
                       __nextOverride: nextOnComplete,
                     });
                   }}
+                  aria-busy={disabled}
                 >
                   {T("forms.proceed_next")}
                 </Button>
@@ -448,12 +452,13 @@ export function FormTaskDetails({
 
           {!readOnly && (
             <div className="flex gap-2 pt-2">
-              <Button onClick={() => setShowRP2Confirm(true)} disabled={!ready}>
+              <Button onClick={() => setShowRP2Confirm(true)} disabled={!ready} aria-busy={disabled}>
                 {T("forms.proceed_next")}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => onSubmit?.({ ...values, __draft: true })}
+                aria-busy={disabled}
               >
                 {T("forms.save_draft")}
               </Button>
@@ -514,6 +519,7 @@ export function FormTaskDetails({
                       __nextOverride: nextOnComplete,
                     });
                   }}
+                  aria-busy={disabled}
                 >
                   {T("forms.proceed_next")}
                 </Button>
@@ -1421,13 +1427,14 @@ export function FormTaskDetails({
               })()
             ) : (
               <div className="flex gap-2">
-                <Button onClick={() => onSubmit?.(values)} disabled={disabled}>
+                <Button onClick={() => onSubmit?.(values)} disabled={disabled} aria-busy={disabled}>
                   {T("forms.save_submit")}
                 </Button>
                 <Button
                   variant="secondary"
                   disabled={disabled}
                   onClick={() => onSubmit?.({ ...values, __draft: true })}
+                  aria-busy={disabled}
                 >
                   {T("forms.save_draft")}
                 </Button>

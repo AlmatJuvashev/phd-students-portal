@@ -12,7 +12,6 @@ import {
   CardTitle,
   CardContent,
 } from "../components/ui/card";
-import { useToast } from "../components/toast";
 import { Badge } from "../components/ui/badge";
 import {
   Copy,
@@ -70,7 +69,10 @@ export function AdminUsers() {
     "asc"
   );
   const itemsPerPage = 10;
-  const { push } = useToast();
+  const push = (msg: { title: string; description?: string }) => {
+    // toasts removed; fallback to console + optional alert on important events
+    console.log(`[${msg.title}]`, msg.description || "");
+  };
   const queryClient = useQueryClient();
 
   // Fetch users list - filter out superadmins
@@ -119,7 +121,8 @@ export function AdminUsers() {
       });
     },
     onError: (error: any) => {
-      push({ title: "Error", description: error.message });
+      console.error(error);
+      alert("Error creating user");
     },
   });
 
@@ -132,13 +135,11 @@ export function AdminUsers() {
       setShowEditModal(false);
       setEditingUser(null);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      push({
-        title: "User updated",
-        description: "User details updated successfully",
-      });
+      push({ title: "User updated" });
     },
     onError: (error: any) => {
-      push({ title: "Error", description: error.message });
+      console.error(error);
+      alert("Error updating user");
     },
   });
 
@@ -148,13 +149,11 @@ export function AdminUsers() {
       api(`/admin/users/${userId}/reset-password`, { method: "POST" }),
     onSuccess: (result) => {
       setResetPassword(result);
-      push({
-        title: "Password reset",
-        description: "New temporary password generated",
-      });
+      push({ title: "Password reset" });
     },
     onError: (error: any) => {
-      push({ title: "Error", description: error.message });
+      console.error(error);
+      alert("Error resetting password");
     },
   });
 
@@ -190,27 +189,21 @@ export function AdminUsers() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    push({ title: "Copied", description: "Text copied to clipboard" });
+    push({ title: "Copied" });
   };
 
   const copyUserCredentials = (username: string, password: string) => {
     const loginUrl = window.location.origin + "/login";
     const message = `Your password has been reset. You can login at ${loginUrl}.\n\nUsername: ${username}\nNew Password: ${password}\n\nPlease save these credentials securely and change your password after login.`;
     navigator.clipboard.writeText(message);
-    push({
-      title: "Credentials Copied",
-      description: "Full login message copied to clipboard",
-    });
+    push({ title: "Credentials Copied" });
   };
 
   const copyNewUserCredentials = (username: string, password: string) => {
     const loginUrl = window.location.origin + "/login";
     const message = `Your account has been created. You can login at ${loginUrl}.\n\nUsername: ${username}\nPassword: ${password}\n\nPlease save these credentials securely and change your password after first login.`;
     navigator.clipboard.writeText(message);
-    push({
-      title: "Credentials Copied",
-      description: "Full login message copied to clipboard",
-    });
+    push({ title: "Credentials Copied" });
   };
 
   const handleSort = (field: keyof User) => {
