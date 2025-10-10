@@ -73,42 +73,42 @@ const idIcon: Record<string, LucideIcon> = {
 
 const stateStyles = {
   locked: {
-    iconBg: "bg-gray-300 dark:bg-gray-600",
-    iconColor: "text-gray-500 dark:text-gray-400",
+    iconBg: "bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700",
+    iconColor: "text-gray-600 dark:text-gray-400",
     badge: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
     ring: "",
     opacity: "opacity-60",
   },
   active: {
-    iconBg: "bg-primary",
+    iconBg: "bg-gradient-to-br from-primary via-primary to-blue-600",
     iconColor: "text-white",
     badge: "bg-primary/20 text-primary",
     ring: "ring-4 ring-primary/30 animate-pulse",
     opacity: "",
   },
   submitted: {
-    iconBg: "bg-amber-500",
+    iconBg: "bg-gradient-to-br from-amber-400 to-amber-600",
     iconColor: "text-white",
     badge: "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300",
     ring: "",
     opacity: "",
   },
   waiting: {
-    iconBg: "bg-blue-500",
+    iconBg: "bg-gradient-to-br from-blue-400 to-blue-600",
     iconColor: "text-white",
     badge: "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300",
     ring: "",
     opacity: "",
   },
   needs_fixes: {
-    iconBg: "bg-red-500",
+    iconBg: "bg-gradient-to-br from-red-400 to-red-600",
     iconColor: "text-white",
     badge: "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300",
     ring: "",
     opacity: "",
   },
   done: {
-    iconBg: "bg-green-500",
+    iconBg: "bg-gradient-to-br from-green-400 to-green-600",
     iconColor: "text-white",
     badge: "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300",
     ring: "",
@@ -150,15 +150,16 @@ export function NodeToken({
         })}
       >
         {isBossNode && node.state === "active" && (
-          <div className="absolute -inset-1.5 rounded-full bg-yellow-400 animate-glow"></div>
+          <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-400 blur-sm animate-glow"></div>
         )}
         <div
           className={clsx(
-            "relative w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 border-4 backdrop-blur-sm",
+            "relative w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center transition-all duration-300",
             {
-              "border-white dark:border-gray-800": !isDone,
-              "border-green-200 dark:border-green-800": isDone,
-              "hover:shadow-xl": isClickable,
+              "shadow-lg hover:shadow-2xl": isClickable,
+              "shadow-md": !isClickable,
+              "ring-2 ring-white/50 dark:ring-gray-700/50": !isDone && node.state !== "locked",
+              "ring-2 ring-green-300/60 dark:ring-green-700/60": isDone,
             },
             styles.iconBg,
             styles.ring,
@@ -175,7 +176,7 @@ export function NodeToken({
             fillOpacity={isDone ? 0.2 : 0}
           />
           {isDone && (
-            <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1 w-7 h-7 shadow-lg border-2 border-white dark:border-gray-800 animate-in zoom-in duration-300">
+            <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full p-1 w-7 h-7 shadow-lg ring-2 ring-white/80 dark:ring-gray-800/80 animate-in zoom-in duration-300">
               <Check className="w-4 h-4" strokeWidth={3.5} />
             </div>
           )}
