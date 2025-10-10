@@ -65,7 +65,8 @@
   },
   "journey": {
     "reset": "Reset Journey",
-    "reset_confirm": "Reset your journey progress?"
+    "reset_confirm": "Reset your journey progress?",
+    "reset_hint": "You can reset your journey to start over."
   },
   "upload": {
     "not_supported": "File uploads will be available soon.",
@@ -90,7 +91,10 @@
   "map": {
     "title": "My Dissertation Map",
     "progress": "Progress",
-    "done_suffix": "Done"
+    "done_suffix": "Done",
+    "congrats_title": "Congratulations!",
+    "congrats_message": "Congratulations, {{name}}! You have successfully completed your dissertation journey.",
+    "student_fallback_name": "Student"
   },
   "fields": {
     "full_name": "Full name",

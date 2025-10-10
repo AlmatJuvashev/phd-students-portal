@@ -14,6 +14,9 @@ import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
 import { useConditions } from "@/features/journey/useConditions";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useSubmission } from "@/features/journey/hooks";
+import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -48,6 +51,8 @@ export function WorldMap({
   const worldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const prevDoneRef = useRef<Record<string, boolean>>({});
+  const [showCongrats, setShowCongrats] = useState(false);
+  const { submission: profile } = useSubmission("S1_profile");
   const findNode = (id: string): NodeVM | null => {
     for (const world of vm.worlds) {
       const found = world.nodes.find((n) => n.id === id);
@@ -63,6 +68,17 @@ export function WorldMap({
   );
   const progress =
     totalNodes > 0 ? Math.round((doneNodes / totalNodes) * 100) : 0;
+
+  // Show congratulations modal once when completed
+  useEffect(() => {
+    try {
+      const key = "journey_congrats_shown";
+      if (progress === 100 && !sessionStorage.getItem(key)) {
+        setShowCongrats(true);
+        sessionStorage.setItem(key, "1");
+      }
+    } catch {}
+  }, [progress]);
 
   // Initialize/refresh expanded state per world
   useEffect(() => {
@@ -234,6 +250,24 @@ export function WorldMap({
       })}
 
       <ConfettiBurst trigger={confetti} />
+
+      {/* Congratulations modal */}
+      <Modal open={showCongrats} onClose={() => setShowCongrats(false)}>
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">{T("map.congrats_title", { defaultValue: "Congratulations!" })}</h3>
+          <p className="text-sm text-muted-foreground">
+            {T("map.congrats_message", {
+              defaultValue: "Congratulations, {{name}}! You have successfully completed your dissertation journey.",
+              name:
+                (profile?.form?.data?.full_name as string) ||
+                T("map.student_fallback_name", { defaultValue: "Student" }),
+            })}
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button onClick={() => setShowCongrats(false)}>{T("common.ok", { defaultValue: "OK" })}</Button>
+          </div>
+        </div>
+      </Modal>
 
       <NodeDetailsSheet
         node={openNode}
