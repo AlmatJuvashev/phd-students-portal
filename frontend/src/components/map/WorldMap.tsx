@@ -43,7 +43,35 @@ export function WorldMap({
   onStateChanged?: () => void;
 }) {
   const { t: T } = useTranslation("common");
-  const unlockAll = (import.meta as any).env?.VITE_UNLOCK_ALL_NODES === "true";
+  const [unlockAll, setUnlockAll] = useState(() => {
+    try {
+      return (
+        (import.meta as any).env?.VITE_UNLOCK_ALL_NODES === "true" ||
+        localStorage.getItem("dev_unlock_all_nodes") === "true"
+      );
+    } catch {
+      return (import.meta as any).env?.VITE_UNLOCK_ALL_NODES === "true";
+    }
+  });
+
+  // Listen to storage changes for unlock all
+  useEffect(() => {
+    const handleUnlockChange = () => {
+      try {
+        const isUnlocked =
+          (import.meta as any).env?.VITE_UNLOCK_ALL_NODES === "true" ||
+          localStorage.getItem("dev_unlock_all_nodes") === "true";
+        setUnlockAll(isUnlocked);
+      } catch {}
+    };
+    window.addEventListener("storage", handleUnlockChange);
+    window.addEventListener("dev_unlock_changed", handleUnlockChange);
+    return () => {
+      window.removeEventListener("storage", handleUnlockChange);
+      window.removeEventListener("dev_unlock_changed", handleUnlockChange);
+    };
+  }, []);
+
   const stateOverride = useMemo(() => {
     if (!unlockAll) return stateByNodeId;
     const m: Record<string, NodeVM["state"]> = {};
@@ -167,16 +195,25 @@ export function WorldMap({
             { defaultValue: "Done" }
           )}`;
           const isWorldDone = worldDoneNodes === w.nodes.length;
-          const isWorldLocked =
-            wi > 0 &&
-            (() => {
-              const prev = arr[wi - 1];
-              const allDone = prev.nodes.every((n) => n.state === "done");
-              const gatewayDone = prev.nodes.some(
-                (n) => n.type === "gateway" && n.state === "done"
-              );
-              return !(allDone || gatewayDone);
-            })();
+          const isWorldLocked = (() => {
+            // RP world is visible/unlocked when required or forced
+            if (w.id === "W3" && (rp_required || unlockAll)) return false;
+            if (wi === 0) return false;
+            const prev = arr[wi - 1];
+            const allDone = prev.nodes.every((n) => n.state === "done");
+            const gatewayDone = prev.nodes.some(
+              (n) => n.type === "gateway" && n.state === "done"
+            );
+            if (allDone || gatewayDone) return false;
+            // Edge-based unlock: if any done node in prev points to a node in this world
+            const currentIds = new Set(w.nodes.map((n) => n.id));
+            const edgeUnlock = prev.nodes.some((pn) => {
+              if (pn.state !== "done") return false;
+              const next = Array.isArray(pn.next) ? pn.next : [];
+              return next.some((nid: string) => currentIds.has(nid));
+            });
+            return !edgeUnlock;
+          })();
 
           const isExpanded = !!expanded[w.id];
 
@@ -375,7 +412,7 @@ export function WorldMap({
         }}
       />
 
-      {import.meta.env.DEV && <DevBar />}
+      {(import.meta as any).env?.DEV && <DevBar />}
     </div>
   );
 }

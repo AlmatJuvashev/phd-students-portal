@@ -145,10 +145,58 @@ export type NodeState =
   | "done";
 export type NodeVM = NodeDef & { worldId: string; state: NodeState };
 
+/**
+ * Compute node states with automatic unlocking based on prerequisites.
+ * If a node is "locked" but all its prerequisites are "done", it becomes "active".
+ */
+export function computeNodeStates(
+  pb: Playbook,
+  rawStateByNodeId: Record<string, NodeState> = {}
+): Record<string, NodeState> {
+  const computed: Record<string, NodeState> = { ...rawStateByNodeId };
+  const { nodeById } = indexPlaybook(pb);
+
+  // Helper to check if all prerequisites are done
+  const allPrereqsDone = (prereqs: string[] | undefined): boolean => {
+    if (!prereqs || prereqs.length === 0) return true;
+    return prereqs.every((prereqId) => computed[prereqId] === "done");
+  };
+
+  // Iterate through all nodes and compute states
+  let changed = true;
+  let iterations = 0;
+  const maxIterations = 100; // safety limit
+
+  while (changed && iterations < maxIterations) {
+    changed = false;
+    iterations++;
+
+    pb.worlds.forEach((world) => {
+      world.nodes.forEach((node) => {
+        const currentState = computed[node.id] ?? "locked";
+
+        // Only process locked nodes
+        if (currentState === "locked") {
+          // Check if all prerequisites are done
+          if (allPrereqsDone(node.prerequisites)) {
+            computed[node.id] = "active";
+            changed = true;
+          }
+        }
+      });
+    });
+  }
+
+  return computed;
+}
+
 export function toViewModel(
   pb: Playbook,
   stateByNodeId: Record<string, NodeState> = {}
 ): { worlds: Array<{ id: string; title: string; nodes: NodeVM[] }> } {
+  // Compute states with prerequisite logic before building view model
+  const computedStates = computeNodeStates(pb, stateByNodeId);
+
   const worlds = [...pb.worlds]
     .sort((a, b) => a.order - b.order)
     .map((w) => ({
@@ -157,7 +205,7 @@ export function toViewModel(
       nodes: w.nodes.map((n) => ({
         ...n,
         worldId: w.id,
-        state: stateByNodeId[n.id] ?? "locked",
+        state: computedStates[n.id] ?? "locked",
       })),
     }));
   return { worlds };
