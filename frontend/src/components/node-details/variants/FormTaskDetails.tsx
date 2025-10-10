@@ -33,6 +33,7 @@ export function FormTaskDetails({
   const [values, setValues] = useState<Record<string, any>>(initial);
   const [showOmidConfirm, setShowOmidConfirm] = useState(false);
   const [showNkConfirm, setShowNkConfirm] = useState(false);
+  // extracted scenes handle their own confirmations; keep local ones for legacy variants
   const [showD2Confirm, setShowD2Confirm] = useState(false);
   const [showV1Confirm, setShowV1Confirm] = useState(false);
   const [showRP2Confirm, setShowRP2Confirm] = useState(false);
@@ -53,8 +54,8 @@ export function FormTaskDetails({
 
   const evalVisible = (expr?: string) => evalVisibleExpr(values, expr);
 
-  // D2_apply_to_ds: checklist with proceed guard and 60/40 layout
-  if (node.id === "D2_apply_to_ds") {
+  // D2_apply_to_ds handled by a dedicated scene in NodeDetailSwitch
+  if (false && node.id === "D2_apply_to_ds") {
     // ready when all required boolean fields are checked true
     const requiredBools = fields.filter(
       (f) => f.type === "boolean" && f.required
@@ -205,8 +206,8 @@ export function FormTaskDetails({
     );
   }
 
-  // V1_reinstatement_package: same UX as D2 (60/40 checklist + guard + read-only)
-  if (node.id === "V1_reinstatement_package") {
+  // V1_reinstatement_package handled by a dedicated scene in NodeDetailSwitch
+  if (false && node.id === "V1_reinstatement_package") {
     const requiredBools = fields.filter(
       (f) => f.type === "boolean" && f.required
     );
@@ -353,8 +354,8 @@ export function FormTaskDetails({
     );
   }
 
-  // RP2_sc_hearing_prep: checklist with guard + read-only (like D2)
-  if (node.id === "RP2_sc_hearing_prep") {
+  // RP2_sc_hearing_prep handled by a dedicated scene in NodeDetailSwitch
+  if (false && node.id === "RP2_sc_hearing_prep") {
     const requiredBools = fields.filter(
       (f) => f.type === "boolean" && f.required
     );
