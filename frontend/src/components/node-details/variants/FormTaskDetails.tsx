@@ -500,8 +500,8 @@ export function FormTaskDetails({
     );
   }
 
-  // VI_attestation_file: final checklist (like D2) with guard and read-only
-  if (node.id === "VI_attestation_file") {
+  // VI_attestation_file handled by a dedicated scene in NodeDetailSwitch
+  if (false && node.id === "VI_attestation_file") {
     const requiredBools = fields.filter(
       (f) => f.type === "boolean" && f.required
     );

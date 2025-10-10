@@ -13,6 +13,7 @@ import React, { Suspense } from "react";
 import D2ApplyToDsScene from "@/features/nodes/scenes/D2ApplyToDsScene";
 import V1ReinstatementScene from "@/features/nodes/scenes/V1ReinstatementScene";
 import RP2HearingPrepScene from "@/features/nodes/scenes/RP2HearingPrepScene";
+import VIAttestationScene from "@/features/nodes/scenes/VIAttestationScene";
 import { FormTaskDetails } from "./variants/FormTaskDetails";
 
 // Lazy heavy variants
@@ -70,6 +71,16 @@ export function NodeDetailSwitch({
   if (node.id === "RP2_sc_hearing_prep") {
     return (
       <RP2HearingPrepScene
+        node={node}
+        initial={initialForm}
+        disabled={saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+  if (node.id === "VI_attestation_file") {
+    return (
+      <VIAttestationScene
         node={node}
         initial={initialForm}
         disabled={saving}
