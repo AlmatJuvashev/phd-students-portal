@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { APP_NAME } from "../config";
 import { useTranslation } from "react-i18next";
+import { Globe } from "lucide-react";
+import { DropdownMenu, DropdownItem } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const { t: T, i18n } = useTranslation("common");
@@ -64,15 +67,55 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               </Link>
             ) : null
           )}
-          <select
-            className="ml-2 border rounded px-1 py-0.5 text-xs"
-            value={i18n.language}
-            onChange={(e) => i18n.changeLanguage(e.target.value)}
+          <DropdownMenu
+            trigger={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 h-8 px-3 text-sm font-medium hover:bg-primary/10 transition-all duration-200"
+              >
+                <Globe className="h-4 w-4" />
+                <span className="hidden sm:inline">{i18n.language.toUpperCase()}</span>
+              </Button>
+            }
           >
-            <option value="ru">RU</option>
-            <option value="kz">KZ</option>
-            <option value="en">EN</option>
-          </select>
+            <DropdownItem
+              onClick={() => i18n.changeLanguage("ru")}
+            >
+              <div
+                className={`flex items-center gap-3 ${
+                  i18n.language === "ru" ? "font-semibold text-primary" : ""
+                }`}
+              >
+                <span className="text-lg">🇷🇺</span>
+                <span>Русский</span>
+              </div>
+            </DropdownItem>
+            <DropdownItem
+              onClick={() => i18n.changeLanguage("kz")}
+            >
+              <div
+                className={`flex items-center gap-3 ${
+                  i18n.language === "kz" ? "font-semibold text-primary" : ""
+                }`}
+              >
+                <span className="text-lg">🇰🇿</span>
+                <span>Қазақша</span>
+              </div>
+            </DropdownItem>
+            <DropdownItem
+              onClick={() => i18n.changeLanguage("en")}
+            >
+              <div
+                className={`flex items-center gap-3 ${
+                  i18n.language === "en" ? "font-semibold text-primary" : ""
+                }`}
+              >
+                <span className="text-lg">🇬🇧</span>
+                <span>English</span>
+              </div>
+            </DropdownItem>
+          </DropdownMenu>
         </nav>
       </header>
       <main>{children ?? <Outlet />}</main>
