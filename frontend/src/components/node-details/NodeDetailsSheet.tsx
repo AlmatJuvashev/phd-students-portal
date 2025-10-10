@@ -10,11 +10,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { NodeDetailSwitch } from "./NodeDetailSwitch";
 import { useEffect, useRef, useState } from "react";
-import {
-  getNodeSubmission,
-  NodeSubmissionDTO,
-  saveNodeSubmission,
-} from "@/api/journey";
+import { NodeSubmissionDTO } from "@/api/journey";
+import { useSubmission } from "@/features/journey/hooks";
 import { useTranslation } from "react-i18next";
 
 export function NodeDetailsSheet({
@@ -31,44 +28,14 @@ export function NodeDetailsSheet({
   onAdvance?: (nextNodeId: string | null) => void;
 }) {
   const { t: T } = useTranslation("common");
-  const [submission, setSubmission] = useState<NodeSubmissionDTO | null>(null);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLDivElement | null>(null);
+  const { submission, isLoading, save } = useSubmission(node?.id || null);
 
   useEffect(() => {
-    if (!node) {
-      setSubmission(null);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    const run = async () => {
-      setLoading(true);
-      try {
-        const data = await getNodeSubmission(node.id);
-        if (!cancelled) {
-          setSubmission(data);
-        }
-      } catch (err: any) {
-        if (!cancelled) {
-          // toast removed -> log error instead
-          console.error(
-            T("common.error", { defaultValue: "Error" }),
-            err?.message ?? String(err)
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [node?.id, T]);
+    // focus the title on open
+    if (node && titleRef.current) titleRef.current.focus();
+  }, [node?.id]);
 
   useEffect(() => {
     if (node && titleRef.current) {
@@ -86,11 +53,10 @@ export function NodeDetailsSheet({
         delete payload.__draft;
         setSaving(true);
         try {
-          const res = await saveNodeSubmission(node.id, {
+          const res = await save.mutateAsync({
             form_data: payload,
             state: isDraft ? "active" : "submitted",
           });
-          setSubmission(res);
           // toast removed -> optionally log success
           console.info(
             isDraft ? T("forms.save_draft") : T("forms.save_submit"),
@@ -120,11 +86,10 @@ export function NodeDetailsSheet({
       case "submit-decision": {
         setSaving(true);
         try {
-          const res = await saveNodeSubmission(node.id, {
+          const res = await save.mutateAsync({
             form_data: evt.payload ?? {},
             state: "submitted",
           });
-          setSubmission(res);
           // toast removed -> optionally log success
           console.info(
             T("decision.submit"),
@@ -180,7 +145,7 @@ export function NodeDetailsSheet({
             </SheetHeader>
 
             <div className="mt-6 h-[calc(100vh-8rem)] overflow-hidden">
-              {loading ? (
+              {isLoading ? (
                 <div className="text-sm text-muted-foreground">
                   {T("common.loading")}
                 </div>

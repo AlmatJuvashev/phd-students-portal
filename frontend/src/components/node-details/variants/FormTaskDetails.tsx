@@ -1,8 +1,5 @@
 // components/node-details/variants/FormTaskDetails.tsx
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { NodeVM, FieldDef, t } from "@/lib/playbook";
@@ -13,6 +10,10 @@ import { useTranslation } from "react-i18next";
 import { AssetsDownloads } from "../AssetsDownloads";
 import { Check } from "lucide-react";
 import { assetsForNode, allAssets } from "@/lib/assets";
+import { evalVisible as evalVisibleExpr } from "@/features/forms/Visibility";
+import { FieldRenderer } from "@/features/forms/FieldRenderer";
+import { ActionsBar } from "@/features/forms/ActionsBar";
+import { TemplatesPanel } from "@/features/forms/TemplatesPanel";
 
 type Props = {
   node: NodeVM;
@@ -50,40 +51,7 @@ export function FormTaskDetails({
     console.log("Current values:", values);
   }, [values]);
 
-  function evalVisible(expr?: string) {
-    if (!expr) return true;
-    try {
-      const mEq = expr.match(/form\.([a-zA-Z0-9_]+)\s*==\s*(true|false)/);
-      if (mEq) {
-        const key = mEq[1];
-        const val = mEq[2] === "true";
-        if (!Object.prototype.hasOwnProperty.call(values, key)) return false;
-        console.log(`Evaluating visibility for ${key}:`, values[key] === val);
-        return !!values[key] === val;
-      }
-      const mNeq = expr.match(/form\.([a-zA-Z0-9_]+)\s*!=\s*(true|false)/);
-      if (mNeq) {
-        const key = mNeq[1];
-        const val = mNeq[2] === "true";
-        if (!Object.prototype.hasOwnProperty.call(values, key)) return false;
-        console.log(`Evaluating visibility for ${key}:`, values[key] !== val);
-        return !!values[key] !== val;
-      }
-      if (expr.includes("&&") || expr.includes("||")) {
-        const replaced = expr.replace(/form\.([a-zA-Z0-9_]+)/g, (s, k) => {
-          return Object.prototype.hasOwnProperty.call(values, k)
-            ? JSON.stringify(!!values[k])
-            : "undefined";
-        });
-        console.log("Evaluating compound expression:", replaced);
-        return Function(`return (${replaced});`)();
-      }
-      return true;
-    } catch (e) {
-      console.error("Error evaluating visibility expression:", expr, e);
-      return true;
-    }
-  }
+  const evalVisible = (expr?: string) => evalVisibleExpr(values, expr);
 
   // D2_apply_to_ds: checklist with proceed guard and 60/40 layout
   if (node.id === "D2_apply_to_ds") {
@@ -1164,56 +1132,14 @@ export function FormTaskDetails({
           ) : (
             <div className="space-y-3">
               {fields.map((f) => (
-                <div key={f.key} className="grid gap-1">
-                  {f.type === "boolean" ? (
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        id={f.key}
-                        type="checkbox"
-                        disabled={!canEdit}
-                        checked={!!values[f.key]}
-                        onChange={(e) => setField(f.key, e.target.checked)}
-                      />
-                      <span>
-                        {t(f.label, f.key)}{" "}
-                        {f.required ? (
-                          <span className="text-destructive">*</span>
-                        ) : null}
-                      </span>
-                    </label>
-                  ) : (
-                    <>
-                      <Label htmlFor={f.key}>
-                        {t(f.label, f.key)}{" "}
-                        {f.required ? (
-                          <span className="text-destructive">*</span>
-                        ) : null}
-                      </Label>
-                      {f.type === "textarea" || f.type === "array" ? (
-                        <Textarea
-                          id={f.key}
-                          disabled={!canEdit}
-                          placeholder={
-                            f.type === "array"
-                              ? T("forms.array_hint")
-                              : t(f.placeholder, "")
-                          }
-                          value={values[f.key] ?? ""}
-                          onChange={(e) => setField(f.key, e.target.value)}
-                        />
-                      ) : (
-                        <Input
-                          id={f.key}
-                          disabled={!canEdit}
-                          type={f.type === "number" ? "number" : "text"}
-                          placeholder={t(f.placeholder, "")}
-                          value={values[f.key] ?? ""}
-                          onChange={(e) => setField(f.key, e.target.value)}
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
+                <FieldRenderer
+                  key={f.key}
+                  field={f as any}
+                  value={values[f.key]}
+                  onChange={(v) => setField(f.key, v)}
+                  canEdit={canEdit}
+                  disabled={disabled}
+                />
               ))}
             </div>
           )}
@@ -1426,19 +1352,11 @@ export function FormTaskDetails({
                 );
               })()
             ) : (
-              <div className="flex gap-2">
-                <Button onClick={() => onSubmit?.(values)} disabled={disabled} aria-busy={disabled}>
-                  {T("forms.save_submit")}
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={disabled}
-                  onClick={() => onSubmit?.({ ...values, __draft: true })}
-                  aria-busy={disabled}
-                >
-                  {T("forms.save_draft")}
-                </Button>
-              </div>
+              <ActionsBar
+                onSubmit={() => onSubmit?.(values)}
+                onDraft={() => onSubmit?.({ ...values, __draft: true })}
+                disabled={disabled}
+              />
             )}
           </div>
         )}
