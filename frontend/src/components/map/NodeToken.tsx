@@ -23,36 +23,44 @@ import {
   Package,
   FileSignature,
   RefreshCw,
+  FileEdit,
+  ClipboardList,
+  BookOpen,
+  ScrollText,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { NodeVM, t } from "@/lib/playbook";
 import clsx from "clsx";
 
 const typeIcon: Record<NodeVM["type"], LucideIcon> = {
-  form: FormInput,
+  form: ClipboardList,
   upload: Upload,
   decision: GitMerge,
   meeting: Users,
-  waiting: Hourglass,
+  waiting: Clock,
   external: ExternalLink,
   boss: Trophy,
-  gateway: MapPin,
-  info: MapPin,
-  confirmTask: Check,
-  uploadTask: Upload,
+  gateway: ArrowRight,
+  info: BookOpen,
+  confirmTask: CheckCircle2,
+  uploadTask: FileEdit,
 };
 
 // More accurate icons by node id when available
 const idIcon: Record<string, LucideIcon> = {
   // Section 1 — Student preparation
-  S1_text_ready: FileText,
+  S1_text_ready: ScrollText,
   S1_antiplag: ShieldCheck,
   S1_publications_list: ListChecks,
   // External application to OMiD
   E1_apply_omid: ClipboardCheck,
   // Hearing at NK (department/committee)
-  E3_hearing_nk: Megaphone,
+  E3_hearing_nk: Users,
   // NCSTE (НЦГНТЭ) steps
-  D1_normokontrol_ncste: GraduationCap,
+  D1_normokontrol_ncste: FileCheck2,
   IV3_publication_certificate_ncste: Award,
   NK_package: Package,
   // DS application / reinstatement
@@ -120,6 +128,7 @@ export function NodeToken({
 
   const isBossNode = node.type === "boss";
   const isClickable = node.state !== "locked";
+  const isDone = node.state === "done";
 
   return (
     <div
@@ -145,7 +154,12 @@ export function NodeToken({
         )}
         <div
           className={clsx(
-            "relative w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300 border-4 border-card dark:border-card-dark backdrop-blur-sm",
+            "relative w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 border-4 backdrop-blur-sm",
+            {
+              "border-white dark:border-gray-800": !isDone,
+              "border-green-200 dark:border-green-800": isDone,
+              "hover:shadow-xl": isClickable,
+            },
             styles.iconBg,
             styles.ring,
             { "boss-node": isBossNode }
@@ -156,10 +170,13 @@ export function NodeToken({
               "h-8 w-8 sm:h-9 sm:w-9 transition-transform group-hover:scale-110 duration-200",
               styles.iconColor
             )}
+            strokeWidth={isDone ? 2.5 : 2}
+            fill={isDone ? "currentColor" : "none"}
+            fillOpacity={isDone ? 0.2 : 0}
           />
-          {node.state === "done" && (
-            <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1 w-6 h-6 shadow-md animate-in zoom-in duration-300">
-              <Check className="w-4 h-4" strokeWidth={3} />
+          {isDone && (
+            <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1 w-7 h-7 shadow-lg border-2 border-white dark:border-gray-800 animate-in zoom-in duration-300">
+              <Check className="w-4 h-4" strokeWidth={3.5} />
             </div>
           )}
         </div>
@@ -168,11 +185,14 @@ export function NodeToken({
       <div className={clsx("flex-1 min-w-0", { "ml-1": isBossNode })}>
         <h3
           className={clsx(
-            "font-bold text-sm sm:text-base leading-tight transition-colors duration-200 truncate",
+            "font-bold text-sm sm:text-base leading-tight transition-colors duration-200",
             {
               "text-primary": node.state === "active",
+              "text-green-700 dark:text-green-400": isDone,
               "group-hover:text-primary":
-                isClickable && node.state !== "active",
+                isClickable && node.state !== "active" && !isDone,
+              "truncate": !isBossNode,
+              "line-clamp-2": isBossNode,
             }
           )}
         >
@@ -180,12 +200,15 @@ export function NodeToken({
         </h3>
         <div
           className={clsx(
-            "mt-1 text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm transition-all duration-200",
+            "mt-1.5 text-xs font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 shadow-sm transition-all duration-200",
             styles.badge,
             "group-hover:shadow-md"
           )}
         >
           {node.state === "locked" && <Lock className="w-3 h-3" />}
+          {node.state === "active" && <AlertCircle className="w-3 h-3" />}
+          {node.state === "done" && <CheckCircle2 className="w-3 h-3" />}
+          {node.state === "waiting" && <Clock className="w-3 h-3" />}
           <span className="capitalize">{node.state.replace("_", " ")}</span>
         </div>
       </div>

@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useSubmission } from "@/features/journey/hooks";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import clsx from "clsx";
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -237,19 +238,35 @@ export function WorldMap({
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="p-6 sm:p-8 relative bg-gradient-to-b from-transparent to-muted/5">
-                        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/30 via-primary/20 to-transparent"></div>
-                        <div className="space-y-6 sm:space-y-8">
-                          {w.nodes.map((n) => (
-                            <NodeToken
-                              key={n.id}
-                              node={n}
-                              onClick={(node) => {
-                                if (node.type === "gateway")
-                                  setGatewayNode(node);
-                                else setOpenNode(node);
-                              }}
-                            />
+                      <div className="p-6 sm:p-8 relative bg-gradient-to-b from-background/50 via-muted/5 to-muted/10">
+                        {/* Vertical connection line with dots */}
+                        <div className="absolute left-8 top-6 bottom-6 w-1 bg-gradient-to-b from-primary/20 via-primary/10 to-primary/5 rounded-full"></div>
+                        
+                        <div className="space-y-5 sm:space-y-6">
+                          {w.nodes.map((n, idx) => (
+                            <div key={n.id} className="relative">
+                              {/* Connection dot */}
+                              <div className={clsx(
+                                "absolute left-7 top-8 w-3 h-3 rounded-full border-2 border-background z-20",
+                                {
+                                  "bg-green-500": n.state === "done",
+                                  "bg-primary": n.state === "active",
+                                  "bg-amber-500": n.state === "submitted",
+                                  "bg-blue-500": n.state === "waiting",
+                                  "bg-red-500": n.state === "needs_fixes",
+                                  "bg-gray-300": n.state === "locked",
+                                }
+                              )}></div>
+                              
+                              <NodeToken
+                                node={n}
+                                onClick={(node) => {
+                                  if (node.type === "gateway")
+                                    setGatewayNode(node);
+                                  else setOpenNode(node);
+                                }}
+                              />
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -258,15 +275,21 @@ export function WorldMap({
                 </AnimatePresence>
               </Card>
               {wi < arr.length - 1 && (
-                <div className="relative h-16 flex items-center justify-center">
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"
-                    style={{
-                      backgroundImage:
-                        "repeating-linear-gradient(to bottom, #cbd5e1, #cbd5e1 4px, transparent 4px, transparent 8px)",
-                    }}
-                  ></div>
-                  <ArrowDown className="z-10 text-gray-400 dark:text-gray-500 bg-background p-1" />
+                <div className="relative h-20 flex items-center justify-center my-2">
+                  {/* Animated dashed line */}
+                  <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-1 overflow-hidden rounded-full">
+                    <div 
+                      className="w-full h-full bg-gradient-to-b from-primary/30 to-primary/20"
+                      style={{
+                        backgroundImage: "repeating-linear-gradient(to bottom, transparent, transparent 4px, rgba(0,0,0,0.1) 4px, rgba(0,0,0,0.1) 8px)",
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Arrow icon with better styling */}
+                  <div className="z-10 bg-background border-2 border-primary/20 rounded-full p-2 shadow-lg">
+                    <ArrowDown className="w-5 h-5 text-primary animate-bounce" style={{ animationDuration: "2s" }} />
+                  </div>
                 </div>
               )}
             </div>
