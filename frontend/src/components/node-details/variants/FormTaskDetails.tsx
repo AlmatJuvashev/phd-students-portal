@@ -12,6 +12,7 @@ import { assetsForNode, allAssets } from "@/lib/assets";
 import { evalVisible as evalVisibleExpr } from "@/features/forms/Visibility";
 import { FieldRenderer } from "@/features/forms/FieldRenderer";
 import { ActionsBar } from "@/features/forms/ActionsBar";
+import StickyActions from "@/components/ui/sticky-actions";
 
 type Props = {
   node: NodeVM;
@@ -271,6 +272,40 @@ export function FormTaskDetails({
               </Button>
             </div>
           )}
+          {/* Sticky back actions for reminder steps */}
+          {currentStep === "hearingReminder" && (
+            <div className="pt-2">
+              <StickyActions
+                primaryLabel={T("forms.save_draft")}
+                onPrimary={() => onSubmit?.({ ...values, __draft: true })}
+                secondaryLabel={T("forms.nk.back", "Назад")}
+                onSecondary={() => setField("hearing_happened", undefined)}
+              />
+            </div>
+          )}
+          {currentStep === "reminderA" && (
+            <div className="pt-2">
+              <StickyActions
+                primaryLabel={T("forms.save_draft")}
+                onPrimary={() => onSubmit?.({ ...values, __draft: true })}
+                secondaryLabel={T("forms.nk.back", "Назад")}
+                onSecondary={() => setField("plan_prepared", undefined)}
+              />
+            </div>
+          )}
+          {currentStep === "reminderB" && (
+            <div className="pt-2">
+              <StickyActions
+                primaryLabel={T("forms.save_draft")}
+                onPrimary={() => onSubmit?.({ ...values, __draft: true })}
+                secondaryLabel={T("forms.nk.back", "Назад")}
+                onSecondary={() => {
+                  setField("plan_prepared", undefined);
+                  setField("remarks_resolved", undefined);
+                }}
+              />
+            </div>
+          )}
         </div>
         {/* Right: Templates (40%), sticky */}
         <div className="lg:col-span-2 border-l pl-4 overflow-auto">
@@ -504,6 +539,35 @@ export function FormTaskDetails({
                   </div>
                 );
               })}
+              {/* Sticky back/save for stacked flow */}
+              {(() => {
+                const canBack =
+                  values["remarks_resolved"] !== undefined ||
+                  values["plan_prepared"] !== undefined ||
+                  values["remarks_exist"] !== undefined;
+                const handleBack = () => {
+                  if (values["remarks_resolved"] !== undefined) {
+                    setField("plan_prepared", undefined);
+                    setField("remarks_resolved", undefined);
+                  } else if (values["plan_prepared"] !== undefined) {
+                    setField("remarks_exist", undefined);
+                    setField("plan_prepared", undefined);
+                  } else if (values["remarks_exist"] !== undefined) {
+                    setField("remarks_exist", undefined);
+                  }
+                };
+                return (
+                  <div className="pt-2">
+                    <StickyActions
+                      primaryLabel={T("forms.save_draft")}
+                      onPrimary={() => onSubmit?.({ ...values, __draft: true })}
+                      secondaryLabel={canBack ? T("forms.back") : undefined}
+                      onSecondary={canBack ? handleBack : undefined}
+                      disabled={disabled}
+                    />
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <div className="space-y-3">
