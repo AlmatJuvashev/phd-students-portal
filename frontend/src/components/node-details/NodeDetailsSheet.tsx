@@ -41,14 +41,14 @@ export function NodeDetailsSheet({
   // Helper to compute next node based on condition
   const getConditionalNext = (node: NodeVM): string | undefined => {
     if (!node.next || !Array.isArray(node.next)) return undefined;
-    
+
     // If node has condition "rp_required", choose based on the condition
     if (node.condition === "rp_required" && node.next.length >= 2) {
       // First option is for when condition is true (RP required)
       // Second option is for when condition is false (direct to normokontrol)
       return rp_required ? node.next[0] : node.next[1];
     }
-    
+
     // Default: first next node
     return node.next[0];
   };
@@ -311,7 +311,8 @@ export function NodeDetailsSheet({
                   onEvent={handleEvent}
                   saving={saving}
                   canEdit={
-                    editing || !["submitted", "done"].includes(
+                    editing ||
+                    !["submitted", "done"].includes(
                       (submission as any)?.state as any
                     )
                   }

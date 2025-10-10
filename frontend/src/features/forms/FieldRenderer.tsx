@@ -62,6 +62,15 @@ export function FieldRenderer({
       </div>
     );
   }
+  // Note field - used for section headers or info text
+  if (field.type === "note") {
+    return (
+      <div className="text-sm font-semibold text-foreground mt-4 mb-2">
+        {t(field.label, field.key)}
+      </div>
+    );
+  }
+
   if (field.type === "boolean") {
     return (
       <label className="inline-flex items-center gap-2">
