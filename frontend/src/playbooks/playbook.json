@@ -883,7 +883,11 @@
         {
           "id": "D1_normokontrol_ncste",
           "module": "IV",
-          "title": "НЦГНТЭ: нормоконтроль",
+          "title": {
+            "ru": "НЦГНТЭ: нормоконтроль оформления диссертации",
+            "kz": "НЦҒНТЭ: диссертацияны рәсімдеудің нормоконтролі",
+            "en": "NCSTE: dissertation formatting check (norm control)"
+          },
           "type": "confirmTask",
           "screen": {
             "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
@@ -1020,7 +1024,11 @@
         {
           "id": "IV3_publication_certificate_ncste",
           "module": "IV",
-          "title": "НЦГНТЭ: справка о публикациях",
+          "title": {
+            "ru": "НЦГНТЭ: справка о публикациях (подтверждение в индексируемых журналах)",
+            "kz": "НЦҒНТЭ: жарияланымдар туралы анықтама (индекстелетін журналдар)",
+            "en": "NCSTE: publication certificate (indexed journals)"
+          },
           "type": "confirmTask",
           "screen": {
             "question": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?",
