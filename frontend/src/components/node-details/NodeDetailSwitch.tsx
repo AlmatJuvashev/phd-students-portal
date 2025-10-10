@@ -215,7 +215,14 @@ export function NodeDetailSwitch({
             />
           );
         if (node.type === "confirmTask")
-          return <ConfirmTaskDetails node={node} />;
+          return (
+            <ConfirmTaskDetails
+              node={node}
+              onComplete={() =>
+                onEvent?.({ type: "submit-decision", payload: {} })
+              }
+            />
+          );
         if (node.type === "uploadTask")
           return <ConfirmUploadTaskDetails node={node} />;
       default:
@@ -300,7 +307,14 @@ export function NodeDetailSwitch({
         );
       }
       if (node.type === "confirmTask") {
-        return <ConfirmTaskDetails node={node} />;
+        return (
+          <ConfirmTaskDetails
+            node={node}
+            onComplete={() =>
+              onEvent?.({ type: "submit-decision", payload: {} })
+            }
+          />
+        );
       }
       return (
         <GatewayInfoDetails
