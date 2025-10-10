@@ -11,10 +11,10 @@ export function HomePage() {
       {/* Hero Section */}
       <div className="text-center space-y-3 py-8">
         <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
-          PhD Student Portal
+          {T("home.hero_title", { defaultValue: "PhD Student Portal" })}
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-          {T("home.welcome", { defaultValue: "Navigate your doctoral journey with clarity and confidence" })}
+          {T("home.hero_subtitle", { defaultValue: "Navigate your doctoral journey with clarity and confidence" })}
         </p>
       </div>
 

@@ -86,7 +86,9 @@
     "supervisors": "Supervisors",
     "contacts_hint": "Find and copy your supervisors’ contact details.",
     "open_contacts": "Contacts",
-    "no_contacts": "No contacts available."
+    "no_contacts": "No contacts available.",
+    "hero_title": "PhD Student Portal",
+    "hero_subtitle": "Navigate your doctoral journey with clarity and confidence"
   },
   "map": {
     "title": "My Dissertation Map",
