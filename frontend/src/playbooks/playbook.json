@@ -1129,7 +1129,7 @@
           "type": "form",
           "who_can_complete": ["student"],
           "prerequisites": ["IV3_publication_certificate_ncste"],
-          "next": ["A1_orders_publication"],
+          "next": ["V1_reinstatement_package"],
           "requirements": {
             "templates": [
               "tpl_app5_ru",
@@ -1275,133 +1275,6 @@
               "Положение о Диссертационном совете.pdf"
             ]
           }
-        },
-
-        {
-          "id": "D2_apply_to_ds_old",
-          "title": {
-            "ru": "Заявление ректору и пакет в ДС",
-            "kz": "Ректорға өтініш және ДК-ға топтама",
-            "en": "Application to Rector and DC package"
-          },
-          "description": {
-            "ru": "Пакет включает: Прил.5, отзывы консультантов (перевод при зарубежном), выписка НК, диссертация (печатная+PDF), Прил.7, Прил.8, приказ УС, транскрипт, Прил.9 (ЛКБ), характеристика, при необходимости сопроводит. письмо.",
-            "kz": "Топтама: Қос.5, кеңесші пікірлері (шетелдікке аударма), ҒК үзіндісі, диссертация (қағаз+PDF), Қос.7, Қос.8, ҒК/УС бұйрығы, транскрипт, Қос.9 (ЖБК), мінездеме, қажет болса ілеспе хат.",
-            "en": "Package: App.5, advisors’ reviews (translation if foreign), SC extract, dissertation (print+PDF), App.7, App.8, AC order, transcript, App.9 (LBC), character reference, optional cover letter."
-          },
-          "type": "upload",
-          "who_can_complete": ["student"],
-          "prerequisites": ["D1_normokontrol_ncste"],
-          "next": ["D3_ds_acceptance_boss"],
-          "outcomes": [],
-          "requirements": {
-            "uploads": [
-              {
-                "key": "ds_package.zip",
-                "mime": ["application/zip"],
-                "required": true
-              },
-              {
-                "key": "ds_application_app5.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "advisor_review_domestic.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "advisor_review_foreign.pdf",
-                "mime": ["application/pdf"],
-                "required": false
-              },
-              {
-                "key": "advisor_review_foreign_translation.pdf",
-                "mime": ["application/pdf"],
-                "required": false
-              },
-              {
-                "key": "sc_extract.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "dissertation_pdf.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "publications_app7.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "abstracts_app8.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "academic_council_order.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "transcript.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "lbc_conclusion_app9.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "character_reference.pdf",
-                "mime": ["application/pdf"],
-                "required": true
-              },
-              {
-                "key": "cover_letter_external.pdf",
-                "mime": ["application/pdf"],
-                "required": false
-              }
-            ]
-          },
-          "outputs": [],
-          "actionHints": []
-        },
-        {
-          "id": "D3_ds_acceptance_boss",
-          "title": {
-            "ru": "Принятие ДС (Boss)",
-            "kz": "ДК қабылдауы (Boss)",
-            "en": "DC acceptance (Boss)"
-          },
-          "description": {
-            "ru": "Проверка полноты/соответствия. При замечаниях — возврат на доработку.",
-            "kz": "Толықтық/сәйкестікті тексеру. Ескертулер болса — қайта өңдеуге қайтару.",
-            "en": "Verify completeness/compliance. If issues — return for fixes."
-          },
-          "type": "boss",
-          "who_can_complete": ["chair", "secretary"],
-          "prerequisites": ["D2_apply_to_ds"],
-          "next": [],
-          "outcomes": [
-            {
-              "value": "accepted",
-              "next": ["W6_GATE"],
-              "label": {}
-            },
-            {
-              "value": "fixes_required",
-              "next": ["D2_apply_to_ds"],
-              "label": {}
-            }
-          ],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
         }
       ]
     },

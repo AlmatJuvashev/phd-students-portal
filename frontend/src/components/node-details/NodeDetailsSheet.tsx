@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { NodeDetailSwitch } from "./NodeDetailSwitch";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getNodeSubmission,
   NodeSubmissionDTO,
@@ -34,6 +34,7 @@ export function NodeDetailsSheet({
   const [submission, setSubmission] = useState<NodeSubmissionDTO | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const titleRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!node) {
@@ -68,6 +69,13 @@ export function NodeDetailsSheet({
       cancelled = true;
     };
   }, [node?.id, T]);
+
+  useEffect(() => {
+    if (node && titleRef.current) {
+      // focus the title for screen readers when sheet opens
+      titleRef.current.focus();
+    }
+  }, [node?.id]);
 
   const handleEvent = async (evt: { type: string; payload?: any }) => {
     if (!node || saving) return;
@@ -156,7 +164,11 @@ export function NodeDetailsSheet({
         {node && (
           <>
             <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
+              <SheetTitle
+                ref={titleRef as any}
+                tabIndex={-1}
+                className="flex items-center gap-2 outline-none"
+              >
                 <span>{t(node.title, node.id)}</span>
                 <Badge variant="secondary" className="capitalize">
                   {node.type}

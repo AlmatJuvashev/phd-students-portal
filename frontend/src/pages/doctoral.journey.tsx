@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
+import { ResetBar } from "@/features/journey/components/ResetBar";
 
 export function DoctoralJourney() {
   const { t: T } = useTranslation("common");
@@ -25,25 +26,7 @@ export function DoctoralJourney() {
         stateByNodeId={state as any}
         onStateChanged={() => refetch()}
       />
-      <div className="p-4">
-        <Button
-          variant="secondary"
-          onClick={async () => {
-            if (
-              !confirm(
-                T("journey.reset_confirm", {
-                  defaultValue: "Reset your journey progress?",
-                })
-              )
-            )
-              return;
-            await api("/journey/reset", { method: "POST" });
-            await refetch();
-          }}
-        >
-          {T("journey.reset", { defaultValue: "Reset Journey" })}
-        </Button>
-      </div>
+      <ResetBar />
     </div>
   );
 }

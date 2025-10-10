@@ -78,7 +78,7 @@ export function DecisionTaskDetails({
             </Button>
           </a>
         )}
-        <Button disabled={disabled} onClick={onSubmit}>
+        <Button disabled={disabled} aria-busy={disabled} onClick={onSubmit}>
           <CheckCircle2 className="mr-1 h-4 w-4" /> {T("decision.submit")}
         </Button>
       </div>

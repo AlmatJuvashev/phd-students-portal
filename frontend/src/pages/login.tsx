@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "../api/client";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
-import { useToast } from "../components/toast";
 import { useTranslation } from "react-i18next";
 
 const Schema = z.object({
@@ -21,7 +20,6 @@ export function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<Form>({ resolver: zodResolver(Schema) });
-  const { push } = useToast();
   const onSubmit = async (data: Form) => {
     try {
       const res = await api("/auth/login", {
@@ -31,7 +29,8 @@ export function LoginPage() {
       localStorage.setItem("token", res.token);
       location.href = "/";
     } catch (e: any) {
-      push({ title: T("auth.failed"), description: e.message });
+      console.error("Login failed", e);
+      alert(T("auth.failed"));
     }
   };
   return (

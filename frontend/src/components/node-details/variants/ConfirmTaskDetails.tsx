@@ -2,7 +2,6 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { useToast } from "@/components/toast";
 import { getAssetUrl } from "@/lib/assets";
 import { t, safeText } from "@/lib/playbook";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
@@ -18,7 +17,6 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
   node,
   onComplete,
 }) => {
-  const { push } = useToast();
   const [isCompleted, setCompleted] = React.useState(
     node?.state === "done" || node?.status === "completed"
   );
@@ -95,20 +93,7 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
   const handleConfirm = () => {
     setCompleted(true);
     setConfirmOpen(false);
-    push({
-      title: t(
-        { ru: "Шаг подтверждён", kz: "Қадам расталды", en: "Step confirmed" },
-        "Шаг подтверждён"
-      ),
-      description: t(
-        {
-          ru: "Действие успешно отмечено как выполненное.",
-          kz: "Әрекет сәтті аяқталған ретінде белгіленді.",
-          en: "Action marked as completed.",
-        },
-        "Действие успешно отмечено как выполненное."
-      ),
-    });
+    // toast removed; keep silent confirmation
     if (onComplete) onComplete();
   };
 
