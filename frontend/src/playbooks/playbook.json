@@ -592,34 +592,41 @@
             ],
             "actions": [
               {
-                "key": "go_to_ds_no_remarks",
+                "key": "go_to_next_no_remarks",
                 "kind": "navigate",
                 "visible_when": "form.hearing_happened == true && form.remarks_exist == false",
                 "label": {
-                  "ru": "Переход к подаче документов к ДС",
-                  "kz": "ДС-ке құжат тапсыруға өту",
-                  "en": "Proceed to submit to the DC"
+                  "ru": "Перейти к следующему шагу",
+                  "kz": "Келесі қадамға өту",
+                  "en": "Proceed to next step"
                 },
-                "to": "D1_normokontrol_ncste"
+                "to": "__conditional_next__"
               },
               {
-                "key": "go_to_ds_all_resolved",
+                "key": "go_to_next_all_resolved",
                 "kind": "navigate",
                 "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true",
                 "label": {
-                  "ru": "Переход к подаче документов к ДС",
-                  "kz": "ДС-ке құжат тапсыруға өту",
-                  "en": "Proceed to submit to the DC"
+                  "ru": "Перейти к следующему шагу",
+                  "kz": "Келесі қадамға өту",
+                  "en": "Proceed to next step"
                 },
-                "to": "D1_normokontrol_ncste"
+                "to": "__conditional_next__"
               }
             ]
           },
-          "next": ["D1_normokontrol_ncste"],
+          "next": ["RP1_overview_actualization", "D1_normokontrol_ncste"],
+          "condition": "rp_required",
 
           "outcomes": [
             {
-              "value": "proceed",
+              "value": "proceed_rp",
+              "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
+              "condition": "rp_required",
+              "next": ["RP1_overview_actualization"]
+            },
+            {
+              "value": "proceed_direct",
               "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
               "next": ["D1_normokontrol_ncste"]
             },
@@ -661,6 +668,8 @@
             "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee."
           },
           "who_can_complete": ["student"],
+          "prerequisites": ["E3_hearing_nk"],
+          "condition": "rp_required",
           "next": ["RP2_sc_hearing_prep"],
           "requirements": {
             "fields": [

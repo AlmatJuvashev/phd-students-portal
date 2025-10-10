@@ -60,13 +60,11 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
             >
               {T("nav.logout")}
             </button>
-          ) : (
-            pathname !== "/login" ? (
-              <Link to="/login" className="text-muted-foreground hover:underline">
-                {T("nav.login")}
-              </Link>
-            ) : null
-          )}
+          ) : pathname !== "/login" ? (
+            <Link to="/login" className="text-muted-foreground hover:underline">
+              {T("nav.login")}
+            </Link>
+          ) : null}
           <DropdownMenu
             trigger={
               <Button
@@ -75,13 +73,13 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
                 className="gap-2 h-auto px-2 py-0 text-sm font-normal text-muted-foreground hover:text-foreground hover:bg-transparent transition-colors duration-200"
               >
                 <Globe className="h-4 w-4" />
-                <span className="hidden sm:inline">{i18n.language.toUpperCase()}</span>
+                <span className="hidden sm:inline">
+                  {i18n.language.toUpperCase()}
+                </span>
               </Button>
             }
           >
-            <DropdownItem
-              onClick={() => i18n.changeLanguage("ru")}
-            >
+            <DropdownItem onClick={() => i18n.changeLanguage("ru")}>
               <div
                 className={`flex items-center gap-3 ${
                   i18n.language === "ru" ? "font-semibold text-primary" : ""
@@ -91,9 +89,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
                 <span>Русский</span>
               </div>
             </DropdownItem>
-            <DropdownItem
-              onClick={() => i18n.changeLanguage("kz")}
-            >
+            <DropdownItem onClick={() => i18n.changeLanguage("kz")}>
               <div
                 className={`flex items-center gap-3 ${
                   i18n.language === "kz" ? "font-semibold text-primary" : ""
@@ -103,9 +99,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
                 <span>Қазақша</span>
               </div>
             </DropdownItem>
-            <DropdownItem
-              onClick={() => i18n.changeLanguage("en")}
-            >
+            <DropdownItem onClick={() => i18n.changeLanguage("en")}>
               <div
                 className={`flex items-center gap-3 ${
                   i18n.language === "en" ? "font-semibold text-primary" : ""
