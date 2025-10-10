@@ -15,6 +15,8 @@ export function useJourneyState() {
     },
     initialData: loadJourneyState() || undefined,
     retry: 0,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const reset = useMutation({
     mutationFn: async () => api("/journey/reset", { method: "POST" }),
@@ -49,6 +51,9 @@ export function useSubmission(nodeId?: string | null) {
     queryKey: ["journey", "node", nodeId, "submission"],
     queryFn: () => getNodeSubmission(nodeId!),
     enabled,
+    staleTime: 5 * 60 * 1000,
+    keepPreviousData: true,
+    refetchOnWindowFocus: false,
   });
   const qc = useQueryClient();
   const save = useMutation({

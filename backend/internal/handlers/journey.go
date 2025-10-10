@@ -82,9 +82,10 @@ func (h *JourneyHandler) Reset(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	_, _ = h.db.Exec(`DELETE FROM node_instances WHERE user_id=$1`, u)
-	_, _ = h.db.Exec(`DELETE FROM journey_states WHERE user_id=$1`, u)
-	c.JSON(http.StatusOK, gin.H{"ok": true})
+    // Preserve S1_profile submissions; remove all other nodes
+    _, _ = h.db.Exec(`DELETE FROM node_instances WHERE user_id=$1 AND node_id <> 'S1_profile'`, u)
+    _, _ = h.db.Exec(`DELETE FROM journey_states WHERE user_id=$1 AND node_id <> 'S1_profile'`, u)
+    c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 func userIDFromClaims(c *gin.Context) string {

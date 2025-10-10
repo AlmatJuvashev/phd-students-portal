@@ -6,7 +6,18 @@ import "./index.css";
 import { router } from "./routes";
 import "./i18n";
 
-const qc = new QueryClient();
+const qc = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5m – keep results fresh to avoid reloading
+      gcTime: 30 * 60 * 1000, // cache for 30m
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      refetchOnMount: false,
+      retry: 1,
+    },
+  },
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -17,3 +28,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+// Warm up common lazy chunks shortly after boot to reduce first-open latency
+setTimeout(() => {
+  // These imports create their own chunks via React.lazy; preloading them improves UX
+  import("@/components/node-details/variants/UploadTaskDetails");
+  import("@/components/node-details/variants/ConfirmUploadTaskDetails");
+  import("@/components/node-details/variants/ExternalProcessDetails");
+}, 0);

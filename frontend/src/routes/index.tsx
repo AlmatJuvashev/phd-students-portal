@@ -4,6 +4,8 @@ import { AppLayout } from '@/pages/layout'
 
 const LoginPage = lazy(() => import('@/pages/login').then(m => ({ default: m.LoginPage })))
 const DoctoralJourney = lazy(() => import('@/pages/doctoral.journey').then(m => ({ default: m.DoctoralJourney })))
+const HomePage = lazy(() => import('@/pages/home').then(m => ({ default: m.HomePage })))
+const ContactsPage = lazy(() => import('@/pages/contacts').then(m => ({ default: m.ContactsPage })))
 const AdminUsers = lazy(() => import('@/pages/admin.users').then(m => ({ default: m.AdminUsers })))
 const AdvisorInbox = lazy(() => import('@/pages/advisor.inbox').then(m => ({ default: m.AdvisorInbox })))
 const Dashboard = lazy(() => import('@/pages/dashboard').then(m => ({ default: m.Dashboard })))
@@ -19,8 +21,9 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      { index: true, element: WithSuspense(<DoctoralJourney />) },
+      { index: true, element: WithSuspense(<HomePage />) },
       { path: 'journey', element: WithSuspense(<DoctoralJourney />) },
+      { path: 'contacts', element: WithSuspense(<ContactsPage />) },
       { path: 'login', element: WithSuspense(<LoginPage />) },
       { path: 'forgot-password', element: WithSuspense(<ForgotPassword />) },
       { path: 'reset-password', element: WithSuspense(<ResetPassword />) },

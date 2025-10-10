@@ -91,6 +91,14 @@ export function FormTaskDetails({
     const canProceed =
       h === true && (r === false || (p === true && z === true));
 
+    const [autoSubmitted, setAutoSubmitted] = useState(false);
+    useEffect(() => {
+      if (!autoSubmitted && h === true && (r === false || (p === true && z === true))) {
+        setAutoSubmitted(true);
+        onSubmit?.({ ...values, __nextOverride: "D1_normokontrol_ncste" });
+      }
+    }, [h, r, p, z, autoSubmitted]);
+
     return (
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
         {/* Left: Form (max 60%) */}
@@ -166,6 +174,15 @@ export function FormTaskDetails({
                       {T("forms.no")}
                     </Button>
                   </div>
+                  <div className="pt-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setField("hearing_happened", undefined)}
+                      disabled={!canEdit || disabled}
+                    >
+                      {T("forms.nk.back", "Назад")}
+                    </Button>
+                  </div>
                 </Card>
               )}
               {currentStep === "q2" && (
@@ -189,6 +206,15 @@ export function FormTaskDetails({
                       disabled={!canEdit || disabled}
                     >
                       {T("forms.no")}
+                    </Button>
+                  </div>
+                  <div className="pt-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setField("remarks_exist", undefined)}
+                      disabled={!canEdit || disabled}
+                    >
+                      {T("forms.nk.back", "Назад")}
                     </Button>
                   </div>
                 </Card>
@@ -234,6 +260,15 @@ export function FormTaskDetails({
                       {T("forms.no")}
                     </Button>
                   </div>
+                  <div className="pt-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setField("plan_prepared", undefined)}
+                      disabled={!canEdit || disabled}
+                    >
+                      {T("forms.nk.back", "Назад")}
+                    </Button>
+                  </div>
                 </Card>
               )}
               {currentStep === "reminderB" && (
@@ -260,16 +295,8 @@ export function FormTaskDetails({
             </motion.div>
           </AnimatePresence>
           {currentStep === "done" && (
-            <div className="pt-2">
-              <Button
-                onClick={() =>
-                  onSubmit?.({ ...values, __nextOverride: "D1_normokontrol_ncste" })
-                }
-                disabled={!canProceed}
-                aria-busy={!canProceed}
-              >
-                {T("forms.nk.proceed", "Переход к подаче документов к ДС")}
-              </Button>
+            <div className="text-sm text-muted-foreground">
+              {T("forms.nk.done_info", "Ответы зафиксированы. Переход к следующему шагу…")}
             </div>
           )}
           {/* Sticky back actions for reminder steps */}
@@ -577,6 +604,8 @@ export function FormTaskDetails({
                   field={f as any}
                   value={values[f.key]}
                   onChange={(v) => setField(f.key, v)}
+                  setField={(k, v) => setField(k, v)}
+                  otherValue={values[`${f.key}_other`]}
                   canEdit={canEdit}
                   disabled={disabled}
                 />

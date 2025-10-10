@@ -114,7 +114,7 @@
       "order": 1,
       "nodes": [
         {
-          "id": "S1_profile",
+      "id": "S1_profile",
           "title": {
             "ru": "Профиль докторанта",
             "kz": "Докторант профилі",
@@ -127,26 +127,47 @@
           "outcomes": [],
           "requirements": {
             "fields": [
+              { "key": "full_name", "required": true, "label": {} },
+              { "key": "specialty", "required": true, "label": {} },
+              { "key": "program", "required": true, "label": {} },
               {
-                "key": "full_name",
+                "key": "graduation_date",
                 "required": true,
-                "label": {}
+                "type": "date",
+                "label": {
+                  "ru": "Дата выпуска из программы",
+                  "kz": "Бағдарламаны бітірген күні",
+                  "en": "Graduation date"
+                }
               },
               {
-                "key": "specialty",
-                "required": true,
-                "label": {}
+                "key": "advisors_full_names",
+                "type": "array",
+                "label": {
+                  "ru": "ФИО консультантов",
+                  "kz": "Жетекшілердің толық аты-жөні",
+                  "en": "Advisors' full names"
+                },
+                "placeholder": {
+                  "ru": "каждая строка — отдельное ФИО",
+                  "kz": "әр жолға бір адам",
+                  "en": "one per line"
+                }
               },
               {
-                "key": "program",
-                "required": true,
-                "label": {}
-              },
-              {
-                "key": "years_since_graduation",
-                "required": true,
-                "type": "number",
-                "label": {}
+                "key": "dissertation_form",
+                "type": "select",
+                "label": {
+                  "ru": "Форма диссертации",
+                  "kz": "Диссертация формасы",
+                  "en": "Dissertation form"
+                },
+                "options": [
+                  { "value": "classic", "label": { "ru": "Классическая", "kz": "Классикалық", "en": "Classic" } },
+                  { "value": "series", "label": { "ru": "Серия статей", "kz": "Мақалалар сериясы", "en": "Series of articles" } },
+                  { "value": "other", "label": { "ru": "Другое", "kz": "Басқа", "en": "Other" } }
+                ],
+                "other_key": "dissertation_form_other"
               }
             ]
           },
