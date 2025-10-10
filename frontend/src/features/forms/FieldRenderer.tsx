@@ -25,6 +25,7 @@ export function FieldRenderer({
         <input
           id={field.key}
           type="checkbox"
+          className="h-5 w-5 accent-primary"
           disabled={!canEdit || disabled}
           checked={!!value}
           onChange={(e) => onChange(e.target.checked)}
@@ -62,4 +63,3 @@ export function FieldRenderer({
     </div>
   );
 }
-

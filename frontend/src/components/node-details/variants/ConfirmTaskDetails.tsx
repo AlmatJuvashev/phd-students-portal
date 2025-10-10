@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { getAssetUrl } from "@/lib/assets";
 import { t, safeText } from "@/lib/playbook";
-import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import type { NodeVM } from "@/lib/playbook";
 import i18n from "i18next";
 
@@ -104,51 +103,48 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
 
         {!isCompleted && (
           <>
-            <Accordion>
-              <AccordionItem header={accordionLabel}>
-                {Array.isArray(instructions) && instructions.length > 0 && (
-                  <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                    {instructions.map((line: string, idx: number) => (
-                      <li key={idx}>{line}</li>
-                    ))}
-                  </ul>
-                )}
-
-                {(() => {
-                  if (!download) return null;
-                  const resolved = download.asset_id
-                    ? getAssetUrl(download.asset_id)
-                    : undefined;
-                  const href =
-                    resolved && resolved !== "#"
-                      ? resolved
-                      : download.asset_path;
-                  if (!href) return null;
-                  return (
-                    <div className="mt-3">
-                      <Button asChild variant="secondary">
-                        <a
-                          href={href}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {download.label ||
-                            t(
-                              {
-                                ru: "Скачать шаблон",
-                                kz: "Үлгіні жүктеу",
-                                en: "Download template",
-                              },
-                              "Скачать шаблон"
-                            )}
-                        </a>
-                      </Button>
-                    </div>
-                  );
-                })()}
-              </AccordionItem>
-            </Accordion>
+            {/* Inline guidance (no collapsible) */}
+            <div className="space-y-2">
+              <div className="text-sm font-medium">{accordionLabel}</div>
+              {Array.isArray(instructions) && instructions.length > 0 && (
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {instructions.map((line: string, idx: number) => (
+                    <li key={idx}>{line}</li>
+                  ))}
+                </ul>
+              )}
+              {(() => {
+                if (!download) return null;
+                const resolved = download.asset_id
+                  ? getAssetUrl(download.asset_id)
+                  : undefined;
+                const href =
+                  resolved && resolved !== "#" ? resolved : download.asset_path;
+                if (!href) return null;
+                return (
+                  <div className="mt-2">
+                    <Button asChild variant="secondary">
+                      <a
+                        href={href}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {download.label ||
+                          t(
+                            {
+                              ru: "Скачать шаблон",
+                              kz: "Үлгіні жүктеу",
+                              en: "Download template",
+                            },
+                            "Скачать шаблон"
+                          )}
+                      </a>
+                    </Button>
+                  </div>
+                );
+              })()}
+            </div>
 
             <div className="pt-2">
               <Button

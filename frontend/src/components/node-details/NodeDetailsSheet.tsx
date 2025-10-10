@@ -29,6 +29,7 @@ export function NodeDetailsSheet({
 }) {
   const { t: T } = useTranslation("common");
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
   const { submission, isLoading, save } = useSubmission(node?.id || null);
 
@@ -62,6 +63,7 @@ export function NodeDetailsSheet({
             isDraft ? T("forms.save_draft") : T("forms.save_submit"),
             T("common.success", { defaultValue: "Saved." })
           );
+          setErrorMsg(null);
           if (!isDraft) {
             onStateRefresh?.();
             const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
@@ -78,6 +80,7 @@ export function NodeDetailsSheet({
             T("common.error", { defaultValue: "Error" }),
             err?.message ?? String(err)
           );
+          setErrorMsg(err?.message ?? String(err));
         } finally {
           setSaving(false);
         }
@@ -95,6 +98,7 @@ export function NodeDetailsSheet({
             T("decision.submit"),
             T("common.success", { defaultValue: "Saved." })
           );
+          setErrorMsg(null);
           onStateRefresh?.();
           const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
           onOpenChange(false);
@@ -105,6 +109,7 @@ export function NodeDetailsSheet({
           }
         } catch (err: any) {
           console.error("submit decision failed", err);
+          setErrorMsg(err?.message ?? String(err));
         } finally {
           setSaving(false);
         }
@@ -145,6 +150,15 @@ export function NodeDetailsSheet({
             </SheetHeader>
 
             <div className="mt-6 h-[calc(100vh-8rem)] overflow-hidden">
+              {errorMsg && (
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800"
+                >
+                  {errorMsg}
+                </div>
+              )}
               {isLoading ? (
                 <div className="text-sm text-muted-foreground">
                   {T("common.loading")}
