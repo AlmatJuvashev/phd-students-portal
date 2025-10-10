@@ -42,7 +42,7 @@ export function WorldMap({
   const { t: T } = useTranslation("common");
   const vm = useMemo(
     () => toViewModel(playbook, stateByNodeId),
-    [playbook, stateByNodeId],
+    [playbook, stateByNodeId]
   );
   const [openNode, setOpenNode] = useState<NodeVM | null>(null);
   const [gatewayNode, setGatewayNode] = useState<NodeVM | null>(null);
@@ -64,7 +64,7 @@ export function WorldMap({
   const totalNodes = vm.worlds.reduce((acc, w) => acc + w.nodes.length, 0);
   const doneNodes = vm.worlds.reduce(
     (acc, w) => acc + w.nodes.filter((n) => n.state === "done").length,
-    0,
+    0
   );
   const progress =
     totalNodes > 0 ? Math.round((doneNodes / totalNodes) * 100) : 0;
@@ -106,7 +106,10 @@ export function WorldMap({
         // scroll next world into view
         const nextWorld = vm.worlds[idx + 1];
         if (nextWorld && worldRefs.current[nextWorld.id]) {
-          worldRefs.current[nextWorld.id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+          worldRefs.current[nextWorld.id]?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         }
       }
       prev[w.id] = isDone;
@@ -114,25 +117,29 @@ export function WorldMap({
   }, [vm.worlds]);
 
   return (
-    <div className="p-4 space-y-4">
-      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm shadow-sm -mx-4 -mt-4 px-4 py-3">
-        <div className="flex items-center justify-between">
+    <div className="p-4 space-y-6">
+      <header className="sticky top-0 z-20 bg-gradient-to-b from-background via-background to-background/80 backdrop-blur-md shadow-lg -mx-4 -mt-4 px-4 py-4 rounded-b-xl">
+        <div className="flex items-center justify-between mb-3">
           <div className="w-10"></div>
-          <h1 className="text-lg font-bold text-center">{T("map.title", { defaultValue: "My Dissertation Map" })}</h1>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10">
+          <h1 className="text-xl font-bold text-center bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            {T("map.title", { defaultValue: "My Dissertation Map" })}
+          </h1>
+          <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors duration-200">
             {/* <Settings /> */}
           </button>
         </div>
-        <div className="px-4 pb-1 pt-2">
-          <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
-            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2">{T("map.progress", { defaultValue: "Progress" })}:</span>
-            <div className="flex-grow bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mx-3">
+        <div className="px-2">
+          <div className="flex justify-between items-center bg-gradient-to-r from-muted/50 to-muted/30 p-3 rounded-xl shadow-sm">
+            <span className="text-xs font-semibold text-muted-foreground ml-1">
+              {T("map.progress", { defaultValue: "Progress" })}:
+            </span>
+            <div className="flex-grow bg-muted/30 rounded-full h-3 mx-3 overflow-hidden shadow-inner">
               <div
-                className="bg-primary h-2.5 rounded-full"
+                className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
-            <span className="text-sm font-bold text-primary mr-2">
+            <span className="text-sm font-bold text-primary mr-1">
               {progress}%
             </span>
           </div>
@@ -142,129 +149,171 @@ export function WorldMap({
       {vm.worlds
         .filter((w) => (w.id === "W3" ? rp_required : true))
         .map((w, wi, arr) => {
-          const worldDoneNodes = w.nodes.filter((n) => n.state === "done").length;
-          const worldProgressText = `${worldDoneNodes}/${w.nodes.length} ${T("map.done_suffix", { defaultValue: "Done" })}`;
+          const worldDoneNodes = w.nodes.filter(
+            (n) => n.state === "done"
+          ).length;
+          const worldProgressText = `${worldDoneNodes}/${w.nodes.length} ${T(
+            "map.done_suffix",
+            { defaultValue: "Done" }
+          )}`;
           const isWorldDone = worldDoneNodes === w.nodes.length;
           const isWorldLocked =
-          wi > 0 &&
-          (() => {
-            const prev = arr[wi - 1];
-            const allDone = prev.nodes.every((n) => n.state === "done");
-            const gatewayDone = prev.nodes.some(
-              (n) => n.type === "gateway" && n.state === "done",
-            );
-            return !(allDone || gatewayDone);
-          })();
+            wi > 0 &&
+            (() => {
+              const prev = arr[wi - 1];
+              const allDone = prev.nodes.every((n) => n.state === "done");
+              const gatewayDone = prev.nodes.some(
+                (n) => n.type === "gateway" && n.state === "done"
+              );
+              return !(allDone || gatewayDone);
+            })();
 
-        const isExpanded = !!expanded[w.id];
+          const isExpanded = !!expanded[w.id];
 
-        return (
-          <div key={w.id} ref={(el) => (worldRefs.current[w.id] = el)}>
-            <Card
-              className={`rounded-xl shadow-md overflow-hidden ${
-                isWorldLocked ? "opacity-50" : ""
-              }`}
+          return (
+            <div
+              key={w.id}
+              ref={(el) => (worldRefs.current[w.id] = el)}
+              className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              style={{ animationDelay: `${wi * 100}ms` }}
             >
-              {/* Header: clickable to expand/collapse when done */}
-              <button
-                className="w-full text-left p-4 border-b border-gray-200 dark:border-gray-700"
-                onClick={() => {
-                  if (isWorldDone) setExpanded((e) => ({ ...e, [w.id]: !e[w.id] }));
-                }}
-                aria-expanded={isExpanded}
+              <Card
+                className={`rounded-2xl shadow-lg overflow-hidden bg-gradient-to-br from-card via-card to-card/50 border-2 transition-all duration-300 hover:shadow-xl ${
+                  isWorldLocked
+                    ? "opacity-50 grayscale"
+                    : "hover:border-primary/20"
+                }`}
               >
-                <div className="flex items-center justify-between">
-                  <h2
-                    className={`text-lg font-bold ${
-                      isWorldLocked
-                        ? "text-gray-500 dark:text-gray-400"
-                        : "text-primary"
-                    }`}
-                  >
-                    {w.title}
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        isWorldDone
-                          ? "bg-green-500/20 text-green-700 dark:text-green-300"
-                          : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300"
+                {/* Header: clickable to expand/collapse when done */}
+                <button
+                  className={`w-full text-left p-5 border-b border-border/50 transition-all duration-200 ${
+                    isWorldDone
+                      ? "hover:bg-muted/30 cursor-pointer"
+                      : "cursor-default"
+                  }`}
+                  onClick={() => {
+                    if (isWorldDone)
+                      setExpanded((e) => ({ ...e, [w.id]: !e[w.id] }));
+                  }}
+                  aria-expanded={isExpanded}
+                >
+                  <div className="flex items-center justify-between">
+                    <h2
+                      className={`text-lg sm:text-xl font-bold transition-colors duration-200 ${
+                        isWorldLocked ? "text-muted-foreground" : "text-primary"
                       }`}
                     >
-                      {worldProgressText}
-                    </div>
-                    {/* Indication chevron when completed (collapsible) */}
-                    {isWorldDone && (
-                      <ChevronDown
-                        className={`transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
-                        aria-hidden
-                        title={isExpanded ? "Collapse" : "Expand"}
-                      />
-                    )}
-                  </div>
-                </div>
-              </button>
-              <AnimatePresence initial={false}>
-                {(!isWorldDone || isExpanded) && (
-                  <motion.div
-                    key={`${w.id}-body`}
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="p-6 relative">
-                      <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"></div>
-                      <div className="space-y-8">
-                        {w.nodes.map((n) => (
-                          <NodeToken
-                            key={n.id}
-                            node={n}
-                            onClick={(node) => {
-                              if (node.type === "gateway") setGatewayNode(node);
-                              else setOpenNode(node);
-                            }}
-                          />
-                        ))}
+                      {w.title}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-all duration-200 ${
+                          isWorldDone
+                            ? "bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/30"
+                            : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border border-yellow-500/30"
+                        }`}
+                      >
+                        {worldProgressText}
                       </div>
+                      {/* Indication chevron when completed (collapsible) */}
+                      {isWorldDone && (
+                        <ChevronDown
+                          className={`transition-transform duration-300 text-muted-foreground ${
+                            isExpanded ? "rotate-180" : "rotate-0"
+                          }`}
+                          aria-hidden="true"
+                        />
+                      )}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-            {wi < arr.length - 1 && (
-              <div className="relative h-16 flex items-center justify-center">
-                <div
-                  className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"
-                  style={{
-                    backgroundImage:
-                      "repeating-linear-gradient(to bottom, #cbd5e1, #cbd5e1 4px, transparent 4px, transparent 8px)",
-                  }}
-                ></div>
-                <ArrowDown className="z-10 text-gray-400 dark:text-gray-500 bg-background p-1" />
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  </div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {(!isWorldDone || isExpanded) && (
+                    <motion.div
+                      key={`${w.id}-body`}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-6 sm:p-8 relative bg-gradient-to-b from-transparent to-muted/5">
+                        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/30 via-primary/20 to-transparent"></div>
+                        <div className="space-y-6 sm:space-y-8">
+                          {w.nodes.map((n) => (
+                            <NodeToken
+                              key={n.id}
+                              node={n}
+                              onClick={(node) => {
+                                if (node.type === "gateway")
+                                  setGatewayNode(node);
+                                else setOpenNode(node);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+              {wi < arr.length - 1 && (
+                <div className="relative h-16 flex items-center justify-center">
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(to bottom, #cbd5e1, #cbd5e1 4px, transparent 4px, transparent 8px)",
+                    }}
+                  ></div>
+                  <ArrowDown className="z-10 text-gray-400 dark:text-gray-500 bg-background p-1" />
+                </div>
+              )}
+            </div>
+          );
+        })}
 
       <ConfettiBurst trigger={confetti} />
 
       {/* Congratulations modal */}
       <Modal open={showCongrats} onClose={() => setShowCongrats(false)}>
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold">{T("map.congrats_title", { defaultValue: "Congratulations!" })}</h3>
-          <p className="text-sm text-muted-foreground">
+        <div className="space-y-4 p-2">
+          <div className="text-center">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg animate-in zoom-in duration-500">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
+              {T("map.congrats_title", { defaultValue: "Congratulations!" })}
+            </h3>
+          </div>
+          <p className="text-sm text-muted-foreground text-center leading-relaxed">
             {T("map.congrats_message", {
-              defaultValue: "Congratulations, {{name}}! You have successfully completed your dissertation journey.",
+              defaultValue:
+                "Congratulations, {{name}}! You have successfully completed your dissertation journey.",
               name:
-                (profile?.form?.data?.full_name as string) ||
+                ((profile as any)?.form?.data?.full_name as string) ||
                 T("map.student_fallback_name", { defaultValue: "Student" }),
             })}
           </p>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={() => setShowCongrats(false)}>{T("common.ok", { defaultValue: "OK" })}</Button>
+          <div className="flex justify-center pt-2">
+            <Button
+              onClick={() => setShowCongrats(false)}
+              className="min-w-[120px] shadow-lg hover:shadow-xl transition-shadow duration-200"
+            >
+              {T("common.ok", { defaultValue: "OK" })}
+            </Button>
           </div>
         </div>
       </Modal>

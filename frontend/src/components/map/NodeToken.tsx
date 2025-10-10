@@ -119,50 +119,74 @@ export function NodeToken({
   const styles = stateStyles[node.state];
 
   const isBossNode = node.type === "boss";
+  const isClickable = node.state !== "locked";
 
   return (
     <div
       role="button"
-      onClick={() => onClick?.(node)}
-      className={clsx("flex items-center gap-4 relative", styles.opacity)}
+      onClick={() => isClickable && onClick?.(node)}
+      className={clsx(
+        "flex items-center gap-4 relative group transition-all duration-200",
+        styles.opacity,
+        {
+          "cursor-pointer hover:scale-[1.02]": isClickable,
+          "cursor-not-allowed": !isClickable,
+        }
+      )}
     >
       <div
-        className={clsx("z-10 relative", { "transform scale-110": isBossNode })}
+        className={clsx("z-10 relative transition-transform duration-300", {
+          "transform scale-110": isBossNode,
+          "group-hover:scale-110": isClickable && !isBossNode,
+        })}
       >
         {isBossNode && node.state === "active" && (
           <div className="absolute -inset-1.5 rounded-full bg-yellow-400 animate-glow"></div>
         )}
         <div
           className={clsx(
-            "relative w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 border-card dark:border-card-dark",
+            "relative w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow duration-300 border-4 border-card dark:border-card-dark backdrop-blur-sm",
             styles.iconBg,
             styles.ring,
             { "boss-node": isBossNode }
           )}
         >
-          <Icon className={clsx("h-8 w-8", styles.iconColor)} />
+          <Icon
+            className={clsx(
+              "h-8 w-8 sm:h-9 sm:w-9 transition-transform group-hover:scale-110 duration-200",
+              styles.iconColor
+            )}
+          />
           {node.state === "done" && (
-            <Check className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-0.5 w-5 h-5" />
+            <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1 w-6 h-6 shadow-md animate-in zoom-in duration-300">
+              <Check className="w-4 h-4" strokeWidth={3} />
+            </div>
           )}
         </div>
       </div>
 
-      <div className={clsx({ "ml-1": isBossNode })}>
+      <div className={clsx("flex-1 min-w-0", { "ml-1": isBossNode })}>
         <h3
-          className={clsx("font-bold", {
-            "text-primary": node.state === "active",
-          })}
+          className={clsx(
+            "font-bold text-sm sm:text-base leading-tight transition-colors duration-200 truncate",
+            {
+              "text-primary": node.state === "active",
+              "group-hover:text-primary":
+                isClickable && node.state !== "active",
+            }
+          )}
         >
           {t(node.title, node.id)}
         </h3>
         <div
           className={clsx(
-            "text-xs font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1",
-            styles.badge
+            "mt-1 text-xs font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 shadow-sm transition-all duration-200",
+            styles.badge,
+            "group-hover:shadow-md"
           )}
         >
-          {node.state === "locked" && <Lock className="text-sm" />}
-          {node.state.replace("_", " ")}
+          {node.state === "locked" && <Lock className="w-3 h-3" />}
+          <span className="capitalize">{node.state.replace("_", " ")}</span>
         </div>
       </div>
     </div>

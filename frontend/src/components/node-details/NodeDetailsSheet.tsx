@@ -54,7 +54,8 @@ export function NodeDetailsSheet({
         const payload = { ...(evt.payload ?? {}) };
         const isDraft = !!payload.__draft;
         delete payload.__draft;
-        const nextOverride: string | undefined = (evt.payload && evt.payload.__nextOverride) || undefined;
+        const nextOverride: string | undefined =
+          (evt.payload && evt.payload.__nextOverride) || undefined;
         setSaving(true);
         try {
           const res = await save.mutateAsync({
@@ -71,7 +72,9 @@ export function NodeDetailsSheet({
             // persist session progress for this node
             patchJourneyState({ [node.id]: "submitted" });
             onStateRefresh?.();
-            const nextId = nextOverride || (Array.isArray(node.next) ? node.next[0] : undefined);
+            const nextId =
+              nextOverride ||
+              (Array.isArray(node.next) ? node.next[0] : undefined);
             onOpenChange(false);
             if (nextId) {
               onAdvance?.(nextId);
@@ -135,64 +138,99 @@ export function NodeDetailsSheet({
 
   return (
     <Sheet open={!!node} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-full sm:max-w-6xl">
+      <SheetContent
+        side="right"
+        className="w-full max-w-full sm:max-w-6xl p-0 flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/10 border-l-2 border-primary/20 shadow-2xl"
+      >
         {node && (
           <>
-            <SheetHeader>
-              <SheetTitle
-                ref={titleRef as any}
-                tabIndex={-1}
-                className="flex items-center gap-2 outline-none"
-              >
-                <span>{t(node.title, node.id)}</span>
-                <Badge variant="secondary" className="capitalize">
-                  {node.type}
-                </Badge>
-                <Badge className="capitalize">
-                  {node.state?.replace("_", " ")}
-                </Badge>
-                {node.type === "form" && submission?.state === "submitted" && (
-                  !editing ? (
-                    <button
-                      className="ml-2 text-xs text-muted-foreground underline"
-                      onClick={() => setEditing(true)}
-                    >
-                      {T("common.edit", { defaultValue: "Edit" })}
-                    </button>
-                  ) : (
-                    <button
-                      className="ml-2 text-xs text-muted-foreground underline"
-                      onClick={() => setEditing(false)}
-                    >
-                      {T("common.cancel_edit", { defaultValue: "Cancel edit" })}
-                    </button>
-                  )
-                )}
-              </SheetTitle>
+            <SheetHeader className="px-6 py-5 border-b border-border/50 bg-card/80 backdrop-blur-md sticky top-0 z-10">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <SheetTitle
+                    ref={titleRef as any}
+                    tabIndex={-1}
+                    className="text-xl sm:text-2xl font-bold outline-none bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent leading-tight pr-2"
+                  >
+                    {t(node.title, node.id)}
+                  </SheetTitle>
+                  {(node as any).description && (
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                      {t((node as any).description, "")}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Badge
+                    variant="secondary"
+                    className="capitalize shadow-sm hover:shadow transition-shadow"
+                  >
+                    {node.type}
+                  </Badge>
+                  <Badge className="capitalize shadow-sm hover:shadow transition-shadow">
+                    {node.state?.replace("_", " ")}
+                  </Badge>
+                  {node.type === "form" &&
+                    (submission as any)?.state === "submitted" &&
+                    (!editing ? (
+                      <button
+                        className="ml-1 text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+                        onClick={() => setEditing(true)}
+                      >
+                        {T("common.edit", { defaultValue: "Edit" })}
+                      </button>
+                    ) : (
+                      <button
+                        className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                        onClick={() => setEditing(false)}
+                      >
+                        {T("common.cancel_edit", { defaultValue: "Cancel" })}
+                      </button>
+                    ))}
+                </div>
+              </div>
             </SheetHeader>
 
-            <div className="mt-6 h-[calc(100vh-8rem)] overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               {errorMsg && (
                 <div
                   role="alert"
                   aria-live="polite"
-                  className="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800"
+                  className="rounded-lg border-2 border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive shadow-sm animate-in fade-in slide-in-from-top-2 duration-300"
                 >
-                  {errorMsg}
+                  <div className="flex items-start gap-2">
+                    <svg
+                      className="h-5 w-5 shrink-0 mt-0.5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span className="font-medium">{errorMsg}</span>
+                  </div>
                 </div>
               )}
               {isLoading ? (
-                <div className="text-sm text-muted-foreground">
-                  {T("common.loading")}
+                <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="text-sm text-muted-foreground animate-pulse">
+                    {T("common.loading")}
+                  </p>
                 </div>
               ) : (
                 <NodeDetailSwitch
                   node={node}
                   role={role}
-                  submission={submission}
+                  submission={submission as any}
                   onEvent={handleEvent}
                   saving={saving}
-                  canEdit={editing || submission?.state !== "submitted"}
+                  canEdit={
+                    editing || (submission as any)?.state !== "submitted"
+                  }
                 />
               )}
             </div>
