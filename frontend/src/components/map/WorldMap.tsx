@@ -1,16 +1,17 @@
 // components/map/WorldMap.tsx
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NodeVM, Playbook, toViewModel, edgesForWorld } from "@/lib/playbook";
 import { NodeToken } from "./NodeToken";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NodeDetailsSheet } from "../node-details/NodeDetailsSheet";
 import { EdgeConnector } from "./EdgeConnector";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ChevronDown } from "lucide-react";
 import { GatewayModal } from "../node-details/GatewayModal";
 import { api } from "@/api/client";
 import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
 import { useConditions } from "@/features/journey/useConditions";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -41,6 +42,9 @@ export function WorldMap({
   const [gatewayNode, setGatewayNode] = useState<NodeVM | null>(null);
   const [confetti, setConfetti] = useState(false);
   const { rp_required } = useConditions();
+  const worldRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const prevDoneRef = useRef<Record<string, boolean>>({});
   const findNode = (id: string): NodeVM | null => {
     for (const world of vm.worlds) {
       const found = world.nodes.find((n) => n.id === id);
@@ -56,6 +60,39 @@ export function WorldMap({
   );
   const progress =
     totalNodes > 0 ? Math.round((doneNodes / totalNodes) * 100) : 0;
+
+  // Initialize/refresh expanded state per world
+  useEffect(() => {
+    const next: Record<string, boolean> = { ...expanded };
+    vm.worlds.forEach((w) => {
+      const worldDone = w.nodes.every((n) => n.state === "done");
+      if (!(w.id in next)) {
+        next[w.id] = !worldDone; // collapse when already done
+      }
+    });
+    if (JSON.stringify(next) !== JSON.stringify(expanded)) {
+      setExpanded(next);
+    }
+  }, [vm.worlds]);
+
+  // Detect newly completed world -> collapse and scroll next into view
+  useEffect(() => {
+    const prev = prevDoneRef.current;
+    vm.worlds.forEach((w, idx) => {
+      const isDone = w.nodes.every((n) => n.state === "done");
+      const wasDone = prev[w.id] || false;
+      if (isDone && !wasDone) {
+        // collapse
+        setExpanded((e) => ({ ...e, [w.id]: false }));
+        // scroll next world into view
+        const nextWorld = vm.worlds[idx + 1];
+        if (nextWorld && worldRefs.current[nextWorld.id]) {
+          worldRefs.current[nextWorld.id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+      prev[w.id] = isDone;
+    });
+  }, [vm.worlds]);
 
   return (
     <div className="p-4 space-y-4">
@@ -102,14 +139,23 @@ export function WorldMap({
             return !(allDone || gatewayDone);
           })();
 
+        const isExpanded = !!expanded[w.id];
+
         return (
-          <div key={w.id}>
+          <div key={w.id} ref={(el) => (worldRefs.current[w.id] = el)}>
             <Card
               className={`rounded-xl shadow-md overflow-hidden ${
                 isWorldLocked ? "opacity-50" : ""
               }`}
             >
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              {/* Header: clickable to expand/collapse when done */}
+              <button
+                className="w-full text-left p-4 border-b border-gray-200 dark:border-gray-700"
+                onClick={() => {
+                  if (isWorldDone) setExpanded((e) => ({ ...e, [w.id]: !e[w.id] }));
+                }}
+                aria-expanded={isExpanded}
+              >
                 <div className="flex items-center justify-between">
                   <h2
                     className={`text-lg font-bold ${
@@ -120,32 +166,55 @@ export function WorldMap({
                   >
                     {w.title}
                   </h2>
-                  <div
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      isWorldDone
-                        ? "bg-green-500/20 text-green-700 dark:text-green-300"
-                        : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300"
-                    }`}
-                  >
-                    {worldProgressText}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        isWorldDone
+                          ? "bg-green-500/20 text-green-700 dark:text-green-300"
+                          : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300"
+                      }`}
+                    >
+                      {worldProgressText}
+                    </div>
+                    {/* Indication chevron when completed (collapsible) */}
+                    {isWorldDone && (
+                      <ChevronDown
+                        className={`transition-transform ${isExpanded ? "rotate-180" : "rotate-0"}`}
+                        aria-hidden
+                        title={isExpanded ? "Collapse" : "Expand"}
+                      />
+                    )}
                   </div>
                 </div>
-              </div>
-              <div className="p-6 relative">
-                <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"></div>
-                <div className="space-y-8">
-                  {w.nodes.map((n) => (
-                    <NodeToken
-                      key={n.id}
-                      node={n}
-                      onClick={(node) => {
-                        if (node.type === "gateway") setGatewayNode(node);
-                        else setOpenNode(node);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
+              </button>
+              <AnimatePresence initial={false}>
+                {(!isWorldDone || isExpanded) && (
+                  <motion.div
+                    key={`${w.id}-body`}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-6 relative">
+                      <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700"></div>
+                      <div className="space-y-8">
+                        {w.nodes.map((n) => (
+                          <NodeToken
+                            key={n.id}
+                            node={n}
+                            onClick={(node) => {
+                              if (node.type === "gateway") setGatewayNode(node);
+                              else setOpenNode(node);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Card>
             {wi < arr.length - 1 && (
               <div className="relative h-16 flex items-center justify-center">
