@@ -215,7 +215,7 @@
           "type": "form",
           "who_can_complete": ["student"],
           "prerequisites": ["S1_antiplag"],
-          "next": ["W2_GATE"],
+          "next": ["E1_apply_omid"],
           "requirements": {
             "templates": [
               "tpl_app7_ru_docx",
@@ -277,22 +277,6 @@
             ]
           },
           "outputs": []
-        },
-        {
-          "id": "W2_GATE",
-          "title": {
-            "ru": "Переход к Предв. экспертизе",
-            "kz": "Алдын ала сараптамаға өту",
-            "en": "Go to Pre-examination"
-          },
-          "type": "gateway",
-          "who_can_complete": ["student"],
-          "prerequisites": ["S1_publications_list"],
-          "next": ["E1_apply_omid"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
         }
       ]
     },
@@ -327,7 +311,7 @@
               "tpl_omid_application_en_docx"
             ]
           },
-          "prerequisites": ["W2_GATE"],
+          "prerequisites": ["S1_publications_list"],
           "next": ["NK_package"]
         },
         {
@@ -578,7 +562,7 @@
                   "kz": "ДС-ке құжат тапсыруға өту",
                   "en": "Proceed to submit to the DC"
                 },
-                "to": "W4_GATE"
+                "to": "D1_normokontrol_ncste"
               },
               {
                 "key": "go_to_ds_all_resolved",
@@ -589,17 +573,17 @@
                   "kz": "ДС-ке құжат тапсыруға өту",
                   "en": "Proceed to submit to the DC"
                 },
-                "to": "W4_GATE"
+                "to": "D1_normokontrol_ncste"
               }
             ]
           },
-          "next": ["W4_GATE"],
+          "next": ["D1_normokontrol_ncste"],
 
           "outcomes": [
             {
               "value": "proceed",
               "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
-              "next": ["W4_GATE"]
+              "next": ["D1_normokontrol_ncste"]
             },
             {
               "value": "needs_plan",
@@ -612,22 +596,6 @@
               "next": ["E3_hearing_nk"]
             }
           ]
-        },
-        {
-          "id": "W4_GATE",
-          "title": {
-            "ru": "Переход к Подаче в ДС",
-            "kz": "ДК-ға тапсыруға өту",
-            "en": "Proceed to DC submission"
-          },
-          "type": "gateway",
-          "who_can_complete": ["system"],
-          "prerequisites": ["E3_hearing_nk"],
-          "next": ["D1_normokontrol_ncste"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
         }
       ]
     },
