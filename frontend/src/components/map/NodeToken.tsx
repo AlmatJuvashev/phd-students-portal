@@ -178,8 +178,8 @@ export function NodeToken({
             fillOpacity={isDone ? 0.2 : 0}
           />
           {isDone && (
-            <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full p-1 w-7 h-7 shadow-lg ring-2 ring-white/80 dark:ring-gray-800/80 animate-in zoom-in duration-300">
-              <Check className="w-4 h-4" strokeWidth={3.5} />
+            <div className="absolute -bottom-0.5 -right-0.5 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-gray-800 animate-in zoom-in duration-300">
+              <Check className="w-3.5 h-3.5" strokeWidth={3} />
             </div>
           )}
         </div>

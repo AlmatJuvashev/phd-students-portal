@@ -13,6 +13,7 @@ import { evalVisible as evalVisibleExpr } from "@/features/forms/Visibility";
 import { FieldRenderer } from "@/features/forms/FieldRenderer";
 import { ActionsBar } from "@/features/forms/ActionsBar";
 import StickyActions from "@/components/ui/sticky-actions";
+import { useConditions } from "@/features/journey/useConditions";
 
 type Props = {
   node: NodeVM;
@@ -64,12 +65,16 @@ export function FormTaskDetails({
     });
   }
 
-  // E3_hearing_nk: interactive cards with guard; proceed to D1_normokontrol_ncste
+  // E3_hearing_nk: interactive cards with guard; proceed to RP1 or D1 based on rp_required
   if (node.id === "E3_hearing_nk") {
     const h = values["hearing_happened"];
     const r = values["remarks_exist"];
     const p = values["plan_prepared"];
     const z = values["remarks_resolved"];
+    const { rp_required } = useConditions();
+    const targetNext = rp_required
+      ? "RP1_overview_actualization"
+      : "D1_normokontrol_ncste";
     let currentStep:
       | "q0"
       | "hearingReminder"
@@ -90,14 +95,6 @@ export function FormTaskDetails({
     else currentStep = "done";
     const canProceed =
       h === true && (r === false || (p === true && z === true));
-
-    const [autoSubmitted, setAutoSubmitted] = useState(false);
-    useEffect(() => {
-      if (!autoSubmitted && h === true && (r === false || (p === true && z === true))) {
-        setAutoSubmitted(true);
-        onSubmit?.({ ...values, __nextOverride: "D1_normokontrol_ncste" });
-      }
-    }, [h, r, p, z, autoSubmitted]);
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
@@ -295,8 +292,14 @@ export function FormTaskDetails({
             </motion.div>
           </AnimatePresence>
           {currentStep === "done" && (
-            <div className="text-sm text-muted-foreground">
-              {T("forms.nk.done_info", "Ответы зафиксированы. Переход к следующему шагу…")}
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">
+                {T("forms.nk.done_info", "Ответы зафиксированы. Вы можете продолжить.")}
+              </div>
+              <StickyActions
+                primaryLabel={T("forms.proceed_next", "Перейти к следующему шагу")}
+                onPrimary={() => onSubmit?.({ ...values, __nextOverride: targetNext })}
+              />
             </div>
           )}
           {/* Sticky back actions for reminder steps */}

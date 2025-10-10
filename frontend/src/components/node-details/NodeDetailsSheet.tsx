@@ -68,6 +68,23 @@ export function NodeDetailsSheet({
   const handleEvent = async (evt: { type: string; payload?: any }) => {
     if (!node || saving) return;
     switch (evt.type) {
+      case "reset-node": {
+        setSaving(true);
+        try {
+          patchJourneyState({ [node.id]: "active" });
+          await api("/journey/state", {
+            method: "PUT",
+            body: JSON.stringify({ node_id: node.id, state: "active" }),
+          });
+          onStateRefresh?.();
+        } catch (err: any) {
+          console.error("reset node failed", err);
+          setErrorMsg(err?.message ?? String(err));
+        } finally {
+          setSaving(false);
+        }
+        break;
+      }
       case "continue": {
         // Treat simple info/gateway continue as completing the node
         setSaving(true);

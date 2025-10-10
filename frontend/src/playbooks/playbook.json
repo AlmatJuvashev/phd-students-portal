@@ -898,22 +898,6 @@
             "requires_upload": false,
             "reminder_required": false
           }
-        },
-        {
-          "id": "R2_complete",
-          "title": {
-            "ru": "Завершение RP",
-            "kz": "RP аяқтау",
-            "en": "RP complete"
-          },
-          "type": "decision",
-          "who_can_complete": ["secretary", "advisor"],
-          "prerequisites": ["R1_intro"],
-          "next": ["D1_normokontrol_ncste"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
         }
       ]
     },
@@ -936,6 +920,7 @@
           },
           "type": "confirmTask",
           "prerequisites": ["E3_hearing_nk"],
+          "next": ["IV_rector_application"],
           "who_can_complete": ["student"],
           "screen": {
             "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
@@ -983,7 +968,7 @@
             },
             "completed": {
               "message": "✅ Нормоконтроль пройден и подтверждён.",
-              "next_node": "IV2"
+              "next_node": "IV_rector_application"
             }
           },
           "meta": {
@@ -995,7 +980,7 @@
           }
         },
         {
-          "id": "IV2",
+          "id": "IV_rector_application",
           "module": "IV",
           "title": {
             "ru": "Заявление ректору",
@@ -1003,6 +988,9 @@
             "en": "Letter to Rector"
           },
           "type": "uploadTask",
+          "prerequisites": ["D1_normokontrol_ncste"],
+          "next": ["IV3_publication_certificate_ncste"],
+          "who_can_complete": ["student"],
           "screen": {
             "question": {
               "ru": "Вы подали заявление на имя Председателя Правления – Ректора на допуск к защите (Приложение 4)?",
@@ -1072,6 +1060,7 @@
         {
           "id": "IV3_publication_certificate_ncste",
           "module": "IV",
+          "prerequisites": ["IV_rector_application"],
           "title": {
             "ru": "НЦГНТЭ: справка о публикациях (подтверждение в индексируемых журналах)",
             "kz": "НЦҒНТЭ: жарияланымдар туралы анықтама (индекстелетін журналдар)",
