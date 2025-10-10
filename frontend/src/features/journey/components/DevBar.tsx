@@ -15,6 +15,8 @@ export function DevBar() {
     setUnlockAll(next);
     try {
       localStorage.setItem("dev_unlock_all_nodes", String(next));
+      // Dispatch custom event to notify WorldMap
+      window.dispatchEvent(new Event("dev_unlock_changed"));
     } catch {}
     // Reload to allow maps/hooks to re-evaluate
     setTimeout(() => window.location.reload(), 50);

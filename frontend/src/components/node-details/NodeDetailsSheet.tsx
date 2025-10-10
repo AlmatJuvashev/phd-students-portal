@@ -51,6 +51,34 @@ export function NodeDetailsSheet({
   const handleEvent = async (evt: { type: string; payload?: any }) => {
     if (!node || saving) return;
     switch (evt.type) {
+      case "continue": {
+        // Treat simple info/gateway continue as completing the node
+        setSaving(true);
+        try {
+          await save.mutateAsync({ form_data: {}, state: "done" });
+          if (node) {
+            patchJourneyState({ [node.id]: "done" });
+            try {
+              await api("/journey/state", {
+                method: "PUT",
+                body: JSON.stringify({ node_id: node.id, state: "done" }),
+              });
+            } catch (e) {
+              console.warn("state upsert failed", e);
+            }
+          }
+          onStateRefresh?.();
+          const nextId = Array.isArray(node.next) ? node.next[0] : undefined;
+          onOpenChange(false);
+          onAdvance?.(nextId ?? null);
+        } catch (err: any) {
+          console.error("continue failed", err);
+          setErrorMsg(err?.message ?? String(err));
+        } finally {
+          setSaving(false);
+        }
+        break;
+      }
       case "submit-form": {
         const payload = { ...(evt.payload ?? {}) };
         const isDraft = !!payload.__draft;

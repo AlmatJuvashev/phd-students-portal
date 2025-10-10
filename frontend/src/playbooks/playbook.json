@@ -927,6 +927,8 @@
             "en": "NCSTE: dissertation formatting check (norm control)"
           },
           "type": "confirmTask",
+          "prerequisites": ["R2_complete"],
+          "who_can_complete": ["student"],
           "screen": {
             "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
             "buttons": [
