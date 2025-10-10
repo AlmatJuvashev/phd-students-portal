@@ -24,7 +24,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
     <div className="max-w-4xl mx-auto p-4">
       <header className="flex items-center justify-between py-2">
         <h1 className="font-semibold">{APP_NAME}</h1>
-        <nav className="flex gap-3 text-sm">
+        <nav className="flex items-center gap-3 text-sm">
           {authed && (
             <Link to="/" className={active("/")}>
               {T("nav.home")}
@@ -72,7 +72,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 h-8 px-3 text-sm font-medium hover:bg-primary/10 transition-all duration-200"
+                className="gap-2 h-auto px-2 py-0 text-sm font-normal text-muted-foreground hover:text-foreground hover:bg-transparent transition-colors duration-200"
               >
                 <Globe className="h-4 w-4" />
                 <span className="hidden sm:inline">{i18n.language.toUpperCase()}</span>
