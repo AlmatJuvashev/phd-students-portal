@@ -348,7 +348,7 @@ export function FormTaskDetails({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
       {/* Left: Form (<=60%) */}
-      <Card className="p-4 space-y-4 lg:col-span-3 min-h-0 overflow-auto">
+      <Card className="p-4 space-y-4 lg:col-span-3 overflow-auto flex-1">
         {node.requirements?.notes && (
           <p className="text-sm text-muted-foreground">
             {node.requirements.notes}

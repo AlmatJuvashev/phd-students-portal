@@ -272,7 +272,18 @@ export function NodeDetailSwitch({
       );
     case "upload":
       if (node.type === "uploadTask") {
-        return <ConfirmUploadTaskDetails node={node} />;
+        const nextOverride = (node as any)?.states?.completed?.next_node;
+        return (
+          <ConfirmUploadTaskDetails
+            node={node}
+            onComplete={() =>
+              onEvent?.({
+                type: "submit-decision",
+                payload: nextOverride ? { __nextOverride: nextOverride } : {},
+              })
+            }
+          />
+        );
       }
       return (
         <UploadTaskDetails

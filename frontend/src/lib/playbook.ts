@@ -149,7 +149,7 @@ export type NodeVM = NodeDef & { worldId: string; state: NodeState };
  * Compute node states with automatic unlocking based on prerequisites.
  * If a node is "locked" but all its prerequisites are "done", it becomes "active".
  * Returns the same object reference if no changes were made to avoid unnecessary re-renders.
- * 
+ *
  * Note: Nodes with a "condition" field are NOT auto-activated by this function.
  * They require manual activation through conditional logic in the UI.
  */
@@ -195,7 +195,7 @@ export function computeNodeStates(
           if (node.condition) {
             return;
           }
-          
+
           // Check if all prerequisites are done
           if (allPrereqsDone(node.prerequisites)) {
             computed[node.id] = "active";
