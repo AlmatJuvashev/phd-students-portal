@@ -1,0 +1,36 @@
+{
+  "text_ready": {
+    "title": "What to check in the dissertation text",
+    "items": [
+      "Title page, abstract, table of contents",
+      "Introduction, objectives, novelty",
+      "Chapters with methods and results",
+      "Conclusion (findings, contribution)",
+      "References list (per rules)",
+      "Appendices (if applicable)"
+    ],
+    "linkLabel": "Open standard",
+    "linkUrl": "https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf"
+  },
+  "antiplag": {
+    "title": "Antiplagiarism ≥ 85%",
+    "items": [
+      "Confirm the check is passed",
+      "Follow the checking guidance",
+      "Reduce matches if needed"
+    ],
+    "linkLabel": "Checking guide",
+    "linkUrl": "https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf"
+  },
+  "ncste_pubcert": {
+    "title": "NCSTE: publication certificate",
+    "items": [
+      "Prepare publication details",
+      "Ensure journals are indexed",
+      "Download template and fill in"
+    ],
+    "linkLabel": "Open template",
+    "linkUrl": ""
+  }
+}
+
