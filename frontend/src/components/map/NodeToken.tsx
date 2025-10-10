@@ -12,6 +12,17 @@ import {
   MapPin,
   Check,
   Lock,
+  FileText,
+  FileCheck2,
+  ShieldCheck,
+  ListChecks,
+  ClipboardCheck,
+  Megaphone,
+  GraduationCap,
+  Award,
+  Package,
+  FileSignature,
+  RefreshCw,
 } from "lucide-react";
 import { NodeVM, t } from "@/lib/playbook";
 import clsx from "clsx";
@@ -28,6 +39,28 @@ const typeIcon: Record<NodeVM["type"], LucideIcon> = {
   info: MapPin,
   confirmTask: Check,
   uploadTask: Upload,
+};
+
+// More accurate icons by node id when available
+const idIcon: Record<string, LucideIcon> = {
+  // Section 1 — Student preparation
+  S1_text_ready: FileText,
+  S1_antiplag: ShieldCheck,
+  S1_publications_list: ListChecks,
+  // External application to OMiD
+  E1_apply_omid: ClipboardCheck,
+  // Hearing at NK (department/committee)
+  E3_hearing_nk: Megaphone,
+  // NCSTE (НЦГНТЭ) steps
+  D1_normokontrol_ncste: GraduationCap,
+  IV3_publication_certificate_ncste: Award,
+  NK_package: Package,
+  // DS application / reinstatement
+  D2_apply_to_ds: FileSignature,
+  V1_reinstatement_package: RefreshCw,
+  // Special scenes
+  RP2_sc_hearing_prep: Users,
+  VI_attestation_file: FileCheck2,
 };
 
 const stateStyles = {
@@ -82,7 +115,7 @@ export function NodeToken({
   node: NodeVM;
   onClick?: (n: NodeVM) => void;
 }) {
-  const Icon = typeIcon[node.type];
+  const Icon = idIcon[node.id] || typeIcon[node.type];
   const styles = stateStyles[node.state];
 
   const isBossNode = node.type === "boss";
