@@ -1,8 +1,8 @@
-import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Link } from 'react-router-dom'
-import { Map, Clock, CheckCircle2, TrendingUp } from 'lucide-react'
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Map, Clock, CheckCircle2, TrendingUp } from "lucide-react";
 
 export function Dashboard() {
   return (
@@ -13,7 +13,8 @@ export function Dashboard() {
           Welcome to Your Dashboard
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground">
-          Track your doctoral journey progress and manage your research milestones
+          Track your doctoral journey progress and manage your research
+          milestones
         </p>
       </div>
 
@@ -25,9 +26,13 @@ export function Dashboard() {
               <div className="p-2 bg-blue-500 rounded-lg">
                 <Clock className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">-</span>
+              <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                -
+              </span>
             </div>
-            <div className="text-sm font-medium text-blue-700 dark:text-blue-300">In Progress</div>
+            <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              In Progress
+            </div>
           </CardContent>
         </Card>
 
@@ -37,9 +42,13 @@ export function Dashboard() {
               <div className="p-2 bg-green-500 rounded-lg">
                 <CheckCircle2 className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-green-700 dark:text-green-300">-</span>
+              <span className="text-2xl font-bold text-green-700 dark:text-green-300">
+                -
+              </span>
             </div>
-            <div className="text-sm font-medium text-green-700 dark:text-green-300">Completed</div>
+            <div className="text-sm font-medium text-green-700 dark:text-green-300">
+              Completed
+            </div>
           </CardContent>
         </Card>
 
@@ -49,9 +58,13 @@ export function Dashboard() {
               <div className="p-2 bg-purple-500 rounded-lg">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-purple-700 dark:text-purple-300">-%</span>
+              <span className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                -%
+              </span>
             </div>
-            <div className="text-sm font-medium text-purple-700 dark:text-purple-300">Progress</div>
+            <div className="text-sm font-medium text-purple-700 dark:text-purple-300">
+              Progress
+            </div>
           </CardContent>
         </Card>
 
@@ -61,9 +74,13 @@ export function Dashboard() {
               <div className="p-2 bg-amber-500 rounded-lg">
                 <Map className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">-</span>
+              <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                -
+              </span>
             </div>
-            <div className="text-sm font-medium text-amber-700 dark:text-amber-300">Total Tasks</div>
+            <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
+              Total Tasks
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -78,7 +95,8 @@ export function Dashboard() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground mb-4">
-            Navigate to your journey map to track progress, upload documents, and complete required tasks.
+            Navigate to your journey map to track progress, upload documents,
+            and complete required tasks.
           </p>
           <Link to="/journey">
             <Button size="lg" className="w-full sm:w-auto">
@@ -94,10 +112,11 @@ export function Dashboard() {
         <CardContent className="p-6">
           <h3 className="font-semibold mb-2">📝 Coming Soon</h3>
           <p className="text-sm text-muted-foreground">
-            This dashboard will soon display your journey progress, recent uploads, advisor feedback, and upcoming deadlines.
+            This dashboard will soon display your journey progress, recent
+            uploads, advisor feedback, and upcoming deadlines.
           </p>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

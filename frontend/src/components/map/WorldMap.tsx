@@ -4,6 +4,7 @@ import { NodeVM, Playbook, toViewModel, edgesForWorld } from "@/lib/playbook";
 import { NodeToken } from "./NodeToken";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BackButton } from "@/components/ui/back-button";
 import { NodeDetailsSheet } from "../node-details/NodeDetailsSheet";
 import { EdgeConnector } from "./EdgeConnector";
 import { ArrowDown, ChevronDown } from "lucide-react";
@@ -120,14 +121,12 @@ export function WorldMap({
   return (
     <div className="p-4 space-y-6">
       <header className="sticky top-0 z-20 bg-gradient-to-b from-background via-background to-background/80 backdrop-blur-md shadow-lg -mx-4 -mt-4 px-4 py-4 rounded-b-xl">
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-10"></div>
-          <h1 className="text-xl font-bold text-center bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <BackButton to="/" />
+          <h1 className="text-lg sm:text-xl font-bold text-center bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent flex-1">
             {T("map.title", { defaultValue: "My Dissertation Map" })}
           </h1>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors duration-200">
-            {/* <Settings /> */}
-          </button>
+          <div className="w-[78px] sm:w-10"></div>
         </div>
         <div className="px-2">
           <div className="flex justify-between items-center bg-gradient-to-r from-muted/50 to-muted/30 p-3 rounded-xl shadow-sm">
@@ -261,17 +260,21 @@ export function WorldMap({
                 <div className="relative h-20 flex items-center justify-center my-2">
                   {/* Animated dashed line */}
                   <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-1 overflow-hidden rounded-full">
-                    <div 
+                    <div
                       className="w-full h-full bg-gradient-to-b from-primary/30 to-primary/20"
                       style={{
-                        backgroundImage: "repeating-linear-gradient(to bottom, transparent, transparent 4px, rgba(0,0,0,0.1) 4px, rgba(0,0,0,0.1) 8px)",
+                        backgroundImage:
+                          "repeating-linear-gradient(to bottom, transparent, transparent 4px, rgba(0,0,0,0.1) 4px, rgba(0,0,0,0.1) 8px)",
                       }}
                     />
                   </div>
-                  
+
                   {/* Arrow icon with better styling */}
                   <div className="z-10 bg-background border-2 border-primary/20 rounded-full p-2 shadow-lg">
-                    <ArrowDown className="w-5 h-5 text-primary animate-bounce" style={{ animationDuration: "2s" }} />
+                    <ArrowDown
+                      className="w-5 h-5 text-primary animate-bounce"
+                      style={{ animationDuration: "2s" }}
+                    />
                   </div>
                 </div>
               )}
