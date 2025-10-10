@@ -239,34 +239,17 @@ export function WorldMap({
                       className="overflow-hidden"
                     >
                       <div className="p-6 sm:p-8 relative bg-gradient-to-b from-background/50 via-muted/5 to-muted/10">
-                        {/* Vertical connection line with dots */}
-                        <div className="absolute left-8 top-6 bottom-6 w-1 bg-gradient-to-b from-primary/20 via-primary/10 to-primary/5 rounded-full"></div>
-                        
                         <div className="space-y-5 sm:space-y-6">
                           {w.nodes.map((n, idx) => (
-                            <div key={n.id} className="relative">
-                              {/* Connection dot */}
-                              <div className={clsx(
-                                "absolute left-7 top-8 w-3 h-3 rounded-full border-2 border-background z-20",
-                                {
-                                  "bg-green-500": n.state === "done",
-                                  "bg-primary": n.state === "active",
-                                  "bg-amber-500": n.state === "submitted",
-                                  "bg-blue-500": n.state === "waiting",
-                                  "bg-red-500": n.state === "needs_fixes",
-                                  "bg-gray-300": n.state === "locked",
-                                }
-                              )}></div>
-                              
-                              <NodeToken
-                                node={n}
-                                onClick={(node) => {
-                                  if (node.type === "gateway")
-                                    setGatewayNode(node);
-                                  else setOpenNode(node);
-                                }}
-                              />
-                            </div>
+                            <NodeToken
+                              key={n.id}
+                              node={n}
+                              onClick={(node) => {
+                                if (node.type === "gateway")
+                                  setGatewayNode(node);
+                                else setOpenNode(node);
+                              }}
+                            />
                           ))}
                         </div>
                       </div>
