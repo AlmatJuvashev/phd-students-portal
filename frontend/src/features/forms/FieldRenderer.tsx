@@ -25,13 +25,17 @@ export function FieldRenderer({
   const { t: T } = useTranslation("common");
   // Select support
   if (field.type === "select" && Array.isArray((field as any).options)) {
-    const opts = (field as any).options as Array<{ value: string; label?: any }>;
+    const opts = (field as any).options as Array<{
+      value: string;
+      label?: any;
+    }>;
     const otherKey = (field as any).other_key || `${field.key}_other`;
     const isOther = value === "other";
     return (
       <div className="grid gap-1">
         <Label htmlFor={field.key}>
-          {t(field.label, field.key)} {field.required ? <span className="text-destructive">*</span> : null}
+          {t(field.label, field.key)}{" "}
+          {field.required ? <span className="text-destructive">*</span> : null}
         </Label>
         <select
           id={field.key}
@@ -49,13 +53,18 @@ export function FieldRenderer({
         </select>
         {isOther && (
           <div className="mt-2 grid gap-1">
-            <Label htmlFor={otherKey}>{T("fields.dissertation_form_other", "Другое (уточните)")}</Label>
+            <Label htmlFor={otherKey}>
+              {T("fields.dissertation_form_other", "Другое (уточните)")}
+            </Label>
             <Input
               id={otherKey}
               disabled={!canEdit || disabled}
               value={otherValue ?? ""}
               onChange={(e) => setField?.(otherKey, e.target.value)}
-              placeholder={T("fields.dissertation_form_other", "Другое (уточните)")}
+              placeholder={T(
+                "fields.dissertation_form_other",
+                "Другое (уточните)"
+              )}
             />
           </div>
         )}
@@ -64,27 +73,44 @@ export function FieldRenderer({
   }
   // Note field - used for section headers or info text
   if (field.type === "note") {
+    const labelText = t(field.label, field.key);
+    // Check if it's an info note (starts with emoji or contains multiple sentences)
+    const isInfoNote =
+      labelText.startsWith("ℹ️") ||
+      labelText.startsWith("⚠️") ||
+      labelText.length > 100;
+
+    if (isInfoNote) {
+      return (
+        <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md mt-4 mb-2">
+          {labelText}
+        </div>
+      );
+    }
+
+    // Regular section header
     return (
-      <div className="text-sm font-semibold text-foreground mt-4 mb-2">
-        {t(field.label, field.key)}
+      <div className="text-sm font-semibold text-foreground mt-4 mb-2 first:mt-0">
+        {labelText}
       </div>
     );
   }
 
   if (field.type === "boolean") {
     return (
-      <label className="inline-flex items-center gap-2">
+      <label className="flex items-center justify-between gap-3 cursor-pointer py-2 px-3 rounded-md hover:bg-muted/50 transition-colors">
+        <span className="flex-1">
+          {t(field.label, field.key)}{" "}
+          {field.required ? <span className="text-destructive">*</span> : null}
+        </span>
         <input
           id={field.key}
           type="checkbox"
-          className="h-5 w-5 accent-primary"
+          className="h-5 w-5 accent-primary flex-shrink-0 cursor-pointer"
           disabled={!canEdit || disabled}
           checked={!!value}
           onChange={(e) => onChange(e.target.checked)}
         />
-        <span>
-          {t(field.label, field.key)} {field.required ? <span className="text-destructive">*</span> : null}
-        </span>
       </label>
     );
   }
@@ -94,7 +120,8 @@ export function FieldRenderer({
     return (
       <div className="grid gap-1">
         <Label htmlFor={field.key}>
-          {t(field.label, field.key)} {field.required ? <span className="text-destructive">*</span> : null}
+          {t(field.label, field.key)}{" "}
+          {field.required ? <span className="text-destructive">*</span> : null}
         </Label>
         <Input
           id={field.key}
@@ -110,13 +137,18 @@ export function FieldRenderer({
   return (
     <div className="grid gap-1">
       <Label htmlFor={field.key}>
-        {t(field.label, field.key)} {field.required ? <span className="text-destructive">*</span> : null}
+        {t(field.label, field.key)}{" "}
+        {field.required ? <span className="text-destructive">*</span> : null}
       </Label>
       {field.type === "textarea" || field.type === "array" ? (
         <Textarea
           id={field.key}
           disabled={!canEdit || disabled}
-          placeholder={field.type === "array" ? T("forms.array_hint") : t(field.placeholder, "")}
+          placeholder={
+            field.type === "array"
+              ? T("forms.array_hint")
+              : t(field.placeholder, "")
+          }
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
         />
