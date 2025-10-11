@@ -203,19 +203,87 @@
             "kz": "Диссертация мәтіні дайын",
             "en": "Dissertation draft ready"
           },
-          "description": {
-            "ru": "Оформите текст диссертации в соответствии со стандартом. Структура и требования: https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf Перейдите по ссылке и проверьте, что разделы и оформление соответствуют стандартам (титульный лист, аннотация, оглавление, введение, главы, заключение, список литературы, приложения и т.д.). После приведения текста к стандарту нажмите «Готово».",
-            "kz": "Диссертация мәтінін стандартқа сәйкес рәсімдеңіз. Құрылым және талаптар: https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf Сілтеме бойынша өтіп, бөлімдер мен рәсімдеудің стандарттарға сай екеніне көз жеткізіңіз (титул беті, аннотация, мазмұны, кіріспе, тараулар, қорытынды, әдебиеттер тізімі, қосымшалар және т.б.). Стандартқа келтірген соң «Дайын» түймесін басыңыз.",
-            "en": "Format the dissertation text according to the standard. Structure and requirements: https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf Follow the link and ensure sections and formatting meet the standard (title page, abstract, table of contents, introduction, chapters, conclusion, references, appendices, etc.). When ready, click ‘Mark as ready’."
-          },
-          "type": "decision",
+          "type": "confirmTask",
           "who_can_complete": ["student"],
           "prerequisites": ["S1_profile"],
           "next": ["S1_antiplag"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
+          "screen": {
+            "question": {
+              "ru": "Текст диссертации приведён к стандарту оформления?",
+              "kz": "Диссертация мәтіні рәсімдеу стандартына келтірілді ме?",
+              "en": "Is the dissertation formatted according to the standard?"
+            },
+            "buttons": [
+              {
+                "id": "view_requirements",
+                "label": {
+                  "ru": "Проверить требования",
+                  "kz": "Талаптарды қарау",
+                  "en": "Review the requirements"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Структура и оформление",
+                    "kz": "Құрылым және рәсімдеу",
+                    "en": "Structure & formatting"
+                  },
+                  "text": {
+                    "ru": [
+                      "Сравните разделы и оформление с официальным стандартом КазНМУ.",
+                      "Убедитесь, что титульный лист, аннотации, оглавление, главы, заключение и список литературы оформлены корректно.",
+                      "Проверьте приложения и нумерацию страниц.",
+                      "Стандарт можно скачать по ссылке ниже."
+                    ],
+                    "kz": [
+                      "Құрылымды және рәсімдеуді ҚазҰМУ ресми стандартымен салыстырыңыз.",
+                      "Титул беті, аннотациялар, мазмұны, тараулар, қорытынды және әдебиеттер тізімі дұрыс рәсімделгеніне көз жеткізіңіз.",
+                      "Қосымшаларды және бет нөмірлеуді тексеріңіз.",
+                      "Төмендегі сілтемеден стандартты жүктей аласыз."
+                    ],
+                    "en": [
+                      "Compare your manuscript with the official KazNMU formatting standard.",
+                      "Verify title page, abstracts, table of contents, chapters, conclusion, and references meet the requirements.",
+                      "Check appendices and pagination.",
+                      "Download the standard via the link below."
+                    ]
+                  },
+                  "downloads": [
+                    {
+                      "label": {
+                        "ru": "Стандарт оформления (PDF)",
+                        "kz": "Рәсімдеу стандарты (PDF)",
+                        "en": "Formatting standard (PDF)"
+                      },
+                      "asset_path": "https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить готовность",
+                  "kz": "Дайындығын растау",
+                  "en": "Confirm readiness"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Вы подтвердите, что текст полностью оформлен по стандарту?",
+                  "kz": "Мәтін стандартқа толық сәйкес екенін растайсыз ба?",
+                  "en": "Confirm the manuscript is fully formatted to the standard?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Текст диссертации подготовлен по стандарту.",
+                "kz": "Диссертация мәтіні стандартқа келтірілді.",
+                "en": "Dissertation manuscript is formatted according to the standard."
+              }
+            }
+          }
         },
         {
           "id": "S1_antiplag",
@@ -224,19 +292,74 @@
             "kz": "Антиплагиат ≥ 85%",
             "en": "Anti-plagiarism ≥ 85%"
           },
-          "type": "decision",
-          "description": {
-            "ru": "Проверьте текст в системе Антиплагиат (не менее 85%). Инструкция: https://smart.zhub.kz/api/workflow/_media/file/b71c8r4-bd49-2544-a9cb-210f3c0b4522.pdf. После проверки подтвердите готовность.",
-            "kz": "Антиплагиат жүйесінде мәтінді тексеріңіз (кемінде 85%). Нұсқаулық: https://smart.zhub.kz/api/workflow/_media/file/b71c8r4-bd49-2544-a9cb-210f3c0b4522.pdf. Тексеруден кейін дайын екенін растаңыз.",
-            "en": "Run the dissertation through the Antiplagiat system (85% or higher). Guide: https://smart.zhub.kz/api/workflow/_media/file/b71c8r4-bd49-2544-a9cb-210f3c0b4522.pdf. When ready, confirm completion."
-          },
+          "type": "confirmTask",
           "who_can_complete": ["student"],
           "prerequisites": ["S1_text_ready"],
           "next": ["S1_publications_list"],
-          "outcomes": [],
-          "requirements": {},
-          "outputs": [],
-          "actionHints": []
+          "screen": {
+            "question": {
+              "ru": "Результат проверки Антиплагиат ≥ 85% подтверждён?",
+              "kz": "Антиплагиат нәтижесі ≥ 85% расталды ма?",
+              "en": "Is the antiplagiarism score ≥ 85% confirmed?"
+            },
+            "buttons": [
+              {
+                "id": "view_guide",
+                "label": {
+                  "ru": "Как пройти проверку",
+                  "kz": "Тексеруді қалай өткізу",
+                  "en": "How to run the check"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Проверка в системе Антиплагиат",
+                    "kz": "Антиплагиат жүйесінде тексеру",
+                    "en": "Checking in the Antiplagiat system"
+                  },
+                  "text": {
+                    "ru": [
+                      "Загрузите окончательный текст в систему Антиплагиат КазНМУ или Smart-Zhub.",
+                      "Убедитесь, что показатель оригинальности ≥ 85%.",
+                      "Получите отчёт и при необходимости устраните совпадения."
+                    ],
+                    "kz": [
+                      "Қорытынды мәтінді ҚазҰМУ немесе Smart-Zhub Антиплагиат жүйесіне салыңыз.",
+                      "Түпнұсқалық көрсеткіші ≥ 85% екеніне көз жеткізіңіз.",
+                      "Есепті жүктеп алып, қажет кезде сәйкестіктерді жойыңыз."
+                    ],
+                    "en": [
+                      "Upload the final manuscript to the KazNMU or Smart-Zhub antiplagiarism system.",
+                      "Ensure the originality score is 85% or higher.",
+                      "Download the report and resolve any flagged matches if needed."
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "confirm_score",
+                "label": {
+                  "ru": "Подтвердить результат",
+                  "kz": "Нәтижені растау",
+                  "en": "Confirm result"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Показатель оригинальности ≥ 85% подтверждён?",
+                  "kz": "Оригиналдық көрсеткіші ≥ 85% расталды ма?",
+                  "en": "Is the originality score ≥ 85% confirmed?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Антиплагиат подтверждён с результатом ≥ 85%.",
+                "kz": "Антиплагиат нәтижесі ≥ 85% расталды.",
+                "en": "Antiplagiarism verification confirmed with ≥ 85%."
+              }
+            }
+          }
         },
         {
           "id": "S1_publications_list",
@@ -334,20 +457,121 @@
             "kz": "ОМиД-ке өтініш",
             "en": "Application to OMiD"
           },
-          "type": "form",
-          "actionHints": ["form"],
+          "type": "confirmTask",
           "who_can_complete": ["student"],
           "description": {
-            "ru": "Готово заявление на предварительную экспертизу в ОМиД?",
-            "kz": "ОМиД-ке алдын ала сараптамаға өтініш дайын ба?",
-            "en": "Is the application for preliminary review to OMiD ready?"
+            "ru": "Подтвердите подготовку и отправку заявления на предварительную экспертизу в ОМиД.",
+            "kz": "ОМиД-ке алдын ала сараптамаға өтініш дайындалып, жіберілгенін растаңыз.",
+            "en": "Confirm the OMiD preliminary review application is prepared and submitted."
           },
-          "requirements": {
-            "templates": [
-              "tpl_omid_application_ru_docx",
-              "tpl_omid_application_kz_docx",
-              "tpl_omid_application_en_docx"
-            ]
+          "screen": {
+            "question": {
+              "ru": "Заявление в ОМиД оформлено и отправлено?",
+              "kz": "ОМиД-ке өтініш рәсімделіп, жіберілді ме?",
+              "en": "Is the OMiD application prepared and submitted?"
+            },
+            "buttons": [
+              {
+                "id": "how_to",
+                "label": {
+                  "ru": "Как оформить заявку",
+                  "kz": "Өтінішті қалай рәсімдеу",
+                  "en": "How to prepare the application"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Шаги оформления",
+                    "kz": "Рәсімдеу қадамдары",
+                    "en": "Preparation steps"
+                  },
+                  "text": {
+                    "ru": [
+                      "Скачайте шаблон и заполните заявление на русском языке.",
+                      "При необходимости подготовьте версии на казахском и английском языках.",
+                      "Проверьте корректность данных (ФИО, тема, специальность, контакты).",
+                      "Отправьте заявление в ОМиД установленным способом и дождитесь подтверждения."
+                    ],
+                    "kz": [
+                      "Үлгіні жүктеп, өтінішті орыс тілінде толтырыңыз.",
+                      "Қажет болса, қазақ және ағылшын тілдеріндегі нұсқаларын дайындаңыз.",
+                      "Деректердің дұрыстығын тексеріңіз (Т.А.Ә., тақырып, мамандық, байланыс).",
+                      "Өтінішті ОМиД-ке белгіленген арна арқылы жіберіп, растауды күтіңіз."
+                    ],
+                    "en": [
+                      "Download the template and complete the Russian version.",
+                      "Prepare Kazakh and English versions if required.",
+                      "Verify all details (name, topic, specialty, contacts).",
+                      "Submit the application to OMiD via the designated channel and wait for confirmation."
+                    ]
+                  },
+                  "downloads": [
+                    {
+                      "label": {
+                        "ru": "Шаблон (RU)",
+                        "kz": "Үлгі (RU)",
+                        "en": "Template (RU)"
+                      },
+                      "asset_id": "tpl_omid_application_ru_docx"
+                    },
+                    {
+                      "label": {
+                        "ru": "Шаблон (KZ)",
+                        "kz": "Үлгі (KZ)",
+                        "en": "Template (KZ)"
+                      },
+                      "asset_id": "tpl_omid_application_kz_docx"
+                    },
+                    {
+                      "label": {
+                        "ru": "Template (EN)",
+                        "kz": "Үлгі (EN)",
+                        "en": "Template (EN)"
+                      },
+                      "asset_id": "tpl_omid_application_en_docx"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить подачу",
+                  "kz": "Жіберуді растау",
+                  "en": "Confirm submission"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Вы уверены, что заявление отправлено в ОМиД?",
+                  "kz": "ОМиД-ке өтініш жіберілгеніне сенімдісіз бе?",
+                  "en": "Confirm the OMiD application has been submitted?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Заявка в ОМиД подтверждена. Можно собирать пакет документов на НК.",
+                "kz": "ОМиД-ке өтініш расталды. Енді ҒК құжаттар пакетін жинауға болады.",
+                "en": "OMiD application confirmed. You can proceed with the SC package."
+              }
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["how_to", "confirm_ready"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_ready"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Заявка в ОМиД подтверждена.",
+                "kz": "✅ ОМиД-ке өтініш расталды.",
+                "en": "✅ OMiD application confirmed."
+              },
+              "next_node": "NK_package"
+            }
           },
           "prerequisites": ["S1_publications_list"],
           "next": ["NK_package"]
@@ -987,7 +1211,7 @@
             "kz": "Ректорға өтініш",
             "en": "Letter to Rector"
           },
-          "type": "uploadTask",
+          "type": "confirmTask",
           "prerequisites": ["D1_normokontrol_ncste"],
           "next": ["IV3_publication_certificate_ncste"],
           "who_can_complete": ["student"],
@@ -1000,52 +1224,103 @@
             "buttons": [
               {
                 "id": "generate_letter",
-                "label": "Сгенерировать заявление",
+                "label": {
+                  "ru": "Сгенерировать заявление",
+                  "kz": "Өтінішті дайындау",
+                  "en": "Generate the letter"
+                },
                 "action": "show_instructions",
                 "instructions": {
-                  "title": "Как оформить заявление",
-                  "text": [
-                    "Для подачи заявления необходимо подготовить письмо на имя Председателя Правления – Ректора НАО «КазНМУ им. С.Д. Асфендиярова».",
-                    "В письме указывается тема диссертации, специальность и подтверждение выполнения всех требований Положения о Диссертационном совете.",
-                    "Вы можете скачать шаблон письма (Приложение 4) ниже."
-                  ],
+                  "title": {
+                    "ru": "Как оформить заявление",
+                    "kz": "Өтінішті қалай рәсімдеу",
+                    "en": "How to prepare the letter"
+                  },
+                  "text": {
+                    "ru": [
+                      "Скачайте шаблон заявления (Приложение 4) на русском языке и заполните его.",
+                      "Укажите тему диссертации, специальность, подтверждение выполнения требований Положения о Диссертационном совете.",
+                      "Подготовьте и приложите версии на казахском и английском языках, если требуется.",
+                      "Передайте заявление Учёному секретарю для регистрации и отправки Ректору."
+                    ],
+                    "kz": [
+                      "Өтініш үлгісін (Қосымша 4) орыс тілінде жүктеп, толтырыңыз.",
+                      "Диссертация тақырыбын, мамандығын және Диссертациялық кеңес Ережесінің талаптарын орындауды көрсетіңіз.",
+                      "Қажет болса, қазақ және ағылшын тілдеріндегі нұсқаларын дайындаңыз.",
+                      "Өтінішті тіркеу және Ректорға жіберу үшін Ғылыми хатшыға тапсырыңыз."
+                    ],
+                    "en": [
+                      "Download the Appendix 4 template (Russian) and complete the letter.",
+                      "Include dissertation topic, specialty, and confirmation that DC regulation requirements are satisfied.",
+                      "Prepare Kazakh and English versions if required by the secretary.",
+                      "Submit the signed letter to the Council Secretary for registration and forwarding to the Rector."
+                    ]
+                  },
                   "downloads": [
                     {
-                      "label": "Скачать шаблон (русский)",
+                      "label": {
+                        "ru": "Шаблон (русский)",
+                        "kz": "Үлгі (орысша)",
+                        "en": "Template (Russian)"
+                      },
                       "asset_id": "tpl_letter_rector_defense_request_ru_docx"
                     },
                     {
-                      "label": "Download template (English)",
-                      "asset_id": "tpl_letter_rector_defense_request_en_docx"
+                      "label": {
+                        "ru": "Шаблон (казахский)",
+                        "kz": "Үлгі (қазақша)",
+                        "en": "Template (Kazakh)"
+                      },
+                      "asset_id": "tpl_letter_rector_defense_request_kz_docx"
                     },
                     {
-                      "label": "Жүктеу үлгісі (қазақша)",
-                      "asset_id": "tpl_letter_rector_defense_request_kz_docx"
+                      "label": {
+                        "ru": "Template (English)",
+                        "kz": "Үлгі (ағылшынша)",
+                        "en": "Template (English)"
+                      },
+                      "asset_id": "tpl_letter_rector_defense_request_en_docx"
                     }
                   ]
                 }
               },
               {
-                "id": "upload_confirmation",
-                "label": "Подтвердить подачу заявления",
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить подачу заявления",
+                  "kz": "Өтінішті жіберуді растау",
+                  "en": "Confirm submission"
+                },
                 "action": "confirm_completion",
-                "confirmation_text": "Вы уверены, что подали заявление ректору о приёме к защите?"
+                "confirmation_text": {
+                  "ru": "Вы уверены, что подали заявление ректору о приёме к защите?",
+                  "kz": "Ректорға қорғауға жіберу туралы өтініш бергеніңізге сенімдісіз бе?",
+                  "en": "Are you sure the letter was submitted to the Rector for defence admission?"
+                }
               }
             ],
             "on_confirm": {
               "status": "completed",
-              "message": "Заявление ректору подано. Можно переходить к следующему шагу."
+              "message": {
+                "ru": "Заявление ректору подано. Можно переходить к следующему шагу.",
+                "kz": "Ректорға өтініш тапсырылды. Келесі қадамға өтуге болады.",
+                "en": "The rector letter has been submitted. You can proceed to the next step."
+              }
             }
           },
           "states": {
             "not_started": {
-              "visible_buttons": ["generate_letter", "upload_confirmation"]
+              "visible_buttons": ["generate_letter", "confirm_ready"]
             },
             "in_progress": {
-              "visible_buttons": ["upload_confirmation"]
+              "visible_buttons": ["confirm_ready"]
             },
             "completed": {
-              "message": "✅ Заявление ректору подтверждено.",
+              "message": {
+                "ru": "✅ Заявление ректору подтверждено.",
+                "kz": "✅ Ректорға өтініш расталды.",
+                "en": "✅ Rector letter confirmed."
+              },
               "next_node": "IV3_publication_certificate_ncste"
             }
           },

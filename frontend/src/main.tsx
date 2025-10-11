@@ -33,6 +33,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 setTimeout(() => {
   // These imports create their own chunks via React.lazy; preloading them improves UX
   import("@/components/node-details/variants/UploadTaskDetails");
-  import("@/components/node-details/variants/ConfirmUploadTaskDetails");
   import("@/components/node-details/variants/ExternalProcessDetails");
 }, 0);
