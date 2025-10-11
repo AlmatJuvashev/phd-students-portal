@@ -7,11 +7,15 @@ import { deriveNodeKind } from "@/features/nodes/deriveNodeKind";
 import FormEntryDetails from "@/features/nodes/kinds/FormEntryDetails";
 import ChecklistDetails from "@/features/nodes/kinds/ChecklistDetails";
 import CardsDetails from "@/features/nodes/kinds/CardsDetails";
+import S1PublicationsDetails from "@/features/nodes/scenes/S1PublicationsDetails";
+import E1ApplyOmidDetails from "@/features/nodes/scenes/E1ApplyOmidDetails";
+import NkPackageDetails from "@/features/nodes/scenes/NkPackageDetails";
 import React from "react";
 import D2ApplyToDsScene from "@/features/nodes/scenes/D2ApplyToDsScene";
 import V1ReinstatementScene from "@/features/nodes/scenes/V1ReinstatementScene";
 import RP2HearingPrepScene from "@/features/nodes/scenes/RP2HearingPrepScene";
 import VIAttestationScene from "@/features/nodes/scenes/VIAttestationScene";
+import E3HearingNkScene from "@/features/nodes/scenes/E3HearingNkScene";
 import { FormTaskDetails } from "./variants/FormTaskDetails";
 import useGuideForNode from "@/features/guides/useGuideForNode";
 
@@ -76,10 +80,46 @@ export function NodeDetailSwitch({
     );
   }
 
+  if (node.id === "S1_publications_list") {
+    return (
+      <S1PublicationsDetails
+        node={node}
+        initial={initialForm}
+        disabled={saving}
+        canEdit={canEdit ?? !saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+
+  if (node.id === "E1_apply_omid") {
+    return (
+      <E1ApplyOmidDetails
+        node={node}
+        initial={initialForm}
+        disabled={saving}
+        canEdit={canEdit ?? !saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+
+  if (node.id === "NK_package") {
+    return (
+      <NkPackageDetails
+        node={node}
+        initial={initialForm}
+        disabled={saving}
+        canEdit={canEdit ?? !saving}
+        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+      />
+    );
+  }
+
   // Force E3_hearing_nk to use the specialized flow in FormTaskDetails (yes/no cards, back navigation)
   if (node.id === "E3_hearing_nk") {
     return (
-      <FormTaskDetails
+      <E3HearingNkScene
         node={node}
         canEdit={canEdit ?? !saving}
         initial={initialForm}
