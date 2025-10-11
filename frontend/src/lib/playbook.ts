@@ -3,12 +3,9 @@ export type RoleId = "student" | "advisor" | "secretary" | "chair" | "admin";
 
 export type ActionKind =
   | "form"
-  | "upload"
   | "outcome"
   | "wait"
-  | "external"
-  | "gateway"
-  | "composite"; // optional
+  | "gateway";
 
 export type FieldDef = {
   key: string;
@@ -269,7 +266,6 @@ export function detectActionKinds(n: NodeDef): ActionKind[] {
   const kinds: ActionKind[] = [];
 
   const hasFields = !!n.requirements?.fields?.length;
-  const hasUploads = !!n.requirements?.uploads?.length;
   const hasOutcomes =
     !!n.outcomes?.length ||
     n.type === "decision" ||
@@ -277,20 +273,12 @@ export function detectActionKinds(n: NodeDef): ActionKind[] {
     n.type === "boss";
   const hasTimer = !!n.timer;
   const isWaiting = n.type === "waiting";
-  const isExternal = n.type === "external";
   const isGateway = n.type === "gateway";
 
   if (hasFields) kinds.push("form");
-  if (hasUploads) kinds.push("upload");
   if (hasOutcomes) kinds.push("outcome");
   if (hasTimer || isWaiting) kinds.push("wait");
-  if (isExternal) kinds.push("external");
   if (isGateway) kinds.push("gateway");
-
-  // Composite convenience: outcome + upload, or upload+form in one screen
-  if (kinds.includes("outcome") && kinds.includes("upload")) {
-    return ["composite"]; // prefer composite single-screen UX
-  }
 
   return kinds.length ? kinds : ["gateway"]; // default read-only
 }

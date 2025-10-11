@@ -32,6 +32,4 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 // Warm up common lazy chunks shortly after boot to reduce first-open latency
 setTimeout(() => {
   // These imports create their own chunks via React.lazy; preloading them improves UX
-  import("@/components/node-details/variants/UploadTaskDetails");
-  import("@/components/node-details/variants/ExternalProcessDetails");
 }, 0);
