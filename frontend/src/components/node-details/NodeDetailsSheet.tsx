@@ -306,7 +306,6 @@ export function NodeDetailsSheet({
               ) : (
                 <NodeDetailSwitch
                   node={node}
-                  role={role}
                   submission={submission as any}
                   onEvent={handleEvent}
                   saving={saving}
