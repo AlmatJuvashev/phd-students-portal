@@ -46,22 +46,24 @@ export default function ChecklistDetails({
               {t((node as any).description, "")}
             </div>
           )}
-          
+
           {/* Checklist items - simplified container */}
-          <div className="space-y-3" style={{ minHeight: 'auto' }}>
+          <div className="space-y-3" style={{ minHeight: "auto" }}>
             {bools.map((f, index) => {
               const isChecked = !!values[f.key];
-              
+
               return (
-                <div 
+                <div
                   key={f.key}
                   className="border p-3 rounded bg-white"
-                  style={{ display: 'block', visibility: 'visible' }}
+                  style={{ display: "block", visibility: "visible" }}
                 >
                   <label className="flex items-center gap-3 cursor-pointer">
                     <span className="flex-1 text-sm">
                       {t(f.label, f.key)}
-                      {f.required && <span className="text-red-500 ml-1">*</span>}
+                      {f.required && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
                     </span>
                     <input
                       type="checkbox"
