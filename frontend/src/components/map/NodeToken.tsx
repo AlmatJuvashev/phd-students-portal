@@ -23,7 +23,6 @@ import {
   Package,
   FileSignature,
   RefreshCw,
-  FileEdit,
   ClipboardList,
   BookOpen,
   ScrollText,
@@ -46,7 +45,6 @@ const typeIcon: Record<NodeVM["type"], LucideIcon> = {
   gateway: ArrowRight,
   info: BookOpen,
   confirmTask: CheckCircle2,
-  uploadTask: FileEdit,
 };
 
 // More accurate icons by node id when available

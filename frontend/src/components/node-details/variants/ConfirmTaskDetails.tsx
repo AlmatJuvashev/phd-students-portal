@@ -44,9 +44,58 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
     : Array.isArray((instructionsRaw as any)?.[currentLang])
     ? (instructionsRaw as any)[currentLang]
     : [];
-  const download = (primaryBtn?.instructions?.download || undefined) as
-    | { label?: string; asset_id?: string; asset_path?: string }
+  const downloadSingle = (primaryBtn?.instructions?.download || undefined) as
+    | { label?: any; asset_id?: string; asset_path?: string }
     | undefined;
+  const downloadsRaw = primaryBtn?.instructions?.downloads as
+    | Array<{ label?: any; asset_id?: string; asset_path?: string }>
+    | undefined;
+  const downloadItems = React.useMemo(() => {
+    const items = Array.isArray(downloadsRaw) && downloadsRaw.length > 0
+      ? downloadsRaw
+      : downloadSingle
+      ? [downloadSingle]
+      : [];
+
+    if (items.length <= 1) return items;
+
+    const matchByLabel = items.find((item) => {
+      const lbl = item.label;
+      return lbl && typeof lbl === "object" && lbl[currentLang];
+    });
+
+    if (matchByLabel) return [matchByLabel];
+
+    const matchByAsset = items.find((item) => {
+      const id = (item.asset_id || "").toLowerCase();
+      if (!id) return false;
+      const lang = currentLang.toLowerCase();
+      return (
+        id.includes(`_${lang}`) ||
+        id.includes(`-${lang}`) ||
+        id.endsWith(`${lang}.docx`) ||
+        id.endsWith(`${lang}.pdf`)
+      );
+    });
+
+    if (matchByAsset) return [matchByAsset];
+
+    const english = items.find((item) => {
+      const lbl = item.label;
+      const id = (item.asset_id || "").toLowerCase();
+      return (
+        (lbl && typeof lbl === "object" && lbl.en) ||
+        id.includes("_en") ||
+        id.includes("-en")
+      );
+    });
+
+    return [matchByLabel || matchByAsset || english || items[0]].filter(Boolean) as Array<{
+      label?: any;
+      asset_id?: string;
+      asset_path?: string;
+    }>;
+  }, [downloadsRaw, downloadSingle, currentLang]);
   const accordionLabel = t(
     primaryBtn?.label as any,
     t(
@@ -141,55 +190,62 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
                   ))}
                 </ul>
               )}
-              {(() => {
-                if (!download) return null;
-                const resolved = download.asset_id
-                  ? getAssetUrl(download.asset_id)
-                  : undefined;
-                const href =
-                  resolved && resolved !== "#" ? resolved : download.asset_path;
-                if (!href) return null;
-                return (
-                  <div className="mt-3">
-                    <Button
-                      asChild
-                      variant="secondary"
-                      size="sm"
-                      className="gap-2"
-                    >
-                      <a
-                        href={href}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
+              {downloadItems.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {downloadItems.map((item, idx) => {
+                    const resolved = item.asset_id
+                      ? getAssetUrl(item.asset_id)
+                      : undefined;
+                    const href =
+                      resolved && resolved !== "#"
+                        ? resolved
+                        : item.asset_path;
+                    if (!href) return null;
+                    const label = safeText(
+                      item.label as any,
+                      t(
+                        {
+                          ru: "Скачать пример письма",
+                          kz: "Хаттың үлгісін жүктеу",
+                          en: "Download sample letter",
+                        },
+                        "Скачать пример письма"
+                      )
+                    );
+                    return (
+                      <Button
+                        key={`${item.asset_id || item.asset_path || idx}`}
+                        asChild
+                        variant="secondary"
+                        size="sm"
+                        className="gap-2"
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                        <a
+                          href={href}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        {download.label ||
-                          t(
-                            {
-                              ru: "Скачать шаблон",
-                              kz: "Үлгіні жүктеу",
-                              en: "Download template",
-                            },
-                            "Скачать шаблон"
-                          )}
-                      </a>
-                    </Button>
-                  </div>
-                );
-              })()}
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          {label}
+                        </a>
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="pt-2">

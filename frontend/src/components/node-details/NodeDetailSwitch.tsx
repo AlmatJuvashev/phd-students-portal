@@ -2,7 +2,6 @@
 import { NodeVM, detectActionKinds } from "@/lib/playbook";
 import { GatewayInfoDetails } from "./variants/GatewayInfoDetails";
 import type { NodeSubmissionDTO } from "@/api/journey";
-import { DecisionTaskDetails } from "./variants/DecisionTaskDetails";
 import ConfirmTaskDetails from "./variants/ConfirmTaskDetails";
 import InfoDetails from "./variants/InfoDetails";
 import { deriveNodeKind } from "@/features/nodes/deriveNodeKind";
@@ -18,9 +17,16 @@ import { FormTaskDetails } from "./variants/FormTaskDetails";
 import useGuideForNode from "@/features/guides/useGuideForNode";
 
 // Lazy heavy variants
-const UploadTaskDetails = React.lazy(() => import("./variants/UploadTaskDetails").then(m => ({ default: m.UploadTaskDetails })));
-const ConfirmUploadTaskDetails = React.lazy(() => import("./variants/ConfirmUploadTaskDetails").then(m => ({ default: m.default })));
-const ExternalProcessDetails = React.lazy(() => import("./variants/ExternalProcessDetails").then(m => ({ default: m.ExternalProcessDetails })));
+const UploadTaskDetails = React.lazy(() =>
+  import("./variants/UploadTaskDetails").then((m) => ({
+    default: m.UploadTaskDetails,
+  }))
+);
+const ExternalProcessDetails = React.lazy(() =>
+  import("./variants/ExternalProcessDetails").then((m) => ({
+    default: m.ExternalProcessDetails,
+  }))
+);
 
 type Props = {
   node: NodeVM;
@@ -107,9 +113,7 @@ export function NodeDetailSwitch({
   }
 
   // permissions (rough defaults, adjust as you wire real RBAC)
-  const canDecide = role === "secretary" || role === "chair";
   const canUpload = role !== "admin"; // example
-  const canComplete = node.who_can_complete?.includes(role);
 
   // Prefer UI-specific kinds first for form-like nodes
   if (node.type === "form") {
@@ -159,48 +163,26 @@ export function NodeDetailSwitch({
           />
         );
       case "upload":
-        // Confirm-style upload task (instructions + confirmation only)
-        if (node.type === "uploadTask") {
-          return (
-            <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
-              <ConfirmUploadTaskDetails node={node} />
-            </Suspense>
-          );
-        }
         return (
           <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
             <UploadTaskDetails
               node={node}
               canEdit={!saving}
               existing={attachmentsBySlot}
-              onSubmit={(payload) => onEvent?.({ type: "submit-upload", payload })}
+              onSubmit={(payload) =>
+                onEvent?.({ type: "submit-upload", payload })
+              }
             />
           </Suspense>
         );
-      case "outcome":
-        if (node.type === "decision" && canComplete) {
-          return (
-            <DecisionTaskDetails
-              node={node}
-              disabled={saving}
-              renderGuide={renderGuide}
-              onSubmit={() =>
-                onEvent?.({
-                  type: "submit-decision",
-                  payload: { acknowledged: true },
-                })
-              }
-            />
-          );
-        }
-        // no generic outcome renderer needed now
-        break;
       case "external":
         return (
           <Suspense fallback={<div className="p-2 text-sm">Loading…</div>}>
             <ExternalProcessDetails
               node={node}
-              onComplete={(payload) => onEvent?.({ type: "complete-external", payload })}
+              onComplete={(payload) =>
+                onEvent?.({ type: "complete-external", payload })
+              }
             />
           </Suspense>
         );
@@ -226,20 +208,6 @@ export function NodeDetailSwitch({
                 })
               }
               onReset={() => onEvent?.({ type: "reset-node" })}
-            />
-          );
-        }
-        if (node.type === "uploadTask") {
-          const nextOverride = (node as any)?.states?.completed?.next_node;
-          return (
-            <ConfirmUploadTaskDetails
-              node={node}
-              onComplete={() =>
-                onEvent?.({
-                  type: "submit-decision",
-                  payload: nextOverride ? { __nextOverride: nextOverride } : {},
-                })
-              }
             />
           );
         }
@@ -271,20 +239,6 @@ export function NodeDetailSwitch({
         />
       );
     case "upload":
-      if (node.type === "uploadTask") {
-        const nextOverride = (node as any)?.states?.completed?.next_node;
-        return (
-          <ConfirmUploadTaskDetails
-            node={node}
-            onComplete={() =>
-              onEvent?.({
-                type: "submit-decision",
-                payload: nextOverride ? { __nextOverride: nextOverride } : {},
-              })
-            }
-          />
-        );
-      }
       return (
         <UploadTaskDetails
           node={node}
@@ -294,20 +248,6 @@ export function NodeDetailSwitch({
         />
       );
     case "outcome":
-      if (node.type === "decision" && canComplete) {
-        return (
-          <DecisionTaskDetails
-            node={node}
-            disabled={saving}
-            onSubmit={() =>
-              onEvent?.({
-                type: "submit-decision",
-                payload: { acknowledged: true },
-              })
-            }
-          />
-        );
-      }
       return (
         <GatewayInfoDetails
           node={node}
@@ -323,7 +263,7 @@ export function NodeDetailSwitch({
           }
         />
       );
-    
+
     case "gateway":
     default:
       if (node.type === "info") {

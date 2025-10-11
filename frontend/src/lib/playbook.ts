@@ -54,8 +54,7 @@ export type NodeDef = {
     | "boss"
     | "gateway"
     | "info"
-    | "confirmTask" // custom simple confirm step
-    | "uploadTask"; // simplified confirm+download-only upload step
+    | "confirmTask"; // custom simple confirm step
   who_can_complete: RoleId[];
   prerequisites?: string[];
   next?: string[];

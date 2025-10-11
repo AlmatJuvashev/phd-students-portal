@@ -40,24 +40,55 @@ export default function InfoDetails({
         {renderGuide ? renderGuide() : null}
         {/* Notes as stacked cards when requested */}
         {layout?.style === "stacked" ? (
-          <div className="space-y-3 sm:space-y-4">
-            {notes.map((f, idx) => (
-              <Card
-                key={f.key}
-                className="p-4 sm:p-5 bg-gradient-to-br from-muted/40 to-muted/20 border border-border/60 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
-                style={{ animationDelay: `${idx * 50}ms` }}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                    {idx + 1}
+          layout?.card_variant === "info" ? (
+            <Card className="p-5 sm:p-6 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent border border-primary/20 shadow-sm hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-2">
+              <div className="space-y-4">
+                {notes.map((f, idx) => {
+                  const raw = t(f.label, f.key);
+                  const [first, ...rest] = raw;
+                  const leadingIcon =
+                    first && /[\p{Emoji}\p{Extended_Pictographic}]/u.test(first)
+                      ? first
+                      : "";
+                  const body = leadingIcon ? rest.join("") : raw;
+                  return (
+                    <div key={f.key} className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 text-xl mt-0.5">
+                          {leadingIcon || idx + 1}
+                        </div>
+                        <div className="text-sm sm:text-base leading-relaxed text-muted-foreground flex-1 whitespace-pre-wrap">
+                          {leadingIcon ? body.trimStart() : raw}
+                        </div>
+                      </div>
+                      {idx < notes.length - 1 && (
+                        <div className="h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent opacity-80" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              {notes.map((f, idx) => (
+                <Card
+                  key={f.key}
+                  className="p-4 sm:p-5 bg-gradient-to-br from-muted/40 to-muted/20 border border-border/60 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                      {idx + 1}
+                    </div>
+                    <div className="text-sm sm:text-base leading-relaxed text-muted-foreground flex-1">
+                      {t(f.label, f.key)}
+                    </div>
                   </div>
-                  <div className="text-sm sm:text-base leading-relaxed text-muted-foreground flex-1">
-                    {t(f.label, f.key)}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )
         ) : (
           <Card className="p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-300 border border-border/60">
             <div className="space-y-3">
