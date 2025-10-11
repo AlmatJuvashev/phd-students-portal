@@ -1,2 +1,1 @@
-export { default } from "@/components/node-details/variants/InfoDetails";
-
+export { default } from "@/features/nodes/details/variants/InfoDetails";

@@ -1,4 +1,4 @@
-import { FormTaskDetails } from "@/components/node-details/variants/FormTaskDetails";
+import { FormTaskDetails } from "@/features/nodes/details/variants/FormTaskDetails";
 import type { NodeVM } from "@/lib/playbook";
 
 export default function FormEntryDetails(props: {
@@ -18,4 +18,3 @@ export default function FormEntryDetails(props: {
     />
   );
 }
-
