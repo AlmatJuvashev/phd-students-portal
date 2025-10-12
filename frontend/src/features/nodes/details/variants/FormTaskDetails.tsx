@@ -1,15 +1,12 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useReducer, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, motion } from "framer-motion";
-
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ActionsBar } from "@/features/forms/ActionsBar";
 import { FieldRenderer } from "@/features/forms/FieldRenderer";
 import { evalVisible as evalVisibleExpr } from "@/features/forms/Visibility";
 import { AssetsDownloads } from "@/features/nodes/details/AssetsDownloads";
-import { FieldDef, NodeVM, t as pickLocale } from "@/lib/playbook";
+import { FieldDef, NodeVM } from "@/lib/playbook";
 
 export type FormTaskContext = {
   node: NodeVM;
@@ -39,35 +36,53 @@ export function FormTaskDetails({
   disabled = false,
   renderActions,
 }: FormTaskDetailsProps) {
-  const [values, setValues] = useState<Record<string, any>>(initial);
-  useEffect(() => {
-    setValues(initial ?? {});
-  }, [initial]);
-
   const { t: T } = useTranslation("common");
   const fields: FieldDef[] = node.requirements?.fields ?? [];
 
-  const cardsLayout = (node.requirements as any)?.ui_hints?.cards_layout;
-  const buttonsStyle = (node.requirements as any)?.ui_hints?.buttons_style;
+  type FormState = Record<string, any>;
+  type Action =
+    | { type: "set"; key: string; value: any }
+    | { type: "replace"; values: FormState };
 
-  const setField = useCallback((key: string, value: any) => {
-    setValues((prev) => {
-      const next = { ...prev, [key]: value };
-      if (key === "hearing_happened") {
-        delete next.remarks_exist;
-        delete next.plan_prepared;
-        delete next.remarks_resolved;
+  const formReducer = useCallback((state: FormState, action: Action): FormState => {
+    switch (action.type) {
+      case "replace":
+        return { ...action.values };
+      case "set": {
+        const next = { ...state, [action.key]: action.value } as FormState;
+        if (action.key === "hearing_happened") {
+          delete next.remarks_exist;
+          delete next.plan_prepared;
+          delete next.remarks_resolved;
+        }
+        if (action.key === "remarks_exist") {
+          delete next.plan_prepared;
+          delete next.remarks_resolved;
+        }
+        if (action.key === "plan_prepared") {
+          delete next.remarks_resolved;
+        }
+        return next;
       }
-      if (key === "remarks_exist") {
-        delete next.plan_prepared;
-        delete next.remarks_resolved;
-      }
-      if (key === "plan_prepared") {
-        delete next.remarks_resolved;
-      }
-      return next;
-    });
+      default:
+        return state;
+    }
   }, []);
+
+  const [values, dispatch] = useReducer(
+    formReducer,
+    initial ?? {},
+    (start) => ({ ...(start ?? {}) })
+  );
+
+  useEffect(() => {
+    dispatch({ type: "replace", values: initial ?? {} });
+  }, [initial]);
+
+  const setField = useCallback(
+    (key: string, value: any) => dispatch({ type: "set", key, value }),
+    []
+  );
 
   const evalVisible = useCallback(
     (expr?: string) => evalVisibleExpr(values, expr),
@@ -119,154 +134,22 @@ export function FormTaskDetails({
 
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="space-y-3 pb-4">
-                {cardsLayout?.style === "stacked" &&
-                buttonsStyle === "yes_no" ? (
-                  <div className="space-y-3">
-                    <AnimatePresence initial={false}>
-                      {fields.map((f) => {
-                        const visible = evalVisible((f as any).visible_when);
-                        if (!visible) return null;
-
-                        if (f.key === "remarks_exist") {
-                          const label = pickLocale(f.label as any, f.key);
-                          return (
-                            <motion.div
-                              key={f.key}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Card className="p-4">
-                                <div className="mb-2 font-medium">{label}</div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => {
-                                      setField(f.key, true);
-                                      saveDraft({ [f.key]: true });
-                                    }}
-                                    disabled={!canEdit || disabled}
-                                  >
-                                    {T("forms.yes")}
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                      setField(f.key, false);
-                                      saveDraft({ [f.key]: false });
-                                    }}
-                                    disabled={!canEdit || disabled}
-                                  >
-                                    {T("forms.no")}
-                                  </Button>
-                                </div>
-                              </Card>
-                            </motion.div>
-                          );
-                        }
-
-                        if (
-                          f.key === "plan_prepared" &&
-                          values["remarks_exist"] === true
-                        ) {
-                          const label = pickLocale(f.label as any, f.key);
-                          return (
-                            <motion.div
-                              key={f.key}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Card className="p-4">
-                                <div className="mb-2 font-medium">{label}</div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => {
-                                      setField(f.key, true);
-                                      saveDraft({ [f.key]: true });
-                                    }}
-                                    disabled={!canEdit || disabled}
-                                  >
-                                    {T("forms.yes")}
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                      setField(f.key, false);
-                                      saveDraft({ [f.key]: false });
-                                    }}
-                                    disabled={!canEdit || disabled}
-                                  >
-                                    {T("forms.no")}
-                                  </Button>
-                                </div>
-                              </Card>
-                            </motion.div>
-                          );
-                        }
-
-                        if (
-                          f.key === "remarks_resolved" &&
-                          values["plan_prepared"] === true
-                        ) {
-                          const label = pickLocale(f.label as any, f.key);
-                          return (
-                            <motion.div
-                              key={f.key}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Card className="p-4">
-                                <div className="mb-2 font-medium">{label}</div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => {
-                                      setField(f.key, true);
-                                      saveDraft({ [f.key]: true });
-                                    }}
-                                    disabled={!canEdit || disabled}
-                                  >
-                                    {T("forms.yes")}
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                      setField(f.key, false);
-                                      saveDraft({ [f.key]: false });
-                                    }}
-                                    disabled={!canEdit || disabled}
-                                  >
-                                    {T("forms.no")}
-                                  </Button>
-                                </div>
-                              </Card>
-                            </motion.div>
-                          );
-                        }
-
-                        return null;
-                      })}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {fields.map((f) => (
-                      <FieldRenderer
-                        key={f.key}
-                        field={f as any}
-                        value={values[f.key]}
-                        onChange={(v) => setField(f.key, v)}
-                        setField={(k, v) => setField(k, v)}
-                        otherValue={values[`${f.key}_other`]}
-                        canEdit={canEdit}
-                        disabled={disabled}
-                      />
-                    ))}
-                  </div>
-                )}
+                {fields.map((f) => {
+                  const visible = evalVisible((f as any).visible_when);
+                  if (!visible) return null;
+                  return (
+                    <FieldRenderer
+                      key={f.key}
+                      field={f as any}
+                      value={values[f.key]}
+                      onChange={(v) => setField(f.key, v)}
+                      setField={(k, v) => setField(k, v)}
+                      otherValue={values[`${f.key}_other`]}
+                      canEdit={canEdit}
+                      disabled={disabled}
+                    />
+                  );
+                })}
               </div>
 
               {!!node.requirements?.validations?.length && (
