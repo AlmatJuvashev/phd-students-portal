@@ -1,4 +1,4 @@
-import { api } from "./client";
+import { api, API_URL } from "./client";
 
 export type NodeSubmissionDTO = {
   node_id: string;
@@ -76,4 +76,22 @@ export async function patchNodeState(
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+}
+
+export async function getProfileSnapshot() {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/journey/profile`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (res.status === 404) {
+    return null;
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || res.statusText);
+  }
+  return res.json();
 }

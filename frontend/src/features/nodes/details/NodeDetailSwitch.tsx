@@ -32,6 +32,7 @@ const sceneLoaders: Record<string, () => Promise<{ default: React.ComponentType<
   V1_reinstatement_package: () => import("@/features/nodes/scenes/V1ReinstatementScene"),
   RP2_sc_hearing_prep: () => import("@/features/nodes/scenes/RP2HearingPrepScene"),
   VI_attestation_file: () => import("@/features/nodes/scenes/VIAttestationScene"),
+  S1_profile: () => import("@/features/nodes/scenes/S1ProfileDetails"),
   S1_publications_list: () => import("@/features/nodes/scenes/S1PublicationsDetails"),
   E1_apply_omid: () => import("@/features/nodes/scenes/E1ApplyOmidDetails"),
   NK_package: () => import("@/features/nodes/scenes/NkPackageDetails"),
