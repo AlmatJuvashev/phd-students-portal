@@ -102,8 +102,8 @@ NoteField.displayName = "NoteField";
 
 const BooleanField = memo(
   ({ field, value, onChange, disabled, canEdit }: FieldRendererProps) => (
-    <label className="flex items-center justify-between gap-3 cursor-pointer py-2 px-3 rounded-md hover:bg-muted/50 transition-colors">
-      <span className="flex-1">
+    <label className="flex items-center justify-between gap-3 cursor-pointer py-2 px-3 rounded-md hover:bg-muted/50 transition-colors min-w-0">
+      <span className="flex-1 min-w-0">
         {t(field.label, field.key)}{" "}
         {field.required ? <span className="text-destructive">*</span> : null}
       </span>

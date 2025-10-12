@@ -15,8 +15,9 @@ export type NodeDetailActionArgs = {
   save: SaveMutation;
   onStateRefresh?: () => void;
   onOpenChange: (open: boolean) => void;
-  onAdvance?: (nextId: string | null) => void;
+  onAdvance?: (nextId: string | null, currentNodeId: string | null) => void;
   setErrorMsg: (msg: string | null) => void;
+  closeOnComplete?: boolean;
 };
 
 const resolveNextNode = (
@@ -44,6 +45,7 @@ export function useNodeDetailActions({
   onOpenChange,
   onAdvance,
   setErrorMsg,
+  closeOnComplete = false,
 }: NodeDetailActionArgs) {
   const { rp_required } = useConditions();
 
@@ -62,8 +64,10 @@ export function useNodeDetailActions({
           console.warn("state upsert failed", error);
         }
         onStateRefresh?.();
-        onOpenChange(false);
-        onAdvance?.(resolveNextNode(node, !!rp_required, nextOverride));
+        if (closeOnComplete) {
+          onOpenChange(false);
+        }
+        onAdvance?.(resolveNextNode(node, !!rp_required, nextOverride), node?.id ?? null);
       };
 
       switch (evt.type) {
