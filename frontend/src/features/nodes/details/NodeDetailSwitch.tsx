@@ -19,6 +19,14 @@ type SceneProps = {
   onSubmit?: (payload: any) => void;
 };
 
+type FormRendererArgs = {
+  node: NodeVM;
+  initialForm: Record<string, any>;
+  saving: boolean;
+  canEdit?: boolean;
+  onEvent?: (evt: { type: string; payload?: any }) => void;
+};
+
 const sceneLoaders: Record<string, () => Promise<{ default: React.ComponentType<SceneProps> }>> = {
   D2_apply_to_ds: () => import("@/features/nodes/scenes/D2ApplyToDsScene"),
   V1_reinstatement_package: () => import("@/features/nodes/scenes/V1ReinstatementScene"),
@@ -40,6 +48,32 @@ const sceneComponents: Record<string, React.LazyExoticComponent<React.ComponentT
     ),
   ])
 );
+
+const formRenderers: Record<string, (args: FormRendererArgs) => JSX.Element> = {
+  formEntry: ({ node, initialForm, saving, canEdit, onEvent }) => (
+    <FormEntryDetails
+      node={node}
+      initial={initialForm}
+      disabled={saving || canEdit === false}
+      onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+    />
+  ),
+  checklist: ({ node, initialForm, saving, onEvent }) => (
+    <ChecklistDetails
+      node={node}
+      initial={initialForm}
+      disabled={saving}
+      onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+    />
+  ),
+  cards: ({ node, initialForm, saving, onEvent }) => (
+    <CardsDetails
+      node={node}
+      disabled={saving}
+      onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
+    />
+  ),
+};
 
 type Props = {
   node: NodeVM;
@@ -77,38 +111,16 @@ export function NodeDetailSwitch({
     );
   }
 
-  // permissions (rough defaults, adjust as you wire real RBAC)
-  // Prefer UI-specific kinds first for form-like nodes
   if (node.type === "form") {
-    const initialForm = submission?.form?.data ?? {};
-    if (uiKind === "formEntry") {
-      return (
-        <FormEntryDetails
-          node={node}
-          initial={initialForm}
-          disabled={saving || canEdit === false}
-          onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-        />
-      );
-    }
-    if (uiKind === "checklist") {
-      return (
-        <ChecklistDetails
-          node={node}
-          initial={initialForm}
-          disabled={saving}
-          onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-        />
-      );
-    }
-    if (uiKind === "cards") {
-      return (
-        <CardsDetails
-          node={node}
-          disabled={saving}
-          onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-        />
-      );
+    const renderer = uiKind ? formRenderers[uiKind] : undefined;
+    if (renderer) {
+      return renderer({
+        node,
+        initialForm,
+        saving,
+        canEdit,
+        onEvent,
+      });
     }
   }
 
