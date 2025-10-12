@@ -58,6 +58,26 @@ func (h *NodeSubmissionHandler) GetSubmission(c *gin.Context) {
 	c.JSON(200, dto)
 }
 
+// GET /api/journey/profile
+func (h *NodeSubmissionHandler) GetProfile(c *gin.Context) {
+	uid := userIDFromClaims(c)
+	if uid == "" {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	var form json.RawMessage
+	err := h.db.QueryRow(`SELECT form_data FROM profile_submissions WHERE user_id=$1`, uid).Scan(&form)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(404, gin.H{"error": "not_found"})
+			return
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.Data(200, "application/json", form)
+}
+
 type submissionReq struct {
 	FormData json.RawMessage `json:"form_data"`
 	State    string          `json:"state"`
@@ -86,6 +106,11 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 		if len(req.FormData) != 0 {
 			if err := h.appendFormRevision(tx, inst, uid, req.FormData); err != nil {
 				return err
+			}
+			if nodeID == "S1_profile" {
+				if err := h.upsertProfileSubmission(tx, uid, req.FormData); err != nil {
+					return err
+				}
 			}
 		}
 		if req.State != "" && req.State != inst.State {
@@ -395,6 +420,14 @@ func (h *NodeSubmissionHandler) appendFormRevision(tx *sqlx.Tx, inst *nodeInstan
 	}
 	inst.CurrentRev = nextRev
 	return h.insertEvent(tx, inst.ID, "draft_saved", userID, map[string]any{"rev": nextRev})
+}
+
+func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, userID string, data json.RawMessage) error {
+	_, err := tx.Exec(`INSERT INTO profile_submissions (user_id, form_data)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id)
+        DO UPDATE SET form_data = EXCLUDED.form_data, updated_at = NOW()`, userID, data)
+	return err
 }
 
 func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, inst *nodeInstanceRecord, userID, role, newState string) error {
