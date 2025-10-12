@@ -7,17 +7,39 @@ import { deriveNodeKind } from "@/features/nodes/deriveNodeKind";
 import FormEntryDetails from "@/features/nodes/kinds/FormEntryDetails";
 import ChecklistDetails from "@/features/nodes/kinds/ChecklistDetails";
 import CardsDetails from "@/features/nodes/kinds/CardsDetails";
-import S1PublicationsDetails from "@/features/nodes/scenes/S1PublicationsDetails";
-import E1ApplyOmidDetails from "@/features/nodes/scenes/E1ApplyOmidDetails";
-import NkPackageDetails from "@/features/nodes/scenes/NkPackageDetails";
-import React from "react";
-import D2ApplyToDsScene from "@/features/nodes/scenes/D2ApplyToDsScene";
-import V1ReinstatementScene from "@/features/nodes/scenes/V1ReinstatementScene";
-import RP2HearingPrepScene from "@/features/nodes/scenes/RP2HearingPrepScene";
-import VIAttestationScene from "@/features/nodes/scenes/VIAttestationScene";
-import E3HearingNkScene from "@/features/nodes/scenes/E3HearingNkScene";
+import React, { Suspense, lazy } from "react";
 import { FormTaskDetails } from "./variants/FormTaskDetails";
 import useGuideForNode from "@/features/guides/useGuideForNode";
+
+type SceneProps = {
+  node: NodeVM;
+  initial?: Record<string, any>;
+  disabled?: boolean;
+  canEdit?: boolean;
+  onSubmit?: (payload: any) => void;
+};
+
+const sceneLoaders: Record<string, () => Promise<{ default: React.ComponentType<SceneProps> }>> = {
+  D2_apply_to_ds: () => import("@/features/nodes/scenes/D2ApplyToDsScene"),
+  V1_reinstatement_package: () => import("@/features/nodes/scenes/V1ReinstatementScene"),
+  RP2_sc_hearing_prep: () => import("@/features/nodes/scenes/RP2HearingPrepScene"),
+  VI_attestation_file: () => import("@/features/nodes/scenes/VIAttestationScene"),
+  S1_publications_list: () => import("@/features/nodes/scenes/S1PublicationsDetails"),
+  E1_apply_omid: () => import("@/features/nodes/scenes/E1ApplyOmidDetails"),
+  NK_package: () => import("@/features/nodes/scenes/NkPackageDetails"),
+  E3_hearing_nk: () => import("@/features/nodes/scenes/E3HearingNkScene"),
+};
+
+const sceneComponents: Record<string, React.LazyExoticComponent<React.ComponentType<SceneProps>>> = Object.fromEntries(
+  Object.entries(sceneLoaders).map(([id, loader]) => [
+    id,
+    lazy(() =>
+      loader().then((mod) => ({
+        default: mod.default || (mod as any),
+      }))
+    ),
+  ])
+);
 
 type Props = {
   node: NodeVM;
@@ -38,94 +60,20 @@ export function NodeDetailSwitch({
   const renderGuide = useGuideForNode(node) || undefined;
   const initialForm = submission?.form?.data ?? {};
 
-  // Explicit scenes (specialized UX) by node id
-  if (node.id === "D2_apply_to_ds") {
+  const SceneComponent = sceneComponents[node.id];
+  if (SceneComponent) {
     return (
-      <D2ApplyToDsScene
-        node={node}
-        initial={initialForm}
-        disabled={saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
-  }
-  if (node.id === "V1_reinstatement_package") {
-    return (
-      <V1ReinstatementScene
-        node={node}
-        initial={initialForm}
-        disabled={saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
-  }
-  if (node.id === "RP2_sc_hearing_prep") {
-    return (
-      <RP2HearingPrepScene
-        node={node}
-        initial={initialForm}
-        disabled={saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
-  }
-  if (node.id === "VI_attestation_file") {
-    return (
-      <VIAttestationScene
-        node={node}
-        initial={initialForm}
-        disabled={saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
-  }
-
-  if (node.id === "S1_publications_list") {
-    return (
-      <S1PublicationsDetails
-        node={node}
-        initial={initialForm}
-        disabled={saving}
-        canEdit={canEdit ?? !saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
-  }
-
-  if (node.id === "E1_apply_omid") {
-    return (
-      <E1ApplyOmidDetails
-        node={node}
-        initial={initialForm}
-        disabled={saving}
-        canEdit={canEdit ?? !saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
-  }
-
-  if (node.id === "NK_package") {
-    return (
-      <NkPackageDetails
-        node={node}
-        initial={initialForm}
-        disabled={saving}
-        canEdit={canEdit ?? !saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
-    );
-  }
-
-  // Force E3_hearing_nk to use the specialized flow in FormTaskDetails (yes/no cards, back navigation)
-  if (node.id === "E3_hearing_nk") {
-    return (
-      <E3HearingNkScene
-        node={node}
-        canEdit={canEdit ?? !saving}
-        initial={initialForm}
-        disabled={saving}
-        onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
-      />
+      <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
+        <SceneComponent
+          node={node}
+          initial={initialForm}
+          disabled={saving}
+          canEdit={canEdit ?? !saving}
+          onSubmit={(payload: any) =>
+            onEvent?.({ type: "submit-form", payload })
+          }
+        />
+      </Suspense>
     );
   }
 
