@@ -3,6 +3,7 @@ import { PublicAsset } from "@/lib/assets";
 import { NodeVM, t } from "@/lib/playbook";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useTemplatesForNode } from "@/features/nodes/useTemplatesForNode";
 
@@ -10,26 +11,26 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   const { i18n, t: T } = useTranslation("common");
   const locale = (i18n.language as "ru" | "kz" | "en") || "ru";
   const assets: PublicAsset[] = useTemplatesForNode(node);
-  if (!assets.length) return null;
-
-  // group by logical base template (e.g., app7, omid, etc.) so we show only one button per locale
-  const groups: Record<string, PublicAsset[]> = {};
-  for (const a of assets) {
-    const id = a.id.toLowerCase();
-    // appN (Appendix templates)
-    const m = id.match(/(app\d+)/i);
-    let key = m ? m[1].toLowerCase() : id;
-    // OMiD application and similar localized assets
-    if (!m && id.includes("omid")) key = "omid";
-    // Fallback: strip locale suffix like _ru/_kz/_en and trailing segments
-    if (!m && !id.includes("omid")) {
-      key = id.replace(/_(ru|kz|en)(_.+)?$/, "");
+  const { order, groups } = useMemo(() => {
+    const grouped: Record<string, PublicAsset[]> = {};
+    for (const asset of assets) {
+      const id = asset.id.toLowerCase();
+      const match = id.match(/(app\d+)/i);
+      let key = match ? match[1].toLowerCase() : id;
+      if (!match && id.includes("omid")) key = "omid";
+      if (!match && !id.includes("omid")) {
+        key = id.replace(/_(ru|kz|en)(_.+)?$/, "");
+      }
+      grouped[key] = grouped[key] || [];
+      grouped[key].push(asset);
     }
-    groups[key] = groups[key] || [];
-    groups[key].push(a);
-  }
+    return {
+      order: Object.keys(grouped).sort(),
+      groups: grouped,
+    };
+  }, [assets]);
 
-  const order = Object.keys(groups).sort();
+  if (!order.length) return null;
   return (
     <div className="space-y-4 sticky top-4">
       <Separator className="my-4" />
