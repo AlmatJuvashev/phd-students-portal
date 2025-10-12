@@ -9,13 +9,10 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { NodeDetailSwitch } from "./NodeDetailSwitch";
-import { useEffect, useRef, useState } from "react";
-import { NodeSubmissionDTO } from "@/api/journey";
+import { useRef, useState } from "react";
 import { useSubmission } from "@/features/journey/hooks";
 import { useTranslation } from "react-i18next";
-import { patchJourneyState } from "@/features/journey/session";
-import { api } from "@/api/client";
-import { useConditions } from "@/features/journey/useConditions";
+import { useNodeDetailActions, useFocusOnOpen } from "./useNodeDetailActions";
 
 export function NodeDetailsSheet({
   node,
@@ -36,187 +33,19 @@ export function NodeDetailsSheet({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
   const { submission, isLoading, save } = useSubmission(node?.id || null);
-  const { rp_required } = useConditions();
 
-  // Helper to compute next node based on condition
-  const getConditionalNext = (node: NodeVM): string | undefined => {
-    if (!node.next || !Array.isArray(node.next)) return undefined;
+  useFocusOnOpen(titleRef, node?.id ?? null);
 
-    // If node has condition "rp_required", choose based on the condition
-    if (node.condition === "rp_required" && node.next.length >= 2) {
-      // First option is for when condition is true (RP required)
-      // Second option is for when condition is false (direct to normokontrol)
-      return rp_required ? node.next[0] : node.next[1];
-    }
-
-    // Default: first next node
-    return node.next[0];
-  };
-
-  useEffect(() => {
-    // focus the title on open
-    if (node && titleRef.current) titleRef.current.focus();
-  }, [node?.id]);
-
-  useEffect(() => {
-    if (node && titleRef.current) {
-      // focus the title for screen readers when sheet opens
-      titleRef.current.focus();
-    }
-  }, [node?.id]);
-
-  const handleEvent = async (evt: { type: string; payload?: any }) => {
-    if (!node || saving) return;
-    switch (evt.type) {
-      case "reset-node": {
-        setSaving(true);
-        try {
-          patchJourneyState({ [node.id]: "active" });
-          await api("/journey/state", {
-            method: "PUT",
-            body: JSON.stringify({ node_id: node.id, state: "active" }),
-          });
-          onStateRefresh?.();
-        } catch (err: any) {
-          console.error("reset node failed", err);
-          setErrorMsg(err?.message ?? String(err));
-        } finally {
-          setSaving(false);
-        }
-        break;
-      }
-      case "continue": {
-        // Treat simple info/gateway continue as completing the node
-        setSaving(true);
-        try {
-          await save.mutateAsync({ form_data: {}, state: "done" });
-          if (node) {
-            patchJourneyState({ [node.id]: "done" });
-            try {
-              await api("/journey/state", {
-                method: "PUT",
-                body: JSON.stringify({ node_id: node.id, state: "done" }),
-              });
-            } catch (e) {
-              console.warn("state upsert failed", e);
-            }
-          }
-          onStateRefresh?.();
-          const nextOverride: string | undefined =
-            (evt.payload && (evt.payload as any).__nextOverride) || undefined;
-          const nextId = nextOverride || getConditionalNext(node);
-          onOpenChange(false);
-          onAdvance?.(nextId ?? null);
-        } catch (err: any) {
-          console.error("continue failed", err);
-          setErrorMsg(err?.message ?? String(err));
-        } finally {
-          setSaving(false);
-        }
-        break;
-      }
-      case "submit-form": {
-        const payload = { ...(evt.payload ?? {}) };
-        const isDraft = !!payload.__draft;
-        delete payload.__draft;
-        const nextOverride: string | undefined =
-          (evt.payload && evt.payload.__nextOverride) || undefined;
-        setSaving(true);
-        try {
-          const res = await save.mutateAsync({
-            form_data: payload,
-            state: isDraft ? "active" : "done",
-          });
-          // toast removed -> optionally log success
-          console.info(
-            isDraft ? T("forms.save_draft") : T("forms.save_submit"),
-            T("common.success", { defaultValue: "Saved." })
-          );
-          setErrorMsg(null);
-          if (!isDraft) {
-            // persist session progress for this node
-            patchJourneyState({ [node.id]: "done" });
-            try {
-              await api("/journey/state", {
-                method: "PUT",
-                body: JSON.stringify({ node_id: node.id, state: "done" }),
-              });
-            } catch (e) {
-              console.warn("state upsert failed", e);
-            }
-            onStateRefresh?.();
-            const nextId = nextOverride || getConditionalNext(node);
-            onOpenChange(false);
-            if (nextId) {
-              onAdvance?.(nextId);
-            } else {
-              onAdvance?.(null);
-            }
-          }
-        } catch (err: any) {
-          // toast removed -> log error
-          console.error(
-            T("common.error", { defaultValue: "Error" }),
-            err?.message ?? String(err)
-          );
-          setErrorMsg(err?.message ?? String(err));
-        } finally {
-          setSaving(false);
-        }
-        break;
-      }
-      case "submit-decision": {
-        setSaving(true);
-        try {
-          const res = await save.mutateAsync({
-            form_data: evt.payload ?? {},
-            state: "done",
-          });
-          // toast removed -> optionally log success
-          console.info(
-            T("decision.submit"),
-            T("common.success", { defaultValue: "Saved." })
-          );
-          setErrorMsg(null);
-          if (node) {
-            patchJourneyState({ [node.id]: "done" });
-            try {
-              await api("/journey/state", {
-                method: "PUT",
-                body: JSON.stringify({ node_id: node.id, state: "done" }),
-              });
-            } catch (e) {
-              console.warn("state upsert failed", e);
-            }
-          }
-          onStateRefresh?.();
-          const nextId = getConditionalNext(node);
-          onOpenChange(false);
-          if (nextId) {
-            onAdvance?.(nextId);
-          } else {
-            onAdvance?.(null);
-          }
-        } catch (err: any) {
-          console.error("submit decision failed", err);
-          setErrorMsg(err?.message ?? String(err));
-        } finally {
-          setSaving(false);
-        }
-        break;
-      }
-      case "submit-upload": {
-        // deferred; no toast
-        break;
-      }
-      case "finalize-composite":
-      case "finalize-outcome":
-        // not implemented; no toast
-        break;
-      default:
-        break;
-    }
-  };
+  const { handleEvent } = useNodeDetailActions({
+    node,
+    saving,
+    setSaving,
+    save,
+    onStateRefresh,
+    onOpenChange,
+    onAdvance,
+    setErrorMsg,
+  });
 
   return (
     <Sheet open={!!node} onOpenChange={onOpenChange}>
