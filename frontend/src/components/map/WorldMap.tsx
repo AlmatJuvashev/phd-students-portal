@@ -126,13 +126,32 @@ export function WorldMap({
     return null;
   };
 
-  const totalNodes = vm.worlds.reduce((acc, w) => acc + w.nodes.length, 0);
-  const doneNodes = vm.worlds.reduce(
-    (acc, w) => acc + w.nodes.filter((n) => n.state === "done").length,
-    0
+  const progress = useMemo(() => {
+    const totals = vm.worlds.reduce(
+      (acc, w) => {
+        acc.total += w.nodes.length;
+        acc.done += w.nodes.filter((n) => n.state === "done").length;
+        return acc;
+      },
+      { done: 0, total: 0 }
+    );
+    return totals.total > 0
+      ? Math.round((totals.done / totals.total) * 100)
+      : 0;
+  }, [vm.worlds]);
+
+  const worldSignature = useMemo(
+    () =>
+      vm.worlds
+        .map(
+          (w) =>
+            `${w.id}:${w.nodes
+              .map((n) => `${n.id}:${n.state}`)
+              .join("|")}`
+        )
+        .join(";"),
+    [vm.worlds]
   );
-  const progress =
-    totalNodes > 0 ? Math.round((doneNodes / totalNodes) * 100) : 0;
 
   // Show congratulations modal once when completed
   useEffect(() => {
@@ -147,22 +166,19 @@ export function WorldMap({
 
   // Initialize expanded state per world only once
   useEffect(() => {
-    const next: Record<string, boolean> = {};
-    vm.worlds.forEach((w) => {
-      const worldDone = w.nodes.every((n) => n.state === "done");
-      if (!(w.id in expanded)) {
-        next[w.id] = !worldDone; // collapse when already done
-      } else {
-        next[w.id] = expanded[w.id];
-      }
+    setExpanded((prev) => {
+      const next: Record<string, boolean> = {};
+      let changed = false;
+      vm.worlds.forEach((w) => {
+        const isDone = w.nodes.every((n) => n.state === "done");
+        const current = w.id in prev ? prev[w.id] : !isDone;
+        if (current !== prev[w.id]) changed = true;
+        next[w.id] = current;
+      });
+      if (Object.keys(prev).length !== Object.keys(next).length) changed = true;
+      return changed ? next : prev;
     });
-    const hasNewWorlds =
-      Object.keys(next).length > Object.keys(expanded).length;
-    if (hasNewWorlds) {
-      setExpanded(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vm.worlds.length]);
+  }, [worldSignature, vm.worlds]);
 
   // Detect newly completed world -> collapse and scroll next into view
   useEffect(() => {
@@ -184,7 +200,7 @@ export function WorldMap({
       }
       prev[w.id] = isDone;
     });
-  }, [vm.worlds]);
+  }, [vm.worlds, worldSignature]);
 
   return (
     <div className="p-4 space-y-6">
