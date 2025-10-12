@@ -10,7 +10,6 @@ import { EdgeConnector } from "./EdgeConnector";
 import { ArrowDown, ChevronDown } from "lucide-react";
 import { GatewayModal } from "@/features/nodes/details/GatewayModal";
 import ModuleGuardModal from "@/features/nodes/details/ModuleGuardModal";
-import type { Playbook } from "@/lib/playbook";
 import { api } from "@/api/client";
 import { patchJourneyState } from "@/features/journey/session";
 import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
@@ -22,6 +21,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import DevBar from "@/features/journey/components/DevBar";
 import clsx from "clsx";
+import { detectTerminalNodeIds } from "@/features/journey/moduleGraph";
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -121,6 +121,13 @@ export function WorldMap({
   const prevDoneRef = useRef<Record<string, boolean>>({});
   const [showCongrats, setShowCongrats] = useState(false);
   const { submission: profile } = useSubmission("S1_profile");
+
+  const terminalNodeSet = useMemo(() => {
+    const perWorld = detectTerminalNodeIds(playbook);
+    const set = new Set<string>();
+    Object.values(perWorld).forEach((ids) => ids.forEach((id) => set.add(id)));
+    return set;
+  }, [playbook]);
   const findNode = (id: string): NodeVM | null => {
     for (const world of vm.worlds) {
       const found = world.nodes.find((n) => n.id === id);
@@ -435,7 +442,12 @@ export function WorldMap({
         node={openNode}
         onOpenChange={(o) => !o && setOpenNode(null)}
         onStateRefresh={onStateChanged}
-        onAdvance={(nextId) => {
+        closeOnComplete={openNode ? terminalNodeSet.has(openNode.id) : false}
+        onAdvance={(nextId, currentId) => {
+          if (currentId && terminalNodeSet.has(currentId)) {
+            setOpenNode(null);
+            return;
+          }
           if (nextId) {
             const nextNode = findNode(nextId);
             if (nextNode) {

@@ -20,12 +20,14 @@ export function NodeDetailsSheet({
   role = "student",
   onStateRefresh,
   onAdvance,
+  closeOnComplete = false,
 }: {
   node: NodeVM | null;
   onOpenChange: (open: boolean) => void;
   role?: "student" | "advisor" | "secretary" | "chair" | "admin";
   onStateRefresh?: () => void;
-  onAdvance?: (nextNodeId: string | null) => void;
+  onAdvance?: (nextNodeId: string | null, currentNodeId: string | null) => void;
+  closeOnComplete?: boolean;
 }) {
   const { t: T } = useTranslation("common");
   const [saving, setSaving] = useState(false);
@@ -45,6 +47,7 @@ export function NodeDetailsSheet({
     onOpenChange,
     onAdvance,
     setErrorMsg,
+    closeOnComplete,
   });
 
   return (
@@ -102,7 +105,7 @@ export function NodeDetailsSheet({
               </div>
             </SheetHeader>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4">
               {errorMsg && (
                 <div
                   role="alert"

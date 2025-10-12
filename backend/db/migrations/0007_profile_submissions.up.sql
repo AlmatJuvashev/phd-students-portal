@@ -1,3 +1,11 @@
+CREATE OR REPLACE FUNCTION touch_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE profile_submissions (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     form_data JSONB NOT NULL,

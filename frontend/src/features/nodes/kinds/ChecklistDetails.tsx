@@ -33,7 +33,7 @@ export default function ChecklistDetails({
     Boolean((initial as any)?.__submittedAt);
   const submittedAt: string | undefined =
     (initial as any)?.__submittedAt || values?.__submittedAt;
-  
+
   // Calculate next node based on outcomes conditions
   const getNextOnComplete = () => {
     if (node.outcomes && node.outcomes.length > 0) {
@@ -43,9 +43,14 @@ export default function ChecklistDetails({
         if (outcomeAny.when) {
           // Simple evaluation of when condition
           // For NK_package: "form.chk_thesis_unbound && form.chk_advisor_reviews && form.chk_pubs_app7 && form.chk_sc_extract && form.chk_lcb_defense"
-          const requiredFields = outcomeAny.when.match(/form\.(\w+)/g)?.map((match: string) => match.replace('form.', '')) || [];
-          const allRequired = requiredFields.every((field: string) => !!values[field]);
-          
+          const requiredFields =
+            outcomeAny.when
+              .match(/form\.(\w+)/g)
+              ?.map((match: string) => match.replace("form.", "")) || [];
+          const allRequired = requiredFields.every(
+            (field: string) => !!values[field]
+          );
+
           if (allRequired) {
             return outcome.next?.[0];
           }
@@ -54,17 +59,27 @@ export default function ChecklistDetails({
       // If no condition matches, return first outcome
       return node.outcomes[0]?.next?.[0];
     }
-    
+
     // Fallback to simple next logic
-    return (Array.isArray(node.next) ? node.next[0] : undefined);
+    return Array.isArray(node.next) ? node.next[0] : undefined;
   };
-  
+
   const nextOnComplete = getNextOnComplete();
 
+  // Debug: check if readOnly changes unexpectedly
+  console.log("[ChecklistDetails] Render state:", {
+    nodeId: node.id,
+    nodeState: node.state,
+    readOnly,
+    totalItems: bools.length,
+    checkedItems: bools.filter((f) => !!values[f.key]).length,
+    submittedAt: (initial as any)?.__submittedAt,
+  });
+
   return (
-    <div className="h-full">
-      <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 space-y-6 lg:space-y-0">
-        <div className="space-y-4">
+    <form className="h-full">
+      <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 space-y-6 lg:space-y-0 min-w-0">
+        <div className="space-y-4 min-w-0">
           {Boolean((node as any)?.description) && (
             <div className="text-sm text-muted-foreground mb-4 p-4 rounded-lg bg-muted/30 border-l-4 border-primary/50">
               {t((node as any).description, "")}
@@ -72,7 +87,7 @@ export default function ChecklistDetails({
           )}
 
           {/* Checklist items using ChecklistItem component */}
-          <div className="space-y-3">
+          <div className="space-y-3 min-w-0">
             {bools.map((f, index) => {
               const isChecked = !!values[f.key];
 
@@ -85,7 +100,7 @@ export default function ChecklistDetails({
                       setValues((s) => ({ ...s, [f.key]: checked }));
                     }
                   }}
-                  label={`${t(f.label, f.key)}${f.required ? '*' : ''}`}
+                  label={`${t(f.label, f.key)}${f.required ? "*" : ""}`}
                   readOnly={readOnly}
                   disabled={disabled}
                 />
@@ -95,7 +110,7 @@ export default function ChecklistDetails({
 
           {/* Action buttons */}
           {!readOnly && (
-            <div className="flex gap-2 pt-4 border-t bg-background/80 backdrop-blur-sm sticky bottom-0">
+            <div className="flex gap-2 pt-4 border-t bg-background/80 backdrop-blur-sm sticky bottom-0 z-10">
               <Button
                 onClick={() => setConfirmOpen(true)}
                 disabled={!ready}
@@ -150,7 +165,10 @@ export default function ChecklistDetails({
         cancelLabel={T("common.cancel")}
         onConfirm={() => {
           setConfirmOpen(false);
-          console.log('[ChecklistDetails] Submitting with next:', nextOnComplete);
+          console.log(
+            "[ChecklistDetails] Submitting with next:",
+            nextOnComplete
+          );
           onSubmit?.({
             ...values,
             __submittedAt: new Date().toISOString(),
@@ -158,6 +176,6 @@ export default function ChecklistDetails({
           });
         }}
       />
-    </div>
+    </form>
   );
 }

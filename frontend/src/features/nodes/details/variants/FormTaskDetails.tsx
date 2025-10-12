@@ -122,9 +122,9 @@ export function FormTaskDetails({
   }, [canEdit, disabled, saveDraft, submit]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-1 min-h-0">
-        <div className="lg:col-span-3 flex flex-col min-h-0">
+        <div className="lg:col-span-3 flex flex-col min-h-0 min-w-0">
           <Card className="p-4 flex flex-col flex-1 min-h-0">
             {node.requirements?.notes && (
               <p className="text-sm text-muted-foreground mb-4">
@@ -132,25 +132,23 @@ export function FormTaskDetails({
               </p>
             )}
 
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="space-y-3 pb-4">
-                {fields.map((f) => {
-                  const visible = evalVisible((f as any).visible_when);
-                  if (!visible) return null;
-                  return (
-                    <FieldRenderer
-                      key={f.key}
-                      field={f as any}
-                      value={values[f.key]}
-                      onChange={(v) => setField(f.key, v)}
-                      setField={(k, v) => setField(k, v)}
-                      otherValue={values[`${f.key}_other`]}
-                      canEdit={canEdit}
-                      disabled={disabled}
-                    />
-                  );
-                })}
-              </div>
+            <div className="space-y-3 pb-4 min-w-0">
+              {fields.map((f) => {
+                const visible = evalVisible((f as any).visible_when);
+                if (!visible) return null;
+                return (
+                  <FieldRenderer
+                    key={f.key}
+                    field={f as any}
+                    value={values[f.key]}
+                    onChange={(v) => setField(f.key, v)}
+                    setField={(k, v) => setField(k, v)}
+                    otherValue={values[`${f.key}_other`]}
+                    canEdit={canEdit}
+                    disabled={disabled}
+                  />
+                );
+              })}
 
               {!!node.requirements?.validations?.length && (
                 <>
@@ -173,14 +171,14 @@ export function FormTaskDetails({
             </div>
 
             {canEdit && (
-              <div className="space-y-2">
+              <div className="space-y-2 mt-4">
                 {renderActions ? renderActions(ctx) : defaultActions}
               </div>
             )}
           </Card>
         </div>
 
-        <div className="lg:col-span-2 border-l pl-4">
+        <div className="lg:col-span-2 border-l pl-4 min-w-0">
           <AssetsDownloads node={node} />
         </div>
       </div>
