@@ -9,6 +9,8 @@ import { NodeDetailsSheet } from "@/features/nodes/details/NodeDetailsSheet";
 import { EdgeConnector } from "./EdgeConnector";
 import { ArrowDown, ChevronDown } from "lucide-react";
 import { GatewayModal } from "@/features/nodes/details/GatewayModal";
+import ModuleGuardModal from "@/features/nodes/details/ModuleGuardModal";
+import type { Playbook } from "@/lib/playbook";
 import { api } from "@/api/client";
 import { patchJourneyState } from "@/features/journey/session";
 import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
@@ -112,6 +114,7 @@ export function WorldMap({
   const [openNode, setOpenNode] = useState<NodeVM | null>(null);
   const [gatewayNode, setGatewayNode] = useState<NodeVM | null>(null);
   const [confetti, setConfetti] = useState(false);
+  const [pendingModule, setPendingModule] = useState<{ fromWorldId: string; toWorldId: string; toFirstNodeId: string } | null>(null);
   const { rp_required } = useConditions();
   const worldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -196,6 +199,14 @@ export function WorldMap({
             behavior: "smooth",
             block: "start",
           });
+          // queue guard modal for next module, without auto-opening its first node
+          const firstNode = nextWorld.nodes[0];
+          if (firstNode) {
+            setPendingModule({ fromWorldId: w.id, toWorldId: nextWorld.id, toFirstNodeId: firstNode.id });
+            try {
+              sessionStorage.setItem(`module_guard_${w.id}_shown`, "1");
+            } catch {}
+          }
         }
       }
       prev[w.id] = isDone;
@@ -433,6 +444,22 @@ export function WorldMap({
             }
           }
           setOpenNode(null);
+        }}
+      />
+
+      <ModuleGuardModal
+        open={!!pendingModule}
+        title={T("module.unlock_title", { defaultValue: "Unlock Next Module" })}
+        onClose={() => setPendingModule(null)}
+        onConfirm={() => {
+          if (!pendingModule) return;
+          setPendingModule(null);
+          // Expand and center next world, do not open its first node
+          setExpanded((e) => ({ ...e, [pendingModule.toWorldId]: true }));
+          const el = worldRefs.current[pendingModule.toWorldId];
+          el?.scrollIntoView({ behavior: "smooth", block: "start" });
+          setConfetti(true);
+          setTimeout(() => setConfetti(false), 1200);
         }}
       />
 
