@@ -1,30 +1,33 @@
+import { memo } from "react";
+import { useTranslation } from "react-i18next";
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FieldDef } from "@/lib/playbook";
 import { t } from "@/lib/playbook";
-import { useTranslation } from "react-i18next";
 
-export function FieldRenderer({
-  field,
-  value,
-  onChange,
-  disabled,
-  canEdit = true,
-  setField,
-  otherValue,
-}: {
+export type FieldRendererProps = {
   field: FieldDef & { placeholder?: any };
   value: any;
-  onChange: (v: any) => void;
+  onChange: (value: any) => void;
   disabled?: boolean;
   canEdit?: boolean;
-  setField?: (k: string, v: any) => void;
+  setField?: (key: string, value: any) => void;
   otherValue?: any;
-}) {
-  const { t: T } = useTranslation("common");
-  // Select support
-  if (field.type === "select" && Array.isArray((field as any).options)) {
+};
+
+const SelectField = memo(
+  ({
+    field,
+    value,
+    onChange,
+    disabled,
+    canEdit,
+    setField,
+    otherValue,
+    T,
+  }: FieldRendererProps & { T: ReturnType<typeof useTranslation>["t"] }) => {
     const opts = (field as any).options as Array<{
       value: string;
       label?: any;
@@ -71,70 +74,73 @@ export function FieldRenderer({
       </div>
     );
   }
-  // Note field - used for section headers or info text
-  if (field.type === "note") {
-    const labelText = t(field.label, field.key);
-    // Check if it's an info note (starts with emoji or contains multiple sentences)
-    const isInfoNote =
-      labelText.startsWith("ℹ️") ||
-      labelText.startsWith("⚠️") ||
-      labelText.length > 100;
+);
+SelectField.displayName = "SelectField";
 
-    if (isInfoNote) {
-      return (
-        <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md mt-4 mb-2">
-          {labelText}
-        </div>
-      );
-    }
+const NoteField = memo(({ field }: FieldRendererProps) => {
+  const labelText = t(field.label, field.key);
+  const isInfoNote =
+    labelText.startsWith("ℹ️") ||
+    labelText.startsWith("⚠️") ||
+    labelText.length > 100;
 
-    // Regular section header
+  if (isInfoNote) {
     return (
-      <div className="text-sm font-semibold text-foreground mt-4 mb-2 first:mt-0">
+      <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md mt-4 mb-2">
         {labelText}
       </div>
     );
   }
 
-  if (field.type === "boolean") {
-    return (
-      <label className="flex items-center justify-between gap-3 cursor-pointer py-2 px-3 rounded-md hover:bg-muted/50 transition-colors">
-        <span className="flex-1">
-          {t(field.label, field.key)}{" "}
-          {field.required ? <span className="text-destructive">*</span> : null}
-        </span>
-        <input
-          id={field.key}
-          type="checkbox"
-          className="h-5 w-5 accent-primary flex-shrink-0 cursor-pointer"
-          disabled={!canEdit || disabled}
-          checked={!!value}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-      </label>
-    );
-  }
-
-  // Date input (native for now; shadcn-style can be plugged in later)
-  if (field.type === "date") {
-    return (
-      <div className="grid gap-1">
-        <Label htmlFor={field.key}>
-          {t(field.label, field.key)}{" "}
-          {field.required ? <span className="text-destructive">*</span> : null}
-        </Label>
-        <Input
-          id={field.key}
-          type="date"
-          disabled={!canEdit || disabled}
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      </div>
-    );
-  }
-
   return (
+    <div className="text-sm font-semibold text-foreground mt-4 mb-2 first:mt-0">
+      {labelText}
+    </div>
+  );
+});
+NoteField.displayName = "NoteField";
+
+const BooleanField = memo(
+  ({ field, value, onChange, disabled, canEdit }: FieldRendererProps) => (
+    <label className="flex items-center justify-between gap-3 cursor-pointer py-2 px-3 rounded-md hover:bg-muted/50 transition-colors">
+      <span className="flex-1">
+        {t(field.label, field.key)}{" "}
+        {field.required ? <span className="text-destructive">*</span> : null}
+      </span>
+      <input
+        id={field.key}
+        type="checkbox"
+        className="h-5 w-5 accent-primary flex-shrink-0 cursor-pointer"
+        disabled={!canEdit || disabled}
+        checked={!!value}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
+  )
+);
+BooleanField.displayName = "BooleanField";
+
+const DateField = memo(
+  ({ field, value, onChange, disabled, canEdit }: FieldRendererProps) => (
+    <div className="grid gap-1">
+      <Label htmlFor={field.key}>
+        {t(field.label, field.key)}{" "}
+        {field.required ? <span className="text-destructive">*</span> : null}
+      </Label>
+      <Input
+        id={field.key}
+        type="date"
+        disabled={!canEdit || disabled}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  )
+);
+DateField.displayName = "DateField";
+
+const TextField = memo(
+  ({ field, value, onChange, disabled, canEdit, T }: FieldRendererProps & { T: ReturnType<typeof useTranslation>["t"] }) => (
     <div className="grid gap-1">
       <Label htmlFor={field.key}>
         {t(field.label, field.key)}{" "}
@@ -163,5 +169,38 @@ export function FieldRenderer({
         />
       )}
     </div>
-  );
+  )
+);
+TextField.displayName = "TextField";
+
+function renderField(
+  props: FieldRendererProps,
+  T: ReturnType<typeof useTranslation>["t"]
+) {
+  const { field } = props;
+
+  if (field.type === "select" && Array.isArray((field as any).options)) {
+    return <SelectField {...props} T={T} />;
+  }
+
+  if (field.type === "note") {
+    return <NoteField {...props} />;
+  }
+
+  if (field.type === "boolean") {
+    return <BooleanField {...props} />;
+  }
+
+  if (field.type === "date") {
+    return <DateField {...props} />;
+  }
+
+  return <TextField {...props} T={T} />;
 }
+
+export const FieldRenderer = memo(function FieldRenderer(props: FieldRendererProps) {
+  const { t: T } = useTranslation("common");
+  return renderField(props, T);
+});
+
+FieldRenderer.displayName = "FieldRenderer";
