@@ -18,8 +18,9 @@ export function ChecklistItem({
   disabled = false,
   readOnly = false,
 }: ChecklistItemProps) {
-  // ReadOnly mode - show all items but non-interactive
+  // ReadOnly mode - show only completed items with green checkmarks
   if (readOnly) {
+    // Only render checked items in readOnly mode
     if (checked) {
       return (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/10 border-2 border-green-200 dark:border-green-800/30 transition-all duration-200">
@@ -32,15 +33,8 @@ export function ChecklistItem({
         </div>
       );
     } else {
-      // Show unchecked items as grayed out in readOnly mode
-      return (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-900/10 border-2 border-gray-200 dark:border-gray-800/30 opacity-60 transition-all duration-200">
-          <div className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 mt-0.5"></div>
-          <span className="text-sm text-gray-700 dark:text-gray-400 leading-relaxed flex-1">
-            {label}
-          </span>
-        </div>
-      );
+      // Don't render unchecked items in readOnly mode
+      return null;
     }
   }
 

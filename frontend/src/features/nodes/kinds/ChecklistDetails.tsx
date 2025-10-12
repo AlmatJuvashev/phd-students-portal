@@ -33,9 +33,33 @@ export default function ChecklistDetails({
     Boolean((initial as any)?.__submittedAt);
   const submittedAt: string | undefined =
     (initial as any)?.__submittedAt || values?.__submittedAt;
-  const nextOnComplete =
-    (Array.isArray(node.next) ? node.next[0] : undefined) ||
-    node.outcomes?.[0]?.next?.[0];
+  
+  // Calculate next node based on outcomes conditions
+  const getNextOnComplete = () => {
+    if (node.outcomes && node.outcomes.length > 0) {
+      // Find the first outcome that matches current form state
+      for (const outcome of node.outcomes) {
+        const outcomeAny = outcome as any;
+        if (outcomeAny.when) {
+          // Simple evaluation of when condition
+          // For NK_package: "form.chk_thesis_unbound && form.chk_advisor_reviews && form.chk_pubs_app7 && form.chk_sc_extract && form.chk_lcb_defense"
+          const requiredFields = outcomeAny.when.match(/form\.(\w+)/g)?.map((match: string) => match.replace('form.', '')) || [];
+          const allRequired = requiredFields.every((field: string) => !!values[field]);
+          
+          if (allRequired) {
+            return outcome.next?.[0];
+          }
+        }
+      }
+      // If no condition matches, return first outcome
+      return node.outcomes[0]?.next?.[0];
+    }
+    
+    // Fallback to simple next logic
+    return (Array.isArray(node.next) ? node.next[0] : undefined);
+  };
+  
+  const nextOnComplete = getNextOnComplete();
 
   return (
     <div className="h-full">
@@ -47,35 +71,24 @@ export default function ChecklistDetails({
             </div>
           )}
 
-          {/* Checklist items - simplified container */}
-          <div className="space-y-3" style={{ minHeight: "auto" }}>
+          {/* Checklist items using ChecklistItem component */}
+          <div className="space-y-3">
             {bools.map((f, index) => {
               const isChecked = !!values[f.key];
 
               return (
-                <div
+                <ChecklistItem
                   key={f.key}
-                  className="border p-3 rounded bg-white"
-                  style={{ display: "block", visibility: "visible" }}
-                >
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <span className="flex-1 text-sm">
-                      {t(f.label, f.key)}
-                      {f.required && (
-                        <span className="text-red-500 ml-1">*</span>
-                      )}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        setValues((s) => ({ ...s, [f.key]: e.target.checked }));
-                      }}
-                      disabled={disabled}
-                      className="w-5 h-5"
-                    />
-                  </label>
-                </div>
+                  checked={isChecked}
+                  onChange={(checked) => {
+                    if (!readOnly) {
+                      setValues((s) => ({ ...s, [f.key]: checked }));
+                    }
+                  }}
+                  label={`${t(f.label, f.key)}${f.required ? '*' : ''}`}
+                  readOnly={readOnly}
+                  disabled={disabled}
+                />
               );
             })}
           </div>
@@ -137,6 +150,7 @@ export default function ChecklistDetails({
         cancelLabel={T("common.cancel")}
         onConfirm={() => {
           setConfirmOpen(false);
+          console.log('[ChecklistDetails] Submitting with next:', nextOnComplete);
           onSubmit?.({
             ...values,
             __submittedAt: new Date().toISOString(),
