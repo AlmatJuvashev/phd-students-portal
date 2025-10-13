@@ -1,7 +1,7 @@
 /**
  * Refactored ChecklistDetails using unified FormProvider
  * Phase 1.4 - Example of form unification
- * 
+ *
  * This is a cleaner, simplified version that demonstrates:
  * - Reusable state management via FormProvider
  * - Automatic field rendering via FormFields
@@ -11,7 +11,12 @@
 
 import type { NodeVM } from "@/lib/playbook";
 import { t } from "@/lib/playbook";
-import { FormProvider, FormFields, FormActions, FormStatus } from "@/features/forms";
+import {
+  FormProvider,
+  FormFields,
+  FormActions,
+  FormStatus,
+} from "@/features/forms";
 import { TemplatesPanel } from "@/features/forms/TemplatesPanel";
 
 export default function ChecklistDetailsUnified({

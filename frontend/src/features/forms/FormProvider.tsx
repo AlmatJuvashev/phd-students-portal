@@ -1,4 +1,12 @@
-import { createContext, useContext, useCallback, useMemo, useReducer, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useMemo,
+  useReducer,
+  useEffect,
+  type ReactNode,
+} from "react";
 import { FieldDef, NodeVM } from "@/lib/playbook";
 import { evalVisible as evalVisibleExpr } from "./Visibility";
 
@@ -112,7 +120,7 @@ export function FormProvider({
   // Determine readonly state
   const submittedAt: string | undefined =
     (initial as any)?.__submittedAt || values?.__submittedAt;
-  
+
   const readOnly =
     canEditProp !== undefined
       ? !canEditProp
@@ -152,7 +160,7 @@ export function FormProvider({
     const requiredFields = fields.filter((f) => f.required);
     return requiredFields.every((f) => {
       const value = values[f.key];
-      
+
       // Check visibility first (if visible property exists)
       const fAny = f as any;
       if (fAny.visible !== undefined && !evalVisible(fAny.visible)) {
@@ -179,7 +187,7 @@ export function FormProvider({
       // Find the first outcome that matches current form state
       for (const outcome of node.outcomes) {
         const outcomeAny = outcome as any;
-        
+
         if (outcomeAny.when) {
           // Extract required fields from when condition
           // e.g., "form.field1 && form.field2" -> ["field1", "field2"]
@@ -187,7 +195,7 @@ export function FormProvider({
             outcomeAny.when
               .match(/form\.(\w+)/g)
               ?.map((match: string) => match.replace("form.", "")) || [];
-          
+
           const allRequired = requiredFields.every(
             (field: string) => !!values[field]
           );
@@ -197,7 +205,7 @@ export function FormProvider({
           }
         }
       }
-      
+
       // If no condition matches, return first outcome
       return node.outcomes[0]?.next?.[0];
     }
@@ -210,7 +218,7 @@ export function FormProvider({
   const submit = useCallback(
     (extra: Record<string, any> = {}) => {
       if (!onSubmit || !isValid) return;
-      
+
       const nextOnComplete = getNextOnComplete();
       const payload = {
         ...values,
@@ -218,7 +226,7 @@ export function FormProvider({
         __submittedAt: new Date().toISOString(),
         ...(nextOnComplete ? { __nextOverride: nextOnComplete } : {}),
       };
-      
+
       onSubmit(payload);
     },
     [onSubmit, values, isValid, getNextOnComplete]
@@ -268,8 +276,6 @@ export function FormProvider({
   );
 
   return (
-    <FormContext.Provider value={contextValue}>
-      {children}
-    </FormContext.Provider>
+    <FormContext.Provider value={contextValue}>{children}</FormContext.Provider>
   );
 }

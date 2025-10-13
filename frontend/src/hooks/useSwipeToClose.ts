@@ -23,11 +23,11 @@ export function useSwipeToClose({
 
     const handleTouchStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement;
-      
+
       // Only start tracking if touch starts on the drag handle or header
-      const isDragHandle = target.closest('[data-drag-handle]');
-      const isHeader = target.closest('[data-sheet-header]');
-      
+      const isDragHandle = target.closest("[data-drag-handle]");
+      const isHeader = target.closest("[data-sheet-header]");
+
       if (isDragHandle || isHeader) {
         startYRef.current = e.touches[0].clientY;
         currentYRef.current = e.touches[0].clientY;
@@ -45,8 +45,8 @@ export function useSwipeToClose({
       if (deltaY > 0) {
         // Optionally prevent scroll while dragging
         const target = e.target as HTMLElement;
-        const scrollable = target.closest('[data-sheet-content]');
-        
+        const scrollable = target.closest("[data-sheet-content]");
+
         if (scrollable && scrollable.scrollTop === 0) {
           e.preventDefault();
         }
@@ -54,7 +54,11 @@ export function useSwipeToClose({
     };
 
     const handleTouchEnd = () => {
-      if (!isDraggingRef.current || startYRef.current === null || currentYRef.current === null) {
+      if (
+        !isDraggingRef.current ||
+        startYRef.current === null ||
+        currentYRef.current === null
+      ) {
         isDraggingRef.current = false;
         return;
       }
@@ -72,7 +76,9 @@ export function useSwipeToClose({
       isDraggingRef.current = false;
     };
 
-    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
     document.addEventListener("touchmove", handleTouchMove, { passive: false });
     document.addEventListener("touchend", handleTouchEnd, { passive: true });
     document.addEventListener("touchcancel", handleTouchEnd, { passive: true });

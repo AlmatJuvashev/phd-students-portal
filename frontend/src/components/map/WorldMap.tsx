@@ -201,27 +201,36 @@ export function WorldMap({
     vm.worlds.forEach((w, idx) => {
       const isDone = w.nodes.every((n) => n.state === "done");
       const wasDone = prev[w.id] || false;
+      
       if (isDone && !wasDone) {
-        // collapse
-        setExpanded((e) => ({ ...e, [w.id]: false }));
-        // scroll next world into view
-        const nextWorld = vm.worlds[idx + 1];
-        if (nextWorld && worldRefs.current[nextWorld.id]) {
-          worldRefs.current[nextWorld.id]?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-          // queue guard modal for next module, without auto-opening its first node
-          const firstNode = nextWorld.nodes[0];
-          if (firstNode) {
-            setPendingModule({
-              fromWorldId: w.id,
-              toWorldId: nextWorld.id,
-              toFirstNodeId: firstNode.id,
+        // Check if we already showed the guard modal for this module
+        let alreadyShown = false;
+        try {
+          alreadyShown = !!sessionStorage.getItem(`module_guard_${w.id}_shown`);
+        } catch {}
+        
+        if (!alreadyShown) {
+          // collapse
+          setExpanded((e) => ({ ...e, [w.id]: false }));
+          // scroll next world into view
+          const nextWorld = vm.worlds[idx + 1];
+          if (nextWorld && worldRefs.current[nextWorld.id]) {
+            worldRefs.current[nextWorld.id]?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
             });
-            try {
-              sessionStorage.setItem(`module_guard_${w.id}_shown`, "1");
-            } catch {}
+            // queue guard modal for next module, without auto-opening its first node
+            const firstNode = nextWorld.nodes[0];
+            if (firstNode) {
+              setPendingModule({
+                fromWorldId: w.id,
+                toWorldId: nextWorld.id,
+                toFirstNodeId: firstNode.id,
+              });
+              try {
+                sessionStorage.setItem(`module_guard_${w.id}_shown`, "1");
+              } catch {}
+            }
           }
         }
       }
@@ -565,7 +574,6 @@ export function WorldMap({
               const currentNode = currentId ? findNode(currentId) : null;
               if (currentNode && currentNode.worldId !== nextNode.worldId) {
                 // Cross-module transition: close sheet, let ModuleGuardModal handle it
-                console.log(`[onAdvance] Cross-module transition detected: ${currentNode.worldId} → ${nextNode.worldId}, closing sheet`);
                 setOpenNode(null);
                 return;
               }

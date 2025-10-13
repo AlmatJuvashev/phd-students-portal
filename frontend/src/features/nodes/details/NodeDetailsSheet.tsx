@@ -36,7 +36,7 @@ export function NodeDetailsSheet({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
   const { submission, isLoading, save } = useSubmission(node?.id || null);
-  
+
   // Detect mobile for bottom sheet pattern
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -74,26 +74,29 @@ export function NodeDetailsSheet({
       <SheetContent
         side={isMobile ? "bottom" : "right"}
         className={`p-0 flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/10 shadow-2xl
-          ${isMobile 
-            ? "w-full h-[90vh] max-h-[90vh] rounded-t-3xl border-t-2 border-primary/20" 
-            : "w-full max-w-full sm:max-w-6xl border-l-2 border-primary/20"
+          ${
+            isMobile
+              ? "w-full h-[90vh] max-h-[90vh] rounded-t-3xl border-t-2 border-primary/20"
+              : "w-full max-w-full sm:max-w-6xl border-l-2 border-primary/20"
           }`}
       >
         {node && (
           <>
             {/* Drag handle for mobile bottom sheet */}
             {isMobile && (
-              <div 
-                data-drag-handle 
+              <div
+                data-drag-handle
                 className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing"
                 aria-label="Drag to close"
               >
                 <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
               </div>
             )}
-            <SheetHeader 
-              data-sheet-header 
-              className={`px-4 sm:px-6 border-b border-border/50 bg-card/80 backdrop-blur-md sticky top-0 z-10 ${isMobile ? 'py-3' : 'py-5'}`}
+            <SheetHeader
+              data-sheet-header
+              className={`px-4 sm:px-6 border-b border-border/50 bg-card/80 backdrop-blur-md sticky top-0 z-10 ${
+                isMobile ? "py-3" : "py-5"
+              }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                 <div className="flex-1 min-w-0">
@@ -143,8 +146,8 @@ export function NodeDetailsSheet({
               </div>
             </SheetHeader>
 
-            <div 
-              data-sheet-content 
+            <div
+              data-sheet-content
               className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-4 overscroll-contain"
             >
               {errorMsg && (

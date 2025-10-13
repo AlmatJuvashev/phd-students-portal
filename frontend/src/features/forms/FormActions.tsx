@@ -27,7 +27,8 @@ export function FormActions({
   className = "",
 }: FormActionsProps) {
   const { t: T } = useTranslation("common");
-  const { node, canEdit, disabled, isValid, submit, saveDraft } = useFormContext();
+  const { node, canEdit, disabled, isValid, submit, saveDraft } =
+    useFormContext();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!canEdit) return null;
@@ -47,7 +48,9 @@ export function FormActions({
 
   return (
     <>
-      <div className={`flex gap-2 pt-4 border-t bg-background/80 backdrop-blur-sm sticky bottom-0 z-10 ${className}`}>
+      <div
+        className={`flex gap-2 pt-4 border-t bg-background/80 backdrop-blur-sm sticky bottom-0 z-10 ${className}`}
+      >
         {!hideSubmit && (
           <Button
             onClick={handleSubmitClick}
@@ -66,7 +69,8 @@ export function FormActions({
             aria-busy={disabled}
             className="touch-manipulation min-h-[44px]"
           >
-            {draftLabel || T("forms.save_draft", { defaultValue: "Save Draft" })}
+            {draftLabel ||
+              T("forms.save_draft", { defaultValue: "Save Draft" })}
           </Button>
         )}
       </div>
@@ -76,7 +80,9 @@ export function FormActions({
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
           message={t((node as any).description || node.title, "")}
-          confirmLabel={submitLabel || T("forms.proceed_next", { defaultValue: "Submit" })}
+          confirmLabel={
+            submitLabel || T("forms.proceed_next", { defaultValue: "Submit" })
+          }
           cancelLabel={T("common.cancel", { defaultValue: "Cancel" })}
           onConfirm={handleConfirm}
         />
