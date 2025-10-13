@@ -1,13 +1,10 @@
 [phases.setup]
-nixPkgs = ["go_1_21", "postgresql"]
+# Install Go runtime for building the app, PostgreSQL client for psql (optional), and curl for downloading migrate binary
+nixPkgs = ["go_1_21", "postgresql", "curl"]
 
+# No pre-install commands needed; migrate binary will be downloaded at release time by scripts/migrate.sh
 [phases.install]
-cmds = [
-  "export GOPATH=/root/go",
-  "export PATH=$GOPATH/bin:$PATH",
-  "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest",
-  "ls -la $GOPATH/bin/migrate || echo 'migrate binary not found'"
-]
+cmds = []
 
 [phases.build]
 cmds = [

@@ -3,6 +3,7 @@
 ## Проблема
 
 Вы видите ошибку:
+
 ```
 stat cmd/migrate/main.go: no such file or directory
 ```
@@ -25,6 +26,7 @@ git push origin main
 ```
 
 Railway запустит:
+
 1. `release` команду → миграции
 2. `web` команду → запуск сервера
 
@@ -35,22 +37,26 @@ Railway запустит:
 #### Шаг 1: Установите golang-migrate
 
 **macOS:**
+
 ```bash
 brew install golang-migrate
 ```
 
 **Linux:**
+
 ```bash
 curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
 sudo mv migrate /usr/local/bin/
 ```
 
 **Windows:**
+
 ```bash
 choco install golang-migrate
 ```
 
 Или через Go:
+
 ```bash
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 ```
@@ -71,6 +77,7 @@ migrate -database "postgresql://postgres:password@region.railway.app:5432/railwa
 ```
 
 **Результат:**
+
 ```
 0001_init.up.sql (2024/10/13 10:30:00)
 0002_comments.up.sql (2024/10/13 10:30:01)
@@ -85,11 +92,13 @@ migrate -database "postgresql://postgres:password@region.railway.app:5432/railwa
 #### Шаг 1: Установите psql
 
 **macOS:**
+
 ```bash
 brew install postgresql
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get install postgresql-client
 ```
@@ -121,9 +130,10 @@ psql "your-database-url" -c "\dt"
 ```
 
 **Ожидаемый результат:**
+
 ```
            List of relations
- Schema |        Name         | Type  
+ Schema |        Name         | Type
 --------+---------------------+-------
  public | comments            | table
  public | journey_states      | table
@@ -138,6 +148,7 @@ psql "your-database-url" -c "\dt"
 Railway → Backend service → Deployments → View Logs
 
 Ищите:
+
 ```
 ✅ All migrations applied successfully!
 ```
@@ -145,13 +156,15 @@ Railway → Backend service → Deployments → View Logs
 ### 3. Проверьте API
 
 Откройте в браузере:
+
 ```
 https://your-backend.railway.app/api/health
 ```
 
 Должно вернуть:
+
 ```json
-{"status":"healthy"}
+{ "status": "healthy" }
 ```
 
 ---
@@ -163,6 +176,7 @@ https://your-backend.railway.app/api/health
 **Проблема:** Миграция была прервана посередине.
 
 **Решение:**
+
 ```bash
 # Узнайте текущую версию
 migrate -database "your-db-url" -path db/migrations version
