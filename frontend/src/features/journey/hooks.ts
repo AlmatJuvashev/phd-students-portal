@@ -20,7 +20,14 @@ export function useJourneyState() {
   });
   const reset = useMutation({
     mutationFn: async () => api("/journey/reset", { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["journey", "state"] }),
+    onSuccess: () => {
+      // Clear sessionStorage journey state
+      saveJourneyState({});
+      // Invalidate all journey-related queries
+      qc.invalidateQueries({ queryKey: ["journey"] });
+      // Force reload to ensure clean state
+      window.location.reload();
+    },
   });
 
   const setNodeState = useMutation({
@@ -52,7 +59,7 @@ export function useSubmission(nodeId?: string | null) {
     queryFn: () => getNodeSubmission(nodeId!),
     enabled,
     staleTime: 5 * 60 * 1000,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
     refetchOnWindowFocus: false,
   });
   const qc = useQueryClient();
