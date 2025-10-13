@@ -3,11 +3,7 @@
   "version": "1.1.0",
   "effective_date": "2025-10-06",
   "locale_default": "ru",
-  "locales": [
-    "ru",
-    "kz",
-    "en"
-  ],
+  "locales": ["ru", "kz", "en"],
   "metadata": {
     "jurisdiction": "KZ",
     "owner_org": "KazNMU",
@@ -16,9 +12,7 @@
       {
         "version": "1.1.0",
         "type": "form",
-        "actionHints": [
-          "form"
-        ],
+        "actionHints": ["form"],
         "notes": "Enriched defense prep/defense/post-defense nodes with deadlines, multilingual labels, uploads, and validation without changing categories/IDs."
       },
       {
@@ -127,13 +121,9 @@
             "en": "Doctoral profile"
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
+          "who_can_complete": ["student"],
           "prerequisites": [],
-          "next": [
-            "S1_text_ready"
-          ],
+          "next": ["S1_text_ready"],
           "outcomes": [
             {
               "value": "done",
@@ -142,9 +132,7 @@
                 "kz": "Профиль толтырылды",
                 "en": "Profile completed"
               },
-              "next": [
-                "S1_text_ready"
-              ]
+              "next": ["S1_text_ready"]
             }
           ],
           "requirements": {
@@ -242,15 +230,9 @@
             "en": "Dissertation draft ready"
           },
           "type": "confirmTask",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "S1_profile"
-          ],
-          "next": [
-            "S1_antiplag"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_profile"],
+          "next": ["S1_antiplag"],
           "screen": {
             "question": {
               "ru": "Текст диссертации приведён к стандарту оформления?",
@@ -337,15 +319,9 @@
             "en": "Anti-plagiarism ≥ 85%"
           },
           "type": "confirmTask",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "S1_text_ready"
-          ],
-          "next": [
-            "S1_publications_list"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_text_ready"],
+          "next": ["S1_publications_list"],
           "screen": {
             "question": {
               "ru": "Результат проверки Антиплагиат ≥ 85% подтверждён?",
@@ -424,15 +400,9 @@
             "en": "Provide only the counts for each section of Appendix 7. Upload the Appendix 7 (DOCX) later in the Dissertation Council package."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "S1_antiplag"
-          ],
-          "next": [
-            "E1_apply_omid"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_antiplag"],
+          "next": ["E1_apply_omid"],
           "outcomes": [
             {
               "value": "done",
@@ -441,9 +411,7 @@
                 "kz": "Тізім дайын",
                 "en": "List prepared"
               },
-              "next": [
-                "E1_apply_omid"
-              ]
+              "next": ["E1_apply_omid"]
             }
           ],
           "requirements": {
@@ -527,9 +495,7 @@
             "en": "Application to OMiD"
           },
           "type": "confirmTask",
-          "who_can_complete": [
-            "student"
-          ],
+          "who_can_complete": ["student"],
           "description": {
             "ru": "Подтвердите подготовку и отправку заявления на предварительную экспертизу в ОМиД.",
             "kz": "ОМиД-ке алдын ала сараптамаға өтініш дайындалып, жіберілгенін растаңыз.",
@@ -630,15 +596,10 @@
           },
           "states": {
             "not_started": {
-              "visible_buttons": [
-                "how_to",
-                "confirm_ready"
-              ]
+              "visible_buttons": ["how_to", "confirm_ready"]
             },
             "in_progress": {
-              "visible_buttons": [
-                "confirm_ready"
-              ]
+              "visible_buttons": ["confirm_ready"]
             },
             "completed": {
               "message": {
@@ -649,12 +610,8 @@
               "next_node": "NK_package"
             }
           },
-          "prerequisites": [
-            "S1_publications_list"
-          ],
-          "next": [
-            "NK_package"
-          ]
+          "prerequisites": ["S1_publications_list"],
+          "next": ["NK_package"]
         },
         {
           "id": "NK_package",
@@ -664,20 +621,14 @@
             "en": "Package for SC"
           },
           "type": "form",
-          "actionHints": [
-            "form"
-          ],
+          "actionHints": ["form"],
           "description": {
             "ru": "Пакет документов собран?",
             "kz": "Құжаттар топтамасы жиналды ма?",
             "en": "Is the document package complete?"
           },
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "E1_apply_omid"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["E1_apply_omid"],
           "requirements": {
             "templates": [
               "tpl_lcb_request_ru_docx",
@@ -776,21 +727,15 @@
             {
               "value": "complete",
               "when": "form.chk_thesis_unbound && form.chk_advisor_reviews && form.chk_pubs_app7 && form.chk_sc_extract && form.chk_lcb_defense",
-              "next": [
-                "E3_hearing_nk"
-              ]
+              "next": ["E3_hearing_nk"]
             },
             {
               "value": "need_letter",
               "when": "!form.chk_lcb_defense",
-              "next": [
-                "NK_package"
-              ]
+              "next": ["NK_package"]
             }
           ],
-          "next": [
-            "E3_hearing_nk"
-          ]
+          "next": ["E3_hearing_nk"]
         },
         {
           "id": "E3_hearing_nk",
@@ -800,15 +745,9 @@
             "en": "SC Hearing"
           },
           "type": "form",
-          "actionHints": [
-            "form"
-          ],
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "NK_package"
-          ],
+          "actionHints": ["form"],
+          "who_can_complete": ["student"],
+          "prerequisites": ["NK_package"],
           "description": {
             "ru": "Подтвердите результаты после заслушивания.",
             "kz": "Тыңдаудан кейінгі нәтижелерді растаңыз.",
@@ -971,40 +910,29 @@
               }
             ]
           },
-          "next": [
-            "RP1_overview_actualization",
-            "D1_normokontrol_ncste"
-          ],
+          "next": ["RP1_overview_actualization", "D1_normokontrol_ncste"],
           "condition": "rp_required",
           "outcomes": [
             {
               "value": "proceed_rp",
               "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
               "condition": "rp_required",
-              "next": [
-                "RP1_overview_actualization"
-              ]
+              "next": ["RP1_overview_actualization"]
             },
             {
               "value": "proceed_direct",
               "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
-              "next": [
-                "D1_normokontrol_ncste"
-              ]
+              "next": ["D1_normokontrol_ncste"]
             },
             {
               "value": "needs_plan",
               "when": "form.remarks_exist == true && form.plan_prepared != true",
-              "next": [
-                "E3_hearing_nk"
-              ]
+              "next": ["E3_hearing_nk"]
             },
             {
               "value": "needs_resolution",
               "when": "form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved != true",
-              "next": [
-                "E3_hearing_nk"
-              ]
+              "next": ["E3_hearing_nk"]
             }
           ]
         }
@@ -1033,16 +961,10 @@
             "kz": "Бітіру күнінен 3 жыл және одан көп өтсе, қорғауға жіберу тек Ғылыми комитет отырысында Research Proposal қайта бекітілгеннен кейін мүмкін.",
             "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee."
           },
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "E3_hearing_nk"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["E3_hearing_nk"],
           "condition": "rp_required",
-          "next": [
-            "RP2_sc_hearing_prep"
-          ],
+          "next": ["RP2_sc_hearing_prep"],
           "requirements": {
             "fields": [
               {
@@ -1095,15 +1017,9 @@
             "en": "Prepare for the hearing: check off the milestones and confirm the protocol extract."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "RP1_overview_actualization"
-          ],
-          "next": [
-            "RP3_pre_expertise_application"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["RP1_overview_actualization"],
+          "next": ["RP3_pre_expertise_application"],
           "outcomes": [
             {
               "value": "done",
@@ -1112,15 +1028,11 @@
                 "kz": "Тыңдау өтті",
                 "en": "Hearing completed"
               },
-              "next": [
-                "RP3_pre_expertise_application"
-              ]
+              "next": ["RP3_pre_expertise_application"]
             }
           ],
           "requirements": {
-            "templates": [
-              "tpl_app7_ru"
-            ],
+            "templates": ["tpl_app7_ru"],
             "fields": [
               {
                 "key": "chk_hearing_date_received",
@@ -1273,15 +1185,10 @@
           },
           "states": {
             "not_started": {
-              "visible_buttons": [
-                "how_to",
-                "confirm_submitted"
-              ]
+              "visible_buttons": ["how_to", "confirm_submitted"]
             },
             "in_progress": {
-              "visible_buttons": [
-                "confirm_submitted"
-              ]
+              "visible_buttons": ["confirm_submitted"]
             },
             "completed": {
               "message": {
@@ -1319,15 +1226,9 @@
             "en": "NCSTE: dissertation formatting check (norm control)"
           },
           "type": "confirmTask",
-          "prerequisites": [
-            "E3_hearing_nk"
-          ],
-          "next": [
-            "IV_rector_application"
-          ],
-          "who_can_complete": [
-            "student"
-          ],
+          "prerequisites": ["E3_hearing_nk"],
+          "next": ["IV_rector_application"],
+          "who_can_complete": ["student"],
           "screen": {
             "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
             "buttons": [
@@ -1367,15 +1268,10 @@
           },
           "states": {
             "not_started": {
-              "visible_buttons": [
-                "how_to",
-                "confirm_passed"
-              ]
+              "visible_buttons": ["how_to", "confirm_passed"]
             },
             "in_progress": {
-              "visible_buttons": [
-                "confirm_passed"
-              ]
+              "visible_buttons": ["confirm_passed"]
             },
             "completed": {
               "message": "✅ Нормоконтроль пройден и подтверждён.",
@@ -1387,9 +1283,7 @@
             "last_updated": "2025-10-08",
             "requires_upload": false,
             "reminder_required": false,
-            "related_docs": [
-              "Положение о Диссертационном совете.pdf"
-            ]
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
           }
         },
         {
@@ -1401,15 +1295,9 @@
             "en": "Letter to Rector"
           },
           "type": "confirmTask",
-          "prerequisites": [
-            "D1_normokontrol_ncste"
-          ],
-          "next": [
-            "IV3_publication_certificate_ncste"
-          ],
-          "who_can_complete": [
-            "student"
-          ],
+          "prerequisites": ["D1_normokontrol_ncste"],
+          "next": ["IV3_publication_certificate_ncste"],
+          "who_can_complete": ["student"],
           "screen": {
             "question": {
               "ru": "Вы подали заявление на имя Председателя Правления – Ректора на допуск к защите (Приложение 4)?",
@@ -1505,15 +1393,10 @@
           },
           "states": {
             "not_started": {
-              "visible_buttons": [
-                "generate_letter",
-                "confirm_ready"
-              ]
+              "visible_buttons": ["generate_letter", "confirm_ready"]
             },
             "in_progress": {
-              "visible_buttons": [
-                "confirm_ready"
-              ]
+              "visible_buttons": ["confirm_ready"]
             },
             "completed": {
               "message": {
@@ -1529,23 +1412,15 @@
             "last_updated": "2025-10-08",
             "requires_upload": false,
             "reminder_required": false,
-            "related_docs": [
-              "Положение о Диссертационном совете.pdf"
-            ]
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
           }
         },
         {
           "id": "IV3_publication_certificate_ncste",
           "module": "IV",
-          "prerequisites": [
-            "IV_rector_application"
-          ],
-          "next": [
-            "D2_apply_to_ds"
-          ],
-          "who_can_complete": [
-            "student"
-          ],
+          "prerequisites": ["IV_rector_application"],
+          "next": ["D2_apply_to_ds"],
+          "who_can_complete": ["student"],
           "title": {
             "ru": "НЦГНТЭ: справка о публикациях (подтверждение в индексируемых журналах)",
             "kz": "НЦҒНТЭ: жарияланымдар туралы анықтама (індекстелетін журналдар)",
@@ -1596,9 +1471,7 @@
               ]
             },
             "in_progress": {
-              "visible_buttons": [
-                "confirm_certificate_received"
-              ]
+              "visible_buttons": ["confirm_certificate_received"]
             },
             "completed": {
               "message": "✅ Получение справки из НЦГНТЭ подтверждено.",
@@ -1610,9 +1483,7 @@
             "last_updated": "2025-10-08",
             "requires_upload": false,
             "reminder_required": false,
-            "related_docs": [
-              "Положение о Диссертационном совете.pdf"
-            ]
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
           }
         },
         {
@@ -1629,15 +1500,9 @@
             "en": "Before submitting to the Dissertation Council, the doctoral student must prepare and deliver the complete set of documents to the Council Secretary."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "IV3_publication_certificate_ncste"
-          ],
-          "next": [
-            "V1_reinstatement_package"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["IV3_publication_certificate_ncste"],
+          "next": ["V1_reinstatement_package"],
           "outcomes": [
             {
               "value": "done",
@@ -1646,9 +1511,7 @@
                 "kz": "Топтама тапсырылды",
                 "en": "Package submitted"
               },
-              "next": [
-                "V1_reinstatement_package"
-              ]
+              "next": ["V1_reinstatement_package"]
             }
           ],
           "requirements": {
@@ -1822,13 +1685,9 @@
             "en": "Reinstatement for defense is required for all doctoral candidates. Prepare and submit the package."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [],
-          "next": [
-            "A1_post_acceptance_overview"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["D2_apply_to_ds"],
+          "next": ["A1_post_acceptance_overview"],
           "outcomes": [
             {
               "value": "done",
@@ -1837,9 +1696,7 @@
                 "kz": "Топтама тапсырылды",
                 "en": "Package submitted"
               },
-              "next": [
-                "A1_post_acceptance_overview"
-              ]
+              "next": ["A1_post_acceptance_overview"]
             }
           ],
           "requirements": {
@@ -1956,12 +1813,9 @@
             "kz": "Диссертациялық кеңес құжаттарыңызды қабылдағаннан кейін, ДК ғылыми хатшысы орындайтын ұйымдастырушылық кезең басталады. Төменде әрекеттердің, мерзімдердің және жауаптылардың қысқаша шолуы берілген.",
             "en": "Once the Dissertation Council has accepted your documents, an administrative phase begins, carried out by the Council Secretary. Below is an overview of actions, deadlines, and responsible persons."
           },
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "V1_reinstatement_package"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["V1_reinstatement_package"],
+          "next": ["VI1_post_defense_overview"],
           "requirements": {
             "ui_hints": {
               "cards_layout": {
@@ -2013,9 +1867,7 @@
             "last_updated": "2025-10-08",
             "requires_upload": false,
             "reminder_required": false,
-            "related_docs": [
-              "Положение о Диссертационном совете.pdf"
-            ]
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
           }
         }
       ]
@@ -2043,15 +1895,9 @@
             "kz": "Сәтті қорғаудан кейін Диссертациялық кеңестің ғылыми хатшысы орындайтын әкімшілік кезең басталады.",
             "en": "After a successful defense, the administrative phase begins, handled by the DC Secretary."
           },
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "A1_post_acceptance_overview"
-          ],
-          "next": [
-            "VI2_library_deposits"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["A1_post_acceptance_overview"],
+          "next": ["VI2_library_deposits"],
           "requirements": {
             "fields": [
               {
@@ -2095,15 +1941,9 @@
             "en": "Mark preparation and delivery of sets to the three libraries. Cover letters are prepared by the DC Secretary (Salem)."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "VI1_post_defense_overview"
-          ],
-          "next": [
-            "VI3_ncste_state_registration"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["VI1_post_defense_overview"],
+          "next": ["VI3_ncste_state_registration"],
           "outcomes": [
             {
               "value": "done",
@@ -2112,9 +1952,7 @@
                 "kz": "Тапсырылды",
                 "en": "Delivered"
               },
-              "next": [
-                "VI3_ncste_state_registration"
-              ]
+              "next": ["VI3_ncste_state_registration"]
             }
           ],
           "requirements": {
@@ -2222,15 +2060,9 @@
             "en": "Assemble printed and electronic package and submit via the DC Secretary (cover letter via Salem)."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "VI2_library_deposits"
-          ],
-          "next": [
-            "VI_attestation_file"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["VI2_library_deposits"],
+          "next": ["VI_attestation_file"],
           "outcomes": [
             {
               "value": "done",
@@ -2239,9 +2071,7 @@
                 "kz": "Жіберілді",
                 "en": "Submitted"
               },
-              "next": [
-                "VI_attestation_file"
-              ]
+              "next": ["VI_attestation_file"]
             }
           ],
           "requirements": {
@@ -2406,15 +2236,9 @@
             "en": "Within 30 days after defense, the doctoral attestation file is formed. Check the presence of each document."
           },
           "type": "form",
-          "who_can_complete": [
-            "student"
-          ],
-          "prerequisites": [
-            "VI3_ncste_state_registration"
-          ],
-          "next": [
-            "END"
-          ],
+          "who_can_complete": ["student"],
+          "prerequisites": ["VI3_ncste_state_registration"],
+          "next": ["END"],
           "outcomes": [
             {
               "value": "done",
@@ -2423,9 +2247,7 @@
                 "kz": "Іс жиналды",
                 "en": "File completed"
               },
-              "next": [
-                "END"
-              ]
+              "next": ["END"]
             }
           ],
           "requirements": {
