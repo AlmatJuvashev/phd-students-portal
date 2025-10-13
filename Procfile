@@ -1,2 +1,1 @@
-release: cd backend && bash scripts/migrate.sh
-web: cd backend && go run cmd/server/main.go
+web: cd backend && bash scripts/migrate.sh && ./bin/server

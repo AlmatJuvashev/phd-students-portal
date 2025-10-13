@@ -2,7 +2,7 @@
 # Install Go runtime for building the app, PostgreSQL client for psql (optional), and curl for downloading migrate binary
 nixPkgs = ["go_1_21", "postgresql", "curl"]
 
-# No pre-install commands needed; migrate binary will be downloaded at release time by scripts/migrate.sh
+# No pre-install commands needed; migrate binary will be downloaded at runtime by scripts/migrate.sh
 [phases.install]
 cmds = []
 
@@ -12,4 +12,4 @@ cmds = [
 ]
 
 [start]
-cmd = "cd backend && ./bin/server"
+cmd = "cd backend && bash scripts/migrate.sh && ./bin/server"
