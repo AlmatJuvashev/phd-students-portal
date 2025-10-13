@@ -1978,7 +1978,7 @@
           "type": "form",
           "who_can_complete": ["student"],
           "prerequisites": ["VI2_library_deposits"],
-          "next": ["Z2_post_defence"],
+          "next": ["VI_attestation_file"],
           "outcomes": [
             {
               "value": "done",
@@ -2157,6 +2157,16 @@
           "who_can_complete": ["student"],
           "prerequisites": ["VI3_ncste_state_registration"],
           "next": ["END"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Дело собрано",
+                "kz": "Іс жиналды",
+                "en": "File completed"
+              }
+            }
+          ],
           "requirements": {
             "fields": [
               {
