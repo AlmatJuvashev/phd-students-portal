@@ -42,7 +42,7 @@ func MustLoad() AppConfig {
 		SMTPUser:      get("SMTP_USER", ""),
 		SMTPPass:      get("SMTP_PASS", ""),
 		SMTPFrom:      get("SMTP_FROM", "PhD Portal <no-reply@local>"),
-		FrontendBase:  get("FRONTEND_BASE_URL", "http://localhost:5173"),
+		FrontendBase:  get("FRONTEND_BASE", "http://localhost:5173"),
 		AdminEmail:    get("ADMIN_EMAIL", ""),
 		AdminPassword: get("ADMIN_PASSWORD", ""),
 		PlaybookPath:  get("PLAYBOOK_PATH", "../frontend/src/playbooks/playbook.json"),
