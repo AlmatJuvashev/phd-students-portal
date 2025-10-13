@@ -1,1 +1,1 @@
-web: cd backend && bash scripts/migrate.sh && ./bin/server
+web: cd backend && bash scripts/check-env.sh && bash scripts/migrate.sh && ./bin/server
