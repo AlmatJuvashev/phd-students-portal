@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import DevBar from "@/features/journey/components/DevBar";
 import clsx from "clsx";
 import { detectTerminalNodeIds } from "@/features/journey/moduleGraph";
+import { useSwipeable } from "react-swipeable";
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -121,6 +122,7 @@ export function WorldMap({
   const prevDoneRef = useRef<Record<string, boolean>>({});
   const [showCongrats, setShowCongrats] = useState(false);
   const { submission: profile } = useSubmission("S1_profile");
+  const [focusedWorldIndex, setFocusedWorldIndex] = useState<number | null>(null);
 
   const terminalNodeSet = useMemo(() => {
     const perWorld = detectTerminalNodeIds(playbook);
@@ -220,8 +222,68 @@ export function WorldMap({
     });
   }, [vm.worlds, worldSignature]);
 
+  // Filter visible worlds based on unlock criteria
+  const visibleWorlds = useMemo(
+    () => vm.worlds.filter((w) => (w.id === "W3" ? unlockAll || rp_required : true)),
+    [vm.worlds, unlockAll, rp_required]
+  );
+
+  // Swipe handlers for mobile navigation between modules
+  const handleSwipe = (direction: "left" | "right") => {
+    if (focusedWorldIndex === null) return;
+    
+    const nextIndex = direction === "left" 
+      ? Math.min(focusedWorldIndex + 1, visibleWorlds.length - 1)
+      : Math.max(focusedWorldIndex - 1, 0);
+    
+    if (nextIndex !== focusedWorldIndex) {
+      setFocusedWorldIndex(nextIndex);
+      const targetWorld = visibleWorlds[nextIndex];
+      if (targetWorld && worldRefs.current[targetWorld.id]) {
+        worldRefs.current[targetWorld.id]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+  };
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => handleSwipe("left"),
+    onSwipedRight: () => handleSwipe("right"),
+    trackMouse: false, // Only track touch, not mouse
+    preventScrollOnSwipe: false,
+    delta: 50, // Minimum distance for swipe
+  });
+
+  // Track which world is in viewport for swipe context
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            const worldId = entry.target.getAttribute("data-world-id");
+            const index = visibleWorlds.findIndex((w) => w.id === worldId);
+            if (index >= 0) {
+              setFocusedWorldIndex(index);
+            }
+          }
+        });
+      },
+      { threshold: [0.5], rootMargin: "-20% 0px -20% 0px" }
+    );
+
+    Object.values(worldRefs.current).forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [visibleWorlds]);
+
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6" {...swipeHandlers}>
       <header className="sticky top-0 z-20 bg-gradient-to-b from-background via-background to-background/80 backdrop-blur-md shadow-lg -mx-4 -mt-4 px-4 py-4 rounded-b-xl">
         <div className="flex items-center justify-between mb-3 gap-2">
           <BackButton to="/" />
@@ -230,7 +292,7 @@ export function WorldMap({
           </h1>
           <div className="w-[78px] sm:w-10"></div>
         </div>
-        <div className="px-2">
+        <div className="px-2 space-y-3">
           <div className="flex justify-between items-center bg-gradient-to-r from-muted/50 to-muted/30 p-3 rounded-xl shadow-sm">
             <span className="text-xs font-semibold text-muted-foreground ml-1">
               {T("map.progress", { defaultValue: "Progress" })}:
@@ -245,12 +307,42 @@ export function WorldMap({
               {progress}%
             </span>
           </div>
+          
+          {/* Module navigation dots (mobile) */}
+          {visibleWorlds.length > 1 && (
+            <div className="flex justify-center items-center gap-2 sm:hidden py-2">
+              {visibleWorlds.map((w, idx) => {
+                const isActive = focusedWorldIndex === idx;
+                const isDone = w.nodes.every((n) => n.state === "done");
+                return (
+                  <button
+                    key={w.id}
+                    onClick={() => {
+                      setFocusedWorldIndex(idx);
+                      worldRefs.current[w.id]?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    aria-label={`${T("map.navigate_to_module", { defaultValue: "Navigate to module" })} ${idx + 1}`}
+                    className={clsx(
+                      "transition-all duration-300 rounded-full touch-manipulation",
+                      {
+                        "w-8 h-2 bg-primary shadow-lg": isActive,
+                        "w-2 h-2": !isActive,
+                        "bg-green-500": !isActive && isDone,
+                        "bg-muted-foreground/30": !isActive && !isDone,
+                      }
+                    )}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
       </header>
 
-      {vm.worlds
-        .filter((w) => (w.id === "W3" ? unlockAll || rp_required : true))
-        .map((w, wi, arr) => {
+      {visibleWorlds.map((w, wi, arr) => {
           const worldDoneNodes = w.nodes.filter(
             (n) => n.state === "done"
           ).length;
@@ -281,11 +373,19 @@ export function WorldMap({
 
           const isExpanded = !!expanded[w.id];
 
+          const isFocused = focusedWorldIndex === wi;
+          
           return (
             <div
               key={w.id}
               ref={(el) => (worldRefs.current[w.id] = el)}
-              className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+              data-world-id={w.id}
+              className={clsx(
+                "animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all",
+                {
+                  "scale-[1.01] sm:scale-100": isFocused, // Subtle scale on mobile when focused
+                }
+              )}
               style={{ animationDelay: `${wi * 100}ms` }}
             >
               <Card
