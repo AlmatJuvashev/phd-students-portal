@@ -211,10 +211,18 @@ export function NodeToken({
             "group-hover:shadow-md"
           )}
         >
-          {node.state === "locked" && <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-          {node.state === "active" && <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-          {node.state === "done" && <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-          {node.state === "waiting" && <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          {node.state === "locked" && (
+            <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          )}
+          {node.state === "active" && (
+            <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          )}
+          {node.state === "done" && (
+            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          )}
+          {node.state === "waiting" && (
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          )}
           <span className="capitalize">{node.state.replace("_", " ")}</span>
         </div>
       </div>
