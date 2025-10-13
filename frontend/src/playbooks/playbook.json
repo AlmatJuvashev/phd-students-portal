@@ -1861,6 +1861,16 @@
           "who_can_complete": ["student"],
           "prerequisites": ["VI1_post_defense_overview"],
           "next": ["VI3_ncste_state_registration"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Сдано",
+                "kz": "Тапсырылды",
+                "en": "Delivered"
+              }
+            }
+          ],
           "requirements": {
             "fields": [
               {
@@ -1969,6 +1979,16 @@
           "who_can_complete": ["student"],
           "prerequisites": ["VI2_library_deposits"],
           "next": ["Z2_post_defence"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Отправлено",
+                "kz": "Жіберілді",
+                "en": "Submitted"
+              }
+            }
+          ],
           "requirements": {
             "fields": [
               {
