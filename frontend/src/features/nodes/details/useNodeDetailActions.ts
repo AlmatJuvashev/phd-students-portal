@@ -105,7 +105,11 @@ export function useNodeDetailActions({
         case "submit-form": {
           const payload = { ...(evt.payload ?? {}) };
           const isDraft = !!payload.__draft;
+          const nextOverride = payload.__nextOverride;
+          // Remove metadata keys before saving to backend
           if ("__draft" in payload) delete payload.__draft;
+          if ("__nextOverride" in payload) delete payload.__nextOverride;
+          if ("__submittedAt" in payload) delete payload.__submittedAt;
           setSaving(true);
           try {
             await save.mutateAsync({
@@ -113,8 +117,11 @@ export function useNodeDetailActions({
               state: isDraft ? "active" : "done",
             });
             setErrorMsg(null);
-            if (isDraft) return;
-            await onComplete(evt.payload?.__nextOverride);
+            if (isDraft) {
+              setSaving(false);
+              return;
+            }
+            await onComplete(nextOverride);
           } catch (error: any) {
             console.error("submit form failed", error);
             setErrorMsg(error?.message ?? String(error));

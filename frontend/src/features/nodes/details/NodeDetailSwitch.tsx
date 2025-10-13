@@ -59,11 +59,12 @@ const formRenderers: Record<string, (args: FormRendererArgs) => JSX.Element> = {
       onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
     />
   ),
-  checklist: ({ node, initialForm, saving, onEvent }) => (
+  checklist: ({ node, initialForm, saving, canEdit, onEvent }) => (
     <ChecklistDetails
       node={node}
       initial={initialForm}
       disabled={saving}
+      canEdit={canEdit}
       onSubmit={(payload) => onEvent?.({ type: "submit-form", payload })}
     />
   ),
