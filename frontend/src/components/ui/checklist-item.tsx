@@ -23,7 +23,10 @@ export function ChecklistItem({
     if (checked) {
       // Show checked items with green styling
       return (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/10 border-2 border-green-200 dark:border-green-800/30 transition-all duration-200 min-w-0" style={{ contain: "layout" }}>
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/10 border-2 border-green-200 dark:border-green-800/30 transition-all duration-200 min-w-0"
+          style={{ contain: "layout" }}
+        >
           <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mt-0.5">
             <Check className="w-4 h-4 text-white" strokeWidth={3} />
           </div>
@@ -35,7 +38,10 @@ export function ChecklistItem({
     } else {
       // Show unchecked items as grayed out but still visible
       return (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-900/10 border-2 border-gray-200 dark:border-gray-800/30 opacity-60 transition-all duration-200 min-w-0" style={{ contain: "layout" }}>
+        <div
+          className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-900/10 border-2 border-gray-200 dark:border-gray-800/30 opacity-60 transition-all duration-200 min-w-0"
+          style={{ contain: "layout" }}
+        >
           <div className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 mt-0.5"></div>
           <span className="text-sm text-gray-700 dark:text-gray-400 leading-relaxed flex-1 min-w-0">
             {label}

@@ -140,7 +140,14 @@ const DateField = memo(
 DateField.displayName = "DateField";
 
 const TextField = memo(
-  ({ field, value, onChange, disabled, canEdit, T }: FieldRendererProps & { T: ReturnType<typeof useTranslation>["t"] }) => (
+  ({
+    field,
+    value,
+    onChange,
+    disabled,
+    canEdit,
+    T,
+  }: FieldRendererProps & { T: ReturnType<typeof useTranslation>["t"] }) => (
     <div className="grid gap-1">
       <Label htmlFor={field.key}>
         {t(field.label, field.key)}{" "}
@@ -198,7 +205,9 @@ function renderField(
   return <TextField {...props} T={T} />;
 }
 
-export const FieldRenderer = memo(function FieldRenderer(props: FieldRendererProps) {
+export const FieldRenderer = memo(function FieldRenderer(
+  props: FieldRendererProps
+) {
   const { t: T } = useTranslation("common");
   return renderField(props, T);
 });
