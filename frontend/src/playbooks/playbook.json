@@ -1422,6 +1422,16 @@
           "who_can_complete": ["student"],
           "prerequisites": ["IV3_publication_certificate_ncste"],
           "next": ["V1_reinstatement_package"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Пакет сдан",
+                "kz": "Топтама тапсырылды",
+                "en": "Package submitted"
+              }
+            }
+          ],
           "requirements": {
             "templates": [
               "tpl_app5_ru",
@@ -1596,6 +1606,16 @@
           "who_can_complete": ["student"],
           "prerequisites": [],
           "next": ["A1_post_acceptance_overview"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Пакет сдан",
+                "kz": "Топтама тапсырылды",
+                "en": "Package submitted"
+              }
+            }
+          ],
           "requirements": {
             "templates": [
               "tpl_reinstatement_rector_ru",
@@ -1711,7 +1731,7 @@
             "en": "Once the Dissertation Council has accepted your documents, an administrative phase begins, carried out by the Council Secretary. Below is an overview of actions, deadlines, and responsible persons."
           },
           "who_can_complete": ["student"],
-          "prerequisites": ["D3_ds_acceptance_boss"],
+          "prerequisites": ["V1_reinstatement_package"],
           "next": ["A1_orders_publication"],
           "requirements": {
             "ui_hints": {
@@ -1793,7 +1813,7 @@
             "en": "After a successful defense, the administrative phase begins, handled by the DC Secretary."
           },
           "who_can_complete": ["student"],
-          "prerequisites": [],
+          "prerequisites": ["A1_post_acceptance_overview"],
           "next": ["VI2_library_deposits"],
           "requirements": {
             "fields": [
