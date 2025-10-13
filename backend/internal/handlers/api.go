@@ -44,6 +44,14 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	}))
 	api := r.Group("/api")
 
+	// Debug endpoint to check CORS config (remove in production)
+	api.GET("/debug/cors", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"frontend_base": cfg.FrontendBase,
+			"origin":        c.Request.Header.Get("Origin"),
+		})
+	})
+
 	api.GET("/me", func(c *gin.Context) {
 		// require auth, then return current user
 		middleware.AuthRequired([]byte(cfg.JWTSecret))(c)
