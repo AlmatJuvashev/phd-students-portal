@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useReducer, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -44,30 +50,33 @@ export function FormTaskDetails({
     | { type: "set"; key: string; value: any }
     | { type: "replace"; values: FormState };
 
-  const formReducer = useCallback((state: FormState, action: Action): FormState => {
-    switch (action.type) {
-      case "replace":
-        return { ...action.values };
-      case "set": {
-        const next = { ...state, [action.key]: action.value } as FormState;
-        if (action.key === "hearing_happened") {
-          delete next.remarks_exist;
-          delete next.plan_prepared;
-          delete next.remarks_resolved;
+  const formReducer = useCallback(
+    (state: FormState, action: Action): FormState => {
+      switch (action.type) {
+        case "replace":
+          return { ...action.values };
+        case "set": {
+          const next = { ...state, [action.key]: action.value } as FormState;
+          if (action.key === "hearing_happened") {
+            delete next.remarks_exist;
+            delete next.plan_prepared;
+            delete next.remarks_resolved;
+          }
+          if (action.key === "remarks_exist") {
+            delete next.plan_prepared;
+            delete next.remarks_resolved;
+          }
+          if (action.key === "plan_prepared") {
+            delete next.remarks_resolved;
+          }
+          return next;
         }
-        if (action.key === "remarks_exist") {
-          delete next.plan_prepared;
-          delete next.remarks_resolved;
-        }
-        if (action.key === "plan_prepared") {
-          delete next.remarks_resolved;
-        }
-        return next;
+        default:
+          return state;
       }
-      default:
-        return state;
-    }
-  }, []);
+    },
+    []
+  );
 
   const [values, dispatch] = useReducer(
     formReducer,
@@ -106,7 +115,16 @@ export function FormTaskDetails({
   );
 
   const ctx = useMemo<FormTaskContext>(
-    () => ({ node, values, setField, canEdit, disabled, submit, saveDraft, evalVisible }),
+    () => ({
+      node,
+      values,
+      setField,
+      canEdit,
+      disabled,
+      submit,
+      saveDraft,
+      evalVisible,
+    }),
     [node, values, setField, canEdit, disabled, submit, saveDraft, evalVisible]
   );
 
