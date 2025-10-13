@@ -108,9 +108,19 @@ export function WorldMap({
     return m;
   }, [unlockAll, playbook.worlds, stableStateByNodeId]);
 
+  const { rp_required } = useConditions();
+  
+  const activeConditions = useMemo(() => {
+    const conditions = new Set<string>();
+    if (rp_required) {
+      conditions.add("rp_required");
+    }
+    return conditions;
+  }, [rp_required]);
+
   const vm = useMemo(
-    () => toViewModel(playbook, stateOverride),
-    [playbook, stateOverride]
+    () => toViewModel(playbook, stateOverride, activeConditions),
+    [playbook, stateOverride, activeConditions]
   );
   const [openNode, setOpenNode] = useState<NodeVM | null>(null);
   const [gatewayNode, setGatewayNode] = useState<NodeVM | null>(null);
@@ -120,7 +130,6 @@ export function WorldMap({
     toWorldId: string;
     toFirstNodeId: string;
   } | null>(null);
-  const { rp_required } = useConditions();
   const worldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const prevDoneRef = useRef<Record<string, boolean>>({});

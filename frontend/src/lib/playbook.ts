@@ -142,16 +142,14 @@ export type NodeState =
 export type NodeVM = NodeDef & { worldId: string; state: NodeState };
 
 /**
- * Compute node states with automatic unlocking based on prerequisites.
- * If a node is "locked" but all its prerequisites are "done", it becomes "active".
- * Returns the same object reference if no changes were made to avoid unnecessary re-renders.
- *
- * Note: Nodes with a "condition" field are NOT auto-activated by this function.
- * They require manual activation through conditional logic in the UI.
+ * computeNodeStates — applies prerequisite-based unlocking logic.
+ * Only unlocks nodes whose prerequisites are all "done" AND that have no runtime conditions,
+ * OR nodes with conditions that are satisfied by the provided activeConditions set.
  */
 export function computeNodeStates(
   pb: Playbook,
-  rawStateByNodeId: Record<string, NodeState> = {}
+  rawStateByNodeId: Record<string, NodeState> = {},
+  activeConditions: Set<string> = new Set()
 ): Record<string, NodeState> {
   let hasChanges = false;
   const computed: Record<string, NodeState> = {};
@@ -186,9 +184,14 @@ export function computeNodeStates(
 
         // Only process locked nodes
         if (currentState === "locked") {
-          // Skip nodes with conditions - they should not be auto-activated
-          // Conditional nodes are activated through UI logic based on runtime conditions
+          // Check if node has a condition
           if (node.condition) {
+            // Only activate if condition is satisfied AND prerequisites are met
+            if (activeConditions.has(node.condition) && allPrereqsDone(node.prerequisites)) {
+              computed[node.id] = "active";
+              changed = true;
+              hasChanges = true;
+            }
             return;
           }
 
@@ -209,10 +212,11 @@ export function computeNodeStates(
 
 export function toViewModel(
   pb: Playbook,
-  stateByNodeId: Record<string, NodeState> = {}
+  stateByNodeId: Record<string, NodeState> = {},
+  activeConditions: Set<string> = new Set()
 ): { worlds: Array<{ id: string; title: string; nodes: NodeVM[] }> } {
   // Compute states with prerequisite logic before building view model
-  const computedStates = computeNodeStates(pb, stateByNodeId);
+  const computedStates = computeNodeStates(pb, stateByNodeId, activeConditions);
 
   const worlds = [...pb.worlds]
     .sort((a, b) => a.order - b.order)
