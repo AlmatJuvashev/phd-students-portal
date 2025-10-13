@@ -3,7 +3,10 @@ nixPkgs = ["go_1_21", "postgresql"]
 
 [phases.install]
 cmds = [
-  "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest"
+  "export GOPATH=/root/go",
+  "export PATH=$GOPATH/bin:$PATH",
+  "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest",
+  "ls -la $GOPATH/bin/migrate || echo 'migrate binary not found'"
 ]
 
 [phases.build]
