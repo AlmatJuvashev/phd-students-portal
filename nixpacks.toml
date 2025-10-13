@@ -1,0 +1,10 @@
+[phases.setup]
+nixPkgs = ["go_1_21", "postgresql"]
+
+[phases.build]
+cmds = [
+  "cd backend && go build -o bin/server cmd/server/main.go"
+]
+
+[start]
+cmd = "cd backend && ./bin/server"
