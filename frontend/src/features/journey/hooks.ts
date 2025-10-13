@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { getNodeSubmission, saveNodeSubmission } from "@/api/journey";
-import { loadJourneyState, saveJourneyState, patchJourneyState } from "./session";
+import {
+  loadJourneyState,
+  saveJourneyState,
+  patchJourneyState,
+} from "./session";
 
 export function useJourneyState() {
   const qc = useQueryClient();
@@ -31,7 +35,13 @@ export function useJourneyState() {
   });
 
   const setNodeState = useMutation({
-    mutationFn: async ({ node_id, state }: { node_id: string; state: string }) =>
+    mutationFn: async ({
+      node_id,
+      state,
+    }: {
+      node_id: string;
+      state: string;
+    }) =>
       api("/journey/state", {
         method: "PUT",
         body: JSON.stringify({ node_id, state }),
@@ -48,7 +58,8 @@ export function useJourneyState() {
     isLoading: query.isLoading,
     refetch: query.refetch,
     reset: () => reset.mutate(),
-    setNodeState: (node_id: string, state: string) => setNodeState.mutate({ node_id, state }),
+    setNodeState: (node_id: string, state: string) =>
+      setNodeState.mutate({ node_id, state }),
   };
 }
 
@@ -67,7 +78,9 @@ export function useSubmission(nodeId?: string | null) {
     mutationFn: async (payload: { form_data?: any; state?: string }) =>
       saveNodeSubmission(nodeId!, payload),
     onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["journey", "node", nodeId, "submission"] }),
+      qc.invalidateQueries({
+        queryKey: ["journey", "node", nodeId, "submission"],
+      }),
   });
   return { submission: query.data, isLoading: query.isLoading, save };
 }

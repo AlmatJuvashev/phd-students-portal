@@ -27,19 +27,29 @@ type FormRendererArgs = {
   onEvent?: (evt: { type: string; payload?: any }) => void;
 };
 
-const sceneLoaders: Record<string, () => Promise<{ default: React.ComponentType<SceneProps> }>> = {
+const sceneLoaders: Record<
+  string,
+  () => Promise<{ default: React.ComponentType<SceneProps> }>
+> = {
   D2_apply_to_ds: () => import("@/features/nodes/scenes/D2ApplyToDsScene"),
-  V1_reinstatement_package: () => import("@/features/nodes/scenes/V1ReinstatementScene"),
-  RP2_sc_hearing_prep: () => import("@/features/nodes/scenes/RP2HearingPrepScene"),
-  VI_attestation_file: () => import("@/features/nodes/scenes/VIAttestationScene"),
+  V1_reinstatement_package: () =>
+    import("@/features/nodes/scenes/V1ReinstatementScene"),
+  RP2_sc_hearing_prep: () =>
+    import("@/features/nodes/scenes/RP2HearingPrepScene"),
+  VI_attestation_file: () =>
+    import("@/features/nodes/scenes/VIAttestationScene"),
   S1_profile: () => import("@/features/nodes/scenes/S1ProfileDetails"),
-  S1_publications_list: () => import("@/features/nodes/scenes/S1PublicationsDetails"),
+  S1_publications_list: () =>
+    import("@/features/nodes/scenes/S1PublicationsDetails"),
   E1_apply_omid: () => import("@/features/nodes/scenes/E1ApplyOmidDetails"),
   NK_package: () => import("@/features/nodes/scenes/NkPackageDetails"),
   E3_hearing_nk: () => import("@/features/nodes/scenes/E3HearingNkScene"),
 };
 
-const sceneComponents: Record<string, React.LazyExoticComponent<React.ComponentType<SceneProps>>> = Object.fromEntries(
+const sceneComponents: Record<
+  string,
+  React.LazyExoticComponent<React.ComponentType<SceneProps>>
+> = Object.fromEntries(
   Object.entries(sceneLoaders).map(([id, loader]) => [
     id,
     lazy(() =>
