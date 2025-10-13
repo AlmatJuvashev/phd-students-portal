@@ -45,14 +45,14 @@ git push origin main
    - Copy your backend URL (e.g., `https://xxx.railway.app`)
 
 6. **Migrations will run automatically!**
+
    - After you push updated files (see Step 1)
    - Railway will run migrations automatically via `Procfile` `release` command
    - Check logs: Deployments → View Logs → Look for "✅ All migrations applied"
-   
+
    **If you need to run manually:** See [`deploy/MIGRATIONS_GUIDE.md`](deploy/MIGRATIONS_GUIDE.md)
 
-
- phd-students-portal-production.up.railway.app
+phd-students-portal-production.up.railway.app
 
 ### Step 3: Deploy Frontend to Vercel
 
