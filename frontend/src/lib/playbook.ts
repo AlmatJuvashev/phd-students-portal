@@ -1,11 +1,7 @@
 // lib/playbook.ts
 export type RoleId = "student" | "advisor" | "secretary" | "chair" | "admin";
 
-export type ActionKind =
-  | "form"
-  | "outcome"
-  | "wait"
-  | "gateway";
+export type ActionKind = "form" | "outcome" | "wait" | "gateway";
 
 export type FieldDef = {
   key: string;
@@ -187,7 +183,10 @@ export function computeNodeStates(
           // Check if node has a condition
           if (node.condition) {
             // Only activate if condition is satisfied AND prerequisites are met
-            if (activeConditions.has(node.condition) && allPrereqsDone(node.prerequisites)) {
+            if (
+              activeConditions.has(node.condition) &&
+              allPrereqsDone(node.prerequisites)
+            ) {
               computed[node.id] = "active";
               changed = true;
               hasChanges = true;

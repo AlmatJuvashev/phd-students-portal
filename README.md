@@ -43,37 +43,39 @@
    ```
 
 ## Authentication
+
 - Email + password login.
 - JWT expiry ~ 6 months (configurable via `JWT_EXP_DAYS`).
 - Password reset flow via Mailpit.
 
 ## Admin
+
 - Create users with auto username & temp password (copy-once).
 - Soft remove via `is_active` flag.
 - Admin can change others’ passwords except for **superadmin**.
 
-
 ## v4 Upgrades
+
 - Auto S3/local upload detection with pre-signed PUT
 - Threaded comments with @mentions
 - Minimal shadcn-style components + Framer Motion polish
 - Backend user listing endpoint for mentions
 
-
 ## v5 Upgrades
+
 - Role-based route guards (JWT-decoded role) with TanStack Router `beforeLoad`
 - Vendored shadcn/ui-style components and theme tokens (mini design system)
 
-
 ## v6 Upgrades
+
 - Backend now on **8280**; root `docker-compose.yml` spins up Postgres, Redis, Mailpit, MinIO, and the backend.
 - New `/api/me` endpoint; Redis-backed caching for user context.
 - Structured logging helpers and more comments.
 - Frontend role-aware top navigation; `/me`-driven auth; common folders for hooks/config/lib.
 - Added toast system; forms use `react-hook-form` + `zod`.
 
-
 ## v6 Upgrades
+
 - Role-aware top nav using `/me` (no client-side JWT decode)
 - `/me` endpoint + user hydration into request context (Redis-cached)
 - Structured logs middleware
@@ -96,6 +98,7 @@ cat deploy/QUICK_DEPLOY.md
 ```
 
 **Steps:**
+
 1. Push to GitHub
 2. Deploy backend to Railway (with PostgreSQL)
 3. Deploy frontend to Vercel
@@ -111,6 +114,7 @@ cat deploy/UNIVERSITY_IT_REQUIREMENTS.md
 ```
 
 **Integration with https://kaznmu.edu.kz:**
+
 - Option A: Subdomain `phd.kaznmu.edu.kz` (recommended)
 - Option B: Path `/phd-portal/` on main domain
 - Option C: iFrame integration

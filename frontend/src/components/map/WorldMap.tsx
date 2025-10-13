@@ -109,7 +109,7 @@ export function WorldMap({
   }, [unlockAll, playbook.worlds, stableStateByNodeId]);
 
   const { rp_required } = useConditions();
-  
+
   const activeConditions = useMemo(() => {
     const conditions = new Set<string>();
     if (rp_required) {
@@ -219,14 +219,14 @@ export function WorldMap({
     vm.worlds.forEach((w, idx) => {
       const isDone = w.nodes.every((n) => n.state === "done");
       const wasDone = prev[w.id] || false;
-      
+
       if (isDone && !wasDone) {
         // Check if we already showed the guard modal for this module
         let alreadyShown = false;
         try {
           alreadyShown = !!sessionStorage.getItem(`module_guard_${w.id}_shown`);
         } catch {}
-        
+
         if (!alreadyShown) {
           // collapse
           setExpanded((e) => ({ ...e, [w.id]: false }));

@@ -1,6 +1,11 @@
 [phases.setup]
 nixPkgs = ["go_1_21", "postgresql"]
 
+[phases.install]
+cmds = [
+  "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest"
+]
+
 [phases.build]
 cmds = [
   "cd backend && go build -o bin/server cmd/server/main.go"

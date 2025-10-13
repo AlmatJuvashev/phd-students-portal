@@ -3,6 +3,7 @@
 ## Quick Deploy to Railway (Demo Version)
 
 ### Prerequisites
+
 - GitHub account with your repository
 - Railway.app account (sign up at https://railway.app)
 
@@ -23,11 +24,13 @@ git push -u origin main
 4. **Railway will auto-detect** Go backend
 
 5. **Add PostgreSQL Database:**
+
    - Click "New" → "Database" → "Add PostgreSQL"
    - Railway will automatically set `DATABASE_URL` environment variable
 
 6. **Set Environment Variables:**
    Go to your service → Variables → Add these:
+
    ```
    JWT_SECRET=your-random-secret-key-change-this
    GIN_MODE=release
@@ -47,8 +50,8 @@ git push -u origin main
    - Root Directory: `frontend`
    - Build Command: `npm run build`
    - Output Directory: `dist`
-   
 4. **Environment Variables:**
+
    ```
    VITE_API_BASE_URL=https://your-backend-url.railway.app/api
    ```
@@ -59,22 +62,43 @@ git push -u origin main
    - Go back to Railway → Backend service → Variables
    - Update `CORS_ORIGINS` with your Vercel URL
 
-### Step 4: Run Database Migrations
+### Step 4: Database Migrations
 
-Railway provides a terminal for your service:
+**✅ Миграции запустятся автоматически!**
 
-1. Go to your backend service → "Terminal" tab (or use Railway CLI)
-2. Run migrations:
-   ```bash
-   cd backend
-   make migrate-up
-   ```
+После того как вы запушите обновлённый `Procfile` и `nixpacks.toml` (см. ниже), Railway автоматически:
 
-Or manually:
+1. Установит `golang-migrate` при сборке
+2. Запустит миграции перед стартом сервера (команда `release` в Procfile)
+3. Запустит ваш backend
+
+**Чтобы активировать автоматические миграции:**
+
 ```bash
-psql $DATABASE_URL -f db/migrations/0001_init.up.sql
-psql $DATABASE_URL -f db/migrations/0002_comments.up.sql
+# Убедитесь что у вас актуальные файлы
+git pull origin main
+
+# Или вручную обновите Procfile:
+cat > Procfile << 'EOF'
+release: cd backend && bash scripts/migrate.sh
+web: cd backend && go run cmd/server/main.go
+EOF
+
+git add Procfile nixpacks.toml backend/scripts/migrate.sh
+git commit -m "Add automatic migrations"
+git push origin main
 ```
+
+Railway автоматически пересоберётся и применит миграции!
+
+**Проверьте логи:**
+
+- Railway → Backend service → **Deployments** → Click latest → **View Logs**
+- Ищите строку: `✅ All migrations applied successfully!`
+
+**Альтернатива (ручной запуск через Railway CLI):**
+
+См. детальную инструкцию: [`MIGRATIONS_GUIDE.md`](./MIGRATIONS_GUIDE.md)
 
 ### Step 5: Test Your Demo
 
