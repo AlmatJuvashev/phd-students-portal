@@ -144,8 +144,17 @@ export function WorldMap({
     return null;
   };
 
+  // Filter visible worlds based on unlock criteria
+  const visibleWorlds = useMemo(
+    () =>
+      vm.worlds.filter((w) =>
+        w.id === "W3" ? unlockAll || rp_required : true
+      ),
+    [vm.worlds, unlockAll, rp_required]
+  );
+
   const progress = useMemo(() => {
-    const totals = vm.worlds.reduce(
+    const totals = visibleWorlds.reduce(
       (acc, w) => {
         acc.total += w.nodes.length;
         acc.done += w.nodes.filter((n) => n.state === "done").length;
@@ -156,7 +165,7 @@ export function WorldMap({
     return totals.total > 0
       ? Math.round((totals.done / totals.total) * 100)
       : 0;
-  }, [vm.worlds]);
+  }, [visibleWorlds]);
 
   const worldSignature = useMemo(
     () =>
@@ -237,15 +246,6 @@ export function WorldMap({
       prev[w.id] = isDone;
     });
   }, [vm.worlds, worldSignature]);
-
-  // Filter visible worlds based on unlock criteria
-  const visibleWorlds = useMemo(
-    () =>
-      vm.worlds.filter((w) =>
-        w.id === "W3" ? unlockAll || rp_required : true
-      ),
-    [vm.worlds, unlockAll, rp_required]
-  );
 
   // Swipe handlers for mobile navigation between modules
   const handleSwipe = (direction: "left" | "right") => {
