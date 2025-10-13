@@ -87,6 +87,9 @@ export function NkPackageDetails({
             <Dialog.Portal>
               <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[70]" />
               <Dialog.Content className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-full max-w-md shadow-lg outline-none">
+                <Dialog.Title className="text-lg font-semibold mb-4">
+                  {T("forms.confirm_submission", "Подтверждение")}
+                </Dialog.Title>
                 <div className="mb-4 text-sm text-muted-foreground whitespace-pre-line">
                   {T("forms.nk_confirm_info")}
                 </div>
