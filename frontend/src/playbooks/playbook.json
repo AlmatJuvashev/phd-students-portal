@@ -124,7 +124,16 @@
           "who_can_complete": ["student"],
           "prerequisites": [],
           "next": ["S1_text_ready"],
-          "outcomes": [],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Профиль заполнен",
+                "kz": "Профиль толтырылды",
+                "en": "Profile completed"
+              }
+            }
+          ],
           "requirements": {
             "fields": [
               { "key": "full_name", "required": true, "label": {} },
@@ -377,6 +386,16 @@
           "who_can_complete": ["student"],
           "prerequisites": ["S1_antiplag"],
           "next": ["E1_apply_omid"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Список подготовлен",
+                "kz": "Тізім дайын",
+                "en": "List prepared"
+              }
+            }
+          ],
           "requirements": {
             "templates": [
               "tpl_app7_ru_docx",
@@ -952,6 +971,16 @@
           "who_can_complete": ["student"],
           "prerequisites": ["RP1_overview_actualization"],
           "next": ["RP3_pre_expertise_application"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Заслушивание прошло",
+                "kz": "Тыңдау өтті",
+                "en": "Hearing completed"
+              }
+            }
+          ],
           "requirements": {
             "templates": ["tpl_app7_ru"],
             "fields": [
@@ -1732,7 +1761,6 @@
           },
           "who_can_complete": ["student"],
           "prerequisites": ["V1_reinstatement_package"],
-          "next": ["A1_orders_publication"],
           "requirements": {
             "ui_hints": {
               "cards_layout": {
