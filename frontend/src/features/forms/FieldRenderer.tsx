@@ -101,22 +101,53 @@ const NoteField = memo(({ field }: FieldRendererProps) => {
 NoteField.displayName = "NoteField";
 
 const BooleanField = memo(
-  ({ field, value, onChange, disabled, canEdit }: FieldRendererProps) => (
-    <label className="flex items-center justify-between gap-3 cursor-pointer py-2 px-3 rounded-md hover:bg-muted/50 transition-colors min-w-0">
-      <span className="flex-1 min-w-0">
-        {t(field.label, field.key)}{" "}
-        {field.required ? <span className="text-destructive">*</span> : null}
-      </span>
-      <input
-        id={field.key}
-        type="checkbox"
-        className="h-5 w-5 accent-primary flex-shrink-0 cursor-pointer"
-        disabled={!canEdit || disabled}
-        checked={!!value}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-    </label>
-  )
+  ({ field, value, onChange, disabled, canEdit }: FieldRendererProps) => {
+    const isReadOnly = !canEdit;
+    const isChecked = !!value;
+    
+    if (isReadOnly) {
+      return (
+        <div
+          className={`flex items-center justify-between gap-3 py-2 px-3 rounded-md min-w-0 ${
+            isChecked
+              ? "bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30"
+              : "bg-gray-50 dark:bg-gray-900/10 border border-gray-200 dark:border-gray-800/30 opacity-60"
+          }`}
+        >
+          <span className={`flex-1 min-w-0 text-sm ${
+            isChecked
+              ? "text-green-900 dark:text-green-100"
+              : "text-gray-700 dark:text-gray-400"
+          }`}>
+            {t(field.label, field.key)}{" "}
+            {field.required ? <span className="text-destructive">*</span> : null}
+          </span>
+          {isChecked && (
+            <svg className="h-5 w-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          )}
+        </div>
+      );
+    }
+    
+    return (
+      <label className="flex items-center justify-between gap-3 cursor-pointer py-2 px-3 rounded-md hover:bg-muted/50 transition-colors min-w-0">
+        <span className="flex-1 min-w-0">
+          {t(field.label, field.key)}{" "}
+          {field.required ? <span className="text-destructive">*</span> : null}
+        </span>
+        <input
+          id={field.key}
+          type="checkbox"
+          className="h-5 w-5 accent-primary flex-shrink-0 cursor-pointer"
+          disabled={disabled}
+          checked={isChecked}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+      </label>
+    );
+  }
 );
 BooleanField.displayName = "BooleanField";
 

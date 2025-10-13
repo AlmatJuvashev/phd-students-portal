@@ -697,7 +697,8 @@
               "when": "!form.chk_lcb_defense",
               "next": ["NK_package"]
             }
-          ]
+          ],
+          "next": ["E3_hearing_nk"]
         },
         {
           "id": "E3_hearing_nk",
@@ -709,6 +710,7 @@
           "type": "form",
           "actionHints": ["form"],
           "who_can_complete": ["student"],
+          "prerequisites": ["NK_package"],
           "description": {
             "ru": "Подтвердите результаты после заслушивания.",
             "kz": "Тыңдаудан кейінгі нәтижелерді растаңыз.",
