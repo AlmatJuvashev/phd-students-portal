@@ -5,7 +5,10 @@ import { api } from "@/api/client";
 import { useConditions } from "@/features/journey/useConditions";
 
 export type SaveMutation = {
-  mutateAsync: (payload: { form_data: Record<string, any>; state: string }) => Promise<unknown>;
+  mutateAsync: (payload: {
+    form_data: Record<string, any>;
+    state: string;
+  }) => Promise<unknown>;
 };
 
 export type NodeDetailActionArgs = {
@@ -67,7 +70,10 @@ export function useNodeDetailActions({
         if (closeOnComplete) {
           onOpenChange(false);
         }
-        onAdvance?.(resolveNextNode(node, !!rp_required, nextOverride), node?.id ?? null);
+        onAdvance?.(
+          resolveNextNode(node, !!rp_required, nextOverride),
+          node?.id ?? null
+        );
       };
 
       switch (evt.type) {
@@ -151,7 +157,17 @@ export function useNodeDetailActions({
           break;
       }
     },
-    [node, saving, setSaving, save, onStateRefresh, onOpenChange, onAdvance, setErrorMsg, rp_required]
+    [
+      node,
+      saving,
+      setSaving,
+      save,
+      onStateRefresh,
+      onOpenChange,
+      onAdvance,
+      setErrorMsg,
+      rp_required,
+    ]
   );
 
   return { handleEvent };

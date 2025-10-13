@@ -23,9 +23,13 @@ export function NkPackageDetails({
   const { t: T, i18n } = useTranslation("common");
   const [confirm, setConfirm] = useState(false);
   const templateCandidates = useMemo(() => {
-    const explicit = (node.requirements as any)?.templates as string[] | undefined;
+    const explicit = (node.requirements as any)?.templates as
+      | string[]
+      | undefined;
     const pool = allAssets();
-    const fallback = pool.filter((a) => a.id.toLowerCase().includes("lcb_request"));
+    const fallback = pool.filter((a) =>
+      a.id.toLowerCase().includes("lcb_request")
+    );
     if (!explicit?.length) return fallback;
     return explicit
       .map((id) => pool.find((asset) => asset.id === id))
@@ -36,8 +40,9 @@ export function NkPackageDetails({
 
   const pickLetterTemplate = useCallback(() => {
     const preferred =
-      templateCandidates.find((asset) => asset.id.toLowerCase().includes(`_${lang}`)) ||
-      templateCandidates[0];
+      templateCandidates.find((asset) =>
+        asset.id.toLowerCase().includes(`_${lang}`)
+      ) || templateCandidates[0];
     if (preferred?.storage?.key) {
       window.open(`/${preferred.storage.key}`, "_blank", "noopener,noreferrer");
     }
@@ -48,7 +53,9 @@ export function NkPackageDetails({
       if (!ctx.canEdit) return null;
       const ui = (ctx.node.requirements as any)?.ui_hints;
       const btnAll = ui?.buttons?.find((b: any) => b.key === "all_ready");
-      const btnNeed = ui?.buttons?.find((b: any) => b.key === "need_lcb_letter");
+      const btnNeed = ui?.buttons?.find(
+        (b: any) => b.key === "need_lcb_letter"
+      );
       const allLabel = pickLocale(btnAll?.label, T("forms.save_submit"));
       const needLabel = pickLocale(btnNeed?.label, T("forms.save_draft"));
       const ready =
@@ -60,7 +67,9 @@ export function NkPackageDetails({
 
       return (
         <>
-          <div className="font-semibold">{T("forms.nk_required_package_title")}</div>
+          <div className="font-semibold">
+            {T("forms.nk_required_package_title")}
+          </div>
           <div className="text-sm text-muted-foreground">
             {pickLocale((ctx.node as any).description, "")}
           </div>
@@ -126,7 +135,9 @@ export function NkPackageDetails({
     [T, confirm, pickLetterTemplate]
   );
 
-  return <FormTaskDetails node={node} {...rest} renderActions={renderActions} />;
+  return (
+    <FormTaskDetails node={node} {...rest} renderActions={renderActions} />
+  );
 }
 
 export default NkPackageDetails;

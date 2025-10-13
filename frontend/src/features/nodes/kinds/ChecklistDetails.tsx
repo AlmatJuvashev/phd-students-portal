@@ -30,11 +30,12 @@ export default function ChecklistDetails({
   const requiredBools = bools.filter((f) => f.required);
   const ready = requiredBools.every((f) => !!values[f.key]);
   // If canEdit is explicitly provided, use it; otherwise fall back to state-based readonly
-  const readOnly = canEdit !== undefined ? !canEdit : (
-    node.state === "submitted" ||
-    node.state === "done" ||
-    Boolean((initial as any)?.__submittedAt)
-  );
+  const readOnly =
+    canEdit !== undefined
+      ? !canEdit
+      : node.state === "submitted" ||
+        node.state === "done" ||
+        Boolean((initial as any)?.__submittedAt);
   const submittedAt: string | undefined =
     (initial as any)?.__submittedAt || values?.__submittedAt;
 
