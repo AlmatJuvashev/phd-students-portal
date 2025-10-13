@@ -130,14 +130,19 @@ export function NodeToken({
   const isDone = node.state === "done";
 
   return (
-    <div
-      role="button"
+    <button
+      type="button"
       onClick={() => isClickable && onClick?.(node)}
+      disabled={!isClickable}
+      aria-label={`${t(node.title, node.id)} - ${node.state}`}
+      aria-disabled={!isClickable}
       className={clsx(
-        "flex items-center gap-4 relative group transition-all duration-200",
+        "flex items-center gap-4 relative group transition-all duration-200 w-full text-left",
+        "min-h-[48px] sm:min-h-[52px] touch-manipulation", // Minimum touch target
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg",
         styles.opacity,
         {
-          "cursor-pointer hover:scale-[1.02]": isClickable,
+          "cursor-pointer hover:scale-[1.02] active:scale-[0.98]": isClickable,
           "cursor-not-allowed": !isClickable,
         }
       )}
@@ -168,7 +173,7 @@ export function NodeToken({
         >
           <Icon
             className={clsx(
-              "h-8 w-8 sm:h-9 sm:w-9 transition-transform group-hover:scale-110 duration-200",
+              "h-10 w-10 sm:h-11 sm:w-11 transition-transform group-hover:scale-110 duration-200",
               styles.iconColor
             )}
             strokeWidth={isDone ? 2.5 : 2}
@@ -176,8 +181,8 @@ export function NodeToken({
             fillOpacity={isDone ? 0.2 : 0}
           />
           {isDone && (
-            <div className="absolute -bottom-0.5 -right-0.5 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-gray-800 animate-in zoom-in duration-300">
-              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+            <div className="absolute -bottom-0.5 -right-0.5 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-gray-800 animate-in zoom-in duration-300">
+              <Check className="w-4 h-4" strokeWidth={3} />
             </div>
           )}
         </div>
@@ -186,7 +191,7 @@ export function NodeToken({
       <div className={clsx("flex-1 min-w-0", { "ml-1": isBossNode })}>
         <h3
           className={clsx(
-            "font-bold text-sm sm:text-base leading-tight transition-colors duration-200",
+            "font-bold text-base sm:text-lg leading-tight transition-colors duration-200",
             {
               "text-primary": node.state === "active",
               "text-green-700 dark:text-green-400": isDone,
@@ -201,18 +206,18 @@ export function NodeToken({
         </h3>
         <div
           className={clsx(
-            "mt-1.5 text-xs font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 shadow-sm transition-all duration-200",
+            "mt-1.5 text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 shadow-sm transition-all duration-200",
             styles.badge,
             "group-hover:shadow-md"
           )}
         >
-          {node.state === "locked" && <Lock className="w-3 h-3" />}
-          {node.state === "active" && <AlertCircle className="w-3 h-3" />}
-          {node.state === "done" && <CheckCircle2 className="w-3 h-3" />}
-          {node.state === "waiting" && <Clock className="w-3 h-3" />}
+          {node.state === "locked" && <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          {node.state === "active" && <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          {node.state === "done" && <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          {node.state === "waiting" && <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           <span className="capitalize">{node.state.replace("_", " ")}</span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
