@@ -7,11 +7,13 @@ A comprehensive, reusable form management system that eliminates code duplicatio
 ## 🎯 Purpose
 
 Before unification, form logic was duplicated across:
+
 - `ChecklistDetails.tsx` - Checklist forms
 - `FormTaskDetails.tsx` - Complex forms with multiple field types
 - Custom scene components - Each with its own validation
 
 This system provides:
+
 - ✅ Unified state management
 - ✅ Automatic validation
 - ✅ Consistent submission logic
@@ -37,6 +39,7 @@ Context provider that manages form state and logic.
 ```
 
 **Props:**
+
 - `node: NodeVM` - Node definition with fields
 - `initial?: Record<string, any>` - Initial values
 - `onSubmit?: (payload: any) => void` - Submit handler
@@ -49,16 +52,16 @@ Hook to access form state from any child component.
 
 ```tsx
 const {
-  values,           // Current form values
-  setField,         // Update single field
-  setValues,        // Update multiple fields
-  isValid,          // Form validation status
-  canEdit,          // Edit permission
-  readOnly,         // Computed readonly state
-  submit,           // Submit handler
-  saveDraft,        // Draft handler
-  evalVisible,      // Check field visibility
-  getNextOnComplete // Calculate next node
+  values, // Current form values
+  setField, // Update single field
+  setValues, // Update multiple fields
+  isValid, // Form validation status
+  canEdit, // Edit permission
+  readOnly, // Computed readonly state
+  submit, // Submit handler
+  saveDraft, // Draft handler
+  evalVisible, // Check field visibility
+  getNextOnComplete, // Calculate next node
 } = useFormContext();
 ```
 
@@ -67,14 +70,15 @@ const {
 Automatically renders all form fields based on node configuration.
 
 ```tsx
-<FormFields 
-  types={["boolean"]}  // Optional: filter by field type
-  spacing="normal"     // "tight" | "normal" | "loose"
+<FormFields
+  types={["boolean"]} // Optional: filter by field type
+  spacing="normal" // "tight" | "normal" | "loose"
   className=""
 />
 ```
 
 **Supported field types:**
+
 - `boolean` - Rendered as ChecklistItem
 - `text` - Text input
 - `select` - Dropdown with optional "other" field
@@ -86,15 +90,16 @@ Standard submit and draft buttons with optional confirmation modal.
 
 ```tsx
 <FormActions
-  showConfirm={true}      // Show confirmation modal
-  submitLabel="Submit"    // Custom submit label
-  draftLabel="Save"       // Custom draft label
-  hideSubmit={false}      // Hide submit button
-  hideDraft={false}       // Hide draft button
+  showConfirm={true} // Show confirmation modal
+  submitLabel="Submit" // Custom submit label
+  draftLabel="Save" // Custom draft label
+  hideSubmit={false} // Hide submit button
+  hideDraft={false} // Hide draft button
 />
 ```
 
 Features:
+
 - Auto-disabled when form invalid
 - Touch-optimized (44px min height)
 - Loading states
@@ -109,6 +114,7 @@ Displays submission status and timestamp.
 ```
 
 Shows:
+
 - "Form submitted (date: ...)" when readonly
 - Hidden when form is editable
 - Localized dates (ru/kz/en)
@@ -118,7 +124,12 @@ Shows:
 ### Simple Checklist Form
 
 ```tsx
-import { FormProvider, FormFields, FormActions, FormStatus } from "@/features/forms";
+import {
+  FormProvider,
+  FormFields,
+  FormActions,
+  FormStatus,
+} from "@/features/forms";
 
 function MyChecklist({ node, initial, onSubmit }) {
   return (
@@ -161,9 +172,9 @@ function CustomForm({ node, initial, onSubmit }) {
 
 function CustomActions() {
   const { isValid, submit, values } = useFormContext();
-  
+
   return (
-    <Button 
+    <Button
       onClick={() => submit({ customField: "value" })}
       disabled={!isValid || !values.someRequirement}
     >
@@ -238,6 +249,7 @@ const readOnly = node.state === "submitted" || ...;
 ```
 
 **Benefits:**
+
 - ❌ ~100 lines of code removed
 - ✅ No manual state management
 - ✅ No manual validation
@@ -247,12 +259,14 @@ const readOnly = node.state === "submitted" || ...;
 ## 📊 Metrics
 
 **Before Phase 1.4:**
+
 - ChecklistDetails: 173 lines
 - FormTaskDetails: 208 lines
 - Custom scenes: 150+ lines each
 - Total duplication: ~500+ lines
 
 **After Phase 1.4:**
+
 - FormProvider: 243 lines (reusable)
 - FormFields: 80 lines (reusable)
 - FormActions: 75 lines (reusable)
@@ -270,16 +284,19 @@ const readOnly = node.state === "submitted" || ...;
 ## ⚙️ Technical Details
 
 **State Management:**
+
 - `useReducer` for form state (predictable updates)
 - Smart field dependencies (auto-clear related fields)
 - Memoized computed values (isValid, nextNode)
 
 **Performance:**
+
 - Memoized context value (prevent unnecessary re-renders)
 - Lazy field rendering (hidden fields not mounted)
 - Optimized validation (only required fields checked)
 
 **Accessibility:**
+
 - 44px touch targets on all buttons
 - `aria-busy` states during submission
 - Screen reader labels

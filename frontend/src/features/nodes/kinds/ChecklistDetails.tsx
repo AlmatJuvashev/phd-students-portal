@@ -72,7 +72,7 @@ export default function ChecklistDetails({
   const nextOnComplete = getNextOnComplete();
 
   return (
-    <form className="h-full">
+    <form className="h-full" onSubmit={(e) => e.preventDefault()}>
       <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 space-y-6 lg:space-y-0 min-w-0">
         <div className="space-y-4 min-w-0">
           {Boolean((node as any)?.description) && (

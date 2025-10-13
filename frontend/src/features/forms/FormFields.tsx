@@ -9,12 +9,12 @@ export interface FormFieldsProps {
    * If not provided, renders all fields
    */
   types?: ("boolean" | "text" | "select" | "date")[];
-  
+
   /**
    * Custom className for the container
    */
   className?: string;
-  
+
   /**
    * Spacing between fields
    */
@@ -30,7 +30,8 @@ export function FormFields({
   className = "",
   spacing = "normal",
 }: FormFieldsProps) {
-  const { fields, values, setField, readOnly, disabled, evalVisible } = useFormContext();
+  const { fields, values, setField, readOnly, disabled, evalVisible } =
+    useFormContext();
 
   const spacingClass = {
     tight: "space-y-2",

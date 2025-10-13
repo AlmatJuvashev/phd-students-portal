@@ -57,23 +57,20 @@ export function useNodeDetailActions({
       if (!node || saving) return;
 
       const onComplete = async (nextOverride?: string) => {
-        console.log(`[onComplete] Setting ${node.id} to done, nextOverride:`, nextOverride);
         patchJourneyState({ [node.id]: "done" });
         try {
-          const response = await api("/journey/state", {
+          await api("/journey/state", {
             method: "PUT",
             body: JSON.stringify({ node_id: node.id, state: "done" }),
           });
-          console.log(`[onComplete] State API success for ${node.id}:`, response);
         } catch (error) {
-          console.warn(`[onComplete] State upsert failed for ${node.id}:`, error);
+          console.error(`State upsert failed for ${node.id}:`, error);
         }
         onStateRefresh?.();
         if (closeOnComplete) {
           onOpenChange(false);
         }
         const nextNode = resolveNextNode(node, !!rp_required, nextOverride);
-        console.log(`[onComplete] Advancing from ${node.id} to:`, nextNode);
         onAdvance?.(nextNode, node?.id ?? null);
       };
 
@@ -114,19 +111,16 @@ export function useNodeDetailActions({
           const isDraft = !!payload.__draft;
           const nextOverride = payload.__nextOverride;
           const submittedAt = payload.__submittedAt;
-          console.log(`[submit-form] Node: ${node.id}, isDraft: ${isDraft}, nextOverride:`, nextOverride);
           // Remove workflow metadata keys before saving to backend
           if ("__draft" in payload) delete payload.__draft;
           if ("__nextOverride" in payload) delete payload.__nextOverride;
           // Keep __submittedAt in form_data for read-only state detection
           setSaving(true);
           try {
-            console.log(`[submit-form] Calling save.mutateAsync for ${node.id} with state:`, isDraft ? "active" : "done");
             await save.mutateAsync({
               form_data: payload,
               state: isDraft ? "active" : "done",
             });
-            console.log(`[submit-form] save.mutateAsync success for ${node.id}`);
             setErrorMsg(null);
             if (isDraft) {
               setSaving(false);
@@ -134,7 +128,7 @@ export function useNodeDetailActions({
             }
             await onComplete(nextOverride);
           } catch (error: any) {
-            console.error(`[submit-form] Failed for ${node.id}:`, error);
+            console.error(`Form submission failed for ${node.id}:`, error);
             setErrorMsg(error?.message ?? String(error));
           } finally {
             setSaving(false);

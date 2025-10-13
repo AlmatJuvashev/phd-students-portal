@@ -18,7 +18,9 @@ export function FormStatus({ className = "" }: FormStatusProps) {
   const submittedAt: string | undefined = (initial as any)?.__submittedAt;
 
   return (
-    <div className={`mt-3 text-sm text-muted-foreground whitespace-pre-line ${className}`}>
+    <div
+      className={`mt-3 text-sm text-muted-foreground whitespace-pre-line ${className}`}
+    >
       {t(
         {
           ru: `Форма отправлена${
