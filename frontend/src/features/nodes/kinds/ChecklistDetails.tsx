@@ -12,11 +12,13 @@ export default function ChecklistDetails({
   initial = {},
   disabled,
   onSubmit,
+  canEdit,
 }: {
   node: NodeVM;
   initial?: Record<string, any>;
   disabled?: boolean;
   onSubmit?: (payload: any) => void;
+  canEdit?: boolean;
 }) {
   const { t: T } = useTranslation("common");
   const [values, setValues] = useState<Record<string, any>>(initial);
@@ -27,10 +29,12 @@ export default function ChecklistDetails({
   const bools = fields.filter((f) => f.type === "boolean");
   const requiredBools = bools.filter((f) => f.required);
   const ready = requiredBools.every((f) => !!values[f.key]);
-  const readOnly =
+  // If canEdit is explicitly provided, use it; otherwise fall back to state-based readonly
+  const readOnly = canEdit !== undefined ? !canEdit : (
     node.state === "submitted" ||
     node.state === "done" ||
-    Boolean((initial as any)?.__submittedAt);
+    Boolean((initial as any)?.__submittedAt)
+  );
   const submittedAt: string | undefined =
     (initial as any)?.__submittedAt || values?.__submittedAt;
 
@@ -65,16 +69,6 @@ export default function ChecklistDetails({
   };
 
   const nextOnComplete = getNextOnComplete();
-
-  // Debug: check if readOnly changes unexpectedly
-  console.log("[ChecklistDetails] Render state:", {
-    nodeId: node.id,
-    nodeState: node.state,
-    readOnly,
-    totalItems: bools.length,
-    checkedItems: bools.filter((f) => !!values[f.key]).length,
-    submittedAt: (initial as any)?.__submittedAt,
-  });
 
   return (
     <form className="h-full">
@@ -165,10 +159,6 @@ export default function ChecklistDetails({
         cancelLabel={T("common.cancel")}
         onConfirm={() => {
           setConfirmOpen(false);
-          console.log(
-            "[ChecklistDetails] Submitting with next:",
-            nextOnComplete
-          );
           onSubmit?.({
             ...values,
             __submittedAt: new Date().toISOString(),
