@@ -18,10 +18,12 @@ git push origin main
 4. Railway will auto-detect and start deploying
 
 **Add PostgreSQL:**
+
 - Click **"New"** → **"Database"** → **"Add PostgreSQL"**
 - Railway auto-sets `DATABASE_URL`
 
 **Add Environment Variables:**
+
 - Click your service → **"Variables"** tab
 - Add:
   ```
@@ -31,7 +33,8 @@ git push origin main
   ```
 
 **Run Migrations:**
-- Click **"Settings"** → **"Deploy"** 
+
+- Click **"Settings"** → **"Deploy"**
 - Add custom build command: `cd backend && make migrate-up && make run`
 - Or use Railway CLI after deploy
 
@@ -62,6 +65,7 @@ git push origin main
 ### 4. Update Backend CORS
 
 Go back to Railway → Your service → Variables → Update:
+
 ```
 CORS_ORIGINS=https://your-frontend.vercel.app,http://localhost:5173
 ```
@@ -75,6 +79,7 @@ Redeploy the backend (Railway will auto-redeploy on changes)
 Open your Vercel URL and test the application.
 
 **Demo credentials** (if you seed the database):
+
 - Email: `admin@kaznmu.edu.kz`
 - Password: `admin123`
 
@@ -85,6 +90,7 @@ Open your Vercel URL and test the application.
 See [`deploy/UNIVERSITY_IT_REQUIREMENTS.md`](deploy/UNIVERSITY_IT_REQUIREMENTS.md) for full production deployment guide.
 
 **Key differences:**
+
 - Backend + Frontend on university server
 - Custom domain: `phd.kaznmu.edu.kz`
 - University's PostgreSQL cluster
@@ -95,11 +101,11 @@ See [`deploy/UNIVERSITY_IT_REQUIREMENTS.md`](deploy/UNIVERSITY_IT_REQUIREMENTS.m
 
 ## Costs Comparison
 
-| Option | Frontend | Backend | Database | Total/month |
-|--------|----------|---------|----------|-------------|
-| **Demo (Railway+Vercel)** | Free | $5 free credit | Included | $0-5 |
-| **University Server** | Free | Free | Free | $0 |
-| **Cloud (DigitalOcean)** | Free (Vercel) | $6 | Included | $6 |
+| Option                    | Frontend      | Backend        | Database | Total/month |
+| ------------------------- | ------------- | -------------- | -------- | ----------- |
+| **Demo (Railway+Vercel)** | Free          | $5 free credit | Included | $0-5        |
+| **University Server**     | Free          | Free           | Free     | $0          |
+| **Cloud (DigitalOcean)**  | Free (Vercel) | $6             | Included | $6          |
 
 ---
 
