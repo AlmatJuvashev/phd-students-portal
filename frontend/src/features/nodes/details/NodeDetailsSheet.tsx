@@ -98,12 +98,13 @@ export function NodeDetailsSheet({
                 isMobile ? "py-3" : "py-5"
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="flex flex-col gap-3">
+                {/* Title section */}
+                <div className="flex-1 min-w-0 pr-10">
                   <SheetTitle
                     ref={titleRef as any}
                     tabIndex={-1}
-                    className="text-lg sm:text-xl md:text-2xl font-bold outline-none bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent leading-tight pr-2"
+                    className="text-lg sm:text-xl md:text-2xl font-bold outline-none bg-gradient-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent leading-tight"
                   >
                     {t(node.title, node.id)}
                   </SheetTitle>
@@ -113,7 +114,9 @@ export function NodeDetailsSheet({
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-wrap">
+                
+                {/* Badges and actions - separate row for better spacing */}
+                <div className="flex items-center gap-2 flex-wrap pr-10">
                   <Badge
                     variant="secondary"
                     className="capitalize shadow-sm hover:shadow transition-shadow text-xs"
@@ -129,14 +132,14 @@ export function NodeDetailsSheet({
                     ) &&
                     (!editing ? (
                       <button
-                        className="ml-1 text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2 transition-colors touch-manipulation min-h-[32px]"
+                        className="text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2 transition-colors touch-manipulation min-h-[32px] px-2"
                         onClick={() => setEditing(true)}
                       >
                         {T("common.edit", { defaultValue: "Edit" })}
                       </button>
                     ) : (
                       <button
-                        className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors touch-manipulation min-h-[32px]"
+                        className="text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors touch-manipulation min-h-[32px] px-2"
                         onClick={() => setEditing(false)}
                       >
                         {T("common.cancel_edit", { defaultValue: "Cancel" })}
