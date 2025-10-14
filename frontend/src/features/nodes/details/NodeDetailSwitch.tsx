@@ -137,14 +137,13 @@ export function NodeDetailSwitch({
   }
 
   if (node.type === "confirmTask") {
-    const nextOverride = (node as any)?.states?.completed?.next_node;
     return (
       <ConfirmTaskDetails
         node={node}
         onComplete={() =>
           onEvent?.({
             type: "submit-decision",
-            payload: nextOverride ? { __nextOverride: nextOverride } : {},
+            payload: {},
           })
         }
         onReset={() => onEvent?.({ type: "reset-node" })}
