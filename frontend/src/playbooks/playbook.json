@@ -395,9 +395,9 @@
             "en": "Publications list"
           },
           "description": {
-            "ru": "Укажите только количество по разделам Приложения 7. Сам файл Приложения 7 (DOCX) загрузите позже в пакет ДС.",
-            "kz": "Қосымша 7 бөлімдері бойынша тек санды көрсетіңіз. Қосымша 7 (DOCX) файлын кейін Диссертациялық кеңес топтамасына жүктеңіз.",
-            "en": "Provide only the counts for each section of Appendix 7. Upload the Appendix 7 (DOCX) later in the Dissertation Council package."
+            "ru": "Заполните сведения по каждому материалу Приложения 7. Добавьте публикации, конференционные материалы и объекты интеллектуальной собственности по разделам I–IV. Шаблон DOCX можно скачать в блоке справа.",
+            "kz": "Қосымша 7 бойынша әр материал туралы деректерді толтырыңыз. I–IV бөлімдерге жарияланымдарды, конференция материалдарын және зияткерлік меншік объектілерін жазыңыз. DOCX үлгісін оң жақ блоктан жүктей аласыз.",
+            "en": "Provide details for each item in Appendix 7. Add publications, conference materials, and intellectual property items for sections I–IV. Download the DOCX template from the panel on the right."
           },
           "type": "form",
           "who_can_complete": ["student"],
@@ -429,50 +429,760 @@
             },
             "fields": [
               {
-                "key": "count_wos_scopus",
-                "type": "number",
-                "min": 0,
-                "required": true,
+                "key": "wos_scopus",
+                "type": "collection",
                 "label": {
-                  "ru": "I. Публикации в базах Web of Science или Scopus (шт.)",
-                  "kz": "I. Web of Science немесе Scopus базаларындағы жарияланымдар (дана)",
-                  "en": "I. Publications in Web of Science or Scopus (count)"
-                }
+                  "ru": "I. Публикации в базах Web of Science или Scopus",
+                  "kz": "I. Web of Science немесе Scopus базаларындағы жарияланымдар",
+                  "en": "I. Publications indexed in Web of Science or Scopus"
+                },
+                "item_label": {
+                  "ru": "Запись о публикации",
+                  "kz": "Жарияланым жазбасы",
+                  "en": "Publication entry"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "label": {
+                      "ru": "Наименование работы",
+                      "kz": "Жұмыстың атауы",
+                      "en": "Title of work"
+                    }
+                  },
+                  {
+                    "key": "format",
+                    "type": "select",
+                    "label": {
+                      "ru": "Формат публикации",
+                      "kz": "Жарияланым форматы",
+                      "en": "Publication format"
+                    },
+                    "options": [
+                      {
+                        "value": "print",
+                        "label": {
+                          "ru": "Печатный",
+                          "kz": "Баспа",
+                          "en": "Printed"
+                        }
+                      },
+                      {
+                        "value": "manuscript",
+                        "label": {
+                          "ru": "На правах рукописи",
+                          "kz": "Қолжазба",
+                          "en": "Manuscript"
+                        }
+                      },
+                      {
+                        "value": "electronic",
+                        "label": {
+                          "ru": "Электронный",
+                          "kz": "Электрондық",
+                          "en": "Electronic"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "format_other"
+                  },
+                  {
+                    "key": "journal",
+                    "label": {
+                      "ru": "Журнал / издательство",
+                      "kz": "Журнал / баспа",
+                      "en": "Journal / publisher"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "label": {
+                      "ru": "Год",
+                      "kz": "Жыл",
+                      "en": "Year"
+                    },
+                    "placeholder": {
+                      "ru": "например, 2024",
+                      "kz": "мысалы, 2024",
+                      "en": "e.g. 2024"
+                    }
+                  },
+                  {
+                    "key": "volume_issue",
+                    "label": {
+                      "ru": "Том / №",
+                      "kz": "Том / №",
+                      "en": "Volume / issue"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "label": {
+                      "ru": "Кол-во печатных листов или страниц",
+                      "kz": "Баспа табақтары немесе беттер саны",
+                      "en": "Printed sheets or pages"
+                    }
+                  },
+                  {
+                    "key": "doi",
+                    "label": {
+                      "ru": "DOI",
+                      "kz": "DOI",
+                      "en": "DOI"
+                    }
+                  },
+                  {
+                    "key": "issn_print",
+                    "label": {
+                      "ru": "ISSN (print)",
+                      "kz": "ISSN (баспа)",
+                      "en": "ISSN (print)"
+                    }
+                  },
+                  {
+                    "key": "issn_online",
+                    "label": {
+                      "ru": "ISSN (online)",
+                      "kz": "ISSN (онлайн)",
+                      "en": "ISSN (online)"
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "label": {
+                      "ru": "Фамилии соавторов",
+                      "kz": "Авторлар тізімі",
+                      "en": "Co-authors"
+                    },
+                    "placeholder": {
+                      "ru": "по одному в строке",
+                      "kz": "әр жолға бір есім",
+                      "en": "one per line"
+                    }
+                  },
+                  {
+                    "key": "indexing",
+                    "type": "select",
+                    "label": {
+                      "ru": "Индексирование",
+                      "kz": "Индекстеу",
+                      "en": "Indexing"
+                    },
+                    "options": [
+                      {
+                        "value": "wos",
+                        "label": {
+                          "ru": "Web of Science",
+                          "kz": "Web of Science",
+                          "en": "Web of Science"
+                        }
+                      },
+                      {
+                        "value": "scopus",
+                        "label": {
+                          "ru": "Scopus",
+                          "kz": "Scopus",
+                          "en": "Scopus"
+                        }
+                      },
+                      {
+                        "value": "kokson",
+                        "label": {
+                          "ru": "Перечень КОКСОН",
+                          "kz": "КОКСОН тізімі",
+                          "en": "KOKSON list"
+                        }
+                      },
+                      {
+                        "value": "rsci",
+                        "label": {
+                          "ru": "РИНЦ",
+                          "kz": "РИНЦ",
+                          "en": "RSCI"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "indexing_other"
+                  }
+                ]
               },
               {
-                "key": "count_kokson",
-                "type": "number",
-                "min": 0,
-                "required": true,
+                "key": "kokson",
+                "type": "collection",
                 "label": {
-                  "ru": "II. Статьи в журналах перечня КОКСОН МНИВО РК (шт.)",
-                  "kz": "II. ҚР ҒЖБМ КОКСОН тізіміндегі журналдардағы мақалалар (дана)",
-                  "en": "II. Articles in journals recommended by KOKSON MSHE RK (count)"
-                }
+                  "ru": "II. Статьи в журналах перечня КОКСОН МНиВО РК",
+                  "kz": "II. ҚР ҒЖБМ КОКСОН тізіміндегі журналдардағы мақалалар",
+                  "en": "II. Articles in journals from the KOKSON MSHE RK list"
+                },
+                "item_label": {
+                  "ru": "Запись о статье",
+                  "kz": "Мақала жазбасы",
+                  "en": "Article entry"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "label": {
+                      "ru": "Наименование работы",
+                      "kz": "Жұмыстың атауы",
+                      "en": "Title of work"
+                    }
+                  },
+                  {
+                    "key": "format",
+                    "type": "select",
+                    "label": {
+                      "ru": "Формат публикации",
+                      "kz": "Жарияланым форматы",
+                      "en": "Publication format"
+                    },
+                    "options": [
+                      {
+                        "value": "print",
+                        "label": {
+                          "ru": "Печатный",
+                          "kz": "Баспа",
+                          "en": "Printed"
+                        }
+                      },
+                      {
+                        "value": "manuscript",
+                        "label": {
+                          "ru": "На правах рукописи",
+                          "kz": "Қолжазба",
+                          "en": "Manuscript"
+                        }
+                      },
+                      {
+                        "value": "electronic",
+                        "label": {
+                          "ru": "Электронный",
+                          "kz": "Электрондық",
+                          "en": "Electronic"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "format_other"
+                  },
+                  {
+                    "key": "journal",
+                    "label": {
+                      "ru": "Журнал / издательство",
+                      "kz": "Журнал / баспа",
+                      "en": "Journal / publisher"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "label": {
+                      "ru": "Год",
+                      "kz": "Жыл",
+                      "en": "Year"
+                    },
+                    "placeholder": {
+                      "ru": "например, 2024",
+                      "kz": "мысалы, 2024",
+                      "en": "e.g. 2024"
+                    }
+                  },
+                  {
+                    "key": "volume_issue",
+                    "label": {
+                      "ru": "Том / №",
+                      "kz": "Том / №",
+                      "en": "Volume / issue"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "label": {
+                      "ru": "Кол-во печатных листов или страниц",
+                      "kz": "Баспа табақтары немесе беттер саны",
+                      "en": "Printed sheets or pages"
+                    }
+                  },
+                  {
+                    "key": "doi",
+                    "label": {
+                      "ru": "DOI",
+                      "kz": "DOI",
+                      "en": "DOI"
+                    }
+                  },
+                  {
+                    "key": "issn_print",
+                    "label": {
+                      "ru": "ISSN (print)",
+                      "kz": "ISSN (баспа)",
+                      "en": "ISSN (print)"
+                    }
+                  },
+                  {
+                    "key": "issn_online",
+                    "label": {
+                      "ru": "ISSN (online)",
+                      "kz": "ISSN (онлайн)",
+                      "en": "ISSN (online)"
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "label": {
+                      "ru": "Фамилии соавторов",
+                      "kz": "Авторлар тізімі",
+                      "en": "Co-authors"
+                    },
+                    "placeholder": {
+                      "ru": "по одному в строке",
+                      "kz": "әр жолға бір есім",
+                      "en": "one per line"
+                    }
+                  },
+                  {
+                    "key": "indexing",
+                    "type": "select",
+                    "label": {
+                      "ru": "Индексирование",
+                      "kz": "Индекстеу",
+                      "en": "Indexing"
+                    },
+                    "options": [
+                      {
+                        "value": "wos",
+                        "label": {
+                          "ru": "Web of Science",
+                          "kz": "Web of Science",
+                          "en": "Web of Science"
+                        }
+                      },
+                      {
+                        "value": "scopus",
+                        "label": {
+                          "ru": "Scopus",
+                          "kz": "Scopus",
+                          "en": "Scopus"
+                        }
+                      },
+                      {
+                        "value": "kokson",
+                        "label": {
+                          "ru": "Перечень КОКСОН",
+                          "kz": "КОКСОН тізімі",
+                          "en": "KOKSON list"
+                        }
+                      },
+                      {
+                        "value": "rsci",
+                        "label": {
+                          "ru": "РИНЦ",
+                          "kz": "РИНЦ",
+                          "en": "RSCI"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "indexing_other"
+                  }
+                ]
               },
               {
-                "key": "count_conferences",
-                "type": "number",
-                "min": 0,
-                "required": true,
+                "key": "conferences",
+                "type": "collection",
                 "label": {
-                  "ru": "III. Научные труды в материалах международных конференций и др. (шт.)",
-                  "kz": "III. Халықаралық конференция материалдарындағы және басқа еңбектер (дана)",
-                  "en": "III. Scientific works in international conference proceedings and others (count)"
-                }
+                  "ru": "III. Научные труды в материалах международных конференций и др.",
+                  "kz": "III. Халықаралық конференциялар материалдарындағы ғылыми еңбектер",
+                  "en": "III. Scientific works in international conference proceedings and others"
+                },
+                "item_label": {
+                  "ru": "Запись о материале конференции",
+                  "kz": "Конференция материалы",
+                  "en": "Conference material entry"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "label": {
+                      "ru": "Наименование работы",
+                      "kz": "Жұмыстың атауы",
+                      "en": "Title of work"
+                    }
+                  },
+                  {
+                    "key": "format",
+                    "type": "select",
+                    "label": {
+                      "ru": "Формат публикации",
+                      "kz": "Жарияланым форматы",
+                      "en": "Publication format"
+                    },
+                    "options": [
+                      {
+                        "value": "print",
+                        "label": {
+                          "ru": "Печатный",
+                          "kz": "Баспа",
+                          "en": "Printed"
+                        }
+                      },
+                      {
+                        "value": "manuscript",
+                        "label": {
+                          "ru": "На правах рукописи",
+                          "kz": "Қолжазба",
+                          "en": "Manuscript"
+                        }
+                      },
+                      {
+                        "value": "electronic",
+                        "label": {
+                          "ru": "Электронный",
+                          "kz": "Электрондық",
+                          "en": "Electronic"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "format_other"
+                  },
+                  {
+                    "key": "journal",
+                    "label": {
+                      "ru": "Сборник / площадка",
+                      "kz": "Жинақ / алаң",
+                      "en": "Proceedings / venue"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "label": {
+                      "ru": "Год",
+                      "kz": "Жыл",
+                      "en": "Year"
+                    },
+                    "placeholder": {
+                      "ru": "например, 2024",
+                      "kz": "мысалы, 2024",
+                      "en": "e.g. 2024"
+                    }
+                  },
+                  {
+                    "key": "volume_issue",
+                    "label": {
+                      "ru": "Том / №",
+                      "kz": "Том / №",
+                      "en": "Volume / issue"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "label": {
+                      "ru": "Кол-во печатных листов или страниц",
+                      "kz": "Баспа табақтары немесе беттер саны",
+                      "en": "Printed sheets or pages"
+                    }
+                  },
+                  {
+                    "key": "doi",
+                    "label": {
+                      "ru": "DOI",
+                      "kz": "DOI",
+                      "en": "DOI"
+                    }
+                  },
+                  {
+                    "key": "issn_print",
+                    "label": {
+                      "ru": "ISSN (print)",
+                      "kz": "ISSN (баспа)",
+                      "en": "ISSN (print)"
+                    }
+                  },
+                  {
+                    "key": "issn_online",
+                    "label": {
+                      "ru": "ISSN (online)",
+                      "kz": "ISSN (онлайн)",
+                      "en": "ISSN (online)"
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "label": {
+                      "ru": "Фамилии соавторов",
+                      "kz": "Авторлар тізімі",
+                      "en": "Co-authors"
+                    },
+                    "placeholder": {
+                      "ru": "по одному в строке",
+                      "kz": "әр жолға бір есім",
+                      "en": "one per line"
+                    }
+                  },
+                  {
+                    "key": "indexing",
+                    "type": "select",
+                    "label": {
+                      "ru": "Индексирование",
+                      "kz": "Индекстеу",
+                      "en": "Indexing"
+                    },
+                    "options": [
+                      {
+                        "value": "wos",
+                        "label": {
+                          "ru": "Web of Science",
+                          "kz": "Web of Science",
+                          "en": "Web of Science"
+                        }
+                      },
+                      {
+                        "value": "scopus",
+                        "label": {
+                          "ru": "Scopus",
+                          "kz": "Scopus",
+                          "en": "Scopus"
+                        }
+                      },
+                      {
+                        "value": "kokson",
+                        "label": {
+                          "ru": "Перечень КОКСОН",
+                          "kz": "КОКСОН тізімі",
+                          "en": "KOKSON list"
+                        }
+                      },
+                      {
+                        "value": "rsci",
+                        "label": {
+                          "ru": "РИНЦ",
+                          "kz": "РИНЦ",
+                          "en": "RSCI"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "indexing_other"
+                  }
+                ]
               },
               {
-                "key": "count_ip",
-                "type": "number",
-                "min": 0,
-                "required": true,
+                "key": "ip",
+                "type": "collection",
                 "label": {
-                  "ru": "IV. Интеллектуальная собственность (патенты, авторские права и др.) (шт.)",
-                  "kz": "IV. Зияткерлік меншік (патенттер, авторлық құқықтар және т.б.) (дана)",
-                  "en": "IV. Intellectual property (patents, copyrights, etc.) (count)"
-                }
+                  "ru": "IV. Интеллектуальная собственность (патенты, авторские права и др.)",
+                  "kz": "IV. Зияткерлік меншік (патенттер, авторлық құқықтар және т.б.)",
+                  "en": "IV. Intellectual property (patents, copyrights, etc.)"
+                },
+                "item_label": {
+                  "ru": "Объект интеллектуальной собственности",
+                  "kz": "Зияткерлік меншік объектісі",
+                  "en": "Intellectual property entry"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "label": {
+                      "ru": "Наименование объекта",
+                      "kz": "Объект атауы",
+                      "en": "Title of work"
+                    }
+                  },
+                  {
+                    "key": "ip_type",
+                    "type": "select",
+                    "required": true,
+                    "label": {
+                      "ru": "Тип",
+                      "kz": "Түрі",
+                      "en": "Type"
+                    },
+                    "options": [
+                      {
+                        "value": "patent",
+                        "label": {
+                          "ru": "Патент",
+                          "kz": "Патент",
+                          "en": "Patent"
+                        }
+                      },
+                      {
+                        "value": "copyright",
+                        "label": {
+                          "ru": "Авторское право",
+                          "kz": "Авторлық құқық",
+                          "en": "Copyright"
+                        }
+                      },
+                      {
+                        "value": "utility_model",
+                        "label": {
+                          "ru": "Полезная модель / изобретение",
+                          "kz": "Пайдалы модель / өнертабыс",
+                          "en": "Utility model / invention"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "ip_type_other"
+                  },
+                  {
+                    "key": "certificate_no",
+                    "label": {
+                      "ru": "№ свидетельства / патента",
+                      "kz": "Куәлік / патент №",
+                      "en": "Certificate / patent number"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "label": {
+                      "ru": "Год",
+                      "kz": "Жыл",
+                      "en": "Year"
+                    },
+                    "placeholder": {
+                      "ru": "например, 2024",
+                      "kz": "мысалы, 2024",
+                      "en": "e.g. 2024"
+                    }
+                  },
+                  {
+                    "key": "journal",
+                    "label": {
+                      "ru": "Организация / издательство",
+                      "kz": "Ұйым / баспа",
+                      "en": "Organization / publisher"
+                    }
+                  },
+                  {
+                    "key": "isbn",
+                    "label": {
+                      "ru": "ISBN",
+                      "kz": "ISBN",
+                      "en": "ISBN"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "label": {
+                      "ru": "Кол-во печатных листов или страниц",
+                      "kz": "Баспа табақтары немесе беттер саны",
+                      "en": "Printed sheets or pages"
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "label": {
+                      "ru": "Фамилии соавторов",
+                      "kz": "Авторлар тізімі",
+                      "en": "Co-authors"
+                    },
+                    "placeholder": {
+                      "ru": "по одному в строке",
+                      "kz": "әр жолға бір есім",
+                      "en": "one per line"
+                    }
+                  },
+                  {
+                    "key": "indexing",
+                    "type": "select",
+                    "label": {
+                      "ru": "Индексирование",
+                      "kz": "Индекстеу",
+                      "en": "Indexing"
+                    },
+                    "options": [
+                      {
+                        "value": "national",
+                        "label": {
+                          "ru": "Национальные базы",
+                          "kz": "Ұлттық базалар",
+                          "en": "National databases"
+                        }
+                      },
+                      {
+                        "value": "international",
+                        "label": {
+                          "ru": "Международные базы",
+                          "kz": "Халықаралық базалар",
+                          "en": "International databases"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "Другое",
+                          "kz": "Басқа",
+                          "en": "Other"
+                        }
+                      }
+                    ],
+                    "other_key": "indexing_other"
+                  }
+                ]
               }
             ]
+
           },
           "outputs": []
         }
