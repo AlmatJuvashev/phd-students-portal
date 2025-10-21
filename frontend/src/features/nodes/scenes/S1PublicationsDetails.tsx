@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { assetsForNode } from "@/lib/assets";
+import { t as pbT } from "@/lib/playbook";
 import {
   FormTaskDetails,
   FormTaskDetailsProps,
@@ -14,10 +15,46 @@ const scrollToTemplates = () =>
     .getElementById("templates-section")
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-export function S1PublicationsDetails({ node, ...rest }: Omit<FormTaskDetailsProps, "renderActions">) {
+const SECTION_KEYS = ["wos_scopus", "kokson", "conferences", "ip"] as const;
+
+type SectionKey = (typeof SECTION_KEYS)[number];
+
+type SectionCount = {
+  key: SectionKey;
+  label: string;
+  count: number;
+};
+
+export function S1PublicationsDetails({
+  node,
+  initial,
+  canEdit,
+  ...rest
+}: Omit<FormTaskDetailsProps, "renderActions">) {
   const { t: T, i18n } = useTranslation("common");
   const assets = useMemo(() => assetsForNode(node), [node]);
   const lang = (i18n.language as "ru" | "kz" | "en") || "ru";
+
+  const fieldMap = useMemo(() => {
+    const map = new Map<string, any>();
+    node.requirements?.fields?.forEach((field: any) => {
+      if (field?.key) {
+        map.set(field.key, field);
+      }
+    });
+    return map;
+  }, [node]);
+
+  const computeCounts = useCallback(
+    (values: Record<string, any> = {}) =>
+      SECTION_KEYS.map<SectionCount>((key) => {
+        const fieldDef = fieldMap.get(key);
+        const label = pbT(fieldDef?.label, key) || key;
+        const items = Array.isArray(values[key]) ? values[key] : [];
+        return { key, label, count: items.length };
+      }),
+    [fieldMap],
+  );
 
   const openTemplate = useCallback(() => {
     const preferred =
@@ -36,10 +73,29 @@ export function S1PublicationsDetails({ node, ...rest }: Omit<FormTaskDetailsPro
   const renderActions = useCallback(
     (ctx: FormTaskContext) => {
       if (!ctx.canEdit) return null;
+      const counts = computeCounts(ctx.values || {});
+      const total = counts.reduce((acc, item) => acc + item.count, 0);
+
       return (
         <>
+          <div className="mb-3 space-y-2 rounded-md border border-dashed p-3 text-sm">
+            <div className="font-medium">
+              {T("forms.collection_summary", "Записи по разделам")}
+            </div>
+            <div className="grid gap-1">
+              {counts.map(({ key, label, count }) => (
+                <div key={key} className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="font-semibold">{count}</span>
+                </div>
+              ))}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {T("forms.collection_total", "Всего записей")}: {total}
+            </div>
+          </div>
           <div className="text-sm font-medium">
-            {T("forms.app7_prompt")}{" "}
+            {T("forms.app7_prompt")} {" "}
             <span className="text-destructive">*</span>
           </div>
           <div className="flex gap-2">
@@ -61,10 +117,48 @@ export function S1PublicationsDetails({ node, ...rest }: Omit<FormTaskDetailsPro
         </>
       );
     },
-    [T, openTemplate]
+    [T, computeCounts, openTemplate],
   );
 
-  return <FormTaskDetails node={node} {...rest} renderActions={renderActions} />;
+  const readOnlyCounts = useMemo(
+    () => computeCounts(initial ?? {}),
+    [computeCounts, initial],
+  );
+  const readOnlyTotal = useMemo(
+    () => readOnlyCounts.reduce((acc, item) => acc + item.count, 0),
+    [readOnlyCounts],
+  );
+
+  return (
+    <div className="space-y-4">
+      <FormTaskDetails
+        node={node}
+        initial={initial}
+        canEdit={canEdit}
+        {...rest}
+        renderActions={renderActions}
+      />
+
+      {canEdit === false && (
+        <div className="space-y-2 rounded-md border bg-muted/30 p-4 text-sm">
+          <div className="font-medium">
+            {T("forms.collection_summary", "Записи по разделам")}
+          </div>
+          <div className="grid gap-1">
+            {readOnlyCounts.map(({ key, label, count }) => (
+              <div key={key} className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-semibold">{count}</span>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {T("forms.collection_total", "Всего записей")}: {readOnlyTotal}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default S1PublicationsDetails;
