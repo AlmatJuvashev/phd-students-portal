@@ -104,6 +104,13 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 			return err
 		}
 		if len(req.FormData) != 0 {
+			if nodeID == "S1_publications_list" {
+				sanitized, _, err := normalizeApp7Payload(req.FormData)
+				if err != nil {
+					return err
+				}
+				req.FormData = sanitized
+			}
 			if err := h.appendFormRevision(tx, inst, uid, req.FormData); err != nil {
 				return err
 			}
@@ -431,35 +438,36 @@ func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, userID stri
 }
 
 func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, inst *nodeInstanceRecord, userID, role, newState string) error {
-    roles := []string{}
-    err := tx.QueryRowx(`SELECT allowed_roles FROM node_state_transitions WHERE from_state=$1 AND to_state=$2`, inst.State, newState).Scan(pq.Array(&roles))
-    if err != nil {
-        if errors.Is(err, sql.ErrNoRows) {
-            // Iteration override: allow students to complete nodes directly to done
-            if role == "student" && newState == "done" && (inst.State == "active" || inst.State == "submitted") {
-                // treat as allowed below
-                roles = []string{role}
-            } else {
-                return fmt.Errorf("transition not allowed")
-            }
-        } else {
-            return err
-        }
-    }
-    allowed := false
-    for _, r := range roles {
-        if r == role {
-            allowed = true
-            break
-        }
-    }
-    // Additional safety: keep override even if roles were loaded but current role not listed
-    if !allowed && role == "student" && newState == "done" && (inst.State == "active" || inst.State == "submitted") {
-        allowed = true
-    }
-    if !allowed {
-        return fmt.Errorf("role %s cannot transition from %s to %s", role, inst.State, newState)
-    }
+	roles := []string{}
+
+	err := tx.QueryRowx(`SELECT allowed_roles FROM node_state_transitions WHERE from_state=$1 AND to_state=$2`, inst.State, newState).Scan(pq.Array(&roles))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Iteration override: allow students to complete nodes directly to done
+			if role == "student" && newState == "done" && (inst.State == "active" || inst.State == "submitted") {
+				// treat as allowed below
+				roles = []string{role}
+			} else {
+				return fmt.Errorf("transition not allowed")
+			}
+		} else {
+			return err
+		}
+	}
+	allowed := false
+	for _, r := range roles {
+		if r == role {
+			allowed = true
+			break
+		}
+	}
+	// Additional safety: keep override even if roles were loaded but current role not listed
+	if !allowed && role == "student" && newState == "done" && (inst.State == "active" || inst.State == "submitted") {
+		allowed = true
+	}
+	if !allowed {
+		return fmt.Errorf("role %s cannot transition from %s to %s", role, inst.State, newState)
+	}
 	previous := inst.State
 	query := "UPDATE node_instances SET state=$1, updated_at=now() WHERE id=$2"
 	if newState == "submitted" {
@@ -548,7 +556,31 @@ func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, er
 		}
 		err := h.db.QueryRowx(`SELECT rev, form_data FROM node_instance_form_revisions WHERE node_instance_id=$1 AND rev=$2`, instanceID, inst.CurrentRev).Scan(&rev.Rev, &rev.Data)
 		if err == nil {
-			dto["form"] = gin.H{"rev": rev.Rev, "data": rev.Data}
+			if inst.NodeID == "S1_publications_list" {
+				if form, parseErr := buildApp7Form(rev.Data); parseErr == nil {
+					summary := summarizeApp7(form.Sections)
+					for key, val := range form.LegacyCounts {
+						if val > 0 && summary[key] == 0 {
+							summary[key] = val
+						}
+					}
+					clientData := gin.H{
+						"wos_scopus":  form.Sections.WosScopus,
+						"kokson":      form.Sections.Kokson,
+						"conferences": form.Sections.Conferences,
+						"ip":          form.Sections.IP,
+						"summary":     summary,
+					}
+					if len(form.LegacyCounts) > 0 {
+						clientData["legacy_counts"] = form.LegacyCounts
+					}
+					dto["form"] = gin.H{"rev": rev.Rev, "data": clientData}
+				} else {
+					dto["form"] = gin.H{"rev": rev.Rev, "data": rev.Data}
+				}
+			} else {
+				dto["form"] = gin.H{"rev": rev.Rev, "data": rev.Data}
+			}
 		}
 	}
 	slots, err := h.fetchSlots(instanceID)
@@ -658,6 +690,11 @@ func handleNodeErr(c *gin.Context, err error) {
 	}
 	if strings.Contains(err.Error(), "not allowed") {
 		c.JSON(403, gin.H{"error": err.Error()})
+		return
+	}
+	var valErr *app7ValidationError
+	if errors.As(err, &valErr) {
+		c.JSON(400, gin.H{"error": valErr.Error()})
 		return
 	}
 	switch {
