@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FieldDef } from "@/lib/playbook";
 import { t } from "@/lib/playbook";
+import { CollectionField } from "./CollectionField";
 
 export type FieldRendererProps = {
   field: FieldDef & { placeholder?: any };
@@ -228,6 +229,19 @@ function renderField(
   T: ReturnType<typeof useTranslation>["t"]
 ) {
   const { field } = props;
+
+  if (field.type === "collection") {
+    return (
+      <CollectionField
+        field={field}
+        value={props.value}
+        onChange={props.onChange}
+        canEdit={props.canEdit}
+        disabled={props.disabled}
+        renderField={(childProps) => renderField(childProps, T)}
+      />
+    );
+  }
 
   if (field.type === "select" && Array.isArray((field as any).options)) {
     return <SelectField {...props} T={T} />;

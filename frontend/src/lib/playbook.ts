@@ -11,6 +11,10 @@ export type FieldDef = {
   placeholder?: Record<string, string>;
   options?: Array<{ value: string; label?: Record<string, string> }>;
   other_key?: string; // for select with 'other'
+  item_label?: Record<string, string>; // for collection items
+  item_fields?: FieldDef[]; // nested fields for collection items
+  min_items?: number;
+  max_items?: number;
 };
 
 export type UploadDef = {
