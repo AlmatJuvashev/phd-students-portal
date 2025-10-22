@@ -1,4 +1,5 @@
-FROM golang:1.22 as builder
+ARG GO_VERSION=1.24
+FROM golang:${GO_VERSION} AS builder
 WORKDIR /app
 COPY . .
 RUN go mod download && CGO_ENABLED=0 go build -o server ./cmd/server

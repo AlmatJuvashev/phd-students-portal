@@ -3,7 +3,7 @@
 ## Текущая проблема
 
 ```
-Access to fetch at 'https://phd-students-portal-production.up.railway.app/api/auth/login' 
+Access to fetch at 'https://phd-students-portal-production.up.railway.app/api/auth/login'
 from origin 'https://phd-students-portal.vercel.app' has been blocked by CORS policy
 ```
 
@@ -27,6 +27,7 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 ```
 
 **Должно вернуть:**
+
 ```json
 {
   "frontend_base": "https://phd-students-portal.vercel.app",
@@ -35,16 +36,23 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 ```
 
 **Если `frontend_base` показывает другое значение:**
+
 - Проверьте Railway Variables → переменная `FRONTEND_BASE` задана правильно
 - Redeploy сервиса (Deployments → последний → Redeploy)
 
 **Если `origin` пустой:**
+
 - Вы открыли endpoint напрямую в браузере (это ОК)
 - Попробуйте сделать fetch из DevTools:
   ```javascript
-  fetch('https://phd-students-portal-production.up.railway.app/api/debug/cors', {
-    headers: { 'Origin': 'https://phd-students-portal.vercel.app' }
-  }).then(r => r.json()).then(console.log)
+  fetch(
+    "https://phd-students-portal-production.up.railway.app/api/debug/cors",
+    {
+      headers: { Origin: "https://phd-students-portal.vercel.app" },
+    }
+  )
+    .then((r) => r.json())
+    .then(console.log);
   ```
 
 ### Шаг 3: Проверьте деплой на Railway
@@ -69,6 +77,7 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
    - `Access-Control-Allow-Credentials: true`
 
 **Если хедеры отсутствуют:**
+
 - Backend не получил переменную `FRONTEND_BASE`
 - Или запрос не дошёл до backend (проблема с Railway)
 
@@ -77,10 +86,12 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 ### 1. Railway не видит FRONTEND_BASE
 
 **Симптомы:**
+
 - Debug endpoint показывает `frontend_base: "http://localhost:5173"`
 - Или показывает пустую строку
 
 **Решение:**
+
 1. Railway → Variables → убедитесь `FRONTEND_BASE` добавлена
 2. Если есть, удалите и добавьте заново
 3. Redeploy сервиса
@@ -88,10 +99,12 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 ### 2. Старый код на Railway
 
 **Симптомы:**
+
 - Debug endpoint не существует (404)
 - CORS хедеры не включают `Access-Control-Allow-Credentials: true`
 
 **Решение:**
+
 1. Проверьте, что Railway подключён к правильному репозиторию
 2. Settings → GitHub → Branch должна быть `main`
 3. Deployments → последний коммит должен быть `709ed29` или новее
@@ -100,10 +113,12 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 ### 3. Несоответствие доменов
 
 **Симптомы:**
+
 - Vercel URL изменился (например, добавили custom domain)
 - Frontend всё ещё использует старый Railway URL
 
 **Решение:**
+
 1. Проверьте актуальный Vercel URL в Settings → Domains
 2. Обновите `FRONTEND_BASE` в Railway
 3. Проверьте `VITE_API_URL` в Vercel Variables
@@ -111,21 +126,25 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 ### 4. Проблема с preflight OPTIONS
 
 **Симптомы:**
+
 - Запрос `OPTIONS` возвращает 404 или 500
 - Нет хедеров `Access-Control-*`
 
 **Решение:**
 Это может быть проблема с middleware порядком. Проверьте `api.go`:
+
 - CORS middleware должен быть **первым** после logger
 - Порядок должен быть: logger → CORS → routes
 
 ### 5. Railway networking issue
 
 **Симптомы:**
+
 - Все конфиги правильные, но CORS всё равно блокируется
 - Railway логи показывают успешный запуск
 
 **Решение:**
+
 1. Попробуйте сделать curl запрос напрямую:
    ```bash
    curl -X OPTIONS \
@@ -154,6 +173,7 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 Если срочно нужно запустить, можно временно разрешить все origins (только для dev/demo!):
 
 **В `api.go` временно замените:**
+
 ```go
 AllowOriginFunc: func(origin string) bool {
     return true  // WARNING: allow all origins (dev only!)
@@ -161,6 +181,7 @@ AllowOriginFunc: func(origin string) bool {
 ```
 
 **После деплоя обязательно:**
+
 1. Проверьте, что приложение работает
 2. Найдите причину исходной проблемы
 3. Верните правильную CORS логику

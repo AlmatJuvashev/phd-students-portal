@@ -114,7 +114,7 @@ export function NodeDetailsSheet({
                     </p>
                   )}
                 </div>
-                
+
                 {/* Badges and actions - separate row for better spacing */}
                 <div className="flex items-center gap-2 flex-wrap pr-10">
                   <Badge

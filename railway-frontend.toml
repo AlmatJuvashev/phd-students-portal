@@ -1,0 +1,10 @@
+# Railway configuration for frontend
+[build]
+builder = "NIXPACKS"
+buildCommand = "cd frontend && npm install && npm run build"
+startCommand = "cd frontend && npx serve -s dist -l 3000"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
