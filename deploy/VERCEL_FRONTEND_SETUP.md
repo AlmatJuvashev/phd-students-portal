@@ -17,11 +17,12 @@
 
 В настройках проекта → **Settings** → **Environment Variables**:
 
-| Variable Name | Value | Environments |
-|--------------|-------|--------------|
+| Variable Name  | Value                                              | Environments                     |
+| -------------- | -------------------------------------------------- | -------------------------------- |
 | `VITE_API_URL` | `https://<ваш-railway-backend>.up.railway.app/api` | Production, Preview, Development |
 
 **Где взять Railway backend URL:**
+
 1. Откройте ваш проект на Railway
 2. Выберите сервис backend
 3. Во вкладке **Settings** → **Networking** → скопируйте **Public Domain**
@@ -31,11 +32,12 @@
 
 В Railway → ваш backend сервис → **Variables** добавьте/обновите:
 
-| Variable | Value |
-|----------|-------|
+| Variable        | Value                                                                   |
+| --------------- | ----------------------------------------------------------------------- |
 | `FRONTEND_BASE` | `https://phd-students-portal.vercel.app` (замените на ваш Vercel домен) |
 
 **Где взять Vercel URL:**
+
 - После деплоя Vercel покажет URL вида `https://<project-name>.vercel.app`
 - Скопируйте этот URL и вставьте в `FRONTEND_BASE` на Railway
 
@@ -58,6 +60,7 @@
 **Причина**: Railway backend не знает Vercel домен.
 
 **Решение**:
+
 1. Проверьте, что `FRONTEND_BASE` на Railway содержит **точный** Vercel URL (без `/` в конце)
 2. Перезапустите backend на Railway
 3. Очистите кеш браузера и перезагрузите страницу
@@ -67,6 +70,7 @@
 **Причина**: `VITE_API_URL` не задан в Vercel.
 
 **Решение**:
+
 1. Vercel → Settings → Environment Variables
 2. Добавьте `VITE_API_URL` со значением Railway backend URL + `/api`
 3. Redeploy на Vercel

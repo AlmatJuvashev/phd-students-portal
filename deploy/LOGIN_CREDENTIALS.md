@@ -1,6 +1,7 @@
 # ✅ РЕШЕНИЕ: Login с admin credentials
 
 ## Проблема
+
 Вы пытались войти используя **email** (`juvashev@gmail.com`), но система ожидает **username**.
 
 ## ✅ Решение
@@ -8,6 +9,7 @@
 При создании admin-пользователя из `ADMIN_EMAIL` система автоматически генерирует **username** из части до `@`:
 
 **Ваши credentials:**
+
 - Email: `<ваш-email>`
 - Password: `<ваш-пароль-из-ADMIN_PASSWORD>`
 - **Username (для логина)**: `<часть-email-до-@>` ← используйте это!
@@ -26,6 +28,7 @@ Password: <ваш-пароль-из-ADMIN_PASSWORD>
 ## 📋 Все тестовые учётные записи
 
 ### 1. Superadmin (созданный из ADMIN_EMAIL)
+
 ```
 Username: <из-вашего-ADMIN_EMAIL>
 Password: <из-ADMIN_PASSWORD>
@@ -33,6 +36,7 @@ Role: superadmin
 ```
 
 ### 2. Дефолтный admin (из seed-скрипта, если есть)
+
 ```
 Username: admin
 Password: admin123
@@ -40,6 +44,7 @@ Role: admin
 ```
 
 ### 3. Тестовый докторант (если создан в seed)
+
 ```
 Username: докторант
 Password: докторант123
@@ -57,6 +62,7 @@ Superadmin user created: username=<username> email=<email>
 ```
 
 Или выполните SQL запрос через Railway Postgres:
+
 ```sql
 SELECT username, email, role FROM users WHERE email = 'your-email@example.com';
 ```

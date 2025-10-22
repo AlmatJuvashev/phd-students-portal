@@ -5,16 +5,19 @@
 ## В backend/internal/config/config.go
 
 Замените строку:
+
 ```go
 FrontendBase:  get("FRONTEND_BASE", "http://localhost:5173"),
 ```
 
 На:
+
 ```go
 FrontendBase:  getOrOverride("FRONTEND_BASE", "https://phd-students-portal.vercel.app"),
 ```
 
 И добавьте функцию:
+
 ```go
 func getOrOverride(k, override string) string {
 	if v := os.Getenv(k); v != "" && v != "http://localhost:5173" {
@@ -29,6 +32,7 @@ func getOrOverride(k, override string) string {
 ```
 
 **После исправления:**
+
 1. Коммит и push
 2. Дождитесь деплоя
 3. Проверьте `/api/debug/cors` — должно показать правильный URL
@@ -49,6 +53,7 @@ railway variables
 Должно показать все переменные, включая `FRONTEND_BASE`.
 
 Если переменной нет в выводе:
+
 ```bash
 railway variables set FRONTEND_BASE=https://phd-students-portal.vercel.app
 ```

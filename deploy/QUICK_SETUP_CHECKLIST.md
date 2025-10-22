@@ -72,6 +72,7 @@ Project → Backend Service → Settings → Networking → Public Domain
 ## 📋 Итоговая конфигурация
 
 **Railway Backend Variables:**
+
 ```bash
 DATABASE_URL=postgresql://...  # auto from Postgres plugin
 JWT_SECRET=<secure-random-string>
@@ -81,6 +82,7 @@ FRONTEND_BASE=https://phd-students-portal.vercel.app
 ```
 
 **Vercel Frontend Variables:**
+
 ```bash
 VITE_API_URL=https://<railway-backend>.up.railway.app/api
 ```

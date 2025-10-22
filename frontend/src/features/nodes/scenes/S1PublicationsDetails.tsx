@@ -9,6 +9,7 @@ import {
   FormTaskDetailsProps,
   FormTaskContext,
 } from "@/features/nodes/details/variants/FormTaskDetails";
+import { generateApp7FromTemplate } from "@/features/docgen/app7-templated";
 
 const scrollToTemplates = () =>
   document
@@ -53,7 +54,7 @@ export function S1PublicationsDetails({
         const items = Array.isArray(values[key]) ? values[key] : [];
         return { key, label, count: items.length };
       }),
-    [fieldMap],
+    [fieldMap]
   );
 
   const openTemplate = useCallback(() => {
@@ -78,13 +79,33 @@ export function S1PublicationsDetails({
 
       return (
         <>
+          <div className="flex gap-2 mb-3">
+            <Button onClick={() => ctx.submit()} disabled={ctx.disabled}>
+              {T("forms.submit_publications", "Submit publications")}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                generateApp7FromTemplate(
+                  ctx.values as any,
+                  (i18n.language as "ru" | "kz" | "en") || "ru"
+                ).catch((err) => console.error(err))
+              }
+              disabled={ctx.disabled}
+            >
+              {T("forms.generate_app7")}
+            </Button>
+          </div>
           <div className="mb-3 space-y-2 rounded-md border border-dashed p-3 text-sm">
             <div className="font-medium">
               {T("forms.collection_summary", "Записи по разделам")}
             </div>
             <div className="grid gap-1">
               {counts.map(({ key, label, count }) => (
-                <div key={key} className="flex items-center justify-between gap-2">
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-2"
+                >
                   <span className="text-muted-foreground">{label}</span>
                   <span className="font-semibold">{count}</span>
                 </div>
@@ -95,8 +116,7 @@ export function S1PublicationsDetails({
             </div>
           </div>
           <div className="text-sm font-medium">
-            {T("forms.app7_prompt")} {" "}
-            <span className="text-destructive">*</span>
+            {T("forms.app7_prompt")} <span className="text-destructive">*</span>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => ctx.submit()} disabled={ctx.disabled}>
@@ -117,16 +137,16 @@ export function S1PublicationsDetails({
         </>
       );
     },
-    [T, computeCounts, openTemplate],
+    [T, computeCounts, openTemplate]
   );
 
   const readOnlyCounts = useMemo(
     () => computeCounts(initial ?? {}),
-    [computeCounts, initial],
+    [computeCounts, initial]
   );
   const readOnlyTotal = useMemo(
     () => readOnlyCounts.reduce((acc, item) => acc + item.count, 0),
-    [readOnlyCounts],
+    [readOnlyCounts]
   );
 
   return (
@@ -146,7 +166,10 @@ export function S1PublicationsDetails({
           </div>
           <div className="grid gap-1">
             {readOnlyCounts.map(({ key, label, count }) => (
-              <div key={key} className="flex items-center justify-between gap-2">
+              <div
+                key={key}
+                className="flex items-center justify-between gap-2"
+              >
                 <span className="text-muted-foreground">{label}</span>
                 <span className="font-semibold">{count}</span>
               </div>

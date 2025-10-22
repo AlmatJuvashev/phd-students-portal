@@ -1,5 +1,16 @@
 DB_URL?=postgres://postgres:postgres@localhost:5435/phd?sslmode=disable
 AIR?=air
+
+# Automatically determine APP_PORT for `make dev` when not provided.
+ifeq ($(filter dev,$(MAKECMDGOALS)),dev)
+ifndef APP_PORT
+ifdef PORT
+APP_PORT := $(PORT)
+else
+APP_PORT := $(strip $(shell python3 -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()'))
+endif
+endif
+endif
 # VERSION is used by `make migrate-force VERSION=<n>` to set the forced migration version.
 VERSION?=1
 
@@ -34,4 +45,5 @@ seed:
 	go run ./cmd/server --seed
 
 dev:
-	$(AIR)
+	@echo "Starting dev server on APP_PORT=$(APP_PORT)"
+	APP_PORT=$(APP_PORT) $(AIR)

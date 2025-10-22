@@ -26,6 +26,8 @@
     "save_submit": "Save and Submit",
     "save_draft": "Save Draft",
     "array_hint": "one per line",
+    "submit_publications": "Submit publications",
+    "generate_app7": "Generate Appendix 7",
     "app7_prompt": "Is the publications list per Appendix 7 prepared and certified by the Publication Activity department?",
     "yes": "Yes",
     "no": "No",

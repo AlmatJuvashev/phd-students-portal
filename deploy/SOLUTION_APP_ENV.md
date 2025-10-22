@@ -3,6 +3,7 @@
 ## Проблема
 
 Логи Railway показывают:
+
 ```
 Config loaded: Port=8080, Env=development, FrontendBase=http://localhost:5173
 ```
@@ -16,15 +17,16 @@ Config loaded: Port=8080, Env=development, FrontendBase=http://localhost:5173
 1. Railway → Backend Service → **Variables**
 2. Нажмите **New Variable** и добавьте:
 
-| Variable Name | Value |
-|--------------|-------|
-| `APP_ENV` | `production` |
+| Variable Name | Value        |
+| ------------- | ------------ |
+| `APP_ENV`     | `production` |
 
 3. Сервис автоматически перезапустится (~30 сек)
 
 ### Проверьте логи после перезапуска:
 
 Должно быть:
+
 ```
 Config loaded: Port=8080, Env=production, FrontendBase=https://phd-students-portal.vercel.app
 ```
@@ -36,6 +38,7 @@ https://phd-students-portal-production.up.railway.app/api/debug/cors
 ```
 
 Должно показать:
+
 ```json
 {
   "frontend_base": "https://phd-students-portal.vercel.app",
@@ -67,6 +70,7 @@ ADMIN_PASSWORD=<ваш-пароль>
 ```
 
 **Удалите старые:**
+
 - `CORS_ORIGINS` (больше не используется)
 - `PORT` (используйте `APP_PORT` вместо этого)
 
@@ -75,6 +79,7 @@ ADMIN_PASSWORD=<ваш-пароль>
 ## Почему это произошло?
 
 В `config.go` код читает:
+
 ```go
 Env: get("APP_ENV", "development"),  // ← дефолт = "development"
 ```
