@@ -23,6 +23,7 @@ import DevBar from "@/features/journey/components/DevBar";
 import clsx from "clsx";
 import { detectTerminalNodeIds } from "@/features/journey/moduleGraph";
 import { useSwipeable } from "react-swipeable";
+import { useAuth } from '@/contexts/AuthContext'
 
 type Pos = { x: number; y: number };
 type Layout = Record<string, Pos>;
@@ -45,6 +46,7 @@ export function WorldMap({
   stateByNodeId?: Record<string, NodeVM["state"]>;
   onStateChanged?: () => void;
 }) {
+  const { user } = useAuth()
   const { t: T } = useTranslation("common");
   const [unlockAll, setUnlockAll] = useState(() => {
     try {
@@ -569,6 +571,7 @@ export function WorldMap({
       <NodeDetailsSheet
         node={openNode}
         onOpenChange={(o) => !o && setOpenNode(null)}
+        role={(user?.role as any) || 'student'}
         onStateRefresh={onStateChanged}
         closeOnComplete={openNode ? terminalNodeSet.has(openNode.id) : false}
         onAdvance={(nextId, currentId) => {

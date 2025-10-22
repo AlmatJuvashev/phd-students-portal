@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import "./index.css";
 import { router } from "./routes";
 import "./i18n";
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -23,7 +24,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={qc}>
       <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
-        <RouterProvider router={router} />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </Suspense>
     </QueryClientProvider>
   </React.StrictMode>

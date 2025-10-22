@@ -69,6 +69,8 @@ export function NodeDetailsSheet({
     closeOnComplete,
   });
 
+  const roleAllowed = !!node?.who_can_complete?.includes(role as any)
+
   return (
     <Sheet open={!!node} onOpenChange={onOpenChange}>
       <SheetContent
@@ -183,18 +185,28 @@ export function NodeDetailsSheet({
                   </p>
                 </div>
               ) : (
-                <NodeDetailSwitch
+                <>
+                  {!roleAllowed && (
+                    <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm mb-3">
+                      <div className="font-medium mb-1">Доступ ограничен</div>
+                      Только {node?.who_can_complete?.join(', ')} могут заполнить эту форму
+                    </div>
+                  )}
+                  <NodeDetailSwitch
                   node={node}
                   submission={submission as any}
                   onEvent={handleEvent}
                   saving={saving}
                   canEdit={
-                    editing ||
-                    !["submitted", "done"].includes(
-                      (submission as any)?.state as any
+                    roleAllowed && (
+                      editing ||
+                      !["submitted", "done"].includes(
+                        (submission as any)?.state as any
+                      )
                     )
                   }
                 />
+                </>
               )}
             </div>
           </>

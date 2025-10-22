@@ -1,6 +1,8 @@
 import React, { lazy, Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '@/pages/layout'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { useAuth } from '@/contexts/AuthContext'
 
 const LoginPage = lazy(() => import('@/pages/login').then(m => ({ default: m.LoginPage })))
 const DoctoralJourney = lazy(() => import('@/pages/doctoral.journey').then(m => ({ default: m.DoctoralJourney })))
@@ -16,20 +18,58 @@ const WithSuspense = (el: React.ReactNode) => (
   <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>{el}</Suspense>
 )
 
+function PublicOnly({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth()
+  if (isLoading) return <div className="p-4 text-sm">Loading…</div>
+  if (user) return WithSuspense(<DoctoralJourney />)
+  return <>{children}</>
+}
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
     children: [
       { index: true, element: WithSuspense(<HomePage />) },
-      { path: 'journey', element: WithSuspense(<DoctoralJourney />) },
+      {
+        path: 'journey',
+        element: (
+          <ProtectedRoute>
+            {WithSuspense(<DoctoralJourney />)}
+          </ProtectedRoute>
+        ),
+      },
       { path: 'contacts', element: WithSuspense(<ContactsPage />) },
-      { path: 'login', element: WithSuspense(<LoginPage />) },
+      {
+        path: 'login',
+        element: <PublicOnly>{WithSuspense(<LoginPage />)}</PublicOnly>,
+      },
       { path: 'forgot-password', element: WithSuspense(<ForgotPassword />) },
       { path: 'reset-password', element: WithSuspense(<ResetPassword />) },
-      { path: 'admin/users', element: WithSuspense(<AdminUsers />) },
-      { path: 'advisor/inbox', element: WithSuspense(<AdvisorInbox />) },
-      { path: 'dashboard', element: WithSuspense(<Dashboard />) },
+      {
+        path: 'admin/users',
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            {WithSuspense(<AdminUsers />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'advisor/inbox',
+        element: (
+          <ProtectedRoute requiredRole="advisor">
+            {WithSuspense(<AdvisorInbox />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'dashboard',
+        element: (
+          <ProtectedRoute>
+            {WithSuspense(<Dashboard />)}
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
 ])
