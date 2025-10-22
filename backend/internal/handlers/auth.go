@@ -1,28 +1,21 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"net/http"
-	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 )
 
 type AuthHandler struct {
-	db     *sqlx.DB
-	cfg    config.AppConfig
-	mailer services.Mailer
+	db  *sqlx.DB
+	cfg config.AppConfig
 }
 
 func NewAuthHandler(db *sqlx.DB, cfg config.AppConfig) *AuthHandler {
-	return &AuthHandler{db: db, cfg: cfg, mailer: services.Mailer{
-		Host: cfg.SMTPHost, Port: cfg.SMTPPort, User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.SMTPFrom,
-	}}
+	return &AuthHandler{db: db, cfg: cfg}
 }
 
 type loginReq struct {
@@ -55,61 +48,4 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": jwt, "role": role})
 }
 
-type forgotReq struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
-// ForgotPassword creates a single-use reset token and emails the link.
-func (h *AuthHandler) ForgotPassword(c *gin.Context) {
-	var req forgotReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	// Generate token
-	buf := make([]byte, 32)
-	_, _ = rand.Read(buf)
-	token := hex.EncodeToString(buf)
-	// Upsert reset token with 1-hour expiry
-	_, err := h.db.Exec(`INSERT INTO password_reset_tokens (email, token, expires_at)
-		VALUES ($1,$2,$3)
-		ON CONFLICT (email) DO UPDATE SET token=$2, expires_at=$3`,
-		req.Email, token, time.Now().Add(time.Hour))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save token"})
-		return
-	}
-	link := h.cfg.FrontendBase + "/reset-password?token=" + token
-	_ = h.mailer.Send(req.Email, "Password Reset", "Click to reset your password: <a href=\""+link+"\">Reset</a>")
-	// Always respond OK to avoid leaking which emails exist
-	c.JSON(http.StatusOK, gin.H{"ok": true})
-}
-
-type resetReq struct {
-	Token       string `json:"token" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=8"`
-}
-
-// ResetPassword verifies token and sets new password
-func (h *AuthHandler) ResetPassword(c *gin.Context) {
-	var req resetReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	var email string
-	var exp time.Time
-	err := h.db.QueryRowx(`SELECT email, expires_at FROM password_reset_tokens WHERE token=$1`, req.Token).Scan(&email, &exp)
-	if err != nil || time.Now().After(exp) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid or expired token"})
-		return
-	}
-	hash, _ := auth.HashPassword(req.NewPassword)
-	_, err = h.db.Exec(`UPDATE users SET password_hash=$1, updated_at=now() WHERE email=$2`, hash, email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "update failed"})
-		return
-	}
-	_, _ = h.db.Exec(`DELETE FROM password_reset_tokens WHERE email=$1`, email)
-	c.JSON(http.StatusOK, gin.H{"ok": true})
-}
+// Note: Password reset via email removed. Admins reset passwords manually via admin panel.

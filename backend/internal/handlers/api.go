@@ -68,11 +68,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		c.JSON(401, gin.H{"error": "unauthenticated"})
 	})
 
-	// Auth routes (login, forgot/reset, logout is client-side token removal)
+	// Auth routes (login only - password reset done by admin)
 	auth := NewAuthHandler(db, cfg)
 	api.POST("/auth/login", auth.Login)
-	api.POST("/auth/forgot", auth.ForgotPassword) // sends email with reset link
-	api.POST("/auth/reset", auth.ResetPassword)   // reset with token
 
 	users := NewUsersHandler(db, cfg)
 	journey := NewJourneyHandler(db, cfg, playbookManager)
