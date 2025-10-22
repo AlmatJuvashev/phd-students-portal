@@ -39,12 +39,14 @@ No body required. The endpoint automatically generates a new secure temporary pa
 2. Finds user in the list
 3. Clicks "Reset Password" button
 4. System displays dialog with new credentials:
+
    ```
    Username: john.doe
    Temporary Password: Abc123XyZ
-   
+
    Share these credentials with the user securely.
    ```
+
 5. Admin copies credentials and shares with user via secure channel
 
 ### User First Login
@@ -62,16 +64,18 @@ async function handleResetPassword(userId: string) {
   try {
     const response = await api.post(`/admin/users/${userId}/reset-password`);
     const { username, temp_password } = response.data;
-    
+
     // Show modal with credentials
-    alert(`New credentials:\nUsername: ${username}\nPassword: ${temp_password}`);
-    
+    alert(
+      `New credentials:\nUsername: ${username}\nPassword: ${temp_password}`
+    );
+
     // Or copy to clipboard
     await navigator.clipboard.writeText(
       `Username: ${username}\nPassword: ${temp_password}`
     );
   } catch (error) {
-    console.error('Failed to reset password:', error);
+    console.error("Failed to reset password:", error);
   }
 }
 ```
@@ -81,14 +85,14 @@ async function handleResetPassword(userId: string) {
 ```tsx
 <Table>
   <TableBody>
-    {users.map(user => (
+    {users.map((user) => (
       <TableRow key={user.id}>
         <TableCell>{user.name}</TableCell>
         <TableCell>{user.email}</TableCell>
         <TableCell>{user.role}</TableCell>
         <TableCell>
-          {user.role !== 'superadmin' && (
-            <Button 
+          {user.role !== "superadmin" && (
+            <Button
               onClick={() => handleResetPassword(user.id)}
               variant="outline"
               size="sm"
@@ -108,8 +112,8 @@ async function handleResetPassword(userId: string) {
 The password reset updates:
 
 ```sql
-UPDATE users 
-SET password_hash = $1, updated_at = NOW() 
+UPDATE users
+SET password_hash = $1, updated_at = NOW()
 WHERE id = $2
 ```
 
@@ -128,18 +132,21 @@ No audit trail is stored by default. Consider adding audit logging if needed.
 ### ⚠️ Recommendations for Production
 
 1. **Add Audit Logging**: Log all password resets
+
    ```sql
    INSERT INTO admin_actions (admin_id, action, target_user_id, created_at)
    VALUES ($1, 'password_reset', $2, NOW())
    ```
 
 2. **Notification**: Email user when password is reset
+
    ```go
-   mailer.Send(user.Email, "Password Reset", 
+   mailer.Send(user.Email, "Password Reset",
      "Your password was reset by an administrator...")
    ```
 
 3. **Force Password Change**: Mark user to change password on next login
+
    ```sql
    ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT FALSE;
    ```
@@ -158,12 +165,12 @@ No audit trail is stored by default. Consider adding audit logging if needed.
 
 ## Error Codes
 
-| Status | Error | Reason |
-|--------|-------|--------|
-| 401 | `unauthorized` | Missing or invalid JWT token |
-| 403 | `cannot reset superadmin password` | Target user is superadmin |
-| 404 | `user not found` | Invalid user ID |
-| 500 | `update failed` | Database error |
+| Status | Error                              | Reason                       |
+| ------ | ---------------------------------- | ---------------------------- |
+| 401    | `unauthorized`                     | Missing or invalid JWT token |
+| 403    | `cannot reset superadmin password` | Target user is superadmin    |
+| 404    | `user not found`                   | Invalid user ID              |
+| 500    | `update failed`                    | Database error               |
 
 ## Testing
 
@@ -196,15 +203,15 @@ func TestResetPasswordForUser(t *testing.T) {
 	// Setup
 	db := setupTestDB()
 	handler := NewUsersHandler(db, config.AppConfig{})
-	
+
 	// Create test user
 	userID := createTestUser(db, "student")
-	
+
 	// Test reset
 	req := httptest.NewRequest("POST", "/admin/users/"+userID+"/reset-password", nil)
 	w := httptest.NewRecorder()
 	handler.ResetPasswordForUser(w, req)
-	
+
 	// Assert
 	assert.Equal(t, 200, w.Code)
 	assert.Contains(t, w.Body.String(), "temp_password")
