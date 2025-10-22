@@ -31,7 +31,7 @@ admin.POST("/users/:id/reset-password", users.ResetPasswordForUser)
 ✅ **Admin/Superadmin Only**: Requires authentication + role check  
 ✅ **Superadmin Protected**: Cannot reset superadmin passwords  
 ✅ **Auto-Generated**: Secure 12+ char passwords (mixed case, numbers)  
-✅ **Returns Credentials**: Admin gets username + temp password  
+✅ **Returns Credentials**: Admin gets username + temp password
 
 ---
 
@@ -57,12 +57,12 @@ You need to add UI button in admin panel:
 
 ```tsx
 // In AdminUsersList component
-<Button 
+<Button
   onClick={() => resetPassword(user.id)}
-  disabled={user.role === 'superadmin'}
+  disabled={user.role === "superadmin"}
 >
   Reset Password
-</Button>
+</Button>;
 
 async function resetPassword(userId: string) {
   const res = await api.post(`/admin/users/${userId}/reset-password`);
@@ -96,6 +96,7 @@ DROP TABLE IF NOT EXISTS password_reset_tokens;
 ## 📚 Documentation Created
 
 1. **`deploy/ADMIN_PASSWORD_RESET.md`** - Complete guide (221 lines)
+
    - API documentation
    - Frontend examples
    - Security best practices
@@ -114,6 +115,7 @@ DROP TABLE IF NOT EXISTS password_reset_tokens;
 **Answer**: **YES!** ✅
 
 The functionality exists and works:
+
 - **Backend**: `POST /api/admin/users/:id/reset-password` ✅
 - **Database**: Migration completed ✅
 - **Documentation**: Comprehensive guide created ✅
@@ -132,26 +134,28 @@ const handleResetPassword = async (userId: string) => {
   try {
     const response = await api.post(`/admin/users/${userId}/reset-password`);
     const { username, temp_password } = response.data;
-    
+
     // Show credentials to admin
-    alert(`Username: ${username}\nTemporary Password: ${temp_password}\n\nShare with user securely.`);
+    alert(
+      `Username: ${username}\nTemporary Password: ${temp_password}\n\nShare with user securely.`
+    );
   } catch (error) {
-    console.error('Password reset failed:', error);
+    console.error("Password reset failed:", error);
   }
 };
 
 // In table row:
 <TableCell>
-  {user.role !== 'superadmin' && (
-    <Button 
-      variant="outline" 
+  {user.role !== "superadmin" && (
+    <Button
+      variant="outline"
       size="sm"
       onClick={() => handleResetPassword(user.id)}
     >
       Reset Password
     </Button>
   )}
-</TableCell>
+</TableCell>;
 ```
 
 That's it! 🚀

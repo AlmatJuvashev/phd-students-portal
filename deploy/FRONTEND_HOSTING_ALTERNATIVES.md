@@ -2,16 +2,17 @@
 
 ## Quick Comparison
 
-| Platform | Free Tier | Setup Time | Speed | GitHub Integration |
-|----------|-----------|------------|-------|-------------------|
-| **Netlify** | ✅ Generous | 5 min | ⚡⚡⚡ | ✅ Yes |
-| **Cloudflare Pages** | ✅ Unlimited | 5 min | ⚡⚡⚡⚡ | ✅ Yes |
-| **Railway** | ✅ Limited | 3 min | ⚡⚡ | ✅ Yes |
-| **Render** | ✅ Good | 5 min | ⚡⚡⚡ | ✅ Yes |
+| Platform             | Free Tier    | Setup Time | Speed    | GitHub Integration |
+| -------------------- | ------------ | ---------- | -------- | ------------------ |
+| **Netlify**          | ✅ Generous  | 5 min      | ⚡⚡⚡   | ✅ Yes             |
+| **Cloudflare Pages** | ✅ Unlimited | 5 min      | ⚡⚡⚡⚡ | ✅ Yes             |
+| **Railway**          | ✅ Limited   | 3 min      | ⚡⚡     | ✅ Yes             |
+| **Render**           | ✅ Good      | 5 min      | ⚡⚡⚡   | ✅ Yes             |
 
 ## Option 1: Netlify (Recommended)
 
 ### Why Netlify?
+
 - Very similar to Vercel
 - Simple setup
 - Excellent free tier
@@ -23,11 +24,13 @@
 1. **Sign up**: https://app.netlify.com/signup
 2. **Import project** from GitHub
 3. **Configure build settings**:
+
    - Base directory: `frontend`
    - Build command: `npm run build`
    - Publish directory: `dist`
 
 4. **Add Environment Variables**:
+
    ```
    VITE_API_URL=https://phd-student-portal-starter-v8-production.up.railway.app/api
    ```
@@ -56,6 +59,7 @@ The `netlify.toml` file in the project root already configures everything needed
 ## Option 2: Cloudflare Pages
 
 ### Why Cloudflare Pages?
+
 - Fastest CDN globally
 - Unlimited bandwidth (free)
 - Great performance in Asia/Kazakhstan
@@ -66,12 +70,14 @@ The `netlify.toml` file in the project root already configures everything needed
 1. **Sign up**: https://dash.cloudflare.com/sign-up/pages
 2. **Connect GitHub** repository
 3. **Configure build**:
+
    - Framework preset: `Vite`
    - Build command: `npm run build`
    - Build output directory: `dist`
    - Root directory: `frontend`
 
 4. **Environment Variables**:
+
    ```
    VITE_API_URL=https://phd-student-portal-starter-v8-production.up.railway.app/api
    NODE_VERSION=18
@@ -84,6 +90,7 @@ The `netlify.toml` file in the project root already configures everything needed
 ## Option 3: Railway (Frontend + Backend Together)
 
 ### Why Railway for Frontend?
+
 - Already hosting your backend
 - Single platform for everything
 - Simple configuration
@@ -95,17 +102,20 @@ The `netlify.toml` file in the project root already configures everything needed
 2. **Create New Project** or add service to existing project
 3. **Select "Deploy from GitHub repo"**
 4. **Configure**:
+
    - Root Directory: `frontend`
    - Build Command: `npm run build && npx serve -s dist -l $PORT`
    - Or use the generated service
 
 5. **Environment Variables**:
+
    ```
    VITE_API_URL=https://phd-student-portal-starter-v8-production.up.railway.app/api
    PORT=3000
    ```
 
 6. **Add `package.json` script** in frontend:
+
    ```json
    "scripts": {
      "serve": "serve -s dist -l $PORT"
@@ -125,6 +135,7 @@ Railway will automatically detect the project and deploy.
 ## Option 4: Render
 
 ### Why Render?
+
 - Simple static site hosting
 - Automatic SSL
 - Good free tier
@@ -135,10 +146,12 @@ Railway will automatically detect the project and deploy.
 1. **Sign up**: https://dashboard.render.com/register
 2. **New Static Site** from GitHub
 3. **Configure**:
+
    - Build Command: `cd frontend && npm install && npm run build`
    - Publish Directory: `frontend/dist`
 
 4. **Environment Variables**:
+
    ```
    VITE_API_URL=https://phd-student-portal-starter-v8-production.up.railway.app/api
    NODE_VERSION=18
@@ -180,16 +193,19 @@ After deployment, test:
 ## Troubleshooting
 
 ### CORS Errors
+
 - Check `FRONTEND_BASE` in Railway backend matches your new frontend URL
 - Ensure `APP_ENV=production` is set in Railway backend
 - Redeploy backend after changing variables
 
 ### Build Fails
+
 - Check Node version is 18 or higher
 - Verify `VITE_API_URL` is set correctly
 - Check build logs for specific errors
 
 ### 404 on Routes
+
 - Ensure redirects are configured (netlify.toml handles this)
 - For other platforms, configure SPA fallback to `/index.html`
 
@@ -198,6 +214,7 @@ After deployment, test:
 ## My Recommendation
 
 **For your case, I recommend Netlify** because:
+
 1. ✅ Most similar to Vercel (easy migration)
 2. ✅ Excellent free tier
 3. ✅ Fast deployment
