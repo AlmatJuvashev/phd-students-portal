@@ -198,87 +198,74 @@ export function CollectionField({
   const maxItems = field.max_items;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-2">
-        <div className="font-medium text-sm">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex items-center gap-2 sticky top-0 z-10 bg-white/95 backdrop-blur py-3 px-4 -mx-4 border-b md:static md:bg-transparent md:backdrop-blur-none">
+        <h3 className="text-lg font-semibold">
           {label}
           {field.required ? <span className="text-destructive">*</span> : null}
-          {itemLabel ? <div className="text-xs text-muted-foreground mt-1">{itemLabel}</div> : null}
-        </div>
-        {canEdit && !disabled ? (
-          <Button size="sm" onClick={() => openEditor(null)} disabled={disabled}>
-            {T("forms.add_item", "Добавить запись")}
-          </Button>
-        ) : null}
+        </h3>
       </div>
+      {itemLabel ? <div className="text-sm text-muted-foreground">{itemLabel}</div> : null}
 
-      <Card className="p-3">
-        {total === 0 ? (
+      {total === 0 ? (
+        <Card className="p-4">
           <div className="text-sm text-muted-foreground">
             {T("forms.collection_empty", "Записей пока нет.")}
           </div>
-        ) : (
-          <div className="space-y-2">
-            <table className="w-full text-sm">
-              <thead className="text-muted-foreground">
-                <tr>
-                  <th className="text-left font-medium w-12">#</th>
-                  {previewFields.map((f) => (
-                    <th key={f.key} className="text-left font-medium">
-                      {pbT(f.label, f.key) || f.key}
-                    </th>
-                  ))}
-                  {canEdit ? <th className="w-20" /> : null}
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {items.map((item, index) => (
-                  <tr key={index} className="align-top">
-                    <td className="py-2 pr-2 text-muted-foreground">{index + 1}</td>
-                    {previewFields.map((f) => {
-                      const cell = item[f.key];
-                      const otherKey = `${f.key}_other`;
-                      const otherValue = item[otherKey];
-                      const rendered = Array.isArray(cell)
-                        ? cell.join(", ")
-                        : cell ?? "";
-                      const display = rendered || otherValue || "—";
-                      return (
-                        <td key={f.key} className="py-2 pr-2">
-                          {display}
-                        </td>
-                      );
-                    })}
-                    {canEdit ? (
-                      <td className="py-2 flex gap-2 justify-end">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openEditor(index)}
-                          disabled={disabled}
-                        >
-                          {T("forms.edit", "Редактировать")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(index)}
-                          disabled={disabled}
-                        >
-                          {T("forms.delete", "Удалить")}
-                        </Button>
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="text-xs text-muted-foreground">
-              {T("forms.collection_total", "Всего записей")}: {total}
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {items.map((item, index) => (
+            <div key={index} className="bg-card border rounded-lg p-4 md:p-6 space-y-4">
+              <div className="text-xs text-muted-foreground">#{index + 1}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {previewFields.map((f) => {
+                  const cell = item[f.key];
+                  const otherKey = `${f.key}_other`;
+                  const otherValue = (item as any)[otherKey];
+                  const rendered = Array.isArray(cell) ? cell.join(", ") : cell ?? "";
+                  const display = (rendered || otherValue || "—") as string;
+                  const isTitle = f.key === "title";
+                  return (
+                    <div key={f.key} className={`space-y-1 ${isTitle ? "md:col-span-2" : ""}`}>
+                      <div className="text-xs text-muted-foreground">
+                        {pbT(f.label, f.key) || f.key}
+                      </div>
+                      <div className="text-sm break-words">{display}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {canEdit ? (
+                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-full sm:w-auto min-h-[44px]"
+                    onClick={() => openEditor(index)}
+                    disabled={disabled}
+                  >
+                    {T("forms.edit", "Редактировать")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="w-full sm:w-auto min-h-[44px]"
+                    onClick={() => handleDelete(index)}
+                    disabled={disabled}
+                  >
+                    {T("forms.delete", "Удалить")}
+                  </Button>
+                </div>
+              ) : null}
             </div>
+          ))}
+          <div className="text-xs text-muted-foreground">
+            {T("forms.collection_total", "Всего записей")}: {total}
           </div>
-        )}
-      </Card>
+        </div>
+      )}
 
       {(minItems || maxItems) && (
         <div className="text-xs text-muted-foreground">
@@ -287,9 +274,20 @@ export function CollectionField({
         </div>
       )}
 
+      {canEdit && !disabled ? (
+        <Button
+          variant="outline"
+          className="w-full mt-2 border-dashed hover:border-solid min-h-[44px]"
+          onClick={() => openEditor(null)}
+          disabled={disabled}
+        >
+          {T("forms.add_item", "Добавить запись")}
+        </Button>
+      ) : null}
+
       <Modal open={modalOpen} onClose={closeEditor}>
-        <div className="space-y-4">
-          <div>
+        <div className="max-h-[85vh] flex flex-col">
+          <div className="sticky top-0 z-10 bg-white/95 backdrop-blur py-3">
             <div className="text-lg font-semibold">
               {editingIndex === null
                 ? T("forms.collection_add_title", "Новая запись")
@@ -299,7 +297,7 @@ export function CollectionField({
               <div className="text-sm text-muted-foreground">{itemLabel}</div>
             ) : null}
           </div>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="flex-1 space-y-3 overflow-y-auto pr-1">
             {itemFields.map((itemField) => (
               <div key={itemField.key} className="space-y-1">
                 {renderField({
@@ -318,11 +316,11 @@ export function CollectionField({
             ))}
           </div>
           <Separator />
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={closeEditor}>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={closeEditor} className="min-h-[44px]">
               {T("forms.cancel", "Отмена")}
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} className="min-h-[44px]">
               {T("forms.save", "Сохранить")}
             </Button>
           </div>
