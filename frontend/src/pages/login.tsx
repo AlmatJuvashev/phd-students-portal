@@ -8,6 +8,8 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Label } from "../components/ui/label";
 import { useTranslation } from "react-i18next";
+import { useAuth } from '@/contexts/AuthContext'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const Schema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -17,6 +19,9 @@ type Form = z.infer<typeof Schema>;
 
 export function LoginPage() {
   const { t: T } = useTranslation("common");
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const {
     register,
     handleSubmit,
@@ -24,12 +29,10 @@ export function LoginPage() {
   } = useForm<Form>({ resolver: zodResolver(Schema) });
   const onSubmit = async (data: Form) => {
     try {
-      const res = await api("/auth/login", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-      localStorage.setItem("token", res.token);
-      location.href = "/";
+      // Use AuthContext for login to refresh user state
+      await login({ username: data.username, password: data.password })
+      const from = (location.state as any)?.from || "/journey"
+      navigate(from, { replace: true })
     } catch (e: any) {
       console.error("Login failed", e);
       alert(T("auth.failed"));

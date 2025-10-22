@@ -6,9 +6,11 @@ import { WorldMap } from "@/components/map/WorldMap";
 import { ResetBar } from "@/features/journey/components/ResetBar";
 import { useJourneyState } from "@/features/journey/hooks";
 import type { Playbook } from "@/lib/playbook";
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 export function DoctoralJourney() {
   const { t: T } = useTranslation("common");
+  const { isLoading } = useRequireAuth()
   const { state = {}, refetch } = useJourneyState();
   const [playbook, setPlaybook] = useState<Playbook | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export function DoctoralJourney() {
     };
   }, []);
 
-  if (loading || !playbook) {
+  if (isLoading || loading || !playbook) {
     return (
       <div className="flex items-center justify-center py-16">
         <p className="text-sm text-muted-foreground animate-pulse">
