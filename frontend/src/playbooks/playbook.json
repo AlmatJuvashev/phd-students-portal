@@ -301,16 +301,17 @@
                 }
               }
             ],
-            "on_confirm": {
-              "status": "completed",
-              "message": {
-                "ru": "Текст диссертации подготовлен по стандарту.",
-                "kz": "Диссертация мәтіні стандартқа келтірілді.",
-                "en": "Dissertation manuscript is formatted according to the standard."
-              }
-            }
+          "on_confirm": {
+            "status": "completed",
+            "message": {
+              "ru": "Текст диссертации подготовлен по стандарту.",
+              "kz": "Диссертация мәтіні стандартқа келтірілді.",
+              "en": "Dissertation manuscript is formatted according to the standard."
+            },
+            "next_node": "S1_antiplag"
           }
-        },
+        }
+      },
         {
           "id": "S1_antiplag",
           "title": {
@@ -377,16 +378,17 @@
                 }
               }
             ],
-            "on_confirm": {
-              "status": "completed",
-              "message": {
-                "ru": "Антиплагиат подтверждён с результатом ≥ 85%.",
-                "kz": "Антиплагиат нәтижесі ≥ 85% расталды.",
-                "en": "Antiplagiarism verification confirmed with ≥ 85%."
-              }
-            }
+          "on_confirm": {
+            "status": "completed",
+            "message": {
+              "ru": "Антиплагиат подтверждён с результатом ≥ 85%.",
+              "kz": "Антиплагиат нәтижесі ≥ 85% расталды.",
+              "en": "Antiplagiarism verification confirmed with ≥ 85%."
+            },
+            "next_node": "S1_publications_list"
           }
-        },
+        }
+      },
         {
           "id": "S1_publications_list",
           "title": {
