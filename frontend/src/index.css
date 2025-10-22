@@ -94,3 +94,30 @@
     animation: glow 2s ease-in-out infinite;
   }
 }
+
+/* Fix NK_package mobile layout */
+@media (max-width: 768px) {
+  /* Prevent template card from blocking content on NK_package */
+  [data-node-id="NK_package"] .sticky {
+    position: relative;
+    top: auto;
+  }
+
+  /* Ensure checklist items have proper touch area */
+  [data-node-id="NK_package"] .space-y-3 > * {
+    min-height: 60px;
+    padding: 1rem;
+  }
+
+  /* Make actions accessible at the bottom */
+  [data-node-id="NK_package"] .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    background: hsl(var(--background) / 0.98);
+    backdrop-filter: saturate(180%) blur(8px);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-top: 1px solid hsl(var(--border));
+  }
+}
