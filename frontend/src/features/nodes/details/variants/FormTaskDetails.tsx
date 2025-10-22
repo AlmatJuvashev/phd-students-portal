@@ -12,7 +12,7 @@ import { ActionsBar } from "@/features/forms/ActionsBar";
 import { FieldRenderer } from "@/features/forms/FieldRenderer";
 import { evalVisible as evalVisibleExpr } from "@/features/forms/Visibility";
 import { AssetsDownloads } from "@/features/nodes/details/AssetsDownloads";
-import { FieldDef, NodeVM } from "@/lib/playbook";
+import { FieldDef, NodeVM, t as pbT } from "@/lib/playbook";
 
 export type FormTaskContext = {
   node: NodeVM;
@@ -139,6 +139,47 @@ export function FormTaskDetails({
     );
   }, [canEdit, disabled, saveDraft, submit]);
 
+  // NK_package: unified button style and simple completion check
+  const nkActions = useMemo(() => {
+    if (!canEdit) return null;
+    const totalFields = (node.requirements?.fields ?? []).length;
+    const required = (node.requirements?.fields ?? []).filter((f) => (f as any).required);
+    const completedCount = required.reduce(
+      (acc, f) => acc + (values[f.key] ? 1 : 0),
+      0
+    );
+    const allRequiredFilled = required.every((f) => !!values[f.key]);
+
+    const outcomeLabel = pbT(node.outcomes?.[0]?.label, "") || T("forms.proceed_next");
+
+    return (
+      <>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>
+            {completedCount} / {required.length || totalFields}
+          </span>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => saveDraft()}
+            disabled={disabled}
+            className="w-full sm:w-auto"
+          >
+            {T("forms.save_draft")}
+          </Button>
+          <Button
+            onClick={() => submit()}
+            disabled={disabled || !allRequiredFilled}
+            className="w-full sm:w-auto"
+          >
+            {outcomeLabel}
+          </Button>
+        </div>
+      </>
+    );
+  }, [T, canEdit, disabled, node, saveDraft, submit, values]);
+
   return (
     <div className="flex flex-col h-full min-h-0" data-node-id={node.id}>
       {/* Mobile: show templates above the form */}
@@ -194,7 +235,11 @@ export function FormTaskDetails({
 
             {canEdit && (
               <div className="space-y-2 mt-4 form-actions">
-                {renderActions ? renderActions(ctx) : defaultActions}
+                {renderActions
+                  ? renderActions(ctx)
+                  : node.id === "NK_package"
+                  ? nkActions
+                  : defaultActions}
               </div>
             )}
           </Card>
