@@ -140,7 +140,11 @@ export function FormTaskDetails({
   }, [canEdit, disabled, saveDraft, submit]);
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0" data-node-id={node.id}>
+      {/* Mobile: show templates above the form */}
+      <div className="lg:hidden mb-2">
+        <AssetsDownloads node={node} />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-1 min-h-0">
         <div className="lg:col-span-3 flex flex-col min-h-0 min-w-0">
           <Card className="p-4 flex flex-col flex-1 min-h-0">
@@ -189,14 +193,14 @@ export function FormTaskDetails({
             </div>
 
             {canEdit && (
-              <div className="space-y-2 mt-4">
+              <div className="space-y-2 mt-4 form-actions">
                 {renderActions ? renderActions(ctx) : defaultActions}
               </div>
             )}
           </Card>
         </div>
 
-        <div className="lg:col-span-2 border-l pl-4 min-w-0">
+        <div className="hidden lg:block lg:col-span-2 border-l pl-4 min-w-0">
           <AssetsDownloads node={node} />
         </div>
       </div>
