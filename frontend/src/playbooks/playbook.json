@@ -1480,7 +1480,8 @@
                 "ru": "Заявка в ОМиД подтверждена. Можно собирать пакет документов на НК.",
                 "kz": "ОМиД-ке өтініш расталды. Енді ҒК құжаттар пакетін жинауға болады.",
                 "en": "OMiD application confirmed. You can proceed with the SC package."
-              }
+              },
+              "next_node": "NK_package"
             }
           },
           "states": {
@@ -2044,7 +2045,8 @@
                 "ru": "Заявление подано. Перейдите к шагам предзащиты (пп. 7–12).",
                 "kz": "Өтініш берілді. Алдын ала қорғау қадамдарына өтіңіз (7–12-тт.).",
                 "en": "Application submitted. Proceed to the pre-defense steps (items 7–12)."
-              }
+              },
+              "next_node": "NK_package"
             }
           },
           "states": {
@@ -2127,7 +2129,8 @@
             ],
             "on_confirm": {
               "status": "completed",
-              "message": "Нормоконтроль пройден и квитанция получена. Можно переходить к следующему шагу."
+              "message": "Нормоконтроль пройден и квитанция получена. Можно переходить к следующему шагу.",
+              "next_node": "IV_rector_application"
             }
           },
           "states": {
@@ -2252,7 +2255,8 @@
                 "ru": "Заявление ректору подано. Можно переходить к следующему шагу.",
                 "kz": "Ректорға өтініш тапсырылды. Келесі қадамға өтуге болады.",
                 "en": "The rector letter has been submitted. You can proceed to the next step."
-              }
+              },
+              "next_node": "IV3_publication_certificate_ncste"
             }
           },
           "states": {
@@ -2324,7 +2328,8 @@
             ],
             "on_confirm": {
               "status": "completed",
-              "message": "Справка о публикациях получена. Можно переходить к следующему шагу."
+              "message": "Справка о публикациях получена. Можно переходить к следующему шагу.",
+              "next_node": "D2_apply_to_ds"
             }
           },
           "states": {

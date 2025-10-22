@@ -30,6 +30,26 @@ const resolveNextNode = (
 ): string | null => {
   if (!node) return null;
   if (override) return override;
+
+  // 1) Explicit on_confirm.next_node (for confirmTask nodes)
+  const onConfirmNext = (node as any)?.screen?.on_confirm?.next_node as
+    | string
+    | undefined;
+  if (onConfirmNext) return onConfirmNext;
+
+  // 2) states.completed.next_node (fallback for legacy confirmTask)
+  const completedNext = (node as any)?.states?.completed?.next_node as
+    | string
+    | undefined;
+  if (completedNext) return completedNext;
+
+  // 3) outcomes[0].next[0] (common for simple forms)
+  const outcomeNext = (node as any)?.outcomes?.[0]?.next?.[0] as
+    | string
+    | undefined;
+  if (outcomeNext) return outcomeNext;
+
+  // 4) Default node.next with special condition handling
   if (!node.next || !Array.isArray(node.next) || node.next.length === 0) {
     return null;
   }
