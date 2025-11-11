@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Globe, BookOpen, Users, Lightbulb } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -58,8 +59,14 @@ export function CollectionField({
   disabled = false,
   renderField,
 }: CollectionFieldProps) {
-  const items = useMemo(() => (Array.isArray(value) ? value : EMPTY_ARRAY), [value]);
-  const itemFields: FieldDef[] = useMemo(() => field.item_fields ?? [], [field.item_fields]);
+  const items = useMemo(
+    () => (Array.isArray(value) ? value : EMPTY_ARRAY),
+    [value]
+  );
+  const itemFields: FieldDef[] = useMemo(
+    () => field.item_fields ?? [],
+    [field.item_fields]
+  );
   const { t: T } = useTranslation("common");
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -101,7 +108,7 @@ export function CollectionField({
       setEditingIndex(index);
       setModalOpen(true);
     },
-    [itemFields, items],
+    [itemFields, items]
   );
 
   const closeEditor = useCallback(() => {
@@ -126,7 +133,10 @@ export function CollectionField({
       if (f.type === "array" || f.key === "coauthors") {
         const list = splitCoauthors(rawValue);
         if (f.required && list.length === 0) {
-          nextErrors[f.key] = `${labelText}: ${T("forms.required", "Обязательное поле")}`;
+          nextErrors[f.key] = `${labelText}: ${T(
+            "forms.required",
+            "Обязательное поле"
+          )}`;
         } else if (list.length > 0) {
           normalized[f.key] = list;
         }
@@ -136,7 +146,10 @@ export function CollectionField({
           valueToStore = valueToStore.trim();
         }
         if (f.required && (valueToStore === undefined || valueToStore === "")) {
-          nextErrors[f.key] = `${labelText}: ${T("forms.required", "Обязательное поле")}`;
+          nextErrors[f.key] = `${labelText}: ${T(
+            "forms.required",
+            "Обязательное поле"
+          )}`;
         }
         if (valueToStore !== undefined && valueToStore !== "") {
           normalized[f.key] = valueToStore;
@@ -144,7 +157,10 @@ export function CollectionField({
       }
       const otherKey = `${f.key}_other`;
       if (draft[otherKey] !== undefined) {
-        const otherValue = typeof draft[otherKey] === "string" ? draft[otherKey].trim() : draft[otherKey];
+        const otherValue =
+          typeof draft[otherKey] === "string"
+            ? draft[otherKey].trim()
+            : draft[otherKey];
         if (otherValue) {
           normalized[otherKey] = otherValue;
         }
@@ -190,22 +206,36 @@ export function CollectionField({
       const next = items.filter((_, index) => index !== idx);
       onChange(next);
     },
-    [items, onChange],
+    [items, onChange]
   );
 
   const total = items.length;
   const minItems = field.min_items ?? 0;
   const maxItems = field.max_items;
 
+  const iconMap: Record<string, any> = {
+    "lucide:globe": Globe,
+    "lucide:book-open": BookOpen,
+    "lucide:users": Users,
+    "lucide:lightbulb": Lightbulb,
+  };
+
+  const SectionIcon = (field as any).icon ? iconMap[(field as any).icon] : null;
+
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="flex items-center gap-2 sticky top-0 z-10 bg-white/95 backdrop-blur py-3 px-4 -mx-4 border-b md:static md:bg-transparent md:backdrop-blur-none">
+      <div className="flex items-center gap-3 md:static md:bg-transparent md:backdrop-blur-none">
+        {SectionIcon && (
+          <SectionIcon className="w-5 h-5 text-primary flex-shrink-0" />
+        )}
         <h3 className="text-lg font-semibold">
           {label}
           {field.required ? <span className="text-destructive">*</span> : null}
         </h3>
       </div>
-      {itemLabel ? <div className="text-sm text-muted-foreground">{itemLabel}</div> : null}
+      {itemLabel ? (
+        <div className="text-sm text-muted-foreground">{itemLabel}</div>
+      ) : null}
 
       {total === 0 ? (
         <Card className="p-4">
@@ -214,20 +244,28 @@ export function CollectionField({
           </div>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 pt-2 md:pt-0">
           {items.map((item, index) => (
-            <div key={index} className="bg-card border rounded-lg p-4 md:p-6 space-y-4">
+            <div
+              key={index}
+              className="bg-card border rounded-lg p-4 md:p-6 space-y-4"
+            >
               <div className="text-xs text-muted-foreground">#{index + 1}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {previewFields.map((f) => {
                   const cell = item[f.key];
                   const otherKey = `${f.key}_other`;
                   const otherValue = (item as any)[otherKey];
-                  const rendered = Array.isArray(cell) ? cell.join(", ") : cell ?? "";
+                  const rendered = Array.isArray(cell)
+                    ? cell.join(", ")
+                    : cell ?? "";
                   const display = (rendered || otherValue || "—") as string;
                   const isTitle = f.key === "title";
                   return (
-                    <div key={f.key} className={`space-y-1 ${isTitle ? "md:col-span-2" : ""}`}>
+                    <div
+                      key={f.key}
+                      className={`space-y-1 ${isTitle ? "md:col-span-2" : ""}`}
+                    >
                       <div className="text-xs text-muted-foreground">
                         {pbT(f.label, f.key) || f.key}
                       </div>
@@ -269,8 +307,12 @@ export function CollectionField({
 
       {(minItems || maxItems) && (
         <div className="text-xs text-muted-foreground">
-          {minItems ? `${T("forms.collection_min", "Минимум")}: ${minItems}. ` : ""}
-          {maxItems ? `${T("forms.collection_max", "Максимум")}: ${maxItems}.` : ""}
+          {minItems
+            ? `${T("forms.collection_min", "Минимум")}: ${minItems}. `
+            : ""}
+          {maxItems
+            ? `${T("forms.collection_max", "Максимум")}: ${maxItems}.`
+            : ""}
         </div>
       )}
 
@@ -287,7 +329,7 @@ export function CollectionField({
 
       <Modal open={modalOpen} onClose={closeEditor}>
         <div className="max-h-[85vh] flex flex-col">
-          <div className="sticky top-0 z-10 bg-white/95 backdrop-blur py-3">
+          <div className="pb-4 border-b mb-4">
             <div className="text-lg font-semibold">
               {editingIndex === null
                 ? T("forms.collection_add_title", "Новая запись")
@@ -297,7 +339,7 @@ export function CollectionField({
               <div className="text-sm text-muted-foreground">{itemLabel}</div>
             ) : null}
           </div>
-          <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+          <div className="flex-1 space-y-4 overflow-y-auto pr-2">
             {itemFields.map((itemField) => (
               <div key={itemField.key} className="space-y-1">
                 {renderField({
@@ -310,14 +352,20 @@ export function CollectionField({
                   otherValue: draft[`${itemField.key}_other`],
                 })}
                 {errors[itemField.key] ? (
-                  <div className="text-xs text-destructive">{errors[itemField.key]}</div>
+                  <div className="text-xs text-destructive">
+                    {errors[itemField.key]}
+                  </div>
                 ) : null}
               </div>
             ))}
           </div>
           <Separator />
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" onClick={closeEditor} className="min-h-[44px]">
+            <Button
+              variant="secondary"
+              onClick={closeEditor}
+              className="min-h-[44px]"
+            >
               {T("forms.cancel", "Отмена")}
             </Button>
             <Button onClick={handleSave} className="min-h-[44px]">

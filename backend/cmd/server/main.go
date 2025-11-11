@@ -64,6 +64,11 @@ func main() {
 
 	r := gin.Default()
 
+	// Trust only localhost proxies (fix Gin warning)
+	if err := r.SetTrustedProxies([]string{"127.0.0.1", "::1"}); err != nil {
+		log.Printf("Warning: failed to set trusted proxies: %v", err)
+	}
+
 	api := handlers.BuildAPI(r, conn, cfg, pbManager)
 
 	logging.Info("API listening", "port", cfg.Port)
