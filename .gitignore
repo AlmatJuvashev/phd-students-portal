@@ -11,6 +11,10 @@ backend/tmp/
 backend/.env
 backend/uploads/
 
+# Mock data (development only)
+mocks/credentials.txt
+mocks/*.txt
+
 # OS/editor
 .DS_Store
 Thumbs.db
