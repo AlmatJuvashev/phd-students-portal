@@ -1,0 +1,203 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Clinical color palette - calm, trust-building, minimal */
+  --clinical-background: oklch(0.99 0.002 240);
+  --clinical-foreground: oklch(0.25 0.01 240);
+
+  --clinical-card: oklch(1 0 0);
+  --clinical-border: oklch(0.94 0.003 240);
+  --clinical-muted: oklch(0.96 0.003 240);
+  --clinical-hover: oklch(0.97 0.003 240);
+
+  /* Primary - soft blue-gray for medical trust */
+  --clinical-primary: oklch(0.48 0.08 240);
+  --clinical-primary-foreground: oklch(0.99 0 0);
+
+  /* Accent - subtle teal for interactive elements */
+  --clinical-accent: oklch(0.55 0.09 200);
+  --clinical-accent-foreground: oklch(0.99 0 0);
+
+  /* Status colors - medical-grade semantics */
+  --clinical-success: oklch(0.55 0.12 150);
+  --clinical-success-foreground: oklch(0.99 0 0);
+
+  --clinical-warning: oklch(0.65 0.15 70);
+  --clinical-warning-foreground: oklch(0.25 0.01 240);
+
+  --clinical-alert: oklch(0.6 0.2 25);
+  --clinical-alert-foreground: oklch(0.99 0 0);
+
+  --clinical-info: oklch(0.52 0.1 220);
+  --clinical-info-foreground: oklch(0.99 0 0);
+
+  --background: oklch(0.99 0.002 240);
+  --foreground: oklch(0.25 0.01 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.01 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.01 240);
+  --primary: oklch(0.48 0.08 240);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.003 240);
+  --secondary-foreground: oklch(0.25 0.01 240);
+  --muted: oklch(0.96 0.003 240);
+  --muted-foreground: oklch(0.52 0.02 240);
+  --accent: oklch(0.96 0.003 240);
+  --accent-foreground: oklch(0.25 0.01 240);
+  --destructive: oklch(0.6 0.2 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.94 0.003 240);
+  --input: oklch(0.94 0.003 240);
+  --ring: oklch(0.48 0.08 240);
+  --chart-1: oklch(0.48 0.08 240);
+  --chart-2: oklch(0.55 0.09 200);
+  --chart-3: oklch(0.55 0.12 150);
+  --chart-4: oklch(0.65 0.15 70);
+  --chart-5: oklch(0.6 0.2 25);
+  --radius: 0.75rem;
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.25 0.01 240);
+  --sidebar-primary: oklch(0.48 0.08 240);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.96 0.003 240);
+  --sidebar-accent-foreground: oklch(0.25 0.01 240);
+  --sidebar-border: oklch(0.94 0.003 240);
+  --sidebar-ring: oklch(0.48 0.08 240);
+}
+
+.dark {
+  --clinical-background: oklch(0.15 0.01 240);
+  --clinical-foreground: oklch(0.95 0.003 240);
+  --clinical-card: oklch(0.18 0.01 240);
+  --clinical-border: oklch(0.25 0.01 240);
+  --clinical-muted: oklch(0.22 0.01 240);
+  --clinical-hover: oklch(0.24 0.01 240);
+
+  --clinical-primary: oklch(0.62 0.12 220);
+  --clinical-primary-foreground: oklch(0.15 0.01 240);
+
+  --clinical-accent: oklch(0.65 0.12 200);
+  --clinical-accent-foreground: oklch(0.15 0.01 240);
+
+  --clinical-success: oklch(0.62 0.14 150);
+  --clinical-success-foreground: oklch(0.15 0.01 240);
+
+  --clinical-warning: oklch(0.7 0.16 70);
+  --clinical-warning-foreground: oklch(0.15 0.01 240);
+
+  --clinical-alert: oklch(0.65 0.22 25);
+  --clinical-alert-foreground: oklch(0.15 0.01 240);
+
+  --clinical-info: oklch(0.62 0.12 220);
+  --clinical-info-foreground: oklch(0.15 0.01 240);
+
+  --background: oklch(0.15 0.01 240);
+  --foreground: oklch(0.95 0.003 240);
+  --card: oklch(0.18 0.01 240);
+  --card-foreground: oklch(0.95 0.003 240);
+  --popover: oklch(0.18 0.01 240);
+  --popover-foreground: oklch(0.95 0.003 240);
+  --primary: oklch(0.62 0.12 220);
+  --primary-foreground: oklch(0.15 0.01 240);
+  --secondary: oklch(0.22 0.01 240);
+  --secondary-foreground: oklch(0.95 0.003 240);
+  --muted: oklch(0.22 0.01 240);
+  --muted-foreground: oklch(0.65 0.02 240);
+  --accent: oklch(0.22 0.01 240);
+  --accent-foreground: oklch(0.95 0.003 240);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.95 0.003 240);
+  --border: oklch(0.25 0.01 240);
+  --input: oklch(0.25 0.01 240);
+  --ring: oklch(0.62 0.12 220);
+  --chart-1: oklch(0.62 0.12 220);
+  --chart-2: oklch(0.65 0.12 200);
+  --chart-3: oklch(0.62 0.14 150);
+  --chart-4: oklch(0.7 0.16 70);
+  --chart-5: oklch(0.65 0.22 25);
+  --sidebar: oklch(0.18 0.01 240);
+  --sidebar-foreground: oklch(0.95 0.003 240);
+  --sidebar-primary: oklch(0.62 0.12 220);
+  --sidebar-primary-foreground: oklch(0.15 0.01 240);
+  --sidebar-accent: oklch(0.22 0.01 240);
+  --sidebar-accent-foreground: oklch(0.95 0.003 240);
+  --sidebar-border: oklch(0.25 0.01 240);
+  --sidebar-ring: oklch(0.62 0.12 220);
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --color-clinical-background: var(--clinical-background);
+  --color-clinical-foreground: var(--clinical-foreground);
+  --color-clinical-card: var(--clinical-card);
+  --color-clinical-border: var(--clinical-border);
+  --color-clinical-muted: var(--clinical-muted);
+  --color-clinical-hover: var(--clinical-hover);
+  --color-clinical-primary: var(--clinical-primary);
+  --color-clinical-primary-foreground: var(--clinical-primary-foreground);
+  --color-clinical-accent: var(--clinical-accent);
+  --color-clinical-accent-foreground: var(--clinical-accent-foreground);
+  --color-clinical-success: var(--clinical-success);
+  --color-clinical-success-foreground: var(--clinical-success-foreground);
+  --color-clinical-warning: var(--clinical-warning);
+  --color-clinical-warning-foreground: var(--clinical-warning-foreground);
+  --color-clinical-alert: var(--clinical-alert);
+  --color-clinical-alert-foreground: var(--clinical-alert-foreground);
+  --color-clinical-info: var(--clinical-info);
+  --color-clinical-info-foreground: var(--clinical-info-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* added clinical shadow utilities */
+.shadow-clinical {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
