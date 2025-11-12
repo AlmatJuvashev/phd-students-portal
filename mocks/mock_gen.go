@@ -25,8 +25,8 @@ type person struct {
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	if err := godotenv.Load("backend/.env"); err != nil {
-		fmt.Println("warning: backend/.env not found, relying on existing env vars")
+	if err := godotenv.Load(".env"); err != nil {
+		fmt.Println("warning: .env not found, relying on existing env vars")
 	}
 	cfg := config.MustLoad()
 	conn := db.MustOpen(cfg.DatabaseURL)
