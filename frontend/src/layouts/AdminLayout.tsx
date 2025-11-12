@@ -33,6 +33,15 @@ function SidebarNav() {
       >
         Student Progress
       </NavLink>
+      <NavLink
+        to="/admin/students-monitor"
+        className={cn(
+          "block rounded px-3 py-2 hover:bg-muted",
+          isActive("/admin/students-monitor") && "bg-muted font-medium"
+        )}
+      >
+        Students Monitor
+      </NavLink>
       <div className="text-xs uppercase text-muted-foreground mt-4 px-2">Management</div>
       <NavLink
         to="/admin/create-students"
