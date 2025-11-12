@@ -164,7 +164,7 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
     advisorsByStudent := map[string][]map[string]string{}
     if len(ids) > 0 {
         query, vs := buildIn("SELECT sa.student_id, u.id, (u.first_name||' '||u.last_name) AS name, COALESCE(u.email,'') FROM student_advisors sa JOIN users u ON u.id=sa.advisor_id WHERE sa.student_id IN (?)", ids)
-        rr, _ := h.db.Queryx(query, vs...)
+        rr, _ := h.db.Queryx(rebind(h.db, query), vs...)
         defer func() { if rr != nil { rr.Close() } }()
         if rr != nil {
             for rr.Next() {
