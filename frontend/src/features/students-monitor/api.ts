@@ -47,3 +47,11 @@ export async function putDeadline(id: string, nodeId: string, due_at: string, no
 export async function postReminders(payload: { student_ids: string[]; title: string; message?: string; due_at?: string }) {
   return api(`/admin/reminders`, { method: "POST", body: JSON.stringify(payload) });
 }
+
+export async function fetchMonitorAnalytics(params: Record<string, any> = {}) {
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && String(v) !== "") sp.set(k, String(v));
+  });
+  return api(`/admin/monitor/analytics${sp.toString() ? `?${sp.toString()}` : ""}`);
+}

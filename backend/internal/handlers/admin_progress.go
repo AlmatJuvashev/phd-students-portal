@@ -303,6 +303,118 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
     c.JSON(http.StatusOK, out)
 }
 
+// MonitorAnalytics returns aggregate analytics for the current filtered cohort.
+// Params mirror MonitorStudents: q, program, department, cohort, advisor_id, rp_required ("1")
+func (h *AdminHandler) MonitorAnalytics(c *gin.Context) {
+    // Build filtered student list first (reuse logic from MonitorStudents)
+    q := strings.TrimSpace(c.Query("q"))
+    program := strings.TrimSpace(c.Query("program"))
+    department := strings.TrimSpace(c.Query("department"))
+    cohort := strings.TrimSpace(c.Query("cohort"))
+    advisorID := strings.TrimSpace(c.Query("advisor_id"))
+    rpOnly := strings.TrimSpace(c.Query("rp_required")) == "1"
+
+    base := `SELECT u.id FROM users u`
+    where := " WHERE u.is_active=true AND u.role='student'"
+    args := []any{}
+
+    role := roleFromContext(c)
+    callerID := userIDFromClaims(c)
+    if role == "advisor" && callerID != "" {
+        base += " JOIN student_advisors sa ON sa.student_id=u.id"
+        where += " AND sa.advisor_id=$1"
+        args = append(args, callerID)
+    }
+    if advisorID != "" {
+        if !strings.Contains(base, "student_advisors") {
+            base += " JOIN student_advisors sa ON sa.student_id=u.id"
+        }
+        where += fmt.Sprintf(" AND sa.advisor_id=$%d", len(args)+1)
+        args = append(args, advisorID)
+    }
+    if program != "" { where += fmt.Sprintf(" AND u.program=$%d", len(args)+1); args = append(args, program) }
+    if department != "" { where += fmt.Sprintf(" AND u.department=$%d", len(args)+1); args = append(args, department) }
+    if cohort != "" { where += fmt.Sprintf(" AND u.cohort=$%d", len(args)+1); args = append(args, cohort) }
+    if q != "" {
+        where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR (u.phone ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
+        args = append(args, q)
+    }
+    // collect ids
+    var ids []string
+    rows, _ := h.db.Queryx(base+where, args...)
+    if rows != nil { for rows.Next(){ var id string; _=rows.Scan(&id); ids = append(ids, id)}; rows.Close() }
+    if len(ids) == 0 { c.JSON(200, gin.H{"antiplag_done_percent": 0, "w2_median_days": 0, "bottleneck_node_id": "", "bottleneck_count": 0, "rp_required_count": 0}); return }
+
+    // rp_required
+    rpRequired := map[string]bool{}
+    q3, v3 := buildIn("SELECT user_id, form_data FROM profile_submissions WHERE user_id IN (?)", ids)
+    rows3, _ := h.db.Queryx(rebind(h.db, q3), v3...)
+    if rows3 != nil {
+        for rows3.Next(){ var uid string; var raw json.RawMessage; _=rows3.Scan(&uid,&raw); var m map[string]any; _=json.Unmarshal(raw,&m); if y,ok:=m["years_since_graduation"].(float64); ok && y>3 { rpRequired[uid]=true } }
+        rows3.Close()
+    }
+    rpCount := 0
+    for _, id := range ids { if rpRequired[id] { rpCount++ } }
+    if rpOnly {
+        filtered := ids[:0]
+        for _, id := range ids { if rpRequired[id] { filtered = append(filtered, id) } }
+        ids = filtered
+        if len(ids) == 0 { c.JSON(200, gin.H{"antiplag_done_percent": 0, "w2_median_days": 0, "bottleneck_node_id": "", "bottleneck_count": 0, "rp_required_count": rpCount}); return }
+    }
+
+    // % with S1_antiplag done (treat done as >=85% confirmed)
+    antiplagDone := 0
+    qA, vA := buildIn("SELECT COUNT(*) FROM node_instances WHERE playbook_version_id=$1 AND node_id='S1_antiplag' AND state='done' AND user_id IN (?)", ids)
+    _ = h.db.QueryRowx(rebind(h.db, qA), append([]any{h.pb.VersionID}, vA...)...).Scan(&antiplagDone)
+    antiplagPct := 0.0
+    if len(ids) > 0 { antiplagPct = float64(antiplagDone) * 100.0 / float64(len(ids)) }
+
+    // Median days in W2: from first update in W2 to last update in W2 for each student
+    _, worlds := worldsFromRaw(h.pb.Raw)
+    w2Nodes := worlds["W2"]
+    durations := []float64{}
+    if len(w2Nodes) > 0 {
+        // fetch per student min and max updated_at for W2 nodes
+        qW, vW := buildIn("SELECT user_id, MIN(updated_at), MAX(updated_at) FROM node_instances WHERE playbook_version_id=$1 AND node_id IN (?) AND user_id IN (?) GROUP BY user_id", append(w2Nodes, ids...))
+        // buildIn cannot handle two INs at once; fallback to two-step: first for users, then constrain node_id list directly by IN with manual string.
+    }
+    // Simplified approach: loop ids and query min/max per id
+    for _, id := range ids {
+        var minT, maxT *time.Time
+        if len(w2Nodes) == 0 { break }
+        q2, v2 := buildIn("SELECT MIN(updated_at), MAX(updated_at) FROM node_instances WHERE playbook_version_id=$1 AND user_id=$2 AND node_id IN (?)", w2Nodes)
+        row := h.db.QueryRowx(rebind(h.db, q2), append([]any{h.pb.VersionID, id}, v2...)...)
+        var minStr, maxStr *time.Time
+        _ = row.Scan(&minStr, &maxStr)
+        minT = minStr; maxT = maxStr
+        if minT != nil && maxT != nil && !maxT.Before(*minT) {
+            d := maxT.Sub(*minT).Hours()/24.0
+            durations = append(durations, d)
+        }
+    }
+    medianDays := 0.0
+    if len(durations) > 0 {
+        // sort
+        for i:=1;i<len(durations);i++{ key:=durations[i]; j:=i-1; for j>=0 && durations[j]>key { durations[j+1]=durations[j]; j-- }; durations[j+1]=key }
+        mid := len(durations)/2
+        if len(durations)%2==1 { medianDays = durations[mid] } else { medianDays = (durations[mid-1]+durations[mid])/2 }
+    }
+
+    // Bottleneck node this month: top node by waiting/needs_fixes updated in current month
+    start := time.Date(time.Now().Year(), time.Now().Month(), 1, 0,0,0,0, time.Now().Location())
+    qB, vB := buildIn("SELECT node_id, COUNT(*) FROM node_instances WHERE playbook_version_id=$1 AND user_id IN (?) AND state IN ('waiting','needs_fixes') AND updated_at >= $2 GROUP BY node_id ORDER BY COUNT(*) DESC LIMIT 1", ids)
+    var bottleneckID string; var bottleneckCount int
+    _ = h.db.QueryRowx(rebind(h.db, qB), append([]any{h.pb.VersionID}, append(vB, start)...)...).Scan(&bottleneckID, &bottleneckCount)
+
+    c.JSON(200, gin.H{
+        "antiplag_done_percent": antiplagPct,
+        "w2_median_days": medianDays,
+        "bottleneck_node_id": bottleneckID,
+        "bottleneck_count": bottleneckCount,
+        "rp_required_count": rpCount,
+    })
+}
+
 // StudentJourney returns node states and basic attachments count for a student.
 func (h *AdminHandler) StudentJourney(c *gin.Context) {
     uid := c.Param("id")

@@ -11,6 +11,7 @@ function SidebarNav() {
   const location = useLocation();
   const isActive = (to: string) => location.pathname === to;
   const canSeeAdmins = user?.role === "superadmin";
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   return (
     <nav className="p-4 space-y-2">
@@ -42,25 +43,29 @@ function SidebarNav() {
       >
         Students Monitor
       </NavLink>
-      <div className="text-xs uppercase text-muted-foreground mt-4 px-2">Management</div>
-      <NavLink
-        to="/admin/create-students"
-        className={cn(
-          "block rounded px-3 py-2 hover:bg-muted",
-          isActive("/admin/create-students") && "bg-muted font-medium"
-        )}
-      >
-        Create Students
-      </NavLink>
-      <NavLink
-        to="/admin/create-advisors"
-        className={cn(
-          "block rounded px-3 py-2 hover:bg-muted",
-          isActive("/admin/create-advisors") && "bg-muted font-medium"
-        )}
-      >
-        Create Advisors
-      </NavLink>
+      {isAdmin && (
+        <>
+          <div className="text-xs uppercase text-muted-foreground mt-4 px-2">Management</div>
+          <NavLink
+            to="/admin/create-students"
+            className={cn(
+              "block rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/create-students") && "bg-muted font-medium"
+            )}
+          >
+            Create Students
+          </NavLink>
+          <NavLink
+            to="/admin/create-advisors"
+            className={cn(
+              "block rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/create-advisors") && "bg-muted font-medium"
+            )}
+          >
+            Create Advisors
+          </NavLink>
+        </>
+      )}
       {canSeeAdmins && (
         <NavLink
           to="/admin/create-admins"
