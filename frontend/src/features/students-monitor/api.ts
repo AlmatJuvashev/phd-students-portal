@@ -12,6 +12,11 @@ export type MonitorStudent = {
   rp_required?: boolean;
   overall_progress_pct?: number;
   last_update?: string;
+  current_stage?: string;
+  stage_done?: number;
+  stage_total?: number;
+  due_next?: string;
+  overdue?: boolean;
 };
 
 export async function fetchMonitorStudents(params: Record<string, any> = {}) {
@@ -31,3 +36,14 @@ export async function patchStudentNodeState(id: string, nodeId: string, state: s
   return api(`/admin/students/${id}/nodes/${nodeId}/state`, { method: "PATCH", body: JSON.stringify({ state }) });
 }
 
+export async function fetchDeadlines(id: string): Promise<{ node_id: string; due_at: string }[]> {
+  return api(`/admin/students/${id}/deadlines`);
+}
+
+export async function putDeadline(id: string, nodeId: string, due_at: string, note?: string) {
+  return api(`/admin/students/${id}/nodes/${nodeId}/deadline`, { method: "PUT", body: JSON.stringify({ due_at, note }) });
+}
+
+export async function postReminders(payload: { student_ids: string[]; title: string; message?: string; due_at?: string }) {
+  return api(`/admin/reminders`, { method: "POST", body: JSON.stringify(payload) });
+}

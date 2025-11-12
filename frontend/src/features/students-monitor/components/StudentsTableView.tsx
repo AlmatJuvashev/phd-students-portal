@@ -14,8 +14,10 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
               <tr className="text-left">
                 <th className="py-2 px-3">Student</th>
                 <th className="py-2 px-3">Program · Department · Cohort</th>
+                <th className="py-2 px-3">Stage</th>
                 <th className="py-2 px-3">Advisors</th>
                 <th className="py-2 px-3">Overall</th>
+                <th className="py-2 px-3">Due next</th>
                 <th className="py-2 px-3">Last update</th>
                 <th className="py-2 px-3">Actions</th>
               </tr>
@@ -30,6 +32,17 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
                   <td className="py-2 px-3">
                     <div>{[r.program, r.department].filter(Boolean).join(" · ") || "—"}</div>
                     <div className="text-xs text-muted-foreground">{r.cohort || "—"}</div>
+                  </td>
+                  <td className="py-2 px-3">
+                    <div className="text-xs font-medium">{stageLabel(r.current_stage)}</div>
+                    {typeof r.stage_done === 'number' && typeof r.stage_total === 'number' && (
+                      <div className="flex items-center gap-2 min-w-[120px]">
+                        <div className="flex-1 bg-muted/40 rounded-full h-1 overflow-hidden">
+                          <div className="bg-primary h-1" style={{ width: `${Math.round(((r.stage_done||0)/(r.stage_total||1))*100)}%` }} />
+                        </div>
+                        <span className="text-xs tabular-nums">{r.stage_done}/{r.stage_total}</span>
+                      </div>
+                    )}
                   </td>
                   <td className="py-2 px-3">
                     <div className="flex flex-wrap gap-1">
@@ -47,6 +60,12 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
                       <span className="tabular-nums w-10 text-right">{Math.round(r.overall_progress_pct || 0)}%</span>
                     </div>
                   </td>
+                  <td className="py-2 px-3">
+                    <div className="flex items-center gap-2">
+                      <span>{r.due_next ? new Date(r.due_next).toLocaleDateString() : '—'}</span>
+                      {r.overdue ? <span title="Overdue" className="text-red-600">●</span> : null}
+                    </div>
+                  </td>
                   <td className="py-2 px-3">{r.last_update ? new Date(r.last_update).toLocaleString() : "—"}</td>
                   <td className="py-2 px-3">
                     <Button size="sm" variant="outline" onClick={() => onOpen(r)}>View</Button>
@@ -61,3 +80,16 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
   );
 }
 
+function stageLabel(s?: string) {
+  const map: Record<string,string> = {
+    W1: "I — Preparation",
+    W2: "II — Pre-examination",
+    W3: "III — RP",
+    W4: "IV — Submission to DC",
+    W5: "V — Restoration",
+    W6: "VI — After DC acceptance",
+    W7: "VII — Defense & Post-defense",
+  };
+  if (!s) return '—';
+  return map[s] || s;
+}
