@@ -1,16 +1,16 @@
 package handlers
 
 import (
-    "encoding/json"
-    "fmt"
-    "net/http"
-    "strings"
-    "time"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
 
-    "github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
-    pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
-    "github.com/gin-gonic/gin"
-    "github.com/jmoiron/sqlx"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 )
 
 type AdminHandler struct {
@@ -100,10 +100,14 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
     advisorID := strings.TrimSpace(c.Query("advisor_id"))
     rpOnly := strings.TrimSpace(c.Query("rp_required")) == "1"
     limit := 200
-    // base selector
-    base := `SELECT u.id, (u.first_name||' '||u.last_name) AS name, COALESCE(u.email,'') AS email, COALESCE(u.phone,'') AS phone,
-                    COALESCE(u.program,'') AS program, COALESCE(u.department,'') AS department, COALESCE(u.cohort,'') AS cohort
-             FROM users u`
+    // base selector - phone, program, department, cohort are in profile_submissions.form_data as JSONB
+    base := `SELECT u.id, (u.first_name||' '||u.last_name) AS name, COALESCE(u.email,'') AS email,
+                    COALESCE(ps.form_data->>'phone','') AS phone,
+                    COALESCE(ps.form_data->>'program','') AS program,
+                    COALESCE(ps.form_data->>'department','') AS department,
+                    COALESCE(ps.form_data->>'cohort','') AS cohort
+             FROM users u
+             LEFT JOIN profile_submissions ps ON ps.user_id = u.id`
     where := " WHERE u.is_active=true AND u.role='student'"
     args := []any{}
 
@@ -122,21 +126,21 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
         where += fmt.Sprintf(" AND sa.advisor_id=$%d", len(args)+1)
         args = append(args, advisorID)
     }
-    // filters
+    // filters - use JSONB fields from profile_submissions
     if program != "" {
-        where += fmt.Sprintf(" AND u.program=$%d", len(args)+1)
+        where += fmt.Sprintf(" AND ps.form_data->>'program'=$%d", len(args)+1)
         args = append(args, program)
     }
     if department != "" {
-        where += fmt.Sprintf(" AND u.department=$%d", len(args)+1)
+        where += fmt.Sprintf(" AND ps.form_data->>'department'=$%d", len(args)+1)
         args = append(args, department)
     }
     if cohort != "" {
-        where += fmt.Sprintf(" AND u.cohort=$%d", len(args)+1)
+        where += fmt.Sprintf(" AND ps.form_data->>'cohort'=$%d", len(args)+1)
         args = append(args, cohort)
     }
     if q != "" {
-        where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR (u.phone ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
+        where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR (ps.form_data->>'phone' ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
         args = append(args, q)
     }
     order := " ORDER BY u.last_name, u.first_name"
@@ -216,7 +220,7 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
     // total nodes and W3 nodes count for correct denominator
     totalNodes := len(h.pb.Nodes)
     // Build world map and node->world mapping from playbook
-    worldOrder, worldNodes := worldsFromRaw(h.pb.Raw)
+    _, worldNodes := worldsFromRaw(h.pb.Raw)
     w3Count := len(worldNodes["W3"])
     now := time.Now()
 
@@ -373,11 +377,6 @@ func (h *AdminHandler) MonitorAnalytics(c *gin.Context) {
     _, worlds := worldsFromRaw(h.pb.Raw)
     w2Nodes := worlds["W2"]
     durations := []float64{}
-    if len(w2Nodes) > 0 {
-        // fetch per student min and max updated_at for W2 nodes
-        qW, vW := buildIn("SELECT user_id, MIN(updated_at), MAX(updated_at) FROM node_instances WHERE playbook_version_id=$1 AND node_id IN (?) AND user_id IN (?) GROUP BY user_id", append(w2Nodes, ids...))
-        // buildIn cannot handle two INs at once; fallback to two-step: first for users, then constrain node_id list directly by IN with manual string.
-    }
     // Simplified approach: loop ids and query min/max per id
     for _, id := range ids {
         var minT, maxT *time.Time
