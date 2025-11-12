@@ -8,6 +8,9 @@ import { AnalyticsView } from "./components/AnalyticsView";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { StudentDetailDrawer } from "./components/StudentDetailDrawer";
+import { Modal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function StudentsMonitorPage() {
   const [filters, setFilters] = React.useState<Filters>({});
@@ -26,6 +29,39 @@ export function StudentsMonitorPage() {
   });
   const [tab, setTab] = React.useState<"table"|"kanban"|"analytics">("table");
   const [detail, setDetail] = React.useState<MonitorStudent | null>(null);
+  const [bulkOpen, setBulkOpen] = React.useState(false);
+  const [bulkTitle, setBulkTitle] = React.useState("");
+  const [bulkMessage, setBulkMessage] = React.useState("");
+  const [bulkDue, setBulkDue] = React.useState("");
+
+  // CSV export: listen to event from FiltersBar and export current rows
+  React.useEffect(() => {
+    function onExport(e: any) {
+      const rows = data || [];
+      const head = ["id","name","email","phone","program","department","cohort","current_stage","stage_done","stage_total","overall_progress_pct","due_next","overdue","last_update"];
+      const lines = [head.join(",")].concat(rows.map(r => [r.id,r.name,r.email||'',r.phone||'',r.program||'',r.department||'',r.cohort||'',r.current_stage||'',String(r.stage_done||''),String(r.stage_total||''),String(Math.round(r.overall_progress_pct||0)),r.due_next||'',String(!!r.overdue),r.last_update||''].map(v => `"${String(v).replaceAll('"','""')}"`).join(',')));
+      const blob = new Blob([lines.join("\n")], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `students-monitor.csv`; a.click(); URL.revokeObjectURL(url);
+    }
+    window.addEventListener('students-monitor:export', onExport as any);
+    return () => window.removeEventListener('students-monitor:export', onExport as any);
+  }, [data]);
+
+  // Bulk reminder open handler
+  React.useEffect(() => {
+    function onOpenBulk() { setBulkOpen(true); }
+    window.addEventListener('students-monitor:bulk-reminder', onOpenBulk);
+    return () => window.removeEventListener('students-monitor:bulk-reminder', onOpenBulk);
+  }, []);
+
+  async function sendBulkReminder() {
+    const ids = (data || []).map(r => r.id);
+    if (ids.length === 0) { setBulkOpen(false); return; }
+    await (await import('./api')).postReminders({ student_ids: ids, title: bulkTitle, message: bulkMessage, due_at: bulkDue || undefined });
+    setBulkOpen(false); setBulkTitle(""); setBulkMessage(""); setBulkDue("");
+  }
 
   return (
     <div className="space-y-4">
@@ -57,6 +93,19 @@ export function StudentsMonitorPage() {
       )}
 
       <StudentDetailDrawer open={!!detail} onOpenChange={(b) => !b && setDetail(null)} student={detail ? { id: detail.id, name: detail.name, program: detail.program, department: detail.department, advisors: detail.advisors as any } : null} />
+
+      <Modal open={bulkOpen} onClose={() => setBulkOpen(false)}>
+        <div className="space-y-3">
+          <div className="text-sm font-semibold">New reminder for {data?.length || 0} students</div>
+          <Input placeholder="Title" value={bulkTitle} onChange={e => setBulkTitle(e.target.value)} />
+          <Input placeholder="Message (optional)" value={bulkMessage} onChange={e => setBulkMessage(e.target.value)} />
+          <input type="datetime-local" value={bulkDue} onChange={e => setBulkDue(e.target.value)} className="border rounded px-2 py-1 w-full" />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setBulkOpen(false)}>Cancel</Button>
+            <Button onClick={sendBulkReminder} disabled={!bulkTitle}>Send</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

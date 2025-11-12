@@ -39,6 +39,7 @@ export function FiltersBar({ value, onChange, onRefresh }: { value: Filters; onC
         <Button variant="ghost" onClick={() => { setLocal({}); onChange({}); }}>Clear</Button>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="outline" onClick={onRefresh}>Refresh</Button>
+          <Button variant="outline" onClick={() => bulkReminder(local)}>New reminder</Button>
           <Button onClick={() => exportCSV(local)}>Export CSV</Button>
         </div>
       </div>
@@ -49,5 +50,10 @@ export function FiltersBar({ value, onChange, onRefresh }: { value: Filters; onC
 function exportCSV(filters: Filters) {
   // Signal to caller via DOM event; page listens and provides current rows snapshot
   const ev = new CustomEvent('students-monitor:export', { detail: { filters } });
+  window.dispatchEvent(ev);
+}
+
+function bulkReminder(filters: Filters) {
+  const ev = new CustomEvent('students-monitor:bulk-reminder', { detail: { filters } });
   window.dispatchEvent(ev);
 }
