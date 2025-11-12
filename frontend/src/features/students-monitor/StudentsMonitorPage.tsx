@@ -19,6 +19,9 @@ export function StudentsMonitorPage() {
       department: filters.department,
       cohort: filters.cohort,
       rp_required: filters.rp_required ? 1 : undefined,
+      overdue: filters.overdue ? 1 : undefined,
+      due_from: filters.due_from,
+      due_to: filters.due_to,
     }),
   });
   const [tab, setTab] = React.useState<"table"|"kanban"|"analytics">("table");
@@ -59,4 +62,3 @@ export function StudentsMonitorPage() {
 }
 
 export default StudentsMonitorPage;
-
