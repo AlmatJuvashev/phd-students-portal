@@ -3,86 +3,219 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertCircle } from "lucide-react";
 import type { MonitorStudent } from "../api";
-import { Input } from "@/components/ui/input";
 
-export function StudentsTableView({ rows, onOpen, selected, onToggle, onToggleAll }: {
+export function StudentsTableView({
+  rows,
+  onOpen,
+  selected,
+  onToggle,
+  onToggleAll,
+}: {
   rows: MonitorStudent[];
   onOpen: (s: MonitorStudent) => void;
   selected: Set<string>;
   onToggle: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
 }) {
-  const { i18n } = useTranslation('common');
+  const { i18n } = useTranslation("common");
+
+  const getRowClass = (student: MonitorStudent) => {
+    if (student.overdue) return "bg-red-50/50 hover:bg-red-50";
+    // Add more status colors based on progress or other criteria
+    return "hover:bg-muted/50";
+  };
+
   return (
-    <Card>
+    <Card className="border-border shadow-sm">
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead className="border-b bg-muted/30">
-              <tr className="text-left">
-                <th className="py-2 px-3"><input type="checkbox" checked={selected.size>0 && selected.size===rows.length} onChange={e => onToggleAll(e.target.checked)} aria-label="Select all" /></th>
-                <th className="py-2 px-3">Student</th>
-                <th className="py-2 px-3">Program · Department · Cohort</th>
-                <th className="py-2 px-3">Stage</th>
-                <th className="py-2 px-3">Advisors</th>
-                <th className="py-2 px-3">Overall</th>
-                <th className="py-2 px-3">Due next</th>
-                <th className="py-2 px-3">Last update</th>
-                <th className="py-2 px-3">Actions</th>
+              <tr>
+                <th className="p-4 text-left">
+                  <Checkbox
+                    checked={selected.size > 0 && selected.size === rows.length}
+                    onCheckedChange={(checked) => onToggleAll(!!checked)}
+                    aria-label="Select all"
+                  />
+                </th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">
+                  Student
+                </th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">
+                  Program · Department
+                </th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">
+                  Advisors · Cohort
+                </th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">
+                  Current Stage
+                </th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">
+                  Progress
+                </th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">
+                  Due Next
+                </th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">
+                  Last Update
+                </th>
+                <th className="p-4 text-right text-sm font-medium text-muted-foreground">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b hover:bg-muted/20">
-                  <td className="py-2 px-3"><input type="checkbox" checked={selected.has(r.id)} onChange={e => onToggle(r.id, e.target.checked)} aria-label={`Select ${r.name}`} /></td>
-                  <td className="py-2 px-3">
-                    <div className="font-medium">{r.name}</div>
-                    <div className="text-xs text-muted-foreground">{r.email || r.phone || "—"}</div>
+                <tr
+                  key={r.id}
+                  className={`border-b transition-colors cursor-pointer ${getRowClass(
+                    r
+                  )}`}
+                  onClick={() => onOpen(r)}
+                >
+                  <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selected.has(r.id)}
+                      onCheckedChange={(checked) => onToggle(r.id, !!checked)}
+                      aria-label={`Select ${r.name}`}
+                    />
                   </td>
-                  <td className="py-2 px-3">
-                    <div>{[r.program, r.department].filter(Boolean).join(" · ") || "—"}</div>
-                    <div className="text-xs text-muted-foreground">{r.cohort || "—"}</div>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="text-xs font-medium">{stageLabel(r.current_stage, i18n.language)}</div>
-                    {typeof r.stage_done === 'number' && typeof r.stage_total === 'number' && (
-                      <div className="flex items-center gap-2 min-w-[120px]">
-                        <div className="flex-1 bg-muted/40 rounded-full h-1 overflow-hidden">
-                          <div className="bg-primary h-1" style={{ width: `${Math.round(((r.stage_done||0)/(r.stage_total||1))*100)}%` }} />
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border-2 border-border">
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {r.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {r.name}
                         </div>
-                        <span className="text-xs tabular-nums">{r.stage_done}/{r.stage_total}</span>
+                        <div className="text-sm text-muted-foreground">
+                          {r.email || r.phone || r.id}
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </td>
-                  <td className="py-2 px-3">
-                    <div className="flex flex-wrap gap-1">
-                      {(r.advisors || []).map((a) => (
-                        <Badge key={a.id} variant="secondary">{a.name}</Badge>
+                  <td className="p-4">
+                    <div className="text-sm text-foreground">
+                      {r.program || "—"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {r.department || "—"}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      {(r.advisors || []).map((advisor, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="outline"
+                          className="text-xs bg-muted/20"
+                        >
+                          {advisor.name}
+                        </Badge>
                       ))}
-                      {(!r.advisors || r.advisors.length === 0) && <span className="text-xs text-muted-foreground">—</span>}
+                      {(!r.advisors || r.advisors.length === 0) && (
+                        <span className="text-xs text-muted-foreground">
+                          No advisor
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {r.cohort || "—"}
                     </div>
                   </td>
-                  <td className="py-2 px-3">
-                    <div className="flex items-center gap-2 min-w-[140px]">
-                      <div className="flex-1 bg-muted/40 rounded-full h-2 overflow-hidden">
-                        <div className="bg-primary h-2" style={{ width: `${Math.round(r.overall_progress_pct || 0)}%` }} />
-                      </div>
-                      <span className="tabular-nums w-10 text-right">{Math.round(r.overall_progress_pct || 0)}%</span>
+                  <td className="p-4">
+                    <Badge className="bg-primary/10 text-primary border border-primary/20">
+                      {stageLabel(r.current_stage, i18n.language)}
+                    </Badge>
+                    {r.rp_required && (
+                      <Badge
+                        variant="outline"
+                        className="ml-1.5 text-xs bg-amber-50 text-amber-700 border-amber-200"
+                      >
+                        RP
+                      </Badge>
+                    )}
+                    {typeof r.stage_done === "number" &&
+                      typeof r.stage_total === "number" && (
+                        <div className="text-xs text-muted-foreground mt-1.5">
+                          {r.stage_done}/{r.stage_total} nodes done
+                        </div>
+                      )}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Progress
+                        value={r.overall_progress_pct || 0}
+                        className="h-2 flex-1 max-w-[120px]"
+                      />
+                      <span className="text-sm font-medium text-foreground min-w-[38px] text-right">
+                        {Math.round(r.overall_progress_pct || 0)}%
+                      </span>
                     </div>
                   </td>
-                  <td className="py-2 px-3">
-                    <div className="flex items-center gap-2">
-                      <span>{r.due_next ? new Date(r.due_next).toLocaleDateString() : '—'}</span>
-                      {r.overdue ? <span title="Overdue" className="text-red-600">●</span> : null}
+                  <td className="p-4">
+                    <div
+                      className={`flex items-center gap-1.5 text-sm ${
+                        r.overdue
+                          ? "text-red-600 font-medium"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {r.overdue && <AlertCircle className="h-4 w-4" />}
+                      {r.due_next || "—"}
                     </div>
                   </td>
-                  <td className="py-2 px-3">{r.last_update ? new Date(r.last_update).toLocaleString() : "—"}</td>
-                  <td className="py-2 px-3">
-                    <Button size="sm" variant="outline" onClick={() => onOpen(r)}>View</Button>
+                  <td className="p-4">
+                    <div className="text-sm text-muted-foreground">
+                      {r.last_update
+                        ? new Date(r.last_update).toLocaleString(i18n.language)
+                        : "—"}
+                    </div>
+                  </td>
+                  <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover:bg-primary/10 hover:text-primary"
+                        onClick={() => onOpen(r)}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover:bg-primary/10 hover:text-primary"
+                      >
+                        Notify
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="p-8 text-center text-muted-foreground"
+                  >
+                    No students match your filters.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -91,8 +224,8 @@ export function StudentsTableView({ rows, onOpen, selected, onToggle, onToggleAl
   );
 }
 
-function stageLabel(s?: string, lang: string = 'en') {
-  const en: Record<string,string> = {
+function stageLabel(s?: string, lang: string = "en") {
+  const en: Record<string, string> = {
     W1: "I — Preparation",
     W2: "II — Pre-examination",
     W3: "III — RP",
@@ -101,7 +234,7 @@ function stageLabel(s?: string, lang: string = 'en') {
     W6: "VI — After DC acceptance",
     W7: "VII — Defense & Post-defense",
   };
-  const ru: Record<string,string> = {
+  const ru: Record<string, string> = {
     W1: "I — Подготовка",
     W2: "II — Предварительная экспертиза",
     W3: "III — RP (условно)",
@@ -110,7 +243,7 @@ function stageLabel(s?: string, lang: string = 'en') {
     W6: "VI — После принятия ДС",
     W7: "VII — Защита и После защиты",
   };
-  const kz: Record<string,string> = {
+  const kz: Record<string, string> = {
     W1: "I — Дайындық",
     W2: "II — Алдын ала сараптама",
     W3: "III — RP",
@@ -119,7 +252,7 @@ function stageLabel(s?: string, lang: string = 'en') {
     W6: "VI — ДК қабылдағаннан кейін",
     W7: "VII — Қорғау және одан кейін",
   };
-  const map = lang.startsWith('ru') ? ru : lang.startsWith('kz') ? kz : en;
-  if (!s) return '—';
+  const map = lang.startsWith("ru") ? ru : lang.startsWith("kz") ? kz : en;
+  if (!s) return "—";
   return map[s] || s;
 }
