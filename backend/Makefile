@@ -46,4 +46,9 @@ seed:
 
 dev:
 	@echo "Starting dev server on APP_PORT=$(APP_PORT)"
-	APP_PORT=$(APP_PORT) $(AIR)
+	@if command -v $(AIR) >/dev/null 2>&1; then \
+		APP_PORT=$(APP_PORT) $(AIR); \
+	else \
+		echo "Warning: '$(AIR)' command not found. Falling back to 'go run ./cmd/server'"; \
+		APP_PORT=$(APP_PORT) go run ./cmd/server; \
+	fi

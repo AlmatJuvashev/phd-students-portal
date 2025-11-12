@@ -3,12 +3,19 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '@/pages/layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
+import { AdminLayout } from '@/layouts/AdminLayout'
 
 const LoginPage = lazy(() => import('@/pages/login').then(m => ({ default: m.LoginPage })))
 const DoctoralJourney = lazy(() => import('@/pages/doctoral.journey').then(m => ({ default: m.DoctoralJourney })))
 const HomePage = lazy(() => import('@/pages/home').then(m => ({ default: m.HomePage })))
 const ContactsPage = lazy(() => import('@/pages/contacts').then(m => ({ default: m.ContactsPage })))
 const AdminUsers = lazy(() => import('@/pages/admin.users').then(m => ({ default: m.AdminUsers })))
+const AdminDashboard = lazy(() => import('@/pages/dashboard').then(m => ({ default: m.Dashboard })))
+const CreateAdmins = lazy(() => import('@/pages/admin/CreateAdmins').then(m => ({ default: m.CreateAdmins })))
+const CreateUsers = lazy(() => import('@/pages/admin/CreateUsers').then(m => ({ default: m.CreateUsers })))
+const CreateStudents = lazy(() => import('@/pages/admin/CreateStudents').then(m => ({ default: m.CreateStudents })))
+const CreateAdvisors = lazy(() => import('@/pages/admin/CreateAdvisors').then(m => ({ default: m.CreateAdvisors })))
+const StudentProgress = lazy(() => import('@/pages/admin/StudentProgress').then(m => ({ default: m.StudentProgress })))
 const AdvisorInbox = lazy(() => import('@/pages/advisor.inbox').then(m => ({ default: m.AdvisorInbox })))
 const Dashboard = lazy(() => import('@/pages/dashboard').then(m => ({ default: m.Dashboard })))
 const ForgotPassword = lazy(() => import('@/pages/forgot').then(m => ({ default: m.ForgotPassword })))
@@ -26,6 +33,7 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
 }
 
 export const router = createBrowserRouter([
+  // App routes (constrained width via AppLayout)
   {
     path: '/',
     element: <AppLayout />,
@@ -47,14 +55,6 @@ export const router = createBrowserRouter([
       { path: 'forgot-password', element: WithSuspense(<ForgotPassword />) },
       { path: 'reset-password', element: WithSuspense(<ResetPassword />) },
       {
-        path: 'admin/users',
-        element: (
-          <ProtectedRoute requiredRole="admin">
-            {WithSuspense(<AdminUsers />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: 'advisor/inbox',
         element: (
           <ProtectedRoute requiredRole="advisor">
@@ -67,6 +67,66 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             {WithSuspense(<Dashboard />)}
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  // Admin routes (full-width layout)
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+        {WithSuspense(<AdminLayout />)}
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: WithSuspense(<AdminDashboard />) },
+      {
+        path: 'create-admins',
+        element: (
+          <ProtectedRoute requiredAnyRole={["superadmin"]}>
+            {WithSuspense(<CreateAdmins />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'create-students',
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<CreateStudents />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'create-advisors',
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<CreateAdvisors />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'create-users',
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<CreateUsers />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'student-progress',
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<StudentProgress />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'users',
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<AdminUsers />)}
           </ProtectedRoute>
         ),
       },
