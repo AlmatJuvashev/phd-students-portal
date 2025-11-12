@@ -35,14 +35,16 @@ export function StudentDetailDrawer({ open, onOpenChange, student }: { open: boo
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[96vw] sm:w-[640px] p-0">
-        <div className="h-14 flex items-center px-4 border-b">
-          <SheetTitle className="flex-1">{student?.name}</SheetTitle>
-          <div className="text-xs text-muted-foreground">
-            {student?.program} · {student?.department}
+      <SheetContent side="right" className="w-[96vw] sm:w-[800px] lg:w-[900px] p-0 overflow-y-auto">
+        <div className="sticky top-0 z-10 h-16 flex items-center px-6 border-b bg-background/95 backdrop-blur">
+          <div className="flex-1">
+            <SheetTitle className="text-xl">{student?.name}</SheetTitle>
+            <div className="text-sm text-muted-foreground mt-0.5">
+              {student?.program} · {student?.department}
+            </div>
           </div>
         </div>
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-6">
           {/* Advisors */}
           <div className="flex flex-wrap gap-2">
             {(student?.advisors || []).map((a) => (
@@ -50,42 +52,42 @@ export function StudentDetailDrawer({ open, onOpenChange, student }: { open: boo
             ))}
           </div>
           {/* Nodes */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium">Stage checklist</div>
+          <div className="space-y-3">
+            <div className="text-base font-semibold">Stage Checklist</div>
             {loading ? (
-              <div className="text-sm text-muted-foreground">Loading…</div>
+              <div className="text-sm text-muted-foreground py-8 text-center">Loading journey data...</div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {nodes.map((n) => (
-                  <div key={n.node_id} className="border rounded p-2 flex items-center justify-between">
-                    <div>
-                      <div className="font-mono text-xs">{n.node_id}</div>
-                      <div className="text-xs text-muted-foreground">Updated: {n.updated_at ? new Date(n.updated_at).toLocaleString() : "—"}</div>
-                      <div className="text-xs text-muted-foreground">Due: {deadlines[n.node_id] ? new Date(deadlines[n.node_id]).toLocaleString() : '—'}</div>
-                      {n.files && n.files.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          {n.files.map((f) => (
-                            <a key={f.download_url} href={f.download_url} className="text-xs underline" target="_blank" rel="noreferrer">
-                              {f.filename}
-                            </a>
-                          ))}
+                  <div key={n.node_id} className="border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-mono text-sm font-medium mb-1">{n.node_id}</div>
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          <div>Updated: {n.updated_at ? new Date(n.updated_at).toLocaleString() : "—"}</div>
+                          <div>Due: {deadlines[n.node_id] ? new Date(deadlines[n.node_id]).toLocaleString() : '—'}</div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
+                      </div>
                       <StatusChip state={n.state} />
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2">
                       <input
                         type="datetime-local"
                         aria-label="Set due date"
-                        className="border rounded px-2 py-1 text-xs"
+                        className="flex-1 min-w-[200px] border rounded-md px-3 py-2 text-sm"
                         value={deadlines[n.node_id] ? deadlines[n.node_id].slice(0,16) : ''}
                         onChange={(e) => setDue(n.node_id, e.target.value)}
                       />
-                      <Button size="sm" variant="outline" onClick={() => confirm(n.node_id)}>Confirm</Button>
+                      <Button size="sm" variant="outline" onClick={() => confirm(n.node_id)}>
+                        Mark as Done
+                      </Button>
                     </div>
                   </div>
                 ))}
-                {nodes.length === 0 && <div className="text-sm text-muted-foreground">No journey data.</div>}
+                {nodes.length === 0 && (
+                  <div className="text-sm text-muted-foreground py-8 text-center">No journey data available.</div>
+                )}
               </div>
             )}
           </div>

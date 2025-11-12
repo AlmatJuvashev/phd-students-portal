@@ -6,14 +6,18 @@ import { StudentsTableView } from "./components/StudentsTableView";
 import { KanbanView } from "./components/KanbanView";
 import { AnalyticsView } from "./components/AnalyticsView";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudentDetailDrawer } from "./components/StudentDetailDrawer";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Languages } from "lucide-react";
 
 export function StudentsMonitorPage() {
   const [filters, setFilters] = React.useState<Filters>({});
+  const [language, setLanguage] = React.useState<"EN" | "RU" | "KZ">("EN");
   const { data = [], isLoading, refetch } = useQuery<MonitorStudent[]>({
     queryKey: ["monitor", "students", filters],
     queryFn: () => fetchMonitorStudents({
@@ -40,7 +44,7 @@ export function StudentsMonitorPage() {
     function onExport(e: any) {
       const rows = data || [];
       const head = ["id","name","email","phone","program","department","cohort","current_stage","stage_done","stage_total","overall_progress_pct","due_next","overdue","last_update"];
-      const lines = [head.join(",")].concat(rows.map(r => [r.id,r.name,r.email||'',r.phone||'',r.program||'',r.department||'',r.cohort||'',r.current_stage||'',String(r.stage_done||''),String(r.stage_total||''),String(Math.round(r.overall_progress_pct||0)),r.due_next||'',String(!!r.overdue),r.last_update||''].map(v => `"${String(v).replaceAll('"','""')}"`).join(',')));
+      const lines = [head.join(",")].concat(rows.map(r => [r.id,r.name,r.email||'',r.phone||'',r.program||'',r.department||'',r.cohort||'',r.current_stage||'',String(r.stage_done||''),String(r.stage_total||''),String(Math.round(r.overall_progress_pct||0)),r.due_next||'',String(!!r.overdue),r.last_update||''].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')));
       const blob = new Blob([lines.join("\n")], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -65,39 +69,67 @@ export function StudentsMonitorPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Students Progress</h2>
-      </div>
-      <FiltersBar value={filters} onChange={setFilters} onRefresh={() => refetch()} />
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">View</CardTitle>
-        </CardHeader>
-      </Card>
-      <div className="flex items-center gap-2 text-sm">
-        <button className={`px-3 py-1.5 rounded ${tab==='table'?'bg-muted':''}`} onClick={() => setTab('table')}>Table</button>
-        <button className={`px-3 py-1.5 rounded ${tab==='kanban'?'bg-muted':''}`} onClick={() => setTab('kanban')}>Kanban</button>
-        <button className={`px-3 py-1.5 rounded ${tab==='analytics'?'bg-muted':''}`} onClick={() => setTab('analytics')}>Analytics</button>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+        <div className="px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold tracking-tight">Student Monitoring</h1>
+              <Badge variant="secondary" className="h-6 px-2.5 text-sm font-medium">
+                {data.length} {data.length === 1 ? 'student' : 'students'}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3">
+              <Select value={language} onValueChange={(val) => setLanguage(val as any)}>
+                <SelectTrigger className="w-[120px] h-9">
+                  <Languages className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EN">English</SelectItem>
+                  <SelectItem value="RU">Русский</SelectItem>
+                  <SelectItem value="KZ">Қазақша</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      ) : data.length === 0 ? (
-        <div className="text-sm text-muted-foreground">No students match your filters.</div>
-      ) : tab === 'table' ? (
-        <StudentsTableView
-          rows={data}
-          onOpen={(s) => setDetail(s)}
-          selected={selected}
-          onToggle={(id, checked) => setSelected(prev => { const next = new Set(prev); if (checked) next.add(id); else next.delete(id); return next; })}
-          onToggleAll={(checked) => setSelected(checked ? new Set(data.map(d => d.id)) : new Set())}
-        />
-      ) : tab === 'kanban' ? (
-        <KanbanView rows={data} />
-      ) : (
-        <AnalyticsView filters={filters} />
-      )}
+      <FiltersBar value={filters} onChange={setFilters} onRefresh={() => refetch()} />
+
+      {/* Tabs */}
+      <div className="px-8 py-4 border-b">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="table">Table View</TabsTrigger>
+            <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Content */}
+      <div className="px-8 py-6">
+        {isLoading ? (
+          <div className="text-center py-12 text-muted-foreground">Loading students...</div>
+        ) : data.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">No students match your filters.</div>
+        ) : tab === 'table' ? (
+          <StudentsTableView
+            rows={data}
+            onOpen={(s) => setDetail(s)}
+            selected={selected}
+            onToggle={(id, checked) => setSelected(prev => { const next = new Set(prev); if (checked) next.add(id); else next.delete(id); return next; })}
+            onToggleAll={(checked) => setSelected(checked ? new Set(data.map(d => d.id)) : new Set())}
+          />
+        ) : tab === 'kanban' ? (
+          <KanbanView rows={data} language={language} />
+        ) : (
+          <AnalyticsView filters={filters} />
+        )}
+      </div>
 
       <StudentDetailDrawer open={!!detail} onOpenChange={(b) => !b && setDetail(null)} student={detail ? { id: detail.id, name: detail.name, program: detail.program, department: detail.department, advisors: detail.advisors as any } : null} />
 
