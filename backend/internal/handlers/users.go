@@ -20,10 +20,16 @@ func NewUsersHandler(db *sqlx.DB, cfg config.AppConfig) *UsersHandler {
 }
 
 type createUserReq struct {
-	FirstName string `json:"first_name" binding:"required"`
-	LastName  string `json:"last_name" binding:"required"`
-	Email     string `json:"email" binding:"required,email"`
-	Role      string `json:"role" binding:"required,oneof=student advisor chair admin superadmin"`
+    FirstName string `json:"first_name" binding:"required"`
+    LastName  string `json:"last_name" binding:"required"`
+    Email     string `json:"email" binding:"omitempty,email"`
+    Role      string `json:"role" binding:"required,oneof=student advisor chair admin superadmin"`
+    // Student optional fields
+    Phone     string   `json:"phone"`
+    Program   string   `json:"program"`
+    Department string  `json:"department"`
+    Cohort    string   `json:"cohort"`
+    AdvisorIDs []string `json:"advisor_ids"`
 }
 
 // CreateUser (admin/superadmin): auto-username + temp password. Returns copyable creds.
@@ -60,13 +66,23 @@ func (h *UsersHandler) CreateUser(c *gin.Context) {
 	}
 	temp := auth.GeneratePass()
 	hash, _ := auth.HashPassword(temp)
-	_, err := h.db.Exec(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active)
-		VALUES ($1,$2,$3,$4,$5,$6,true)`, username, req.Email, req.FirstName, req.LastName, req.Role, hash)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "insert failed"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"username": username, "temp_password": temp})
+    _, err := h.db.Exec(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active, phone, program, department, cohort)
+        VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8,$9,$10)`,
+        username, nullable(req.Email), req.FirstName, req.LastName, req.Role, hash,
+        nullable(req.Phone), nullable(req.Program), nullable(req.Department), nullable(req.Cohort))
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "insert failed"})
+        return
+    }
+    // Link advisors for students
+    if req.Role == "student" && len(req.AdvisorIDs) > 0 {
+        for _, aid := range req.AdvisorIDs {
+            _, _ = h.db.Exec(`INSERT INTO student_advisors (student_id, advisor_id)
+                VALUES ((SELECT id FROM users WHERE username=$1), $2)
+                ON CONFLICT DO NOTHING`, username, aid)
+        }
+    }
+    c.JSON(http.StatusOK, gin.H{"username": username, "temp_password": temp})
 }
 
 type resetPwReq struct {
@@ -197,14 +213,33 @@ type listUsersResp struct {
 
 // ListUsers (admin/superadmin): basic list for mentions/autocomplete
 func (h *UsersHandler) ListUsers(c *gin.Context) {
-	q := strings.TrimSpace(c.Query("q"))
-	rows := []listUsersResp{}
-	if q == "" {
-		_ = h.db.Select(&rows, `SELECT id, (first_name||' '||last_name) AS name, email, role FROM users WHERE is_active=true ORDER BY last_name LIMIT 50`)
-	} else {
-		_ = h.db.Select(&rows, `SELECT id, (first_name||' '||last_name) AS name, email, role FROM users
-			WHERE is_active=true AND (first_name ILIKE '%'||$1||'%' OR last_name ILIKE '%'||$1||'%' OR email ILIKE '%'||$1||'%')
-			ORDER BY last_name LIMIT 50`, q)
-	}
-	c.JSON(200, rows)
+    q := strings.TrimSpace(c.Query("q"))
+    roleFilter := strings.TrimSpace(c.Query("role"))
+    rows := []listUsersResp{}
+    base := `SELECT id, (first_name||' '||last_name) AS name, email, role FROM users WHERE is_active=true`
+    where := ""
+    args := []any{}
+    if roleFilter != "" {
+        where += " AND role = $1"
+        args = append(args, roleFilter)
+    }
+    if q != "" {
+        if len(args) == 0 {
+            where += " AND (first_name ILIKE '%'||$1||'%' OR last_name ILIKE '%'||$1||'%' OR email ILIKE '%'||$1||'%')"
+        } else {
+            where += " AND (first_name ILIKE '%'||$2||'%' OR last_name ILIKE '%'||$2||'%' OR email ILIKE '%'||$2||'%')"
+        }
+        args = append(args, q)
+    }
+    query := base + where + " ORDER BY last_name LIMIT 50"
+    _ = h.db.Select(&rows, query, args...)
+    c.JSON(200, rows)
+}
+
+// nullable returns nil for empty string, used for optional fields
+func nullable(s string) any {
+    if strings.TrimSpace(s) == "" {
+        return nil
+    }
+    return s
 }

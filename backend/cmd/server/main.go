@@ -63,6 +63,8 @@ func main() {
 	}
 
 	r := gin.Default()
+	// Do not trust any proxy headers by default; see Gin docs.
+	_ = r.SetTrustedProxies(nil)
 
 	api := handlers.BuildAPI(r, conn, cfg, pbManager)
 

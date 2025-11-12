@@ -46,7 +46,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               </Link>
             )}
           {authed && (role === "admin" || role === "superadmin") && (
-            <Link to="/admin/users" className={active("/admin/users")}>
+            <Link to="/admin" className={active("/admin")}>
               {T("nav.admin")}
             </Link>
           )}
