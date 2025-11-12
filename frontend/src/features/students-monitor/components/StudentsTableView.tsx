@@ -1,10 +1,12 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { MonitorStudent } from "../api";
 
 export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; onOpen: (s: MonitorStudent) => void }) {
+  const { i18n } = useTranslation('common');
   return (
     <Card>
       <CardContent className="p-0">
@@ -34,7 +36,7 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
                     <div className="text-xs text-muted-foreground">{r.cohort || "—"}</div>
                   </td>
                   <td className="py-2 px-3">
-                    <div className="text-xs font-medium">{stageLabel(r.current_stage)}</div>
+                    <div className="text-xs font-medium">{stageLabel(r.current_stage, i18n.language)}</div>
                     {typeof r.stage_done === 'number' && typeof r.stage_total === 'number' && (
                       <div className="flex items-center gap-2 min-w-[120px]">
                         <div className="flex-1 bg-muted/40 rounded-full h-1 overflow-hidden">
@@ -80,8 +82,8 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
   );
 }
 
-function stageLabel(s?: string) {
-  const map: Record<string,string> = {
+function stageLabel(s?: string, lang: string = 'en') {
+  const en: Record<string,string> = {
     W1: "I — Preparation",
     W2: "II — Pre-examination",
     W3: "III — RP",
@@ -90,6 +92,25 @@ function stageLabel(s?: string) {
     W6: "VI — After DC acceptance",
     W7: "VII — Defense & Post-defense",
   };
+  const ru: Record<string,string> = {
+    W1: "I — Подготовка",
+    W2: "II — Предварительная экспертиза",
+    W3: "III — RP (условно)",
+    W4: "IV — Подача в ДС",
+    W5: "V — Восстановление",
+    W6: "VI — После принятия ДС",
+    W7: "VII — Защита и После защиты",
+  };
+  const kz: Record<string,string> = {
+    W1: "I — Дайындық",
+    W2: "II — Алдын ала сараптама",
+    W3: "III — RP",
+    W4: "IV — ДК-ға тапсыру",
+    W5: "V — Қалпына келтіру",
+    W6: "VI — ДК қабылдағаннан кейін",
+    W7: "VII — Қорғау және одан кейін",
+  };
+  const map = lang.startsWith('ru') ? ru : lang.startsWith('kz') ? kz : en;
   if (!s) return '—';
   return map[s] || s;
 }
