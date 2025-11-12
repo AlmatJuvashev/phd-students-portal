@@ -118,6 +118,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
     admin.GET("/monitor/students", adminHandler.MonitorStudents)
     admin.GET("/students/:id/journey", adminHandler.StudentJourney)
     admin.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
+    admin.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
+    admin.PUT("/students/:id/nodes/:nodeId/deadline", adminHandler.PutStudentDeadline)
+    admin.POST("/reminders", adminHandler.PostReminders)
 
 	// Self-service password change
 	api.PATCH("/me/password", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.ChangeOwnPassword)

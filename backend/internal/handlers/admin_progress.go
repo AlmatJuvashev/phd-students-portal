@@ -1,7 +1,11 @@
 package handlers
 
 import (
+    "encoding/json"
+    "fmt"
     "net/http"
+    "strings"
+    "time"
 
     "github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
     pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
@@ -211,7 +215,10 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
     out := []gin.H{}
     // total nodes and W3 nodes count for correct denominator
     totalNodes := len(h.pb.Nodes)
-    w3Count := nodesInWorld(h.pb.Raw, "W3")
+    // Build world map and node->world mapping from playbook
+    worldOrder, worldNodes := worldsFromRaw(h.pb.Raw)
+    w3Count := len(worldNodes["W3"])
+    now := time.Now()
 
     for _, r := range rows {
         rp := rpRequired[r.ID]
@@ -222,7 +229,58 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
         done := doneCount[r.ID]
         pct := 0.0
         if totalRequired > 0 { pct = float64(done) * 100.0 / float64(totalRequired) }
-        out = append(out, gin.H{
+
+        // determine current stage from last updated node
+        var lastNodeID string
+        _ = h.db.QueryRowx(`SELECT node_id FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 ORDER BY updated_at DESC LIMIT 1`, r.ID, h.pb.VersionID).Scan(&lastNodeID)
+        stage := nodeWorld(lastNodeID, worldNodes)
+        if stage == "" { stage = "W1" }
+        stageTotal := len(worldNodes[stage])
+        // stage done count
+        stageDone := 0
+        if stageTotal > 0 {
+            // count done within this world's nodes
+            q, vs := buildIn(`SELECT COUNT(*) FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 AND state='done' AND node_id IN (?)`, worldNodes[stage])
+            _ = h.db.QueryRowx(rebind(h.db, q), append([]any{r.ID, h.pb.VersionID}, vs...)...).Scan(&stageDone)
+        }
+
+        // deadlines
+        // earliest future due date for not-done nodes
+        var dueNext *string
+        _ = h.db.QueryRowx(`SELECT to_char(MIN(nd.due_at),'YYYY-MM-DD"T"HH24:MI:SSZ')
+            FROM node_deadlines nd
+            WHERE nd.user_id=$1
+              AND nd.due_at >= now()
+              AND NOT EXISTS (
+                SELECT 1 FROM node_instances ni
+                WHERE ni.user_id=$1 AND ni.playbook_version_id=$2 AND ni.node_id=nd.node_id AND ni.state='done'
+              )`, r.ID, h.pb.VersionID).Scan(&dueNext)
+
+        var hasOverdue bool
+        _ = h.db.QueryRowx(`SELECT EXISTS(
+            SELECT 1 FROM node_deadlines nd
+            WHERE nd.user_id=$1 AND nd.due_at < $2 AND NOT EXISTS (
+              SELECT 1 FROM node_instances ni
+              WHERE ni.user_id=$1 AND ni.playbook_version_id=$3 AND ni.node_id=nd.node_id AND ni.state='done'
+            ))`, r.ID, now, h.pb.VersionID).Scan(&hasOverdue)
+
+        // filter overdue
+        if c.Query("overdue") == "1" && !hasOverdue { continue }
+
+        // date range filter
+        if from := strings.TrimSpace(c.Query("due_from")); from != "" {
+            // ensure there is any due within range
+            var exists bool
+            _ = h.db.QueryRowx(`SELECT EXISTS(SELECT 1 FROM node_deadlines WHERE user_id=$1 AND due_at >= $2)`, r.ID, from).Scan(&exists)
+            if !exists { continue }
+        }
+        if to := strings.TrimSpace(c.Query("due_to")); to != "" {
+            var exists bool
+            _ = h.db.QueryRowx(`SELECT EXISTS(SELECT 1 FROM node_deadlines WHERE user_id=$1 AND due_at <= $2)`, r.ID, to).Scan(&exists)
+            if !exists { continue }
+        }
+
+        m := gin.H{
             "id": r.ID,
             "name": r.Name,
             "email": r.Email,
@@ -234,7 +292,13 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
             "rp_required": rp,
             "overall_progress_pct": pct,
             "last_update": lastUpdate[r.ID],
-        })
+            "current_stage": stage,
+            "stage_done": stageDone,
+            "stage_total": stageTotal,
+            "overdue": hasOverdue,
+        }
+        if dueNext != nil && *dueNext != "" { m["due_next"] = *dueNext }
+        out = append(out, m)
     }
     c.JSON(http.StatusOK, out)
 }
@@ -245,7 +309,8 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
     rows, err := h.db.Queryx(`SELECT id, node_id, state, updated_at FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2`, uid, h.pb.VersionID)
     if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
     defer rows.Close()
-    type N struct { NodeID string `json:"node_id"`; State string `json:"state"`; UpdatedAt string `json:"updated_at"`; Attachments int `json:"attachments"`}
+    type Att struct { Filename string `json:"filename"`; DownloadURL string `json:"download_url"`; SizeBytes int64 `json:"size_bytes"`; AttachedAt string `json:"attached_at"` }
+    type N struct { NodeID string `json:"node_id"`; State string `json:"state"`; UpdatedAt string `json:"updated_at"`; Attachments int `json:"attachments"`; Files []Att `json:"files"`}
     list := []N{}
     for rows.Next() {
         var id, nodeID, state string; var updated time.Time
@@ -253,7 +318,18 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
         // count attachments
         var cnt int
         _ = h.db.QueryRowx(`SELECT COUNT(*) FROM node_instance_slots s JOIN node_instance_slot_attachments a ON a.slot_id=s.id AND a.is_active WHERE s.node_instance_id=$1`, id).Scan(&cnt)
-        list = append(list, N{NodeID: nodeID, State: state, UpdatedAt: updated.Format(time.RFC3339), Attachments: cnt})
+        // fetch attachments metadata
+        files := []Att{}
+        fr, _ := h.db.Queryx(`SELECT a.filename, a.size_bytes, a.attached_at, dv.id FROM node_instance_slot_attachments a JOIN node_instance_slots s ON s.id=a.slot_id JOIN document_versions dv ON dv.id=a.document_version_id WHERE s.node_instance_id=$1 AND a.is_active ORDER BY a.attached_at DESC`, id)
+        if fr != nil {
+            for fr.Next() {
+                var fn string; var sz int64; var at time.Time; var vid string
+                _ = fr.Scan(&fn, &sz, &at, &vid)
+                files = append(files, Att{ Filename: fn, SizeBytes: sz, AttachedAt: at.Format(time.RFC3339), DownloadURL: fmt.Sprintf("/api/documents/versions/%s/download", vid) })
+            }
+            fr.Close()
+        }
+        list = append(list, N{NodeID: nodeID, State: state, UpdatedAt: updated.Format(time.RFC3339), Attachments: cnt, Files: files})
     }
     c.JSON(200, gin.H{"nodes": list})
 }
@@ -284,6 +360,69 @@ func nodesInWorld(raw json.RawMessage, worldID string) int {
     if err := json.Unmarshal(raw, &p); err != nil { return 0 }
     for _, w := range p.Worlds { if w.ID == worldID { return len(w.Nodes) } }
     return 0
+}
+
+func worldsFromRaw(raw json.RawMessage) ([]string, map[string][]string) {
+    var p pb.Playbook
+    if err := json.Unmarshal(raw, &p); err != nil { return nil, map[string][]string{} }
+    order := []string{}
+    m := map[string][]string{}
+    for _, w := range p.Worlds {
+        order = append(order, w.ID)
+        ids := []string{}
+        for _, n := range w.Nodes { ids = append(ids, n.ID) }
+        m[w.ID] = ids
+    }
+    return order, m
+}
+
+func nodeWorld(nodeID string, worlds map[string][]string) string {
+    if nodeID == "" { return "" }
+    for w, ids := range worlds {
+        for _, id := range ids { if id == nodeID { return w } }
+    }
+    return ""
+}
+
+// Deadlines endpoints
+func (h *AdminHandler) GetStudentDeadlines(c *gin.Context) {
+    uid := c.Param("id")
+    rows, err := h.db.Queryx(`SELECT node_id, to_char(due_at,'YYYY-MM-DD"T"HH24:MI:SSZ') FROM node_deadlines WHERE user_id=$1 ORDER BY due_at`, uid)
+    if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+    defer rows.Close()
+    out := []gin.H{}
+    for rows.Next() { var nid, due string; _ = rows.Scan(&nid, &due); out = append(out, gin.H{"node_id": nid, "due_at": due}) }
+    c.JSON(200, out)
+}
+
+func (h *AdminHandler) PutStudentDeadline(c *gin.Context) {
+    uid := c.Param("id"); nodeID := c.Param("nodeId")
+    var body struct { DueAt string `json:"due_at"`; Note string `json:"note"` }
+    if err := c.ShouldBindJSON(&body); err != nil { c.JSON(400, gin.H{"error": err.Error()}); return }
+    caller := userIDFromClaims(c)
+    if caller == "" { c.JSON(401, gin.H{"error": "unauthorized"}); return }
+    _, err := h.db.Exec(`INSERT INTO node_deadlines (user_id,node_id,due_at,note,created_by)
+        VALUES ($1,$2,$3,$4,$5)
+        ON CONFLICT (user_id,node_id) DO UPDATE SET due_at=$3, note=$4`, uid, nodeID, body.DueAt, body.Note, caller)
+    if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+    c.JSON(200, gin.H{"ok": true})
+}
+
+// Reminders
+func (h *AdminHandler) PostReminders(c *gin.Context) {
+    var body struct{ StudentIDs []string `json:"student_ids"`; Title string `json:"title"`; Message string `json:"message"`; DueAt *string `json:"due_at"` }
+    if err := c.ShouldBindJSON(&body); err != nil { c.JSON(400, gin.H{"error": err.Error()}); return }
+    caller := userIDFromClaims(c); if caller == "" { c.JSON(401, gin.H{"error": "unauthorized"}); return }
+    tx := h.db.MustBegin()
+    for _, sid := range body.StudentIDs {
+        if body.DueAt != nil {
+            _, _ = tx.Exec(`INSERT INTO reminders (student_id,title,message,due_at,created_by) VALUES ($1,$2,$3,$4,$5)`, sid, body.Title, body.Message, *body.DueAt, caller)
+        } else {
+            _, _ = tx.Exec(`INSERT INTO reminders (student_id,title,message,created_by) VALUES ($1,$2,$3,$4)`, sid, body.Title, body.Message, caller)
+        }
+    }
+    if err := tx.Commit(); err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+    c.JSON(200, gin.H{"ok": true})
 }
 
 // buildIn builds a sql IN clause with placeholders for sqlx
