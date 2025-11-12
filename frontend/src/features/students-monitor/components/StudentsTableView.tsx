@@ -4,8 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { MonitorStudent } from "../api";
+import { Input } from "@/components/ui/input";
 
-export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; onOpen: (s: MonitorStudent) => void }) {
+export function StudentsTableView({ rows, onOpen, selected, onToggle, onToggleAll }: {
+  rows: MonitorStudent[];
+  onOpen: (s: MonitorStudent) => void;
+  selected: Set<string>;
+  onToggle: (id: string, checked: boolean) => void;
+  onToggleAll: (checked: boolean) => void;
+}) {
   const { i18n } = useTranslation('common');
   return (
     <Card>
@@ -14,6 +21,7 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/30">
               <tr className="text-left">
+                <th className="py-2 px-3"><input type="checkbox" checked={selected.size>0 && selected.size===rows.length} onChange={e => onToggleAll(e.target.checked)} aria-label="Select all" /></th>
                 <th className="py-2 px-3">Student</th>
                 <th className="py-2 px-3">Program · Department · Cohort</th>
                 <th className="py-2 px-3">Stage</th>
@@ -27,6 +35,7 @@ export function StudentsTableView({ rows, onOpen }: { rows: MonitorStudent[]; on
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="border-b hover:bg-muted/20">
+                  <td className="py-2 px-3"><input type="checkbox" checked={selected.has(r.id)} onChange={e => onToggle(r.id, e.target.checked)} aria-label={`Select ${r.name}`} /></td>
                   <td className="py-2 px-3">
                     <div className="font-medium">{r.name}</div>
                     <div className="text-xs text-muted-foreground">{r.email || r.phone || "—"}</div>

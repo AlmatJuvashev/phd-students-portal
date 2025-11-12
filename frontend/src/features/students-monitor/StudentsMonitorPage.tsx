@@ -29,6 +29,7 @@ export function StudentsMonitorPage() {
   });
   const [tab, setTab] = React.useState<"table"|"kanban"|"analytics">("table");
   const [detail, setDetail] = React.useState<MonitorStudent | null>(null);
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = React.useState(false);
   const [bulkTitle, setBulkTitle] = React.useState("");
   const [bulkMessage, setBulkMessage] = React.useState("");
@@ -57,7 +58,7 @@ export function StudentsMonitorPage() {
   }, []);
 
   async function sendBulkReminder() {
-    const ids = (data || []).map(r => r.id);
+    const ids = (selected.size > 0 ? Array.from(selected) : (data || []).map(r => r.id));
     if (ids.length === 0) { setBulkOpen(false); return; }
     await (await import('./api')).postReminders({ student_ids: ids, title: bulkTitle, message: bulkMessage, due_at: bulkDue || undefined });
     setBulkOpen(false); setBulkTitle(""); setBulkMessage(""); setBulkDue("");
@@ -85,11 +86,17 @@ export function StudentsMonitorPage() {
       ) : data.length === 0 ? (
         <div className="text-sm text-muted-foreground">No students match your filters.</div>
       ) : tab === 'table' ? (
-        <StudentsTableView rows={data} onOpen={(s) => setDetail(s)} />
+        <StudentsTableView
+          rows={data}
+          onOpen={(s) => setDetail(s)}
+          selected={selected}
+          onToggle={(id, checked) => setSelected(prev => { const next = new Set(prev); if (checked) next.add(id); else next.delete(id); return next; })}
+          onToggleAll={(checked) => setSelected(checked ? new Set(data.map(d => d.id)) : new Set())}
+        />
       ) : tab === 'kanban' ? (
         <KanbanView rows={data} />
       ) : (
-        <AnalyticsView />
+        <AnalyticsView filters={filters} />
       )}
 
       <StudentDetailDrawer open={!!detail} onOpenChange={(b) => !b && setDetail(null)} student={detail ? { id: detail.id, name: detail.name, program: detail.program, department: detail.department, advisors: detail.advisors as any } : null} />

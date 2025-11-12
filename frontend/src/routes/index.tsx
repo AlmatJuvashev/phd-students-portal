@@ -77,7 +77,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: (
-      <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+      <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
         {WithSuspense(<AdminLayout />)}
       </ProtectedRoute>
     ),
