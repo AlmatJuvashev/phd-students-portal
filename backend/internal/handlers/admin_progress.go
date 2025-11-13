@@ -187,11 +187,45 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
             for rows1.Next() { var uid string; var cnt int; _ = rows1.Scan(&uid, &cnt); doneCount[uid] = cnt }
             rows1.Close()
         }
-        // last update per user
-        q2, v2 := buildIn("SELECT user_id, to_char(MAX(updated_at),'YYYY-MM-DD"+"T"+"HH24:MI:SSZ') FROM node_instances WHERE playbook_version_id=$1 AND user_id IN (?) GROUP BY user_id", ids)
-        rows2, _ := h.db.Queryx(rebind(h.db, q2), append([]any{h.pb.VersionID}, v2...)...)
+        // last update per user — consider instances, form revisions, attachments, and events
+        // Build sub-queries with UNION ALL and aggregate MAX at the end
+        // Prepare placeholders for IN (...)
+        // node_instances.updated_at
+        qNI, vNI := buildIn("SELECT user_id, MAX(updated_at) FROM node_instances WHERE playbook_version_id=$1 AND user_id IN (?) GROUP BY user_id", ids)
+        // form revisions
+        qFR, vFR := buildIn("SELECT ni.user_id, MAX(r.created_at) FROM node_instance_form_revisions r JOIN node_instances ni ON ni.id=r.node_instance_id WHERE ni.playbook_version_id=$1 AND ni.user_id IN (?) GROUP BY ni.user_id", ids)
+        // attachments
+        qAT, vAT := buildIn("SELECT ni.user_id, MAX(a.attached_at) FROM node_instance_slot_attachments a JOIN node_instance_slots s ON s.id=a.slot_id JOIN node_instances ni ON ni.id=s.node_instance_id WHERE ni.playbook_version_id=$1 AND ni.user_id IN (?) GROUP BY ni.user_id", ids)
+        // events
+        qEV, vEV := buildIn("SELECT ni.user_id, MAX(e.created_at) FROM node_events e JOIN node_instances ni ON ni.id=e.node_instance_id WHERE ni.playbook_version_id=$1 AND ni.user_id IN (?) GROUP BY ni.user_id", ids)
+
+        // Wrap unions and aggregate by user_id
+        // Note: sqlx.Rebind only handles placeholders; we must substitute in order: versionID, then IN args for each union.
+        union := "SELECT user_id, MAX(ts) AS last FROM ("+
+            strings.Replace(rebind(h.db, qNI), "MAX(updated_at)", "MAX(updated_at) AS ts", 1) +
+            " UNION ALL " + strings.Replace(rebind(h.db, qFR), "MAX(r.created_at)", "MAX(r.created_at) AS ts", 1) +
+            " UNION ALL " + strings.Replace(rebind(h.db, qAT), "MAX(a.attached_at)", "MAX(a.attached_at) AS ts", 1) +
+            " UNION ALL " + strings.Replace(rebind(h.db, qEV), "MAX(e.created_at)", "MAX(e.created_at) AS ts", 1) +
+            ") u GROUP BY user_id"
+
+        argsAll := []any{h.pb.VersionID}
+        argsAll = append(argsAll, vNI...)
+        argsAll = append(argsAll, h.pb.VersionID)
+        argsAll = append(argsAll, vFR...)
+        argsAll = append(argsAll, h.pb.VersionID)
+        argsAll = append(argsAll, vAT...)
+        argsAll = append(argsAll, h.pb.VersionID)
+        argsAll = append(argsAll, vEV...)
+
+        rows2, _ := h.db.Queryx(union, argsAll...)
         if rows2 != nil {
-            for rows2.Next() { var uid, ts string; _ = rows2.Scan(&uid, &ts); lastUpdate[uid] = ts }
+            for rows2.Next() {
+                var uid string
+                var ts time.Time
+                if err := rows2.Scan(&uid, &ts); err == nil {
+                    lastUpdate[uid] = ts.Format(time.RFC3339)
+                }
+            }
             rows2.Close()
         }
     }
