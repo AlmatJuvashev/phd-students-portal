@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -139,12 +140,14 @@ const mockDocuments: Document[] = [
 export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { i18n } = useTranslation('common');
   const [comment, setComment] = React.useState("");
   const [documents, setDocuments] = React.useState<Document[]>(mockDocuments);
   const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
   const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>(
     {}
   );
+  const [allNodeTitles, setAllNodeTitles] = React.useState<Record<string, string>>({});
 
   const {
     data: student,
@@ -222,6 +225,33 @@ export function StudentDetailPage() {
       mounted = false;
     };
   }, [student?.current_stage]);
+
+  // Build global map of node id -> human title for Upcoming Deadlines
+  React.useEffect(() => {
+    let mounted = true;
+    import("@/playbooks/playbook.json")
+      .then((mod: any) => {
+        if (!mounted) return;
+        const pb = (mod && (mod.default || mod)) as any;
+        const worlds = (pb.worlds || pb.Worlds || []) as any[];
+        const lang = (i18n?.language || 'en').toLowerCase();
+        const pick = (obj: any, key: string) => obj?.[key] || obj?.[key?.toUpperCase?.()] || (key ? obj?.[key.charAt(0).toUpperCase()+key.slice(1)] : undefined);
+        const titles: Record<string, string> = {};
+        worlds.forEach((w: any) => {
+          const nodesArr = (w.nodes || w.Nodes || []) as any[];
+          nodesArr.forEach((n: any) => {
+            const id = n.id || n.ID;
+            const t = n.title || n.Title || {};
+            titles[id] = pick(t, lang) || pick(t, 'en') || pick(t, 'ru') || pick(t, 'kz') || id;
+          });
+        });
+        setAllNodeTitles(titles);
+      })
+      .catch(() => setAllNodeTitles({}));
+    return () => {
+      mounted = false;
+    };
+  }, [i18n?.language]);
 
   // Compute stage nodes using playbook data
   const nodes = journeyData?.nodes || [];
@@ -722,9 +752,14 @@ export function StudentDetailPage() {
                       >
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <code className="text-xs bg-muted px-2 py-0.5 rounded font-mono">
-                            {deadline.node_id}
-                          </code>
+                          <div className="flex flex-col">
+                            <div className="text-sm font-medium text-foreground">
+                              {allNodeTitles[deadline.node_id] || deadline.node_id}
+                            </div>
+                            <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
+                              {deadline.node_id}
+                            </code>
+                          </div>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {new Date(deadline.due_at).toLocaleString()}

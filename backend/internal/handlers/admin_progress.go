@@ -180,23 +180,23 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
     doneCount := map[string]int{}
     lastUpdate := map[string]string{}
     if len(ids) > 0 {
-        // done per user
-        q1, v1 := buildIn("SELECT user_id, COUNT(*) FROM node_instances WHERE playbook_version_id=$1 AND state='done' AND user_id IN (?) GROUP BY user_id", ids)
-        rows1, _ := h.db.Queryx(rebind(h.db, q1), append([]any{h.pb.VersionID}, v1...)...)
+        // done per user (across all playbook versions to avoid zeros due to version mismatch)
+        q1, v1 := buildIn("SELECT user_id, COUNT(*) FROM node_instances WHERE state='done' AND user_id IN (?) GROUP BY user_id", ids)
+        rows1, _ := h.db.Queryx(rebind(h.db, q1), v1...)
         if rows1 != nil {
             for rows1.Next() { var uid string; var cnt int; _ = rows1.Scan(&uid, &cnt); doneCount[uid] = cnt }
             rows1.Close()
         }
-        // Last activity per user (safe and clear): compute via GREATEST of per-table MAX timestamps for each user id
+        // Last activity per user across all versions: compute via GREATEST of per-table MAX timestamps for each user id
         for _, id := range ids {
             var ts sql.NullTime
             _ = h.db.QueryRowx(`
                 SELECT GREATEST(
-                    COALESCE((SELECT MAX(updated_at) FROM node_instances WHERE playbook_version_id=$1 AND user_id=$2), 'epoch'::timestamptz),
-                    COALESCE((SELECT MAX(r.created_at) FROM node_instance_form_revisions r JOIN node_instances ni ON ni.id=r.node_instance_id WHERE ni.playbook_version_id=$1 AND ni.user_id=$2), 'epoch'::timestamptz),
-                    COALESCE((SELECT MAX(a.attached_at) FROM node_instance_slot_attachments a JOIN node_instance_slots s ON s.id=a.slot_id JOIN node_instances ni ON ni.id=s.node_instance_id WHERE ni.playbook_version_id=$1 AND ni.user_id=$2), 'epoch'::timestamptz),
-                    COALESCE((SELECT MAX(e.created_at) FROM node_events e JOIN node_instances ni ON ni.id=e.node_instance_id WHERE ni.playbook_version_id=$1 AND ni.user_id=$2), 'epoch'::timestamptz)
-                ) AS last`, h.pb.VersionID, id).Scan(&ts)
+                    COALESCE((SELECT MAX(updated_at) FROM node_instances WHERE user_id=$1), 'epoch'::timestamptz),
+                    COALESCE((SELECT MAX(r.created_at) FROM node_instance_form_revisions r JOIN node_instances ni ON ni.id=r.node_instance_id WHERE ni.user_id=$1), 'epoch'::timestamptz),
+                    COALESCE((SELECT MAX(a.attached_at) FROM node_instance_slot_attachments a JOIN node_instance_slots s ON s.id=a.slot_id JOIN node_instances ni ON ni.id=s.node_instance_id WHERE ni.user_id=$1), 'epoch'::timestamptz),
+                    COALESCE((SELECT MAX(e.created_at) FROM node_events e JOIN node_instances ni ON ni.id=e.node_instance_id WHERE ni.user_id=$1), 'epoch'::timestamptz)
+                ) AS last`, id).Scan(&ts)
             if ts.Valid {
                 lastUpdate[id] = ts.Time.Format(time.RFC3339)
             }
@@ -242,9 +242,9 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
         pct := 0.0
         if totalRequired > 0 { pct = float64(done) * 100.0 / float64(totalRequired) }
 
-        // determine current stage from last updated node
+        // determine current stage from last updated node (across all versions)
         var lastNodeID string
-        _ = h.db.QueryRowx(`SELECT node_id FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 ORDER BY updated_at DESC LIMIT 1`, r.ID, h.pb.VersionID).Scan(&lastNodeID)
+        _ = h.db.QueryRowx(`SELECT node_id FROM node_instances WHERE user_id=$1 ORDER BY updated_at DESC LIMIT 1`, r.ID).Scan(&lastNodeID)
         stage := nodeWorld(lastNodeID, worldNodes)
         if stage == "" { stage = "W1" }
         stageTotal := len(worldNodes[stage])
@@ -252,8 +252,8 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
         stageDone := 0
         if stageTotal > 0 {
             // count done within this world's nodes
-            q, vs := buildIn(`SELECT COUNT(*) FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 AND state='done' AND node_id IN (?)`, worldNodes[stage])
-            _ = h.db.QueryRowx(rebind(h.db, q), append([]any{r.ID, h.pb.VersionID}, vs...)...).Scan(&stageDone)
+            q, vs := buildIn(`SELECT COUNT(*) FROM node_instances WHERE user_id=$1 AND state='done' AND node_id IN (?)`, worldNodes[stage])
+            _ = h.db.QueryRowx(rebind(h.db, q), append([]any{r.ID}, vs...)...).Scan(&stageDone)
         }
 
         // deadlines
@@ -265,16 +265,16 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
               AND nd.due_at >= now()
               AND NOT EXISTS (
                 SELECT 1 FROM node_instances ni
-                WHERE ni.user_id=$1 AND ni.playbook_version_id=$2 AND ni.node_id=nd.node_id AND ni.state='done'
-              )`, r.ID, h.pb.VersionID).Scan(&dueNext)
+                WHERE ni.user_id=$1 AND ni.node_id=nd.node_id AND ni.state='done'
+              )`, r.ID).Scan(&dueNext)
 
         var hasOverdue bool
         _ = h.db.QueryRowx(`SELECT EXISTS(
             SELECT 1 FROM node_deadlines nd
             WHERE nd.user_id=$1 AND nd.due_at < $2 AND NOT EXISTS (
               SELECT 1 FROM node_instances ni
-              WHERE ni.user_id=$1 AND ni.playbook_version_id=$3 AND ni.node_id=nd.node_id AND ni.state='done'
-            ))`, r.ID, now, h.pb.VersionID).Scan(&hasOverdue)
+              WHERE ni.user_id=$1 AND ni.node_id=nd.node_id AND ni.state='done'
+            ))`, r.ID, now).Scan(&hasOverdue)
 
         // filter overdue
         if c.Query("overdue") == "1" && !hasOverdue { continue }
