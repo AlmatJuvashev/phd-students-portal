@@ -1,17 +1,17 @@
 package handlers
 
 import (
-    "database/sql"
-    "encoding/json"
-    "fmt"
-    "net/http"
-    "strings"
-    "time"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
 
-    "github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
-    pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
-    "github.com/gin-gonic/gin"
-    "github.com/jmoiron/sqlx"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 )
 
 type AdminHandler struct {
@@ -438,7 +438,17 @@ func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
         Department string `db:"department"`
         Cohort     string `db:"cohort"`
     }
-    if err := h.db.Get(&user, `SELECT id,email,phone,first_name,last_name,program,department,cohort FROM users WHERE id=$1 AND role='student'`, uid); err != nil {
+    // Get user data with profile info from profile_submissions JSONB
+    query := `SELECT u.id, COALESCE(u.email,'') AS email, 
+                     COALESCE(ps.form_data->>'phone','') AS phone,
+                     u.first_name, u.last_name,
+                     COALESCE(ps.form_data->>'program','') AS program,
+                     COALESCE(ps.form_data->>'department','') AS department,
+                     COALESCE(ps.form_data->>'cohort','') AS cohort
+              FROM users u
+              LEFT JOIN profile_submissions ps ON ps.user_id = u.id
+              WHERE u.id=$1 AND u.role='student'`
+    if err := h.db.Get(&user, query, uid); err != nil {
         c.JSON(404, gin.H{"error": "not found"})
         return
     }

@@ -15,6 +15,9 @@ backend/uploads/
 mocks/credentials.txt
 mocks/*.txt
 
+# UI examples and prototypes
+ui-examples/
+
 # OS/editor
 .DS_Store
 Thumbs.db

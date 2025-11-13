@@ -141,6 +141,10 @@ export function StudentDetailPage() {
   const navigate = useNavigate();
   const [comment, setComment] = React.useState("");
   const [documents, setDocuments] = React.useState<Document[]>(mockDocuments);
+  const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
+  const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>(
+    {}
+  );
 
   const {
     data: student,
@@ -171,6 +175,63 @@ export function StudentDetailPage() {
     });
     return map;
   }, [deadlinesList]);
+
+  // Load playbook and extract nodes for current stage
+  React.useEffect(() => {
+    let mounted = true;
+    const stage = student?.current_stage;
+    if (!stage) {
+      setStageNodeIds(null);
+      return;
+    }
+
+    import("@/playbooks/playbook.json")
+      .then((mod: any) => {
+        if (!mounted) return;
+        const pb = (mod && (mod.default || mod)) as any;
+        const worlds = (pb.worlds || pb.Worlds || []) as any[];
+        const world = worlds.find((w: any) => w.id === stage || w.ID === stage);
+        if (world) {
+          const nodesArr = (world.nodes || world.Nodes || []) as any[];
+          const ids = nodesArr.map((n: any) => n.id || n.ID);
+          setStageNodeIds(ids);
+          // Build titles map (prefer EN -> RU -> KZ if available)
+          const titleFor = (n: any) => {
+            const t = n.title || n.Title || {};
+            return t.en || t.EN || t.En || t.ru || t.RU || t.kz || t.KZ || "";
+          };
+          const map: Record<string, string> = {};
+          nodesArr.forEach((n: any) => {
+            const id = n.id || n.ID;
+            map[id] = titleFor(n);
+          });
+          setNodeTitles(map);
+        } else {
+          setStageNodeIds(null);
+          setNodeTitles({});
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setStageNodeIds(null);
+          setNodeTitles({});
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [student?.current_stage]);
+
+  // Compute stage nodes using playbook data
+  const nodes = journeyData?.nodes || [];
+  const stageNodes = React.useMemo(() => {
+    // Filter nodes by current stage using playbook node IDs
+    if (!stageNodeIds || stageNodeIds.length === 0) return [];
+
+    const set = new Set(stageNodeIds);
+    return nodes.filter((n: any) => set.has(n.node_id));
+  }, [nodes, stageNodeIds]);
 
   const handleMarkDone = async (nodeId: string) => {
     if (!id) return;
@@ -217,52 +278,6 @@ export function StudentDetailPage() {
       </div>
     );
   }
-
-  const nodes = journeyData?.nodes || [];
-  const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
-  const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>({});
-
-  // Load playbook and extract nodes for current stage
-  React.useEffect(() => {
-    let mounted = true;
-    const stage = student?.current_stage;
-    if (!stage) {
-      setStageNodeIds(null);
-      return;
-    }
-    import("@/playbooks/playbook.json").then((mod: any) => {
-      if (!mounted) return;
-      const pb = (mod && (mod.default || mod)) as any;
-      const worlds = (pb.worlds || pb.Worlds || []) as any[];
-      const world = worlds.find((w: any) => w.id === stage || w.ID === stage);
-      if (world) {
-        const nodesArr = (world.nodes || world.Nodes || []) as any[];
-        const ids = nodesArr.map((n: any) => n.id || n.ID);
-        setStageNodeIds(ids);
-        // Build titles map (prefer EN -> RU -> KZ if available)
-        const titleFor = (n: any) => {
-          const t = n.title || n.Title || {};
-          return t.en || t.EN || t.En || t.ru || t.RU || t.kz || t.KZ || "";
-        };
-        const map: Record<string, string> = {};
-        nodesArr.forEach((n: any) => {
-          const id = n.id || n.ID;
-          map[id] = titleFor(n);
-        });
-        setNodeTitles(map);
-      } else {
-        setStageNodeIds(null);
-        setNodeTitles({});
-      }
-    });
-    return () => { mounted = false };
-  }, [student?.current_stage]);
-
-  const stageNodes = React.useMemo(() => {
-    if (!stageNodeIds || stageNodeIds.length === 0) return nodes;
-    const set = new Set(stageNodeIds);
-    return nodes.filter((n: any) => set.has(n.node_id));
-  }, [nodes, stageNodeIds]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -776,7 +791,9 @@ function NodeCard({
           )}
         </div>
         <div className="w-48 ml-4">
-          <label className="block text-xs text-muted-foreground mb-1">Set deadline</label>
+          <label className="block text-xs text-muted-foreground mb-1">
+            Set deadline
+          </label>
           <input
             type="datetime-local"
             aria-label="Set due date"
