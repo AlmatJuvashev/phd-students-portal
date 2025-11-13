@@ -154,7 +154,34 @@
       "requested_toast": "Запрос на изменения отправлен",
       "error_toast": "Не удалось обновить статус",
       "uploaded_meta": "Загружено {{date}}{{by}}",
-      "uploaded_by": " · {{name}}"
+      "uploaded_by": " · {{name}}",
+      "confirm_reset": "Сбросить пароль этого студента? Ему понадобится новый временный пароль для входа.",
+      "password_reset": "Пароль сброшен",
+      "reset_password": "Сбросить пароль"
+    },
+    "forms": {
+      "create_students_title": "Создание студентов",
+      "create_students_subtitle": "Приглашайте новых студентов, назначайте консультантов и управляйте аккаунтами.",
+      "students_table": "Студенты",
+      "registration_date": "Дата регистрации",
+      "copy_credentials": "Скопировать данные",
+      "phone_optional": "Телефон (необязательно)",
+      "email_optional": "Email (необязательно)",
+      "program": "Программа",
+      "department": "Кафедра",
+      "cohort": "Поток",
+      "advisors": "Консультанты",
+      "search_advisors": "Поиск консультантов…",
+      "creating": "Создание…",
+      "username": "Логин",
+      "temp_password": "Временный пароль",
+      "create_student": {
+        "title": "Создать студента",
+        "subtitle": "Добавьте нового студента с программой и консультантами.",
+        "heading": "Данные студента",
+        "submit": "Создать студента",
+        "success": "Студент создан"
+      }
     }
   },
   "table": {
