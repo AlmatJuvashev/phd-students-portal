@@ -34,6 +34,12 @@ export type JourneyNode = {
   state: string;
   updated_at?: string;
   attachments?: number;
+  files?: Array<{
+    filename: string;
+    download_url: string;
+    size_bytes: number;
+    attached_at?: string;
+  }>;
 };
 export async function fetchStudentJourney(
   id: string
@@ -94,4 +100,35 @@ export async function fetchMonitorAnalytics(params: Record<string, any> = {}) {
 
 export async function fetchStudentDetails(id: string): Promise<MonitorStudent> {
   return api(`/admin/students/${id}`);
+}
+
+export type NodeFileRow = {
+  slot_key: string;
+  attachment_id: string;
+  filename: string;
+  size_bytes: number;
+  status: "submitted" | "approved" | "rejected";
+  review_note?: string;
+  attached_at?: string;
+  approved_at?: string;
+  approved_by?: string;
+  mime_type?: string;
+  download_url: string;
+};
+
+export async function fetchStudentNodeFiles(
+  studentId: string,
+  nodeId: string,
+): Promise<NodeFileRow[]> {
+  return api(`/admin/students/${studentId}/nodes/${nodeId}/files`);
+}
+
+export async function reviewAttachment(
+  attachmentId: string,
+  payload: { status: "approved" | "rejected" | "submitted"; note?: string },
+) {
+  return api(`/admin/attachments/${attachmentId}/review`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
