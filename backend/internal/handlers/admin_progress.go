@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -733,6 +734,140 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 	c.JSON(200, out)
 }
 
+// ReviewAttachment allows admin/advisors to approve or request fixes for an attachment.
+func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
+	attachmentID := c.Param("attachmentId")
+	actorID := userIDFromClaims(c)
+	if actorID == "" {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	role := roleFromContext(c)
+	var body struct {
+		Status string `json:"status" binding:"required"`
+		Note   string `json:"note"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	status := strings.ToLower(strings.TrimSpace(body.Status))
+	allowed := map[string]bool{"approved": true, "rejected": true, "submitted": true}
+	if !allowed[status] {
+		c.JSON(400, gin.H{"error": "invalid status"})
+		return
+	}
+	tx, err := h.db.Beginx()
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer tx.Rollback()
+	var meta struct {
+		InstanceID string `db:"instance_id"`
+		SlotID     string `db:"slot_id"`
+		SlotKey    string `db:"slot_key"`
+		NodeID     string `db:"node_id"`
+		StudentID  string `db:"user_id"`
+		State      string `db:"state"`
+	}
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, s.id AS slot_id, s.slot_key, ni.node_id, ni.user_id, ni.state
+		FROM node_instance_slot_attachments a
+		JOIN node_instance_slots s ON s.id=a.slot_id
+		JOIN node_instances ni ON ni.id=s.node_instance_id
+		WHERE a.id=$1 AND a.is_active=true AND ni.playbook_version_id=$2`, attachmentID, h.pb.VersionID).
+		Scan(&meta.InstanceID, &meta.SlotID, &meta.SlotKey, &meta.NodeID, &meta.StudentID, &meta.State)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(404, gin.H{"error": "attachment not found"})
+			return
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	if role == "advisor" {
+		var allowedAdvisor bool
+		_ = tx.QueryRowx(`SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1 AND advisor_id=$2)`, meta.StudentID, actorID).Scan(&allowedAdvisor)
+		if !allowedAdvisor {
+			c.JSON(403, gin.H{"error": "forbidden"})
+			return
+		}
+	}
+	_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET status=$1, review_note=$2,
+		approved_by=CASE WHEN $1 IN ('approved','rejected') THEN $3 ELSE NULL END,
+		approved_at=CASE WHEN $1 IN ('approved','rejected') THEN now() ELSE NULL END
+		WHERE id=$4`, status, nullableString(body.Note), actorID, attachmentID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	payload := map[string]any{"attachment_id": attachmentID, "status": status}
+	if strings.TrimSpace(body.Note) != "" {
+		payload["note"] = body.Note
+	}
+	if err := insertNodeEvent(tx, meta.InstanceID, "attachment_reviewed", actorID, payload); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	var counts struct {
+		Submitted int `db:"submitted"`
+		Approved  int `db:"approved"`
+		Rejected  int `db:"rejected"`
+	}
+	_ = tx.QueryRowx(`SELECT
+		COALESCE(SUM(CASE WHEN a.status='submitted' THEN 1 ELSE 0 END),0) AS submitted,
+		COALESCE(SUM(CASE WHEN a.status='approved' THEN 1 ELSE 0 END),0) AS approved,
+		COALESCE(SUM(CASE WHEN a.status='rejected' THEN 1 ELSE 0 END),0) AS rejected
+		FROM node_instance_slot_attachments a
+		JOIN node_instance_slots s ON s.id=a.slot_id
+		WHERE s.node_instance_id=$1 AND a.is_active`, meta.InstanceID).Scan(&counts.Submitted, &counts.Approved, &counts.Rejected)
+	total := counts.Submitted + counts.Approved + counts.Rejected
+	newState := meta.State
+	if total > 0 {
+		switch {
+		case counts.Rejected > 0:
+			newState = "needs_fixes"
+		case counts.Submitted == 0 && counts.Approved > 0:
+			newState = "done"
+		default:
+			newState = "submitted"
+		}
+	}
+	if newState != meta.State {
+		query := "UPDATE node_instances SET state=$1, updated_at=now() WHERE id=$2"
+		if newState == "submitted" {
+			query = "UPDATE node_instances SET state=$1, submitted_at=COALESCE(submitted_at, now()), updated_at=now() WHERE id=$2"
+		}
+		if _, err := tx.Exec(query, newState, meta.InstanceID); err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		_, _ = tx.Exec(`INSERT INTO journey_states (user_id, node_id, state)
+			VALUES ($1,$2,$3)
+			ON CONFLICT (user_id,node_id) DO UPDATE SET state=$3, updated_at=now()`, meta.StudentID, meta.NodeID, newState)
+		_ = insertNodeEvent(tx, meta.InstanceID, "state_changed", actorID, map[string]any{"from": meta.State, "to": newState})
+	}
+	if err := tx.Commit(); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	var resp struct {
+		Status     string         `db:"status" json:"status"`
+		ReviewNote sql.NullString `db:"review_note" json:"review_note"`
+		ApprovedAt sql.NullTime   `db:"approved_at" json:"approved_at"`
+	}
+	_ = h.db.QueryRowx(`SELECT status, review_note, approved_at FROM node_instance_slot_attachments WHERE id=$1`, attachmentID).
+		Scan(&resp.Status, &resp.ReviewNote, &resp.ApprovedAt)
+	result := gin.H{"status": resp.Status, "node_state": newState}
+	if resp.ReviewNote.Valid {
+		result["review_note"] = resp.ReviewNote.String
+	}
+	if resp.ApprovedAt.Valid {
+		result["approved_at"] = resp.ApprovedAt.Time.Format(time.RFC3339)
+	}
+	c.JSON(200, result)
+}
+
 // PatchStudentNodeState allows admin/advisor to change a student's node state.
 func (h *AdminHandler) PatchStudentNodeState(c *gin.Context) {
 	uid := c.Param("id")
@@ -904,3 +1039,13 @@ func buildIn(query string, args []string) (string, []interface{}) {
 
 // rebind converts ? placeholders to the driver's bindtype
 func rebind(db *sqlx.DB, q string) string { return db.Rebind(q) }
+
+func insertNodeEvent(tx *sqlx.Tx, nodeInstanceID, eventType, actorID string, payload map[string]any) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`INSERT INTO node_events (node_instance_id, event_type, payload, actor_id)
+		VALUES ($1,$2,$3,$4)`, nodeInstanceID, eventType, data, actorID)
+	return err
+}
