@@ -145,5 +145,17 @@
     "current_node": "Current Node",
     "last_activity": "Last Activity",
     "actions": "Actions"
+  },
+  "time": {
+    "ago": "{{value}} {{unit}} ago",
+    "units": {
+      "seconds": "sec",
+      "minutes": "min",
+      "hours": "hours",
+      "days": "days",
+      "weeks": "weeks",
+      "months": "months",
+      "years": "years"
+    }
   }
 }

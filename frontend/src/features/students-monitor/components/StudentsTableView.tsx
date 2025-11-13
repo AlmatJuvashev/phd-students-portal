@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle } from "lucide-react";
 import type { MonitorStudent } from "../api";
 import { stageLabel } from "../utils";
+import { computeTimeAgo } from "@/lib/time";
 
 const STAGES = ["W1", "W2", "W3", "W4", "W5", "W6", "W7"];
 
@@ -91,9 +92,8 @@ export function StudentsTableView({
                 <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Cohort
                 </th>
-                <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Due
-                </th>
+                <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Due</th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Last Activity</th>
               </tr>
             </thead>
             <tbody>
@@ -133,9 +133,7 @@ export function StudentsTableView({
                         <div className="font-medium text-sm text-foreground">
                           {student.name}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {student.id}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{student.email || '—'}</div>
                       </div>
                     </div>
                   </td>
@@ -202,12 +200,34 @@ export function StudentsTableView({
                       </div>
                     )}
                   </td>
+                  <td className="py-2.5 px-4">
+                    {student.last_update ? (
+                      <div className="text-sm text-foreground">
+                        {(() => {
+                          const rel = computeTimeAgo(student.last_update);
+                          if (!rel) return new Date(student.last_update).toLocaleString(i18n.language);
+                          const unitKey = `time.units.${rel.unit}` as const;
+                          const unitLabel = (i18n as any).t ? (i18n as any).t(unitKey) : rel.unit;
+                          const ago = (i18n as any).t ? (i18n as any).t('time.ago', { value: rel.value, unit: unitLabel }) : `${rel.value} ${unitLabel} ago`;
+                          const abs = new Date(student.last_update).toLocaleString(i18n.language);
+                          return (
+                            <>
+                              <span className="font-medium">{ago}</span>
+                              <span className="text-xs text-muted-foreground ml-2">({abs})</span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">—</div>
+                    )}
+                  </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="p-8 text-center text-muted-foreground"
                   >
                     No students match your filters.
