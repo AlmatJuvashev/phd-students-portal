@@ -108,5 +108,42 @@
     "advisors_full_names": "ФИО консультантов",
     "dissertation_form": "Форма диссертации",
     "dissertation_form_other": "Другое (уточните)"
+  },
+  "admin": {
+    "sidebar": {
+      "core": "Основное",
+      "management": "Управление",
+      "dashboard": "Панель",
+      "student_progress": "Прогресс студентов",
+      "students_monitor": "Мониторинг студентов",
+      "create_students": "Создать студентов",
+      "create_advisors": "Создать консультантов",
+      "create_admins": "Создать админов"
+    },
+    "topbar": {
+      "admin_panel": "Админ-панель",
+      "menu": "Меню",
+      "admin": "Админ",
+      "signed_in_as": "Вы вошли как",
+      "back_to_main": "Назад на главную",
+      "back_to_main_button": "Назад"
+    },
+    "student_progress": {
+      "title": "Прогресс студентов",
+      "subtitle": "Обзор выполнения карты диссертации студентами.",
+      "search": "Поиск по имени или email",
+      "refresh": "Обновить",
+      "students": "Студенты",
+      "empty": "Студенты не найдены.",
+      "view_journey": "Открыть карту",
+      "tooltip_progress": "Выполнено {{done}} из {{total}} узлов ({{pct}}%)"
+    }
+  },
+  "table": {
+    "name": "Имя",
+    "email": "Email",
+    "current_node": "Текущий узел",
+    "last_activity": "Последняя активность",
+    "actions": "Действия"
   }
 }

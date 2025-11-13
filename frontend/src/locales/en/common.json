@@ -108,5 +108,42 @@
     "advisors_full_names": "Advisors' full names",
     "dissertation_form": "Dissertation form",
     "dissertation_form_other": "Other (specify)"
+  },
+  "admin": {
+    "sidebar": {
+      "core": "Core",
+      "management": "Management",
+      "dashboard": "Dashboard",
+      "student_progress": "Student Progress",
+      "students_monitor": "Students Monitor",
+      "create_students": "Create Students",
+      "create_advisors": "Create Advisors",
+      "create_admins": "Create Admins"
+    },
+    "topbar": {
+      "admin_panel": "Admin Panel",
+      "menu": "Menu",
+      "admin": "Admin",
+      "signed_in_as": "Signed in as",
+      "back_to_main": "Back to main page",
+      "back_to_main_button": "Back to main"
+    },
+    "student_progress": {
+      "title": "Student Progress",
+      "subtitle": "Overview of students’ dissertation map completion.",
+      "search": "Search by name or email",
+      "refresh": "Refresh",
+      "students": "Students",
+      "empty": "No students found.",
+      "view_journey": "View Journey",
+      "tooltip_progress": "{{done}} of {{total}} nodes done ({{pct}}%)"
+    }
+  },
+  "table": {
+    "name": "Name",
+    "email": "Email",
+    "current_node": "Current Node",
+    "last_activity": "Last Activity",
+    "actions": "Actions"
   }
 }
