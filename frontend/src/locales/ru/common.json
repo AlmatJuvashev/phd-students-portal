@@ -145,5 +145,42 @@
     "current_node": "Текущий узел",
     "last_activity": "Последняя активность",
     "actions": "Действия"
+  },
+  "time": {
+    "ago": "{{value}} {{unit}} назад",
+    "units": {
+      "seconds": "сек",
+      "minutes": "мин",
+      "hours": "час",
+      "days": "дн",
+      "weeks": "нед",
+      "months": "мес",
+      "years": "г"
+    }
+  },
+  "validation": {
+    "required": "Обязательно",
+    "invalid_email": "Неверный email"
+  },
+  "admin.forms": {
+    "first_name": "Имя",
+    "last_name": "Фамилия",
+    "email": "Email",
+    "phone_optional": "Телефон (необязательно)",
+    "email_optional": "Email (необязательно)",
+    "program": "Программа",
+    "department": "Кафедра",
+    "cohort": "Поток",
+    "advisors": "Консультанты",
+    "search_advisors": "Поиск консультантов…",
+    "creating": "Создание…",
+    "username": "Логин",
+    "temp_password": "Временный пароль",
+    "share_credentials": "Передайте эти учётные данные безопасным способом.",
+    "roles": { "student": "Студент", "advisor": "Консультант", "chair": "Зав.кафедрой" },
+    "create_admins": { "title": "Создать админов", "subtitle": "Только супер-админы могут создавать админов.", "heading": "Новый админ", "submit": "Создать админа", "success": "Админ создан" },
+    "create_users": { "title": "Создать пользователей", "subtitle": "Создание студентов, консультантов и зав.кафедрой.", "heading": "Новый пользователь", "submit": "Создать пользователя", "success": "Пользователь создан" },
+    "create_student": { "title": "Создать студента", "subtitle": "Добавьте нового студента и назначьте консультантов.", "heading": "Данные студента", "submit": "Создать студента", "success": "Студент создан" },
+    "create_advisor": { "title": "Создать консультанта", "subtitle": "Добавьте нового академического консультанта.", "heading": "Данные консультанта", "submit": "Создать консультанта", "success": "Консультант создан" }
   }
 }
