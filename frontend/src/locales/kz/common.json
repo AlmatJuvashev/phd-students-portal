@@ -108,5 +108,42 @@
     "advisors_full_names": "Жетекшілердің толық аты-жөні",
     "dissertation_form": "Диссертация формасы",
     "dissertation_form_other": "Басқа (нақтылаңыз)"
+  },
+  "admin": {
+    "sidebar": {
+      "core": "Негізгі",
+      "management": "Басқару",
+      "dashboard": "Панель",
+      "student_progress": "Студент прогресі",
+      "students_monitor": "Студенттер мониторингі",
+      "create_students": "Студент қосу",
+      "create_advisors": "Кеңесші қосу",
+      "create_admins": "Админ қосу"
+    },
+    "topbar": {
+      "admin_panel": "Админ панелі",
+      "menu": "Мәзір",
+      "admin": "Админ",
+      "signed_in_as": "Кіру:",
+      "back_to_main": "Басты бетке оралу",
+      "back_to_main_button": "Басты бет"
+    },
+    "student_progress": {
+      "title": "Студент прогресі",
+      "subtitle": "Студенттердің диссертациялық картаны орындауының көрінісі.",
+      "search": "Аты-жөні немесе email бойынша іздеу",
+      "refresh": "Жаңарту",
+      "students": "Студенттер",
+      "empty": "Студенттер табылмады.",
+      "view_journey": "Картаны ашу",
+      "tooltip_progress": "{{done}} / {{total}} түйін орындалды ({{pct}}%)"
+    }
+  },
+  "table": {
+    "name": "Аты-жөні",
+    "email": "Email",
+    "current_node": "Ағымдағы түйін",
+    "last_activity": "Соңғы әрекет",
+    "actions": "Әрекеттер"
   }
 }
