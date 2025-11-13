@@ -138,7 +138,7 @@ const nodeStates: Record<
 export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { i18n } = useTranslation('common');
+  const { i18n, t } = useTranslation('common');
   const [comment, setComment] = React.useState("");
   const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
   const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>(
@@ -310,20 +310,28 @@ export function StudentDetailPage() {
       note?: string;
     }) => reviewAttachment(attachmentId, { status, note }),
     onSuccess: (_data, variables) => {
-      setReviewMessage({
-        tone: "success",
-        text:
-          variables.status === "approved"
-            ? "Document approved"
-            : "Requested changes sent",
-      });
+    setReviewMessage({
+      tone: "success",
+      text:
+        variables.status === "approved"
+          ? t("admin.review.approved_toast", {
+              defaultValue: "Document approved",
+            })
+          : t("admin.review.requested_toast", {
+              defaultValue: "Requested changes sent",
+            }),
+    });
       refetchNodeFiles();
       refetchJourney();
     },
     onError: (err: any) => {
       setReviewMessage({
         tone: "error",
-        text: err?.message || "Unable to update status",
+        text:
+          err?.message ||
+          t("admin.review.error_toast", {
+            defaultValue: "Unable to update status",
+          }),
       });
     },
   });
@@ -643,14 +651,20 @@ export function StudentDetailPage() {
           <Card className="border shadow-sm">
             <CardContent className="p-6 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold">Documents & Review</h3>
+                <h3 className="text-lg font-semibold">
+                  {t("admin.review.title", { defaultValue: "Documents & Review" })}
+                </h3>
                 {stageNodes.length > 0 && (
                   <Select
                     value={selectedNodeId ?? ""}
                     onValueChange={setSelectedNodeId}
                   >
                     <SelectTrigger className="w-full sm:w-72">
-                      <SelectValue placeholder="Select node" />
+                      <SelectValue
+                        placeholder={t("admin.review.select_node", {
+                          defaultValue: "Select node",
+                        })}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {stageNodes.map((node: any) => (
@@ -675,16 +689,20 @@ export function StudentDetailPage() {
               )}
               {!selectedNodeId ? (
                 <p className="text-sm text-muted-foreground">
-                  Select a node above to inspect uploaded files.
+                  {t("admin.review.hint", {
+                    defaultValue: "Select a node above to inspect uploaded files.",
+                  })}
                 </p>
               ) : nodeFilesLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading files...
+                  {t("admin.review.loading", { defaultValue: "Loading files..." })}
                 </div>
               ) : nodeFiles.length === 0 ? (
                 <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  No files uploaded for this node yet.
+                  {t("admin.review.empty", {
+                    defaultValue: "No files uploaded for this node yet.",
+                  })}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -697,6 +715,20 @@ export function StudentDetailPage() {
                     const working =
                       pendingAttachment === file.attachment_id &&
                       reviewMutation.isPending;
+                    const statusLabel = t(`uploads.status.${file.status}`, {
+                      defaultValue: statusBadge.label,
+                    });
+                    const uploadedByText = file.uploaded_by
+                      ? t("admin.review.uploaded_by", {
+                          defaultValue: ` · ${file.uploaded_by}`,
+                          name: file.uploaded_by,
+                        })
+                      : "";
+                    const uploadMeta = t("admin.review.uploaded_meta", {
+                      defaultValue: `Uploaded ${formatDateLabel(file.attached_at)}${uploadedByText}`,
+                      date: formatDateLabel(file.attached_at),
+                      by: uploadedByText,
+                    });
                     return (
                       <div
                         key={file.attachment_id}
@@ -708,25 +740,29 @@ export function StudentDetailPage() {
                               {file.filename}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {formatBytes(file.size_bytes)} · Uploaded {formatDateLabel(file.attached_at)}
-                              {file.uploaded_by ? ` · ${file.uploaded_by}` : ""}
+                              {formatBytes(file.size_bytes)} · {uploadMeta}
                             </p>
                             {file.review_note && (
                               <p className="text-xs text-amber-700 mt-1">
-                                Reviewer note: {file.review_note}
+                                {t("uploads.note", {
+                                  defaultValue: "Reviewer note:",
+                                })}{" "}
+                                {file.review_note}
                               </p>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className={statusBadge.className}>
-                              {statusBadge.label}
+                              {statusLabel}
                             </Badge>
                             <Button variant="ghost" size="icon" asChild>
                               <a
                                 href={file.download_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label="Download file"
+                                aria-label={t("uploads.download", {
+                                  defaultValue: "Download",
+                                })}
                               >
                                 <Download className="h-4 w-4" />
                               </a>
@@ -746,7 +782,7 @@ export function StudentDetailPage() {
                               ) : (
                                 <CheckCircle2 className="h-4 w-4 mr-2" />
                               )}
-                              Approve
+                              {t("admin.review.approve", { defaultValue: "Approve" })}
                             </Button>
                           )}
                           {file.status !== "rejected" && (
@@ -763,7 +799,9 @@ export function StudentDetailPage() {
                               }
                             >
                               <AlertTriangle className="h-4 w-4 mr-2" />
-                              Request changes
+                              {t("admin.review.request_changes", {
+                                defaultValue: "Request changes",
+                              })}
                             </Button>
                           )}
                         </div>
@@ -859,13 +897,20 @@ export function StudentDetailPage() {
       >
         <div className="space-y-4">
           <div>
-            <h4 className="text-lg font-semibold">Request changes</h4>
+            <h4 className="text-lg font-semibold">
+              {t("admin.review.modal_title", { defaultValue: "Request changes" })}
+            </h4>
             <p className="text-sm text-muted-foreground">
-              {reviewDialog?.filename}
+              {t("admin.review.modal_hint", {
+                defaultValue: reviewDialog?.filename || "",
+                filename: reviewDialog?.filename ?? "",
+              })}
             </p>
           </div>
           <Textarea
-            placeholder="Let the student know what needs to be fixed"
+            placeholder={t("admin.review.modal_placeholder", {
+              defaultValue: "Let the student know what needs to be fixed",
+            })}
             rows={4}
             value={reviewNote}
             onChange={(event) => setReviewNote(event.target.value)}
@@ -878,7 +923,7 @@ export function StudentDetailPage() {
                 setReviewNote("");
               }}
             >
-              Cancel
+              {t("common.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               onClick={submitRequestChanges}
@@ -892,7 +937,7 @@ export function StudentDetailPage() {
               reviewMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Send request
+              {t("admin.review.send", { defaultValue: "Send request" })}
             </Button>
           </div>
         </div>
