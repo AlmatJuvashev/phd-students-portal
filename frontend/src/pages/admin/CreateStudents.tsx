@@ -72,12 +72,19 @@ export function CreateStudents() {
   });
 
   const {
-    data: students = [],
+    data: allUsers = [],
     isLoading: studentsLoading,
+    isError: studentsError,
+    refetch: refetchStudents,
   } = useQuery<StudentRow[]>({
-    queryKey: ["admin", "students"],
-    queryFn: () => api(`/admin/users?role=student`),
+    queryKey: ["admin", "users"],
+    queryFn: () => api(`/admin/users`),
   });
+
+  const students = React.useMemo(
+    () => allUsers.filter((user) => user.role === "student"),
+    [allUsers]
+  );
 
   const {
     register,
@@ -116,7 +123,7 @@ export function CreateStudents() {
       reset();
       setAdvisorSearch("");
       setSelectedAdvisors([]);
-      queryClient.invalidateQueries({ queryKey: ["admin", "students"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
     onError: (err: any) => {
       alert(err?.message || "Failed to create student");
@@ -128,9 +135,14 @@ export function CreateStudents() {
       api(`/admin/users/${userId}/reset-password`, { method: "POST" }),
     onSuccess: (result: Creds) => {
       setResetInfo(result);
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
     onError: (err: any) => alert(err?.message || "Failed to reset password"),
   });
+
+  const [pendingResetId, setPendingResetId] = React.useState<string | null>(
+    null
+  );
 
   const onSubmit = (data: Form) => createStudentMutation.mutate(data);
 
@@ -157,7 +169,10 @@ export function CreateStudents() {
         })
       )
     ) {
-      resetPasswordMutation.mutate(student.id);
+      setPendingResetId(student.id);
+      resetPasswordMutation.mutate(student.id, {
+        onSettled: () => setPendingResetId(null),
+      });
     }
   };
 
@@ -300,14 +315,36 @@ export function CreateStudents() {
                     </td>
                   </tr>
                 )}
-                {!studentsLoading && students.length === 0 && (
+                {studentsError && (
                   <tr>
-                    <td colSpan={8} className="py-6 text-center text-muted-foreground">
-                      {t("admin.review.empty", { defaultValue: "No students yet." })}
+                    <td colSpan={8} className="py-6 text-center text-red-600">
+                      {t("common.error", { defaultValue: "Error" })}: {" "}
+                      {t("admin.forms.students_error", {
+                        defaultValue: "Unable to load students.",
+                      })}
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => refetchStudents()}
+                        >
+                          {t("common.retry", { defaultValue: "Retry" })}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 )}
-                {!studentsLoading &&
+                {!studentsLoading && !studentsError && students.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-6 text-center text-muted-foreground">
+                      {t("admin.forms.students_empty", {
+                        defaultValue: "No students yet.",
+                      })}
+                    </td>
+                  </tr>
+                )}
+                {!studentsLoading && !studentsError &&
                   students.map((student, idx) => (
                     <tr
                       key={student.id}
@@ -349,8 +386,8 @@ export function CreateStudents() {
                                   defaultValue: "Reset password",
                                 })}
                               >
-                                {resetPasswordMutation.isLoading &&
-                                resetPasswordMutation.variables === student.id ? (
+                                {pendingResetId === student.id &&
+                                resetPasswordMutation.isPending ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                   <RefreshCw className="h-4 w-4" />
