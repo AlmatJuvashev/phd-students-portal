@@ -82,7 +82,12 @@ export function useSubmission(nodeId?: string | null) {
         queryKey: ["journey", "node", nodeId, "submission"],
       }),
   });
-  return { submission: query.data, isLoading: query.isLoading, save };
+  return {
+    submission: query.data,
+    isLoading: query.isLoading,
+    save,
+    refetch: query.refetch,
+  };
 }
 
 export function useAdvance(playbook: any) {
