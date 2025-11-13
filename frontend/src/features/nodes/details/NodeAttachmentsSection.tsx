@@ -6,19 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Loader2, Upload } from "lucide-react";
 
-const statusStyles: Record<string, { label: string; className: string }> = {
-  submitted: {
-    label: "Pending",
-    className: "bg-amber-50 text-amber-700 border border-amber-200",
-  },
-  approved: {
-    label: "Approved",
-    className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  },
-  rejected: {
-    label: "Needs fixes",
-    className: "bg-rose-50 text-rose-700 border border-rose-200",
-  },
+const statusStyles: Record<string, string> = {
+  submitted: "bg-amber-50 text-amber-700 border border-amber-200",
+  approved: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  rejected: "bg-rose-50 text-rose-700 border border-rose-200",
 };
 
 function formatBytes(bytes?: number) {
@@ -189,7 +180,19 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
                   </p>
                 ) : (
                   attachments.map((att) => {
-                    const status = att.status ? statusStyles[att.status] : null;
+                    const statusClass = att.status
+                      ? statusStyles[att.status] || statusStyles.submitted
+                      : null;
+                    const statusLabel = att.status
+                      ? t(`uploads.status.${att.status}`, {
+                          defaultValue:
+                            att.status === "approved"
+                              ? "Approved"
+                              : att.status === "rejected"
+                              ? "Needs fixes"
+                              : "Pending",
+                        })
+                      : null;
                     return (
                       <div
                         key={att.version_id}
@@ -208,9 +211,9 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          {status && (
-                            <Badge variant="outline" className={status.className}>
-                              {status.label}
+                          {statusClass && statusLabel && (
+                            <Badge variant="outline" className={statusClass}>
+                              {statusLabel}
                             </Badge>
                           )}
                           <Button variant="ghost" size="icon" asChild>

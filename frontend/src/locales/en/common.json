@@ -137,6 +137,24 @@
       "empty": "No students found.",
       "view_journey": "View Journey",
       "tooltip_progress": "{{done}} of {{total}} nodes done ({{pct}}%)"
+    },
+    "review": {
+      "title": "Documents & Review",
+      "select_node": "Select node",
+      "hint": "Select a node above to inspect uploaded files.",
+      "loading": "Loading files...",
+      "empty": "No files uploaded for this node yet.",
+      "approve": "Approve",
+      "request_changes": "Request changes",
+      "modal_title": "Request changes",
+      "modal_hint": "{{filename}}",
+      "modal_placeholder": "Let the student know what needs to be fixed",
+      "send": "Send request",
+      "approved_toast": "Document approved",
+      "requested_toast": "Requested changes sent",
+      "error_toast": "Unable to update status",
+      "uploaded_meta": "Uploaded {{date}}{{by}}",
+      "uploaded_by": " · {{name}}"
     }
   },
   "table": {
@@ -156,6 +174,24 @@
       "weeks": "weeks",
       "months": "months",
       "years": "years"
+    }
+  },
+  "uploads": {
+    "title": "Supporting documents",
+    "subtitle": "Attach the required files for this stage.",
+    "allowed": "Allowed: {{mime}}",
+    "any_format": "Any format",
+    "replace": "Replace file",
+    "add": "Upload file",
+    "empty": "No files uploaded yet.",
+    "note": "Reviewer note:",
+    "download": "Download",
+    "success": "File uploaded",
+    "error": "Failed to upload file. Try again.",
+    "status": {
+      "submitted": "Pending",
+      "approved": "Approved",
+      "rejected": "Needs fixes"
     }
   }
 }
