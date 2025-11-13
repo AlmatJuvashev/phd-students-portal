@@ -17,6 +17,7 @@ const CreateStudents = lazy(() => import('@/pages/admin/CreateStudents').then(m 
 const CreateAdvisors = lazy(() => import('@/pages/admin/CreateAdvisors').then(m => ({ default: m.CreateAdvisors })))
 const StudentProgress = lazy(() => import('@/pages/admin/StudentProgress').then(m => ({ default: m.StudentProgress })))
 const StudentsMonitorPage = lazy(() => import('@/features/students-monitor/StudentsMonitorPage').then(m => ({ default: m.StudentsMonitorPage })))
+const StudentDetailPage = lazy(() => import('@/features/students-monitor/pages/StudentDetailPage').then(m => ({ default: m.StudentDetailPage })))
 const AdvisorInbox = lazy(() => import('@/pages/advisor.inbox').then(m => ({ default: m.AdvisorInbox })))
 const Dashboard = lazy(() => import('@/pages/dashboard').then(m => ({ default: m.Dashboard })))
 const ForgotPassword = lazy(() => import('@/pages/forgot').then(m => ({ default: m.ForgotPassword })))
@@ -128,6 +129,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
             {WithSuspense(<StudentsMonitorPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'students-monitor/:id',
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
+            {WithSuspense(<StudentDetailPage />)}
           </ProtectedRoute>
         ),
       },

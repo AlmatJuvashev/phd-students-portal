@@ -8,16 +8,17 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle } from "lucide-react";
 import type { MonitorStudent } from "../api";
+import { stageLabel } from "../utils";
 
 export function StudentsTableView({
   rows,
-  onOpen,
+  onView,
   selected,
   onToggle,
   onToggleAll,
 }: {
   rows: MonitorStudent[];
-  onOpen: (s: MonitorStudent) => void;
+  onView: (s: MonitorStudent) => void;
   selected: Set<string>;
   onToggle: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
@@ -72,13 +73,13 @@ export function StudentsTableView({
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr
-                  key={r.id}
-                  className={`border-b transition-colors cursor-pointer ${getRowClass(
-                    r
-                  )}`}
-                  onClick={() => onOpen(r)}
-                >
+                  <tr
+                    key={r.id}
+                    className={`border-b transition-colors cursor-pointer ${getRowClass(
+                      r
+                    )}`}
+                    onClick={() => onView(r)}
+                  >
                   <td className="p-4" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selected.has(r.id)}
@@ -137,9 +138,9 @@ export function StudentsTableView({
                     </div>
                   </td>
                   <td className="p-4">
-                    <Badge className="bg-primary/10 text-primary border border-primary/20">
-                      {stageLabel(r.current_stage, i18n.language)}
-                    </Badge>
+                      <Badge className="bg-primary/10 text-primary border border-primary/20">
+                        {stageLabel(r.current_stage, i18n.language)}
+                      </Badge>
                     {r.rp_required && (
                       <Badge
                         variant="outline"
@@ -191,7 +192,7 @@ export function StudentsTableView({
                         variant="ghost"
                         size="sm"
                         className="h-8 px-2 hover:bg-primary/10 hover:text-primary"
-                        onClick={() => onOpen(r)}
+                        onClick={() => onView(r)}
                       >
                         View
                       </Button>
@@ -222,37 +223,4 @@ export function StudentsTableView({
       </CardContent>
     </Card>
   );
-}
-
-function stageLabel(s?: string, lang: string = "en") {
-  const en: Record<string, string> = {
-    W1: "I — Preparation",
-    W2: "II — Pre-examination",
-    W3: "III — RP",
-    W4: "IV — Submission to DC",
-    W5: "V — Restoration",
-    W6: "VI — After DC acceptance",
-    W7: "VII — Defense & Post-defense",
-  };
-  const ru: Record<string, string> = {
-    W1: "I — Подготовка",
-    W2: "II — Предварительная экспертиза",
-    W3: "III — RP (условно)",
-    W4: "IV — Подача в ДС",
-    W5: "V — Восстановление",
-    W6: "VI — После принятия ДС",
-    W7: "VII — Защита и После защиты",
-  };
-  const kz: Record<string, string> = {
-    W1: "I — Дайындық",
-    W2: "II — Алдын ала сараптама",
-    W3: "III — RP",
-    W4: "IV — ДК-ға тапсыру",
-    W5: "V — Қалпына келтіру",
-    W6: "VI — ДК қабылдағаннан кейін",
-    W7: "VII — Қорғау және одан кейін",
-  };
-  const map = lang.startsWith("ru") ? ru : lang.startsWith("kz") ? kz : en;
-  if (!s) return "—";
-  return map[s] || s;
 }
