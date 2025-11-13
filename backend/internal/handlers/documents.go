@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -158,13 +160,37 @@ func (h *DocumentsHandler) PresignGetLatest(c *gin.Context) {
 // Local download (serve file on disk) for a version id
 func (h *DocumentsHandler) DownloadVersion(c *gin.Context) {
 	ver := c.Param("versionId")
-	var path string
-	err := h.db.QueryRowx(`SELECT storage_path FROM document_versions WHERE id=$1`, ver).Scan(&path)
+	var row struct {
+		StoragePath string         `db:"storage_path"`
+		Bucket      sql.NullString `db:"bucket"`
+		ObjectKey   sql.NullString `db:"object_key"`
+		MimeType    string         `db:"mime_type"`
+	}
+	err := h.db.QueryRowx(`SELECT storage_path, bucket, object_key, mime_type FROM document_versions WHERE id=$1`, ver).
+		Scan(&row.StoragePath, &row.Bucket, &row.ObjectKey, &row.MimeType)
 	if err != nil {
 		c.JSON(404, gin.H{"error": "not found"})
 		return
 	}
-	c.File(path)
+	if row.Bucket.Valid && row.ObjectKey.Valid {
+		s3c, err := services.NewS3FromEnv()
+		if err != nil {
+			c.JSON(500, gin.H{"error": "s3 init failed"})
+			return
+		}
+		if s3c == nil {
+			c.JSON(500, gin.H{"error": "s3 not configured"})
+			return
+		}
+		url, err := s3c.PresignGet(row.ObjectKey.String, time.Minute*10)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "presign failed"})
+			return
+		}
+		c.Redirect(http.StatusTemporaryRedirect, url)
+		return
+	}
+	c.File(row.StoragePath)
 }
 
 // ListDocuments returns documents for a given student

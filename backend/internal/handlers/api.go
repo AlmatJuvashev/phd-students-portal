@@ -72,10 +72,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	auth := NewAuthHandler(db, cfg)
 	api.POST("/auth/login", auth.Login)
 
-    users := NewUsersHandler(db, cfg)
-    journey := NewJourneyHandler(db, cfg, playbookManager)
-    nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
-    adminHandler := NewAdminHandler(db, cfg, playbookManager)
+	users := NewUsersHandler(db, cfg)
+	journey := NewJourneyHandler(db, cfg, playbookManager)
+	nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
+	adminHandler := NewAdminHandler(db, cfg, playbookManager)
 	_ = NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL)) // TODO: use me handler for routes
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 
@@ -109,22 +109,23 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	admin := api.Group("/admin")
 	admin.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
 	admin.Use(middleware.RequireRoles("admin", "superadmin"))
-    admin.GET("/users", users.ListUsers)
-    admin.POST("/users", users.CreateUser)
-    admin.PUT("/users/:id", users.UpdateUser)
-    admin.POST("/users/:id/reset-password", users.ResetPasswordForUser)
-    admin.PATCH("/users/:id/active", users.SetActive)
-    admin.GET("/student-progress", adminHandler.StudentProgress)
-    
-    // Monitor endpoints (admin/advisor access) - extend admin group
-    admin.GET("/monitor/students", adminHandler.MonitorStudents)
-    admin.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
-    admin.GET("/students/:id", adminHandler.GetStudentDetails)
-    admin.GET("/students/:id/journey", adminHandler.StudentJourney)
-    admin.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
-    admin.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
-    admin.PUT("/students/:id/nodes/:nodeId/deadline", adminHandler.PutStudentDeadline)
-    admin.POST("/reminders", adminHandler.PostReminders)
+	admin.GET("/users", users.ListUsers)
+	admin.POST("/users", users.CreateUser)
+	admin.PUT("/users/:id", users.UpdateUser)
+	admin.POST("/users/:id/reset-password", users.ResetPasswordForUser)
+	admin.PATCH("/users/:id/active", users.SetActive)
+	admin.GET("/student-progress", adminHandler.StudentProgress)
+
+	// Monitor endpoints (admin/advisor access) - extend admin group
+	admin.GET("/monitor/students", adminHandler.MonitorStudents)
+	admin.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
+	admin.GET("/students/:id", adminHandler.GetStudentDetails)
+	admin.GET("/students/:id/journey", adminHandler.StudentJourney)
+	admin.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
+	admin.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
+	admin.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
+	admin.PUT("/students/:id/nodes/:nodeId/deadline", adminHandler.PutStudentDeadline)
+	admin.POST("/reminders", adminHandler.PostReminders)
 
 	// Self-service password change
 	api.PATCH("/me/password", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.ChangeOwnPassword)
