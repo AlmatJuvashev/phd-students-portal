@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,34 +27,59 @@ type S3Client struct {
 }
 
 func NewS3FromEnv() (*S3Client, error) {
-	endpoint := os.Getenv("S3_ENDPOINT")
-	if endpoint == "" {
+	bucket := firstNonEmpty(os.Getenv("S3_BUCKET"), os.Getenv("S3_BUCKET_NAME"))
+	if bucket == "" {
 		return nil, nil
-	} // feature disabled
+	}
+	region := firstNonEmpty(os.Getenv("S3_REGION"), os.Getenv("AWS_REGION"), "us-east-1")
+	endpoint := os.Getenv("S3_ENDPOINT")
+	access := firstNonEmpty(os.Getenv("S3_ACCESS_KEY_ID"), os.Getenv("S3_ACCESS_KEY"), os.Getenv("AWS_ACCESS_KEY_ID"))
+	secret := firstNonEmpty(os.Getenv("S3_SECRET_ACCESS_KEY"), os.Getenv("S3_SECRET_KEY"), os.Getenv("AWS_SECRET_ACCESS_KEY"))
+	usePathStyleEnv := strings.ToLower(getEnv("S3_USE_PATH_STYLE", ""))
+	usePathStyle := usePathStyleEnv == "true"
+	if usePathStyleEnv == "" {
+		usePathStyle = endpoint != ""
+	}
 	scfg := S3Config{
 		Endpoint:     endpoint,
-		Region:       getEnv("S3_REGION", "us-east-1"),
-		Bucket:       getEnv("S3_BUCKET", "phd-portal"),
-		AccessKey:    os.Getenv("S3_ACCESS_KEY"),
-		SecretKey:    os.Getenv("S3_SECRET_KEY"),
-		UsePathStyle: getEnv("S3_USE_PATH_STYLE", "true") == "true",
+		Region:       region,
+		Bucket:       bucket,
+		AccessKey:    access,
+		SecretKey:    secret,
+		UsePathStyle: usePathStyle,
 	}
-	creds := aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(scfg.AccessKey, scfg.SecretKey, ""))
-	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{URL: scfg.Endpoint, HostnameImmutable: true}, nil
-	})
-	cfg, err := config.LoadDefaultConfig(context.Background(),
-		config.WithRegion(scfg.Region),
-		config.WithCredentialsProvider(creds),
-		config.WithEndpointResolverWithOptions(resolver),
-	)
+	var cfg aws.Config
+	var err error
+	credProvider := aws.CredentialsProvider(nil)
+	if access != "" && secret != "" {
+		credProvider = aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(access, secret, ""))
+	}
+	if endpoint != "" {
+		resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			return aws.Endpoint{URL: endpoint, HostnameImmutable: true}, nil
+		})
+		opts := []func(*config.LoadOptions) error{
+			config.WithRegion(region),
+			config.WithEndpointResolverWithOptions(resolver),
+		}
+		if credProvider != nil {
+			opts = append(opts, config.WithCredentialsProvider(credProvider))
+		}
+		cfg, err = config.LoadDefaultConfig(context.Background(), opts...)
+	} else {
+		loadOpts := []func(*config.LoadOptions) error{
+			config.WithRegion(region),
+		}
+		if credProvider != nil {
+			loadOpts = append(loadOpts, config.WithCredentialsProvider(credProvider))
+		}
+		cfg, err = config.LoadDefaultConfig(context.Background(), loadOpts...)
+	}
 	if err != nil {
 		return nil, err
 	}
-	return &S3Client{
-		cfg:    scfg,
-		client: s3.NewFromConfig(cfg, func(o *s3.Options) { o.UsePathStyle = scfg.UsePathStyle }),
-	}, nil
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) { o.UsePathStyle = scfg.UsePathStyle })
+	return &S3Client{cfg: scfg, client: client}, nil
 }
 
 func (s *S3Client) PresignPut(objectKey, contentType string, expires time.Duration) (string, error) {
@@ -92,4 +118,20 @@ func (s *S3Client) PresignGet(objectKey string, expires time.Duration) (string, 
 		return "", err
 	}
 	return req.URL, nil
+}
+
+func (s *S3Client) Bucket() string {
+	if s == nil {
+		return ""
+	}
+	return s.cfg.Bucket
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }
