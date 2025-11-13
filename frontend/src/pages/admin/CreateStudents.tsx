@@ -31,6 +31,11 @@ import {
   Copy,
   Loader2,
   X,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 
 const Schema = z.object({
@@ -64,6 +69,12 @@ export function CreateStudents() {
   const [showModal, setShowModal] = React.useState(false);
   const [created, setCreated] = React.useState<Creds | null>(null);
   const [resetInfo, setResetInfo] = React.useState<Creds | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [sortField, setSortField] = React.useState<
+    "name" | "username" | "program" | "department" | "cohort" | "created_at"
+  >("name");
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
+  const [page, setPage] = React.useState(1);
 
   const { data: advisors = [] } = useQuery<UserLite[]>({
     queryKey: ["admin", "advisors", advisorSearch],
@@ -85,6 +96,7 @@ export function CreateStudents() {
     () => allUsers.filter((user) => user.role === "student"),
     [allUsers]
   );
+  const normalizedStudents = React.useMemo(() => students ?? [], [students]);
 
   const {
     register,
@@ -183,6 +195,67 @@ export function CreateStudents() {
     return d.toLocaleDateString();
   };
 
+  const PAGE_SIZE = 10;
+  const filteredStudents = React.useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    const base = normalizedStudents;
+    const filtered = term
+      ? base.filter((student) => {
+          const haystack = [
+            student.name,
+            student.email,
+            student.username,
+            student.program,
+            student.department,
+            student.cohort,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(term);
+        })
+      : base;
+    const sorted = [...filtered].sort((a, b) => {
+      const aVal = (a[sortField] || "").toString().toLowerCase();
+      const bVal = (b[sortField] || "").toString().toLowerCase();
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [normalizedStudents, searchTerm, sortField, sortDirection]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedStudents = React.useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredStudents.slice(start, start + PAGE_SIZE);
+  }, [filteredStudents, currentPage]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [searchTerm, sortField, sortDirection, normalizedStudents.length]);
+
+  const handleSort = (
+    field: "name" | "username" | "program" | "department" | "cohort" | "created_at"
+  ) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortIcon = (field: typeof sortField) => {
+    if (sortField !== field) return null;
+    return sortDirection === "asc" ? (
+      <ChevronUp className="ml-1 h-3 w-3" />
+    ) : (
+      <ChevronDown className="ml-1 h-3 w-3" />
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -274,32 +347,99 @@ export function CreateStudents() {
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle>
-            {t("admin.forms.students_table", { defaultValue: "Students" })} · {students.length}
-          </CardTitle>
+        <CardHeader className="space-y-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>
+                {t("admin.forms.students_table", { defaultValue: "Students" })} · {normalizedStudents.length}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {t("admin.forms.students_summary", {
+                  defaultValue: "{{count}} students · page {{page}} of {{pages}}",
+                })
+                  .replace("{{count}}", filteredStudents.length.toString())
+                  .replace("{{page}}", currentPage.toString())
+                  .replace("{{pages}}", totalPages.toString())}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder={t("admin.forms.search_students", {
+                    defaultValue: "Search students…",
+                  })}
+                  className="pl-9"
+                />
+              </div>
+              <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                {t("admin.forms.create_student.submit", { defaultValue: "Create Student" })}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-muted-foreground">
+              <thead className="sticky top-0 z-10 bg-background text-left text-muted-foreground">
+                <tr>
                   <th className="py-2 pr-4 font-medium">#</th>
-                  <th className="py-2 pr-4 font-medium">
-                    {t("table.name", { defaultValue: "Name" })}
+                  <th
+                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center">
+                      {t("table.name", { defaultValue: "Name" })}
+                      {renderSortIcon("name")}
+                    </div>
                   </th>
-                  <th className="py-2 pr-4 font-medium">Username</th>
-                  <th className="py-2 pr-4 font-medium">
-                    {t("admin.forms.program", { defaultValue: "Program" })}
+                  <th
+                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    onClick={() => handleSort("username")}
+                  >
+                    <div className="flex items-center">
+                      Username
+                      {renderSortIcon("username")}
+                    </div>
                   </th>
-                  <th className="py-2 pr-4 font-medium">
-                    {t("admin.forms.department", { defaultValue: "Department" })}
+                  <th
+                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    onClick={() => handleSort("program")}
+                  >
+                    <div className="flex items-center">
+                      {t("admin.forms.program", { defaultValue: "Program" })}
+                      {renderSortIcon("program")}
+                    </div>
                   </th>
-                  <th className="py-2 pr-4 font-medium">
-                    {t("admin.forms.cohort", { defaultValue: "Cohort" })}
+                  <th
+                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    onClick={() => handleSort("department")}
+                  >
+                    <div className="flex items-center">
+                      {t("admin.forms.department", { defaultValue: "Department" })}
+                      {renderSortIcon("department")}
+                    </div>
                   </th>
-                  <th className="py-2 pr-4 font-medium">
-                    {t("admin.forms.registration_date", { defaultValue: "Registered" })}
+                  <th
+                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    onClick={() => handleSort("cohort")}
+                  >
+                    <div className="flex items-center">
+                      {t("admin.forms.cohort", { defaultValue: "Cohort" })}
+                      {renderSortIcon("cohort")}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    onClick={() => handleSort("created_at")}
+                  >
+                    <div className="flex items-center">
+                      {t("admin.forms.registration_date", { defaultValue: "Registered" })}
+                      {renderSortIcon("created_at")}
+                    </div>
                   </th>
                   <th className="py-2 text-right font-medium">
                     {t("table.actions", { defaultValue: "Actions" })}
@@ -335,7 +475,7 @@ export function CreateStudents() {
                     </td>
                   </tr>
                 )}
-                {!studentsLoading && !studentsError && students.length === 0 && (
+                {!studentsLoading && !studentsError && filteredStudents.length === 0 && (
                   <tr>
                     <td colSpan={8} className="py-6 text-center text-muted-foreground">
                       {t("admin.forms.students_empty", {
@@ -344,14 +484,15 @@ export function CreateStudents() {
                     </td>
                   </tr>
                 )}
-                {!studentsLoading && !studentsError &&
-                  students.map((student, idx) => (
+                {!studentsLoading &&
+                  !studentsError &&
+                  paginatedStudents.map((student, idx) => (
                     <tr
                       key={student.id}
                       className="border-t border-border/60 text-foreground"
                     >
                       <td className="py-3 pr-4 align-top text-muted-foreground">
-                        {idx + 1}
+                        {(currentPage - 1) * PAGE_SIZE + idx + 1}
                       </td>
                       <td className="py-3 pr-4 align-top">
                         <div className="font-medium">{student.name}</div>
@@ -406,6 +547,37 @@ export function CreateStudents() {
                   ))}
               </tbody>
             </table>
+          </div>
+          <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              {t("admin.forms.pagination_label", {
+                defaultValue: "Page {{page}} of {{pages}}",
+              })
+                .replace("{{page}}", currentPage.toString())
+                .replace("{{pages}}", totalPages.toString())}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t("admin.forms.prev_page", { defaultValue: "Prev" })}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="gap-2"
+              >
+                {t("admin.forms.next_page", { defaultValue: "Next" })}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
