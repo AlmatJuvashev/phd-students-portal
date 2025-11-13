@@ -220,6 +220,7 @@ export function StudentDetailPage() {
 
   const nodes = journeyData?.nodes || [];
   const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
+  const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>({});
 
   // Load playbook and extract nodes for current stage
   React.useEffect(() => {
@@ -232,12 +233,26 @@ export function StudentDetailPage() {
     import("@/playbooks/playbook.json").then((mod: any) => {
       if (!mounted) return;
       const pb = (mod && (mod.default || mod)) as any;
-      const world = (pb.worlds || pb.Worlds || []).find((w: any) => w.id === stage || w.ID === stage);
+      const worlds = (pb.worlds || pb.Worlds || []) as any[];
+      const world = worlds.find((w: any) => w.id === stage || w.ID === stage);
       if (world) {
-        const ids = (world.nodes || world.Nodes || []).map((n: any) => n.id || n.ID);
+        const nodesArr = (world.nodes || world.Nodes || []) as any[];
+        const ids = nodesArr.map((n: any) => n.id || n.ID);
         setStageNodeIds(ids);
+        // Build titles map (prefer EN -> RU -> KZ if available)
+        const titleFor = (n: any) => {
+          const t = n.title || n.Title || {};
+          return t.en || t.EN || t.En || t.ru || t.RU || t.kz || t.KZ || "";
+        };
+        const map: Record<string, string> = {};
+        nodesArr.forEach((n: any) => {
+          const id = n.id || n.ID;
+          map[id] = titleFor(n);
+        });
+        setNodeTitles(map);
       } else {
         setStageNodeIds(null);
+        setNodeTitles({});
       }
     });
     return () => { mounted = false };
@@ -481,10 +496,10 @@ export function StudentDetailPage() {
                     <NodeCard
                       key={node.node_id}
                       id={node.node_id}
+                      title={nodeTitles[node.node_id]}
                       state={node.state as NodeState}
                       dueDate={deadlines[node.node_id]}
                       onSetDue={(due) => handleSetDeadline(node.node_id, due)}
-                      onMarkDone={() => handleMarkDone(node.node_id)}
                     />
                   ))
                 )}
@@ -723,26 +738,26 @@ export function StudentDetailPage() {
 
 function NodeCard({
   id,
+  title,
   state,
   dueDate,
   onSetDue,
-  onMarkDone,
 }: {
   id: string;
+  title?: string;
   state: NodeState;
   dueDate?: string;
   onSetDue: (due: string) => void;
-  onMarkDone: () => void;
 }) {
   const stateConfig = nodeStates[state];
   const StateIcon = stateConfig.icon;
 
   return (
-    <div className="p-5 rounded-lg border hover:shadow-md transition-all">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <code className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded font-mono">
+    <div className="p-4 rounded-lg border bg-card hover:bg-muted/10 transition-colors">
+      <div className="flex items-start justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <code className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded font-mono">
               {id}
             </code>
             <Badge variant="outline" className={`text-xs ${stateConfig.color}`}>
@@ -750,27 +765,26 @@ function NodeCard({
               {stateConfig.label}
             </Badge>
           </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
-        {dueDate && (
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            Due: {new Date(dueDate).toLocaleString()}
+          <div className="text-sm font-medium text-foreground truncate">
+            {title || "—"}
           </div>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <input
-          type="datetime-local"
-          aria-label="Set due date"
-          className="flex-1 border rounded-md px-3 py-2 text-sm"
-          value={dueDate ? dueDate.slice(0, 16) : ""}
-          onChange={(e) => onSetDue(e.target.value)}
-        />
-        <Button size="sm" variant="outline" onClick={onMarkDone}>
-          Mark Done
-        </Button>
+          {dueDate && (
+            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              Due: {new Date(dueDate).toLocaleString()}
+            </div>
+          )}
+        </div>
+        <div className="w-48 ml-4">
+          <label className="block text-xs text-muted-foreground mb-1">Set deadline</label>
+          <input
+            type="datetime-local"
+            aria-label="Set due date"
+            className="w-full border rounded-md px-2 py-1 text-xs"
+            value={dueDate ? dueDate.slice(0, 16) : ""}
+            onChange={(e) => onSetDue(e.target.value)}
+          />
+        </div>
       </div>
     </div>
   );
