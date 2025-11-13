@@ -6,13 +6,15 @@ import { StatusChip } from "./StatusChip";
 
 type Props = {
   studentId: string;
+  currentStage?: string; // W1..W7; if provided, show only nodes in this stage
   studentName?: string;
 };
 
-export function StudentJourneyPanel({ studentId }: Props) {
+export function StudentJourneyPanel({ studentId, currentStage }: Props) {
   const [nodes, setNodes] = React.useState<JourneyNode[]>([]);
   const [deadlines, setDeadlines] = React.useState<Record<string, string>>({});
   const [loading, setLoading] = React.useState(false);
+  const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
 
   React.useEffect(() => {
     if (!studentId) {
@@ -30,6 +32,27 @@ export function StudentJourneyPanel({ studentId }: Props) {
       }),
     ]).finally(() => setLoading(false));
   }, [studentId]);
+
+  // Load playbook to resolve which node ids belong to the current stage (world)
+  React.useEffect(() => {
+    let mounted = true;
+    if (!currentStage) {
+      setStageNodeIds(null);
+      return;
+    }
+    import("@/playbooks/playbook.json").then((mod: any) => {
+      if (!mounted) return;
+      const pb = (mod && (mod.default || mod)) as any;
+      const world = (pb.worlds || pb.Worlds || []).find((w: any) => w.id === currentStage || w.ID === currentStage);
+      if (world) {
+        const ids = (world.nodes || world.Nodes || []).map((n: any) => n.id || n.ID);
+        setStageNodeIds(ids);
+      } else {
+        setStageNodeIds(null);
+      }
+    });
+    return () => { mounted = false };
+  }, [currentStage]);
 
   const confirmNode = async (nodeId: string) => {
     await patchStudentNodeState(studentId, nodeId, "done");
@@ -49,10 +72,10 @@ export function StudentJourneyPanel({ studentId }: Props) {
       </CardHeader>
       <CardContent className="space-y-2">
         {loading && <p className="text-sm text-muted-foreground">Loading journey…</p>}
-        {!loading && nodes.length === 0 && (
+        {!loading && filteredNodes(nodes, stageNodeIds).length === 0 && (
           <p className="text-sm text-muted-foreground">No journey data yet.</p>
         )}
-        {!loading && nodes.map((node) => (
+        {!loading && filteredNodes(nodes, stageNodeIds).map((node) => (
           <div key={node.node_id} className="border rounded p-3 flex items-start justify-between gap-3">
             <div>
               <div className="font-mono text-xs">{node.node_id}</div>
@@ -81,3 +104,9 @@ export function StudentJourneyPanel({ studentId }: Props) {
 }
 
 export default StudentJourneyPanel;
+
+function filteredNodes(all: JourneyNode[], stageNodeIds: string[] | null) {
+  if (!stageNodeIds || stageNodeIds.length === 0) return all;
+  const set = new Set(stageNodeIds);
+  return all.filter((n) => set.has(n.node_id));
+}
