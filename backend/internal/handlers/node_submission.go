@@ -11,6 +11,7 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jmoiron/sqlx"
@@ -98,7 +99,8 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 	}
 	locale := h.resolveLocale(c.Query("locale"))
 
-	err := h.withTx(func(tx *sqlx.Tx) error {
+	var err error
+	err = h.withTx(func(tx *sqlx.Tx) error {
 		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
 		if err != nil {
 			return err
@@ -146,6 +148,7 @@ type nodeUploadPresignReq struct {
 	SlotKey     string `json:"slot_key" binding:"required"`
 	Filename    string `json:"filename" binding:"required"`
 	ContentType string `json:"content_type" binding:"required"`
+	SizeBytes   int64  `json:"size_bytes" binding:"required"`
 }
 
 // POST /api/journey/nodes/:nodeId/uploads/presign
@@ -161,10 +164,16 @@ func (h *NodeSubmissionHandler) PresignUpload(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	maxBytes := int64(h.cfg.FileUploadMaxMB) * 1024 * 1024
+	if maxBytes > 0 && req.SizeBytes > maxBytes {
+		c.JSON(400, gin.H{"error": fmt.Sprintf("file too large (max %d MB)", h.cfg.FileUploadMaxMB)})
+		return
+	}
 	locale := h.resolveLocale(c.Query("locale"))
 	var docID string
 	var instanceID string
-	err := h.withTx(func(tx *sqlx.Tx) error {
+	var err error
+	err = h.withTx(func(tx *sqlx.Tx) error {
 		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
 		if err != nil {
 			return err
@@ -202,14 +211,24 @@ func (h *NodeSubmissionHandler) PresignUpload(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "S3 not configured"})
 		return
 	}
-	objectKey := fmt.Sprintf("%s/%s", docID, req.Filename)
-	url, err := s3c.PresignPut(objectKey, req.ContentType, time.Minute*15)
+	objectKey := storage.BuildNodeObjectKey(uid, nodeID, req.SlotKey, req.Filename)
+	expires := time.Minute * 15
+	url, err := s3c.PresignPut(objectKey, req.ContentType, expires)
 	if err != nil {
 		handleNodeErr(c, err)
 		return
 	}
 	_ = instanceID // currently unused but reserved for future audit
-	c.JSON(200, gin.H{"upload_url": url, "object_key": objectKey, "document_id": docID})
+	resp := gin.H{
+		"upload_url":       url,
+		"object_key":       objectKey,
+		"document_id":      docID,
+		"bucket":           s3c.Bucket(),
+		"expires_in":       int(expires.Seconds()),
+		"max_size_bytes":   maxBytes,
+		"required_headers": map[string]string{"Content-Type": req.ContentType},
+	}
+	c.JSON(200, resp)
 }
 
 type nodeAttachReq struct {
@@ -218,6 +237,7 @@ type nodeAttachReq struct {
 	ObjectKey   string `json:"object_key" binding:"required"`
 	ContentType string `json:"content_type" binding:"required"`
 	SizeBytes   int64  `json:"size_bytes" binding:"required"`
+	ETag        string `json:"etag"`
 }
 
 // POST /api/journey/nodes/:nodeId/uploads/attach
@@ -228,13 +248,24 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
+	role := roleFromContext(c)
 	var req nodeAttachReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	s3c, err := services.NewS3FromEnv()
+	if err != nil {
+		handleNodeErr(c, err)
+		return
+	}
+	if s3c == nil {
+		c.JSON(400, gin.H{"error": "S3 not configured"})
+		return
+	}
+	bucket := s3c.Bucket()
 	locale := h.resolveLocale(c.Query("locale"))
-	err := h.withTx(func(tx *sqlx.Tx) error {
+	err = h.withTx(func(tx *sqlx.Tx) error {
 		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
 		if err != nil {
 			return err
@@ -248,8 +279,9 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 			return err
 		}
 		var versionID string
-		err = tx.QueryRowx(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by)
-            VALUES ($1,$2,$3,$4,$5) RETURNING id`, docID, req.ObjectKey, req.ContentType, req.SizeBytes, uid).Scan(&versionID)
+		err = tx.QueryRowx(`INSERT INTO document_versions (document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+			docID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, uid, nullableString(req.ETag)).Scan(&versionID)
 		if err != nil {
 			return err
 		}
@@ -262,13 +294,16 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 				return err
 			}
 		}
-		_, err = tx.Exec(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, filename, size_bytes, attached_by)
-            VALUES ($1,$2,$3,$4,$5)`, slot.ID, versionID, req.Filename, req.SizeBytes, uid)
+		_, err = tx.Exec(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, filename, size_bytes, attached_by, status)
+			VALUES ($1,$2,$3,$4,$5,'submitted')`, slot.ID, versionID, req.Filename, req.SizeBytes, uid)
 		if err != nil {
 			return err
 		}
 		if err := h.insertEvent(tx, inst.ID, "file_attached", uid, map[string]any{"slot_key": req.SlotKey, "version_id": versionID}); err != nil {
 			return err
+		}
+		if inst.State == "active" {
+			_ = h.transitionState(tx, inst, uid, role, "submitted")
 		}
 		return nil
 	})
@@ -600,11 +635,12 @@ func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, er
 
 func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 	rows, err := h.db.Queryx(`SELECT s.id, s.slot_key, s.required, s.multiplicity, s.mime_whitelist,
-        a.id AS attachment_id, a.document_version_id, a.filename, a.size_bytes, a.attached_at, a.is_active
-        FROM node_instance_slots s
-        LEFT JOIN node_instance_slot_attachments a ON a.slot_id=s.id
-        WHERE s.node_instance_id=$1
-        ORDER BY s.slot_key, a.attached_at DESC`, instanceID)
+		a.id AS attachment_id, a.document_version_id, a.filename, a.size_bytes, a.attached_at, a.is_active,
+		a.status, a.review_note, a.approved_at, a.approved_by
+		FROM node_instance_slots s
+		LEFT JOIN node_instance_slot_attachments a ON a.slot_id=s.id
+		WHERE s.node_instance_id=$1
+		ORDER BY s.slot_key, a.attached_at DESC`, instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -621,6 +657,10 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 		SizeBytes    sql.NullInt64  `db:"size_bytes"`
 		AttachedAt   sql.NullTime   `db:"attached_at"`
 		IsActive     sql.NullBool   `db:"is_active"`
+		Status       sql.NullString `db:"status"`
+		ReviewNote   sql.NullString `db:"review_note"`
+		ApprovedAt   sql.NullTime   `db:"approved_at"`
+		ApprovedBy   sql.NullString `db:"approved_by"`
 	}
 	slots := []gin.H{}
 	slotMap := map[string]gin.H{}
@@ -652,6 +692,18 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 			}
 			if r.AttachedAt.Valid {
 				att["attached_at"] = r.AttachedAt.Time.Format(time.RFC3339)
+			}
+			if r.Status.Valid {
+				att["status"] = r.Status.String
+			}
+			if r.ReviewNote.Valid {
+				att["review_note"] = r.ReviewNote.String
+			}
+			if r.ApprovedAt.Valid {
+				att["approved_at"] = r.ApprovedAt.Time.Format(time.RFC3339)
+			}
+			if r.ApprovedBy.Valid {
+				att["approved_by"] = r.ApprovedBy.String
 			}
 			att["download_url"] = fmt.Sprintf("/api/documents/versions/%s/download", r.VersionID.String)
 			attachments = append(attachments, att)
@@ -724,4 +776,11 @@ func roleFromContext(c *gin.Context) string {
 		}
 	}
 	return ""
+}
+
+func nullableString(v string) interface{} {
+	if strings.TrimSpace(v) == "" {
+		return nil
+	}
+	return v
 }
