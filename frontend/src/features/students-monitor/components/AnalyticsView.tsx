@@ -1,7 +1,14 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { fetchMonitorAnalytics } from "../api";
-import { CheckCircle2, Clock, AlertTriangle, Users, TrendingUp, AlertCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Users,
+  TrendingUp,
+  AlertCircle,
+} from "lucide-react";
 
 export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
   const [data, setData] = React.useState<any>(null);
@@ -9,7 +16,8 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     fetchMonitorAnalytics({
       q: filters.q,
       program: filters.program,
@@ -17,13 +25,18 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
       cohort: filters.cohort,
       advisor_id: filters.advisor_id,
       rp_required: filters.rp_required ? 1 : undefined,
-    }).then(setData).catch((e) => setError(String(e))).finally(() => setLoading(false));
+    })
+      .then(setData)
+      .catch((e) => setError(String(e)))
+      .finally(() => setLoading(false));
   }, [JSON.stringify(filters)]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-muted-foreground">Loading analytics...</div>
+        <div className="text-sm text-muted-foreground">
+          Loading analytics...
+        </div>
       </div>
     );
   }
@@ -91,16 +104,17 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {metrics.map((metric, idx) => (
-          <Card key={idx} className="overflow-hidden hover:shadow-lg transition-shadow">
+          <Card
+            key={idx}
+            className="overflow-hidden hover:shadow-lg transition-shadow"
+          >
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-muted-foreground mb-2">
                     {metric.title}
                   </p>
-                  <h3 className="text-3xl font-bold mb-1">
-                    {metric.value}
-                  </h3>
+                  <h3 className="text-3xl font-bold mb-1">{metric.value}</h3>
                   <p className="text-xs text-muted-foreground">
                     {metric.description}
                   </p>

@@ -55,3 +55,7 @@ export async function fetchMonitorAnalytics(params: Record<string, any> = {}) {
   });
   return api(`/admin/monitor/analytics${sp.toString() ? `?${sp.toString()}` : ""}`);
 }
+
+export async function fetchStudentDetails(id: string) {
+  return api(`/admin/students/${id}`);
+}

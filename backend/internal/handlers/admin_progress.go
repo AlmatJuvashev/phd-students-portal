@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strings"
-	"time"
+    "database/sql"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "strings"
+    "time"
 
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
-	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
-	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
+    "github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+    pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
+    "github.com/gin-gonic/gin"
+    "github.com/jmoiron/sqlx"
 )
 
 type AdminHandler struct {
@@ -412,6 +413,105 @@ func (h *AdminHandler) MonitorAnalytics(c *gin.Context) {
         "bottleneck_count": bottleneckCount,
         "rp_required_count": rpCount,
     })
+}
+
+// GetStudentDetails returns overview info used by the detail page.
+func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
+    uid := c.Param("id")
+    role := roleFromContext(c)
+    caller := userIDFromClaims(c)
+    if role == "advisor" && caller != "" {
+        var exists bool
+        _ = h.db.Get(&exists, `SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1 AND advisor_id=$2)`, uid, caller)
+        if !exists {
+            c.JSON(403, gin.H{"error": "forbidden"})
+            return
+        }
+    }
+    var user struct {
+        ID         string `db:"id"`
+        Email      string `db:"email"`
+        Phone      string `db:"phone"`
+        FirstName  string `db:"first_name"`
+        LastName   string `db:"last_name"`
+        Program    string `db:"program"`
+        Department string `db:"department"`
+        Cohort     string `db:"cohort"`
+    }
+    if err := h.db.Get(&user, `SELECT id,email,phone,first_name,last_name,program,department,cohort FROM users WHERE id=$1 AND role='student'`, uid); err != nil {
+        c.JSON(404, gin.H{"error": "not found"})
+        return
+    }
+    advRows := []struct {
+        ID    string `db:"advisor_id"`
+        Name  string `db:"name"`
+        Email string `db:"email"`
+    }{}
+    _ = h.db.Select(&advRows, `SELECT sa.advisor_id, (u.first_name||' '||u.last_name) AS name, u.email
+        FROM student_advisors sa JOIN users u ON u.id=sa.advisor_id WHERE sa.student_id=$1`, uid)
+    advisors := make([]map[string]string, 0, len(advRows))
+    for _, a := range advRows {
+        advisors = append(advisors, map[string]string{"id": a.ID, "name": a.Name, "email": a.Email})
+    }
+
+    // rp requirement
+    var rp bool
+    if row := struct{ Form json.RawMessage }{}; h.db.QueryRowx(`SELECT form_data FROM profile_submissions WHERE user_id=$1`, uid).Scan(&row.Form) == nil {
+        var m map[string]any
+        _ = json.Unmarshal(row.Form, &m)
+        if y, ok := m["years_since_graduation"].(float64); ok && y > 3 { rp = true }
+    }
+
+    totalNodes := len(h.pb.Nodes)
+    _, worldNodes := worldsFromRaw(h.pb.Raw)
+    w3Count := len(worldNodes["W3"])
+    done := 0
+    _ = h.db.QueryRowx(`SELECT COUNT(*) FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 AND state='done'`, uid, h.pb.VersionID).Scan(&done)
+    totalRequired := totalNodes
+    if !rp { totalRequired = totalNodes - w3Count }
+    if totalRequired <= 0 { totalRequired = totalNodes }
+    pct := 0.0
+    if totalRequired > 0 { pct = float64(done) * 100.0 / float64(totalRequired) }
+
+    var lastNodeID string
+    _ = h.db.QueryRowx(`SELECT node_id FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 ORDER BY updated_at DESC LIMIT 1`, uid, h.pb.VersionID).Scan(&lastNodeID)
+    stage := nodeWorld(lastNodeID, worldNodes)
+    if stage == "" { stage = "W1" }
+    stageTotal := len(worldNodes[stage])
+    stageDone := 0
+    if stageTotal > 0 {
+        q, vs := buildIn(`SELECT COUNT(*) FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 AND node_id IN (?) AND state='done'`, worldNodes[stage])
+        _ = h.db.QueryRowx(rebind(h.db, q), append([]any{uid, h.pb.VersionID}, vs...)...).Scan(&stageDone)
+    }
+
+    var dueNext *string
+    _ = h.db.QueryRowx(`SELECT to_char(MIN(due_at),'YYYY-MM-DD"T"HH24:MI:SSZ') FROM node_deadlines nd WHERE nd.user_id=$1 AND nd.due_at >= now() AND NOT EXISTS (SELECT 1 FROM node_instances ni WHERE ni.user_id=$1 AND ni.playbook_version_id=$2 AND ni.node_id=nd.node_id AND ni.state='done')`, uid, h.pb.VersionID).Scan(&dueNext)
+    var overdue bool
+    _ = h.db.QueryRowx(`SELECT EXISTS(SELECT 1 FROM node_deadlines nd WHERE nd.user_id=$1 AND nd.due_at < $2 AND NOT EXISTS (SELECT 1 FROM node_instances ni WHERE ni.user_id=$1 AND ni.playbook_version_id=$3 AND ni.node_id=nd.node_id AND ni.state='done'))`, uid, time.Now(), h.pb.VersionID).Scan(&overdue)
+    var lastUpdate sql.NullString
+    _ = h.db.QueryRowx(`SELECT to_char(MAX(updated_at),'YYYY-MM-DD"T"HH24:MI:SSZ') FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2`, uid, h.pb.VersionID).Scan(&lastUpdate)
+
+    resp := gin.H{
+        "id":             user.ID,
+        "name":           fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+        "email":          user.Email,
+        "phone":          user.Phone,
+        "program":        user.Program,
+        "department":     user.Department,
+        "cohort":         user.Cohort,
+        "advisors":       advisors,
+        "rp_required":    rp,
+        "overall_progress_pct": pct,
+        "current_stage":  stage,
+        "stage_done":     stageDone,
+        "stage_total":    stageTotal,
+        "overdue":        overdue,
+        "last_update":    lastUpdate.String,
+    }
+    if dueNext != nil && *dueNext != "" {
+        resp["due_next"] = *dueNext
+    }
+    c.JSON(200, resp)
 }
 
 // StudentJourney returns node states and basic attachments count for a student.
