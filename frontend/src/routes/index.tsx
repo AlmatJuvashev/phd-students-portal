@@ -15,7 +15,6 @@ const CreateAdmins = lazy(() => import('@/pages/admin/CreateAdmins').then(m => (
 const CreateUsers = lazy(() => import('@/pages/admin/CreateUsers').then(m => ({ default: m.CreateUsers })))
 const CreateStudents = lazy(() => import('@/pages/admin/CreateStudents').then(m => ({ default: m.CreateStudents })))
 const CreateAdvisors = lazy(() => import('@/pages/admin/CreateAdvisors').then(m => ({ default: m.CreateAdvisors })))
-const StudentProgress = lazy(() => import('@/pages/admin/StudentProgress').then(m => ({ default: m.StudentProgress })))
 const StudentsMonitorPage = lazy(() => import('@/features/students-monitor/StudentsMonitorPage').then(m => ({ default: m.StudentsMonitorPage })))
 const StudentDetailPage = lazy(() => import('@/features/students-monitor/pages/StudentDetailPage').then(m => ({ default: m.StudentDetailPage })))
 const AdvisorInbox = lazy(() => import('@/pages/advisor.inbox').then(m => ({ default: m.AdvisorInbox })))
@@ -113,14 +112,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
             {WithSuspense(<CreateUsers />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'student-progress',
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
-            {WithSuspense(<StudentProgress />)}
           </ProtectedRoute>
         ),
       },
