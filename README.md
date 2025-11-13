@@ -42,6 +42,35 @@
    VITE_API_URL=http://localhost:8080/api npm run dev
    ```
 
+## 📁 File Storage (S3 / MinIO)
+
+Uploads are stored in S3-compatible object storage using pre-signed PUT URLs. Configure the backend via environment variables:
+
+- `S3_BUCKET`, `S3_REGION`
+- `S3_ENDPOINT` + `S3_USE_PATH_STYLE=true` for MinIO/local setups
+- `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (AWS credentials also supported)
+- `FILE_UPLOAD_MAX_MB` (default 25 MB)
+
+For local development you can spin up MinIO:
+
+```bash
+docker run -p 9000:9000 -p 9090:9090 \
+  -e "MINIO_ROOT_USER=minio" -e "MINIO_ROOT_PASSWORD=minio123" \
+  quay.io/minio/minio server /data --console-address :9090
+```
+
+Then set `S3_ENDPOINT=http://localhost:9000` in `backend/.env` and `frontend/.env.local` to enable uploads.
+
+## 🧪 Mock Data Generator
+
+Generate advisors + students (with random progress, deadlines, and seeded document attachments) using:
+
+```bash
+./mocks/generate_mock_data.sh
+```
+
+This command wipes existing test users (`role` in `student`/`advisor`), recreates five advisors with 4–7 students each, and writes fresh credentials to `mocks/credentials.txt`.
+
 ## Authentication
 
 - Email + password login.
