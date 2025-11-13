@@ -11,11 +11,11 @@ import { stageLabel } from "../utils";
 export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data, isLoading, error } = useQuery(
-    ["student", id],
-    () => fetchStudentDetails(id!),
-    { enabled: !!id }
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["student", id],
+    queryFn: () => fetchStudentDetails(id!),
+    enabled: !!id,
+  });
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-6">
