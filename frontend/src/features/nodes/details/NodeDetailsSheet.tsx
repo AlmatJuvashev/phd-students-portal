@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { NodeDetailSwitch } from "./NodeDetailSwitch";
+import { NodeAttachmentsSection } from "./NodeAttachmentsSection";
 import { useEffect, useRef, useState } from "react";
 import { useSubmission } from "@/features/journey/hooks";
 import { useTranslation } from "react-i18next";
@@ -35,7 +36,9 @@ export function NodeDetailsSheet({
   const [editing, setEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
-  const { submission, isLoading, save } = useSubmission(node?.id || null);
+  const { submission, isLoading, save, refetch } = useSubmission(
+    node?.id || null,
+  );
 
   // Detect mobile for bottom sheet pattern
   const [isMobile, setIsMobile] = useState(false);
@@ -193,19 +196,28 @@ export function NodeDetailsSheet({
                     </div>
                   )}
                   <NodeDetailSwitch
-                  node={node}
-                  submission={submission as any}
-                  onEvent={handleEvent}
-                  saving={saving}
-                  canEdit={
-                    roleAllowed && (
-                      editing ||
-                      !["submitted", "done"].includes(
-                        (submission as any)?.state as any
-                      )
-                    )
-                  }
-                />
+                    node={node}
+                    submission={submission as any}
+                    onEvent={handleEvent}
+                    saving={saving}
+                    canEdit={
+                      roleAllowed &&
+                      (editing ||
+                        !["submitted", "done"].includes(
+                          (submission as any)?.state as any
+                        ))
+                    }
+                  />
+                  {submission?.slots && submission.slots.length > 0 && (
+                    <div className="pt-6">
+                      <NodeAttachmentsSection
+                        nodeId={node.id}
+                        slots={submission.slots}
+                        canEdit={roleAllowed}
+                        onRefresh={() => refetch()}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>

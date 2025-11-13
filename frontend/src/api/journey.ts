@@ -18,6 +18,10 @@ export type NodeSubmissionDTO = {
       is_active: boolean;
       attached_at?: string;
       download_url: string;
+      status?: "submitted" | "approved" | "rejected";
+      review_note?: string;
+      approved_at?: string;
+      approved_by?: string;
     }>;
   }>;
   outcomes?: Array<{
@@ -44,7 +48,12 @@ export async function saveNodeSubmission(
 
 export async function presignNodeUpload(
   nodeId: string,
-  payload: { slot_key: string; filename: string; content_type: string },
+  payload: {
+    slot_key: string;
+    filename: string;
+    content_type: string;
+    size_bytes: number;
+  },
 ) {
   return api(`/journey/nodes/${nodeId}/uploads/presign`, {
     method: "POST",
@@ -60,6 +69,7 @@ export async function attachNodeUpload(
     object_key: string;
     content_type: string;
     size_bytes: number;
+    etag?: string;
   },
 ) {
   return api(`/journey/nodes/${nodeId}/uploads/attach`, {
