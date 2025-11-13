@@ -1,13 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   fetchStudentDetails,
   fetchStudentJourney,
   fetchDeadlines,
   patchStudentNodeState,
   putDeadline,
+  fetchStudentNodeFiles,
+  reviewAttachment,
 } from "../api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Modal } from "@/components/ui/modal";
 import {
   ArrowLeft,
   Mail,
@@ -28,9 +38,9 @@ import {
   AlertTriangle,
   Lock,
   Send,
-  FileText,
-  ExternalLink,
   Plus,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 const STAGES = [
@@ -43,6 +53,47 @@ const STAGES = [
   { id: "W7", label: "VII — Defense & Post-defense" },
 ];
 
+const attachmentStatuses: Record<
+  string,
+  { label: string; className: string }
+> = {
+  submitted: {
+    label: "Pending",
+    className: "bg-amber-50 text-amber-700 border border-amber-200",
+  },
+  approved: {
+    label: "Approved",
+    className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  },
+  rejected: {
+    label: "Needs fixes",
+    className: "bg-rose-50 text-rose-700 border border-rose-200",
+  },
+};
+
+const formatBytes = (bytes?: number) => {
+  if (!bytes && bytes !== 0) return "";
+  if (Math.abs(bytes) < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let value = bytes;
+  let unitIndex = -1;
+  do {
+    value /= 1024;
+    unitIndex += 1;
+  } while (Math.abs(value) >= 1024 && unitIndex < units.length - 1);
+  return `${value.toFixed(1)} ${units[unitIndex]}`;
+};
+
+const formatDateLabel = (value?: string) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
 type NodeState =
   | "locked"
   | "active"
@@ -50,18 +101,6 @@ type NodeState =
   | "waiting"
   | "needs_fixes"
   | "done";
-
-type DocumentStatus = "pending_review" | "reviewed" | "needs_revision";
-
-interface Document {
-  id: string;
-  filename: string;
-  uploadDate: string;
-  status: DocumentStatus;
-  reviewedBy?: string;
-  reviewDate?: string;
-  comments?: string;
-}
 
 const nodeStates: Record<
   NodeState,
@@ -95,59 +134,30 @@ const nodeStates: Record<
   },
 };
 
-const documentStatusConfig: Record<
-  DocumentStatus,
-  { label: string; color: string; bgColor: string; borderColor: string }
-> = {
-  pending_review: {
-    label: "Pending Review",
-    color: "text-amber-700",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-  },
-  reviewed: {
-    label: "Reviewed",
-    color: "text-green-700",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
-  },
-  needs_revision: {
-    label: "Needs Revision",
-    color: "text-red-700",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
-  },
-};
-
-// Mock documents - in production, fetch from API
-const mockDocuments: Document[] = [
-  {
-    id: "doc1",
-    filename: "Antiplagiarism_Certificate.pdf",
-    uploadDate: "2025-01-10",
-    status: "reviewed",
-    reviewedBy: "Dr. Petrov A.V.",
-    reviewDate: "2025-01-11",
-  },
-  {
-    id: "doc2",
-    filename: "Publications_List.pdf",
-    uploadDate: "2025-01-08",
-    status: "pending_review",
-  },
-];
 
 export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { i18n } = useTranslation('common');
   const [comment, setComment] = React.useState("");
-  const [documents, setDocuments] = React.useState<Document[]>(mockDocuments);
   const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
   const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>(
     {}
   );
   const [allNodeTitles, setAllNodeTitles] = React.useState<Record<string, string>>({});
+  const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(
+    null,
+  );
+  const [reviewDialog, setReviewDialog] = React.useState<
+    { attachmentId: string; filename: string } | null
+  >(null);
+  const [reviewNote, setReviewNote] = React.useState("");
+  const [reviewMessage, setReviewMessage] = React.useState<
+    { text: string; tone: "success" | "error" } | null
+  >(null);
+  const [pendingAttachment, setPendingAttachment] = React.useState<string | null>(
+    null,
+  );
 
   const {
     data: student,
@@ -169,6 +179,16 @@ export function StudentDetailPage() {
     queryKey: ["student-deadlines", id],
     queryFn: () => fetchDeadlines(id!),
     enabled: !!id,
+  });
+
+  const {
+    data: nodeFiles = [],
+    isLoading: nodeFilesLoading,
+    refetch: refetchNodeFiles,
+  } = useQuery({
+    queryKey: ["student-node-files", id, selectedNodeId],
+    queryFn: () => fetchStudentNodeFiles(id!, selectedNodeId!),
+    enabled: !!id && !!selectedNodeId,
   });
 
   const deadlines = React.useMemo(() => {
@@ -263,6 +283,12 @@ export function StudentDetailPage() {
     return nodes.filter((n: any) => set.has(n.node_id));
   }, [nodes, stageNodeIds]);
 
+  React.useEffect(() => {
+    if (!selectedNodeId && stageNodes.length > 0) {
+      setSelectedNodeId(stageNodes[0].node_id);
+    }
+  }, [selectedNodeId, stageNodes]);
+
   const handleMarkDone = async (nodeId: string) => {
     if (!id) return;
     await patchStudentNodeState(id, nodeId, "done");
@@ -273,23 +299,61 @@ export function StudentDetailPage() {
     if (!id) return;
     await putDeadline(id, nodeId, due);
   };
+  const reviewMutation = useMutation({
+    mutationFn: ({
+      attachmentId,
+      status,
+      note,
+    }: {
+      attachmentId: string;
+      status: "approved" | "rejected";
+      note?: string;
+    }) => reviewAttachment(attachmentId, { status, note }),
+    onSuccess: (_data, variables) => {
+      setReviewMessage({
+        tone: "success",
+        text:
+          variables.status === "approved"
+            ? "Document approved"
+            : "Requested changes sent",
+      });
+      refetchNodeFiles();
+      refetchJourney();
+    },
+    onError: (err: any) => {
+      setReviewMessage({
+        tone: "error",
+        text: err?.message || "Unable to update status",
+      });
+    },
+  });
 
-  const handleDocumentReview = (docId: string, newStatus: DocumentStatus) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === docId
-          ? {
-              ...doc,
-              status: newStatus,
-              reviewedBy:
-                newStatus !== "pending_review" ? "Current User" : undefined,
-              reviewDate:
-                newStatus !== "pending_review"
-                  ? new Date().toISOString()
-                  : undefined,
-            }
-          : doc
-      )
+  const handleApprove = (attachmentId: string) => {
+    setPendingAttachment(attachmentId);
+    reviewMutation.mutate(
+      { attachmentId, status: "approved" },
+      {
+        onSettled: () => setPendingAttachment(null),
+      },
+    );
+  };
+
+  const submitRequestChanges = () => {
+    if (!reviewDialog) return;
+    setPendingAttachment(reviewDialog.attachmentId);
+    reviewMutation.mutate(
+      {
+        attachmentId: reviewDialog.attachmentId,
+        status: "rejected",
+        note: reviewNote || undefined,
+      },
+      {
+        onSettled: () => {
+          setPendingAttachment(null);
+          setReviewDialog(null);
+          setReviewNote("");
+        },
+      },
     );
   };
 
@@ -577,131 +641,135 @@ export function StudentDetailPage() {
 
           {/* Documents & Review */}
           <Card className="border shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-6">Documents & Review</h3>
-              {documents && documents.length > 0 ? (
-                <div className="space-y-4">
-                  {documents.map((doc) => {
-                    const statusConfig = documentStatusConfig[doc.status];
+            <CardContent className="p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Documents & Review</h3>
+                {stageNodes.length > 0 && (
+                  <Select
+                    value={selectedNodeId ?? ""}
+                    onValueChange={setSelectedNodeId}
+                  >
+                    <SelectTrigger className="w-full sm:w-72">
+                      <SelectValue placeholder="Select node" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stageNodes.map((node: any) => (
+                        <SelectItem key={node.node_id} value={node.node_id}>
+                          {nodeTitles[node.node_id] || node.node_id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              {reviewMessage && (
+                <div
+                  className={`rounded-md border p-3 text-sm ${
+                    reviewMessage.tone === "error"
+                      ? "border-destructive/50 bg-destructive/5 text-destructive"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  }`}
+                >
+                  {reviewMessage.text}
+                </div>
+              )}
+              {!selectedNodeId ? (
+                <p className="text-sm text-muted-foreground">
+                  Select a node above to inspect uploaded files.
+                </p>
+              ) : nodeFilesLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading files...
+                </div>
+              ) : nodeFiles.length === 0 ? (
+                <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  No files uploaded for this node yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {nodeFiles.map((file) => {
+                    const statusBadge = attachmentStatuses[file.status] || {
+                      label: file.status,
+                      className:
+                        "bg-muted text-muted-foreground border border-border",
+                    };
+                    const working =
+                      pendingAttachment === file.attachment_id &&
+                      reviewMutation.isPending;
                     return (
                       <div
-                        key={doc.id}
-                        className="p-5 rounded-lg border bg-background space-y-4"
+                        key={file.attachment_id}
+                        className="rounded-lg border border-dashed px-4 py-3 space-y-3"
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1">
-                            <FileText className="h-5 w-5 text-primary mt-0.5" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-base font-medium text-foreground mb-1">
-                                {doc.filename}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Uploaded{" "}
-                                {new Date(doc.uploadDate).toLocaleDateString()}
-                              </div>
-                              {doc.reviewedBy && (
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Reviewed by {doc.reviewedBy} on{" "}
-                                  {new Date(
-                                    doc.reviewDate!
-                                  ).toLocaleDateString()}
-                                </div>
-                              )}
-                              {doc.comments && (
-                                <div className="mt-3 p-3 rounded bg-muted/10 text-sm text-foreground">
-                                  <strong>Review Comments:</strong>{" "}
-                                  {doc.comments}
-                                </div>
-                              )}
-                            </div>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium text-foreground break-all">
+                              {file.filename}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatBytes(file.size_bytes)} · Uploaded {formatDateLabel(file.attached_at)}
+                              {file.uploaded_by ? ` · ${file.uploaded_by}` : ""}
+                            </p>
+                            {file.review_note && (
+                              <p className="text-xs text-amber-700 mt-1">
+                                Reviewer note: {file.review_note}
+                              </p>
+                            )}
                           </div>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor} ml-2`}
-                          >
-                            {statusConfig.label}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={statusBadge.className}>
+                              {statusBadge.label}
+                            </Badge>
+                            <Button variant="ghost" size="icon" asChild>
+                              <a
+                                href={file.download_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Download file"
+                              >
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          </div>
                         </div>
-
-                        {doc.status === "pending_review" && (
-                          <div className="flex gap-2 pt-3 border-t">
+                        <div className="flex flex-wrap gap-2">
+                          {file.status !== "approved" && (
                             <Button
                               size="sm"
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                              onClick={() =>
-                                handleDocumentReview(doc.id, "reviewed")
-                              }
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              disabled={working}
+                              onClick={() => handleApprove(file.attachment_id)}
                             >
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Approve Document
+                              {working ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                              )}
+                              Approve
                             </Button>
+                          )}
+                          {file.status !== "rejected" && (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                              className="border-red-200 text-red-700 hover:bg-red-50"
+                              disabled={working}
                               onClick={() =>
-                                handleDocumentReview(doc.id, "needs_revision")
+                                setReviewDialog({
+                                  attachmentId: file.attachment_id,
+                                  filename: file.filename,
+                                })
                               }
                             >
                               <AlertTriangle className="h-4 w-4 mr-2" />
-                              Request Changes
+                              Request changes
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="gap-2"
-                              onClick={() => window.open("#", "_blank")}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-
-                        {doc.status === "needs_revision" && (
-                          <div className="flex gap-2 pt-3 border-t">
-                            <Button
-                              size="sm"
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                              onClick={() =>
-                                handleDocumentReview(doc.id, "reviewed")
-                              }
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Mark as Reviewed
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="gap-2"
-                              onClick={() => window.open("#", "_blank")}
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              View Document
-                            </Button>
-                          </div>
-                        )}
-
-                        {doc.status === "reviewed" && (
-                          <div className="flex gap-2 pt-3 border-t">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => window.open("#", "_blank")}
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              View Document
-                            </Button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     );
                   })}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground p-8 text-center border border-dashed rounded-lg">
-                  No documents uploaded yet. Documents will appear here once the
-                  student uploads them.
                 </div>
               )}
             </CardContent>
@@ -782,6 +850,53 @@ export function StudentDetailPage() {
           </Card>
         </div>
       </main>
+      <Modal
+        open={!!reviewDialog}
+        onClose={() => {
+          setReviewDialog(null);
+          setReviewNote("");
+        }}
+      >
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-lg font-semibold">Request changes</h4>
+            <p className="text-sm text-muted-foreground">
+              {reviewDialog?.filename}
+            </p>
+          </div>
+          <Textarea
+            placeholder="Let the student know what needs to be fixed"
+            rows={4}
+            value={reviewNote}
+            onChange={(event) => setReviewNote(event.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setReviewDialog(null);
+                setReviewNote("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitRequestChanges}
+              disabled={
+                !reviewNote.trim() ||
+                (pendingAttachment === reviewDialog?.attachmentId &&
+                  reviewMutation.isPending)
+              }
+            >
+              {pendingAttachment === reviewDialog?.attachmentId &&
+              reviewMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Send request
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
