@@ -119,6 +119,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
     // Monitor endpoints (admin/advisor access) - extend admin group
     admin.GET("/monitor/students", adminHandler.MonitorStudents)
     admin.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
+    admin.GET("/students/:id", adminHandler.GetStudentDetails)
     admin.GET("/students/:id/journey", adminHandler.StudentJourney)
     admin.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
     admin.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)

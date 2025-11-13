@@ -219,7 +219,6 @@ export function StudentsMonitorPage() {
         ) : tab === "table" ? (
           <StudentsTableView
             rows={data}
-            onView={(s) => navigate(`/admin/students-monitor/${s.id}`)}
             selected={selected}
             onToggle={(id, checked) =>
               setSelected((prev) => {
