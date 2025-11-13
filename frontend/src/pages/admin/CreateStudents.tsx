@@ -90,6 +90,7 @@ export function CreateStudents() {
   } = useQuery<StudentRow[]>({
     queryKey: ["admin", "users"],
     queryFn: () => api(`/admin/users`),
+    refetchOnMount: true, // Always refetch on mount to show latest data
   });
 
   const students = React.useMemo(
@@ -136,6 +137,7 @@ export function CreateStudents() {
       setAdvisorSearch("");
       setSelectedAdvisors([]);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      refetchStudents(); // Explicitly refetch to update the table
     },
     onError: (err: any) => {
       alert(err?.message || "Failed to create student");
@@ -362,29 +364,23 @@ export function CreateStudents() {
                   .replace("{{pages}}", totalPages.toString())}
               </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:w-64">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder={t("admin.forms.search_students", {
-                    defaultValue: "Search students…",
-                  })}
-                  className="pl-9"
-                />
-              </div>
-              <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                {t("admin.forms.create_student.submit", { defaultValue: "Create Student" })}
-              </Button>
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder={t("admin.forms.search_students", {
+                  defaultValue: "Search students…",
+                })}
+                className="pl-9"
+              />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="max-h-[60vh] overflow-auto rounded-md border border-border/50">
             <table className="min-w-full text-sm">
-              <thead className="sticky top-0 z-10 bg-background text-left text-muted-foreground">
+              <thead className="sticky top-0 z-20 bg-card/95 backdrop-blur text-left text-muted-foreground">
                 <tr>
                   <th className="py-2 pr-4 font-medium">#</th>
                   <th
