@@ -154,7 +154,34 @@
       "requested_toast": "Requested changes sent",
       "error_toast": "Unable to update status",
       "uploaded_meta": "Uploaded {{date}}{{by}}",
-      "uploaded_by": " · {{name}}"
+      "uploaded_by": " · {{name}}",
+      "confirm_reset": "Reset this student's password? They will need the new temporary password to login.",
+      "password_reset": "Password reset",
+      "reset_password": "Reset password"
+    },
+    "forms": {
+      "create_students_title": "Create Students",
+      "create_students_subtitle": "Invite new students, assign advisors, and manage existing accounts.",
+      "students_table": "Students",
+      "registration_date": "Registered",
+      "copy_credentials": "Copy credentials",
+      "phone_optional": "Phone (optional)",
+      "email_optional": "Email (optional)",
+      "program": "Program",
+      "department": "Department",
+      "cohort": "Cohort",
+      "advisors": "Advisors",
+      "search_advisors": "Search advisors…",
+      "creating": "Creating…",
+      "username": "Username",
+      "temp_password": "Temp password",
+      "create_student": {
+        "title": "Create Student",
+        "subtitle": "Add a new student with program details and advisor assignments.",
+        "heading": "Student Details",
+        "submit": "Create Student",
+        "success": "Student Created"
+      }
     }
   },
   "table": {

@@ -205,18 +205,32 @@ func (h *UsersHandler) SetActive(c *gin.Context) {
 }
 
 type listUsersResp struct {
-	ID    string `db:"id" json:"id"`
-	Name  string `db:"name" json:"name"`
-	Email string `db:"email" json:"email"`
-	Role  string `db:"role" json:"role"`
+	ID         string `db:"id" json:"id"`
+	Name       string `db:"name" json:"name"`
+	Email      string `db:"email" json:"email"`
+	Role       string `db:"role" json:"role"`
+	Username   string `db:"username" json:"username"`
+	Program    string `db:"program" json:"program"`
+	Department string `db:"department" json:"department"`
+	Cohort     string `db:"cohort" json:"cohort"`
+	CreatedAt  string `db:"created_at" json:"created_at"`
 }
 
 // ListUsers (admin/superadmin): basic list for mentions/autocomplete
 func (h *UsersHandler) ListUsers(c *gin.Context) {
     q := strings.TrimSpace(c.Query("q"))
     roleFilter := strings.TrimSpace(c.Query("role"))
-    rows := []listUsersResp{}
-    base := `SELECT id, (first_name||' '||last_name) AS name, email, role FROM users WHERE is_active=true`
+	rows := []listUsersResp{}
+	base := `SELECT id,
+	        (first_name||' '||last_name) AS name,
+	        email,
+	        role,
+	        username,
+	        COALESCE(program,'') AS program,
+	        COALESCE(department,'') AS department,
+	        COALESCE(cohort,'') AS cohort,
+	        to_char(created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') AS created_at
+	        FROM users WHERE is_active=true`
     where := ""
     args := []any{}
     if roleFilter != "" {

@@ -154,7 +154,34 @@
       "requested_toast": "Түзету сұранысы жіберілді",
       "error_toast": "Статусты жаңарту мүмкін болмады",
       "uploaded_meta": "Жүктелген күні {{date}}{{by}}",
-      "uploaded_by": " · {{name}}"
+      "uploaded_by": " · {{name}}",
+      "confirm_reset": "Осы студенттің құпиясөзін қалпына келтіресіз бе? Оған жаңа уақытша құпиясөз керек болады.",
+      "password_reset": "Құпиясөз жаңартылды",
+      "reset_password": "Құпиясөзді қалпына келтіру"
+    },
+    "forms": {
+      "create_students_title": "Студенттерді қосу",
+      "create_students_subtitle": "Жаңа студенттерді шақырып, кеңесшілер тағайындаңыз және аккаунттарды басқарыңыз.",
+      "students_table": "Студенттер",
+      "registration_date": "Тіркелген күні",
+      "copy_credentials": "Деректерді көшіру",
+      "phone_optional": "Телефон (міндетті емес)",
+      "email_optional": "Email (міндетті емес)",
+      "program": "Бағдарлама",
+      "department": "Кафедра",
+      "cohort": "Ағын",
+      "advisors": "Кеңесшілер",
+      "search_advisors": "Кеңесшілерді іздеу…",
+      "creating": "Жасалуда…",
+      "username": "Логин",
+      "temp_password": "Уақытша құпиясөз",
+      "create_student": {
+        "title": "Студент қосу",
+        "subtitle": "Бағдарлама деректерімен және кеңесшілермен студент қосыңыз.",
+        "heading": "Студент деректері",
+        "submit": "Студент қосу",
+        "success": "Студент жасалды"
+      }
     }
   },
   "table": {
