@@ -28,15 +28,6 @@ function SidebarNav() {
         {t('admin.sidebar.dashboard','Dashboard')}
       </NavLink>
       <NavLink
-        to="/admin/student-progress"
-        className={cn(
-          "block rounded px-3 py-2 hover:bg-muted",
-          isActive("/admin/student-progress") && "bg-muted font-medium"
-        )}
-      >
-        {t('admin.sidebar.student_progress','Student Progress')}
-      </NavLink>
-      <NavLink
         to="/admin/students-monitor"
         className={cn(
           "block rounded px-3 py-2 hover:bg-muted",
