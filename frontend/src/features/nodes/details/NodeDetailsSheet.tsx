@@ -15,6 +15,7 @@ import { useSubmission } from "@/features/journey/hooks";
 import { useTranslation } from "react-i18next";
 import { useNodeDetailActions, useFocusOnOpen } from "./useNodeDetailActions";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
+import { AnimatePresence, motion } from "framer-motion";
 
 export function NodeDetailsSheet({
   node,
@@ -71,6 +72,30 @@ export function NodeDetailsSheet({
     setErrorMsg,
     closeOnComplete,
   });
+
+  const stateLabel = (n: NodeVM | null) => {
+    if (!n) return "";
+    const state = n.state || "";
+    if (n.type === "confirmTask" && state === "done") {
+      return t(
+        { ru: "Шаг подтверждён", kz: "Қадам расталды", en: "Step confirmed" },
+        "Шаг подтверждён"
+      );
+    }
+    if (state === "active") {
+      return t({ ru: "Активно", kz: "Белсенді", en: "Active" }, "Активно");
+    }
+    if (state === "submitted") {
+      return t(
+        { ru: "Отправлено", kz: "Жіберілді", en: "Submitted" },
+        "Отправлено"
+      );
+    }
+    if (state === "done") {
+      return t({ ru: "Готово", kz: "Дайын", en: "Done" }, "Готово");
+    }
+    return (n.state || "").replace("_", " ");
+  };
 
   const roleAllowed = !!node?.who_can_complete?.includes(role as any)
 
@@ -129,7 +154,7 @@ export function NodeDetailsSheet({
                     {node.type}
                   </Badge>
                   <Badge className="capitalize shadow-sm hover:shadow transition-shadow text-xs">
-                    {node.state?.replace("_", " ")}
+                    {stateLabel(node)}
                   </Badge>
                   {node.type === "form" &&
                     ["submitted", "done"].includes(
@@ -156,70 +181,81 @@ export function NodeDetailsSheet({
 
             <div
               data-sheet-content
-              className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-4 overscroll-contain"
+              className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 overscroll-contain"
             >
-              {errorMsg && (
-                <div
-                  role="alert"
-                  aria-live="polite"
-                  className="rounded-lg border-2 border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive shadow-sm animate-in fade-in slide-in-from-top-2 duration-300"
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={node.id}
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -24 }}
+                  transition={{ type: "tween", duration: 0.25, ease: "easeInOut" }}
+                  className="space-y-4"
                 >
-                  <div className="flex items-start gap-2">
-                    <svg
-                      className="h-5 w-5 shrink-0 mt-0.5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+                  {errorMsg && (
+                    <div
+                      role="alert"
+                      aria-live="polite"
+                      className="rounded-lg border-2 border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive shadow-sm"
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span className="font-medium">{errorMsg}</span>
-                  </div>
-                </div>
-              )}
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-                  <p className="text-sm text-muted-foreground animate-pulse">
-                    {T("common.loading")}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {!roleAllowed && (
-                    <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm mb-3">
-                      <div className="font-medium mb-1">Доступ ограничен</div>
-                      Только {node?.who_can_complete?.join(', ')} могут заполнить эту форму
+                      <div className="flex items-start gap-2">
+                        <svg
+                          className="h-5 w-5 shrink-0 mt-0.5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span className="font-medium">{errorMsg}</span>
+                      </div>
                     </div>
                   )}
-                  <NodeDetailSwitch
-                    node={node}
-                    submission={submission as any}
-                    onEvent={handleEvent}
-                    saving={saving}
-                    canEdit={
-                      roleAllowed &&
-                      (editing ||
-                        !["submitted", "done"].includes(
-                          (submission as any)?.state as any
-                        ))
-                    }
-                  />
-                  {submission?.slots && submission.slots.length > 0 && (
-                    <div className="pt-6">
-                      <NodeAttachmentsSection
-                        nodeId={node.id}
-                        slots={submission.slots}
-                        canEdit={roleAllowed}
-                        onRefresh={() => refetch()}
-                      />
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                      <p className="text-sm text-muted-foreground animate-pulse">
+                        {T("common.loading")}
+                      </p>
                     </div>
+                  ) : (
+                    <>
+                      {!roleAllowed && (
+                        <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm mb-3">
+                          <div className="font-medium mb-1">Доступ ограничен</div>
+                          Только {node?.who_can_complete?.join(', ')} могут заполнить эту форму
+                        </div>
+                      )}
+                      <NodeDetailSwitch
+                        node={node}
+                        submission={submission as any}
+                        onEvent={handleEvent}
+                        saving={saving}
+                        canEdit={
+                          roleAllowed &&
+                          (editing ||
+                            !["submitted", "done"].includes(
+                              (submission as any)?.state as any
+                            ))
+                        }
+                      />
+                      {submission?.slots && submission.slots.length > 0 && (
+                        <div className="pt-6">
+                          <NodeAttachmentsSection
+                            nodeId={node.id}
+                            slots={submission.slots}
+                            canEdit={roleAllowed}
+                            onRefresh={() => refetch()}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
-                </>
-              )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </>
         )}

@@ -154,7 +154,7 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
 
   return (
     <Card className="bg-gradient-to-br from-card to-card/50">
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-6 p-4 sm:p-6">
         {question && (
           <p className="text-lg sm:text-xl font-semibold text-foreground leading-relaxed">
             {question}
@@ -164,7 +164,7 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
         {!isCompleted && (
           <>
             {/* Inline guidance (no collapsible) */}
-            <div className="space-y-3 p-4 rounded-xl bg-muted/30 border-l-4 border-primary/40">
+            <div className="space-y-3 p-5 sm:p-6 rounded-xl bg-muted/30 border-l-4 border-primary/40">
               <div className="text-sm font-semibold text-primary flex items-center gap-2">
                 <svg
                   className="w-4 h-4"
@@ -309,7 +309,7 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
         )}
 
         {isCompleted && (
-          <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 p-5 border-2 border-green-500/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 p-6 sm:p-7 border-2 border-green-500/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
                 <svg

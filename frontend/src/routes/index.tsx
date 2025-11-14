@@ -1,5 +1,7 @@
 import React, { lazy, Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
+import RouteErrorBoundary from '@/pages/errors/RouteErrorBoundary'
+import NotFound from '@/pages/errors/NotFound'
 import { AppLayout } from '@/pages/layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
@@ -38,6 +40,7 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: WithSuspense(<HomePage />) },
       {
@@ -55,6 +58,7 @@ export const router = createBrowserRouter([
       },
       { path: 'forgot-password', element: WithSuspense(<ForgotPassword />) },
       { path: 'reset-password', element: WithSuspense(<ResetPassword />) },
+      { path: '*', element: <NotFound /> },
       {
         path: 'advisor/inbox',
         element: (
@@ -81,6 +85,7 @@ export const router = createBrowserRouter([
         {WithSuspense(<AdminLayout />)}
       </ProtectedRoute>
     ),
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: WithSuspense(<AdminDashboard />) },
       {
@@ -139,6 +144,7 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      { path: '*', element: <NotFound /> },
     ],
   },
 ])
