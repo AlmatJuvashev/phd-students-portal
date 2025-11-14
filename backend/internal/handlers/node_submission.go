@@ -392,10 +392,14 @@ func (h *NodeSubmissionHandler) ensureNodeInstance(c *gin.Context, userID, nodeI
 }
 
 func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID, locale string) (*nodeInstanceRecord, error) {
-	inst, err := h.loadInstanceTx(tx, userID, nodeID)
-	if err == nil {
-		return inst, nil
-	}
+    inst, err := h.loadInstanceTx(tx, userID, nodeID)
+    if err == nil {
+        // Backfill missing upload slots if playbook now defines them
+        if err := h.ensureSlotsForInstance(tx, inst.ID, nodeID); err != nil {
+            return nil, err
+        }
+        return inst, nil
+    }
 	if !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
@@ -410,20 +414,20 @@ func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID
 	if err != nil {
 		return nil, err
 	}
-	if nodeDef.Requirements != nil {
-		for _, up := range nodeDef.Requirements.Uploads {
-			req := up.Required
-			mime := pq.Array(up.Mime)
-			if len(up.Mime) == 0 {
-				mime = pq.Array([]string{})
-			}
-			_, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist)
+    if nodeDef.Requirements != nil {
+        for _, up := range nodeDef.Requirements.Uploads {
+            req := up.Required
+            mime := pq.Array(up.Mime)
+            if len(up.Mime) == 0 {
+                mime = pq.Array([]string{})
+            }
+            _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist)
                 VALUES ($1,$2,$3,'single',$4)`, rec.ID, up.Key, req, mime)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
+            if err != nil {
+                return nil, err
+            }
+        }
+    }
 	if err := h.insertEvent(tx, rec.ID, "opened", userID, map[string]any{"locale": locale}); err != nil {
 		return nil, err
 	}
@@ -431,6 +435,40 @@ func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID
         VALUES ($1,$2,'active')
         ON CONFLICT (user_id, node_id) DO UPDATE SET state='active', updated_at=now()`, userID, nodeID)
 	return &rec, nil
+}
+
+// ensureSlotsForInstance inserts any missing slot rows for an existing node instance
+// based on the current playbook definition (useful after adding requirements.uploads
+// to a node in a newer playbook version).
+func (h *NodeSubmissionHandler) ensureSlotsForInstance(tx *sqlx.Tx, instanceID, nodeID string) error {
+    nodeDef, ok := h.pb.NodeDefinition(nodeID)
+    if !ok || nodeDef.Requirements == nil || len(nodeDef.Requirements.Uploads) == 0 {
+        return nil
+    }
+    // Load existing slot keys for this instance
+    var existing []string
+    if err := tx.Select(&existing, `SELECT slot_key FROM node_instance_slots WHERE node_instance_id=$1`, instanceID); err != nil {
+        return err
+    }
+    present := map[string]struct{}{}
+    for _, k := range existing {
+        present[k] = struct{}{}
+    }
+    // Insert any missing slots
+    for _, up := range nodeDef.Requirements.Uploads {
+        if _, ok := present[up.Key]; ok {
+            continue
+        }
+        mime := pq.Array(up.Mime)
+        if len(up.Mime) == 0 {
+            mime = pq.Array([]string{})
+        }
+        if _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist)
+            VALUES ($1,$2,$3,'single',$4)`, instanceID, up.Key, up.Required, mime); err != nil {
+            return err
+        }
+    }
+    return nil
 }
 
 func (h *NodeSubmissionHandler) loadInstanceTx(tx *sqlx.Tx, userID, nodeID string) (*nodeInstanceRecord, error) {
