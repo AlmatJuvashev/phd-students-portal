@@ -323,13 +323,13 @@
           "who_can_complete": ["student"],
           "prerequisites": ["S1_text_ready"],
           
-          \"requirements\": {
-            \"uploads\": [
+          "requirements": {
+            "uploads": [
               {
-                \"key\": \"antiplag_report\",
-                \"label\": { \"ru\": \"Отчёт Антиплагиат (PDF)\", \"kz\": \"Антиплагиат есебі (PDF)\", \"en\": \"Antiplagiarism report (PDF)\" },
-                \"required\": true,
-                \"mime\": [\"application/pdf\"]
+                "key": "antiplag_report",
+                "label": { "ru": "Отчёт Антиплагиат (PDF)", "kz": "Антиплагиат есебі (PDF)", "en": "Antiplagiarism report (PDF)" },
+                "required": true,
+                "mime": ["application/pdf"]
               }
             ]
           },
@@ -437,12 +437,12 @@
             ],
 
             
-            \"uploads\": [
+            "uploads": [
               {
-                \"key\": \"appendix_7_signed\",
-                \"label\": { \"ru\": \"Приложение 7 (подписанное)\", \"kz\": \"7-қосымша (қол қойылған)\", \"en\": \"Appendix 7 (signed)\" },
-                \"required\": false,
-                \"mime\": [\"application/pdf\"]
+                "key": "appendix_7_signed",
+                "label": { "ru": "Приложение 7 (подписанное)", "kz": "7-қосымша (қол қойылған)", "en": "Appendix 7 (signed)" },
+                "required": false,
+                "mime": ["application/pdf"]
               }
             ],
             "fields": [
@@ -2117,19 +2117,19 @@
           "prerequisites": ["E3_hearing_nk"],
           "next": ["IV_rector_application"],
           "who_can_complete": ["student"],
-          \"requirements\": {
-            \"uploads\": [
+          "requirements": {
+            "uploads": [
               {
-                \"key\": \"dissertation_docx\",
-                \"label\": { \"ru\": \"Файл диссертации (DOCX)\", \"kz\": \"Диссертация файлы (DOCX)\", \"en\": \"Dissertation manuscript (DOCX)\" },
-                \"required\": true,
-                \"mime\": [\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\"]
+                "key": "dissertation_docx",
+                "label": { "ru": "Файл диссертации (DOCX)", "kz": "Диссертация файлы (DOCX)", "en": "Dissertation manuscript (DOCX)" },
+                "required": true,
+                "mime": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
               },
               {
-                \"key\": \"ncste_receipt\",
-                \"label\": { \"ru\": \"Квитанция об оплате (PDF/изображение)\", \"kz\": \"Төлем түбіртегі (PDF/сурет)\", \"en\": \"Payment receipt (PDF/image)\" },
-                \"required\": true,
-                \"mime\": [\"application/pdf\", \"image/jpeg\", \"image/png\"]
+                "key": "ncste_receipt",
+                "label": { "ru": "Квитанция об оплате (PDF/изображение)", "kz": "Төлем түбіртегі (PDF/сурет)", "en": "Payment receipt (PDF/image)" },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
               }
             ]
           },
@@ -2204,13 +2204,13 @@
           "prerequisites": ["D1_normokontrol_ncste"],
           "next": ["IV3_publication_certificate_ncste"],
           "who_can_complete": ["student"],
-          \"requirements\": {
-            \"uploads\": [
+          "requirements": {
+            "uploads": [
               {
-                \"key\": \"rector_letter\",
-                \"label\": { \"ru\": \"Заявление ректору (подписанное)\", \"kz\": \"Ректорға өтініш (қол қойылған)\", \"en\": \"Letter to Rector (signed)\" },
-                \"required\": true,
-                \"mime\": [\"application/pdf\"]
+                "key": "rector_letter",
+                "label": { "ru": "Заявление ректору (подписанное)", "kz": "Ректорға өтініш (қол қойылған)", "en": "Letter to Rector (signed)" },
+                "required": true,
+                "mime": ["application/pdf"]
               }
             ]
           },
@@ -2345,13 +2345,13 @@
             "en": "NCSTE: publication certificate (indexed journals)"
           },
           "type": "confirmTask",
-          \"requirements\": {
-            \"uploads\": [
+          "requirements": {
+            "uploads": [
               {
-                \"key\": \"ncste_publication_certificate\",
-                \"label\": { \"ru\": \"Справка НЦГНТЭ о публикациях\", \"kz\": \"НЦҒНТЭ жарияланымдар анықтамасы\", \"en\": \"NCSTE publication certificate\" },
-                \"required\": true,
-                \"mime\": [\"application/pdf\"]
+                "key": "ncste_publication_certificate",
+                "label": { "ru": "Справка НЦГНТЭ о публикациях", "kz": "НЦҒНТЭ жарияланымдар анықтамасы", "en": "NCSTE publication certificate" },
+                "required": true,
+                "mime": ["application/pdf"]
               }
             ]
           },
