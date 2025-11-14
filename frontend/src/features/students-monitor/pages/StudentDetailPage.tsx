@@ -148,6 +148,7 @@ export function StudentDetailPage() {
   const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(
     null,
   );
+  const [slotLabels, setSlotLabels] = React.useState<Record<string, { label: string; required?: boolean }>>({});
   const [reviewDialog, setReviewDialog] = React.useState<
     { attachmentId: string; filename: string } | null
   >(null);
@@ -288,6 +289,44 @@ export function StudentDetailPage() {
       setSelectedNodeId(stageNodes[0].node_id);
     }
   }, [selectedNodeId, stageNodes]);
+
+  // Load slot labels for the selected node from the playbook (uploads spec)
+  React.useEffect(() => {
+    let mounted = true;
+    if (!selectedNodeId) {
+      setSlotLabels({});
+      return;
+    }
+    import("@/playbooks/playbook.json").then((mod: any) => {
+      if (!mounted) return;
+      const pb = (mod && (mod.default || mod)) as any;
+      const worlds = (pb.worlds || pb.Worlds || []) as any[];
+      const lang = (i18n?.language || 'en').toLowerCase();
+      const findNode = () => {
+        for (const w of worlds) {
+          const nodesArr = (w.nodes || w.Nodes || []) as any[];
+          for (const n of nodesArr) {
+            const id = n.id || n.ID;
+            if (id === selectedNodeId) return n;
+          }
+        }
+        return null;
+      };
+      const node = findNode();
+      const uploads = node?.requirements?.uploads || node?.Requirements?.Uploads || [];
+      const map: Record<string, { label: string; required?: boolean }> = {};
+      for (const up of uploads) {
+        const key = up.key || up.Key;
+        const lbl = up.label || up.Label || {};
+        const label = lbl[lang] || lbl[lang?.toUpperCase?.()] || lbl.en || lbl.EN || key;
+        map[key] = { label, required: !!(up.required ?? up.Required) };
+      }
+      setSlotLabels(map);
+    }).catch(() => setSlotLabels({}));
+    return () => {
+      mounted = false;
+    };
+  }, [selectedNodeId, i18n?.language]);
 
   const handleMarkDone = async (nodeId: string) => {
     if (!id) return;
@@ -705,13 +744,29 @@ export function StudentDetailPage() {
                   })}
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {nodeFiles.map((file) => {
-                    const statusBadge = attachmentStatuses[file.status] || {
-                      label: file.status,
-                      className:
-                        "bg-muted text-muted-foreground border border-border",
-                    };
+                <div className="space-y-4">
+                  {Object.entries(
+                    nodeFiles.reduce((acc: Record<string, typeof nodeFiles>, f) => {
+                      const k = (f as any).slot_key || 'default';
+                      (acc[k] ||= []).push(f);
+                      return acc;
+                    }, {})
+                  ).map(([slot, files]) => {
+                    const meta = slotLabels[slot];
+                    return (
+                      <div key={slot} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold">{meta?.label || slot}</h4>
+                          {meta?.required && (
+                            <Badge variant="outline" className="text-xxs uppercase">{t('common.required', { defaultValue: 'Required' })}</Badge>
+                          )}
+                        </div>
+                        {files.map((file) => {
+                      const statusBadge = attachmentStatuses[file.status] || {
+                        label: file.status,
+                        className:
+                          "bg-muted text-muted-foreground border border-border",
+                      };
                     const working =
                       pendingAttachment === file.attachment_id &&
                       reviewMutation.isPending;
@@ -729,11 +784,11 @@ export function StudentDetailPage() {
                       date: formatDateLabel(file.attached_at),
                       by: uploadedByText,
                     });
-                    return (
-                      <div
-                        key={file.attachment_id}
-                        className="rounded-lg border border-dashed px-4 py-3 space-y-3"
-                      >
+                          return (
+                            <div
+                              key={file.attachment_id}
+                              className="rounded-lg border border-dashed px-4 py-3 space-y-3"
+                            >
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <p className="text-sm font-medium text-foreground break-all">
@@ -805,6 +860,9 @@ export function StudentDetailPage() {
                             </Button>
                           )}
                         </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })}
