@@ -322,6 +322,17 @@
           "type": "confirmTask",
           "who_can_complete": ["student"],
           "prerequisites": ["S1_text_ready"],
+          
+          \"requirements\": {
+            \"uploads\": [
+              {
+                \"key\": \"antiplag_report\",
+                \"label\": { \"ru\": \"Отчёт Антиплагиат (PDF)\", \"kz\": \"Антиплагиат есебі (PDF)\", \"en\": \"Antiplagiarism report (PDF)\" },
+                \"required\": true,
+                \"mime\": [\"application/pdf\"]
+              }
+            ]
+          },
           "next": ["S1_publications_list"],
           "screen": {
             "question": {
@@ -425,6 +436,15 @@
               "tpl_app7_en_docx"
             ],
 
+            
+            \"uploads\": [
+              {
+                \"key\": \"appendix_7_signed\",
+                \"label\": { \"ru\": \"Приложение 7 (подписанное)\", \"kz\": \"7-қосымша (қол қойылған)\", \"en\": \"Appendix 7 (signed)\" },
+                \"required\": false,
+                \"mime\": [\"application/pdf\"]
+              }
+            ],
             "fields": [
               {
                 "key": "wos_scopus",
@@ -2097,6 +2117,23 @@
           "prerequisites": ["E3_hearing_nk"],
           "next": ["IV_rector_application"],
           "who_can_complete": ["student"],
+          \"requirements\": {
+            \"uploads\": [
+              {
+                \"key\": \"dissertation_docx\",
+                \"label\": { \"ru\": \"Файл диссертации (DOCX)\", \"kz\": \"Диссертация файлы (DOCX)\", \"en\": \"Dissertation manuscript (DOCX)\" },
+                \"required\": true,
+                \"mime\": [\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\"]
+              },
+              {
+                \"key\": \"ncste_receipt\",
+                \"label\": { \"ru\": \"Квитанция об оплате (PDF/изображение)\", \"kz\": \"Төлем түбіртегі (PDF/сурет)\", \"en\": \"Payment receipt (PDF/image)\" },
+                \"required\": true,
+                \"mime\": [\"application/pdf\", \"image/jpeg\", \"image/png\"]
+              }
+            ]
+          },
+          
           "screen": {
             "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
             "buttons": [
@@ -2167,6 +2204,17 @@
           "prerequisites": ["D1_normokontrol_ncste"],
           "next": ["IV3_publication_certificate_ncste"],
           "who_can_complete": ["student"],
+          \"requirements\": {
+            \"uploads\": [
+              {
+                \"key\": \"rector_letter\",
+                \"label\": { \"ru\": \"Заявление ректору (подписанное)\", \"kz\": \"Ректорға өтініш (қол қойылған)\", \"en\": \"Letter to Rector (signed)\" },
+                \"required\": true,
+                \"mime\": [\"application/pdf\"]
+              }
+            ]
+          },
+          
           "screen": {
             "question": {
               "ru": "Вы подали заявление на имя Председателя Правления – Ректора на допуск к защите (Приложение 4)?",
@@ -2297,6 +2345,17 @@
             "en": "NCSTE: publication certificate (indexed journals)"
           },
           "type": "confirmTask",
+          \"requirements\": {
+            \"uploads\": [
+              {
+                \"key\": \"ncste_publication_certificate\",
+                \"label\": { \"ru\": \"Справка НЦГНТЭ о публикациях\", \"kz\": \"НЦҒНТЭ жарияланымдар анықтамасы\", \"en\": \"NCSTE publication certificate\" },
+                \"required\": true,
+                \"mime\": [\"application/pdf\"]
+              }
+            ]
+          },
+          
           "screen": {
             "question": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?",
             "buttons": [
