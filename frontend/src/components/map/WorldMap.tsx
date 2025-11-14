@@ -589,7 +589,7 @@ export function WorldMap({
                 setOpenNode(null);
                 return;
               }
-              // Same module: open next node immediately
+              // Same module: keep sheet open and animate content switch
               setOpenNode(nextNode);
               return;
             }
