@@ -327,9 +327,17 @@
             "uploads": [
               {
                 "key": "antiplag_report",
-                "label": { "ru": "Отчёт Антиплагиат (PDF)", "kz": "Антиплагиат есебі (PDF)", "en": "Antiplagiarism report (PDF)" },
+                "label": {
+                  "ru": "Антиплагиат: отчёт/документ (PDF/DOCX)",
+                  "kz": "Антиплагиат: есеп/құжат (PDF/DOCX)",
+                  "en": "Antiplagiarism: report/document (PDF/DOCX)"
+                },
                 "required": true,
-                "mime": ["application/pdf"]
+                "mime": [
+                  "application/pdf",
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  "application/msword"
+                ]
               }
             ]
           },

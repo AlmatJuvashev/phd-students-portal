@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NodeSubmissionDTO, attachNodeUpload, presignNodeUpload } from "@/api/journey";
 import { Card } from "@/components/ui/card";
@@ -42,14 +42,49 @@ type Props = {
 };
 
 export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh }: Props) {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; tone: "error" | "success" } | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [slotMeta, setSlotMeta] = useState<Record<string, { label?: string; required?: boolean }>>({});
 
   if (!slots || slots.length === 0) {
     return null;
   }
+
+  // Load slot labels from playbook for nicer display (fallback to key)
+  useEffect(() => {
+    let mounted = true;
+    import("@/playbooks/playbook.json").then((mod: any) => {
+      if (!mounted) return;
+      const pb = (mod && (mod.default || mod)) as any;
+      const worlds = (pb.worlds || pb.Worlds || []) as any[];
+      const lang = (i18n?.language || 'en');
+      const pick = (obj: any, key: string) => obj?.[key] || obj?.[key?.toUpperCase?.()] || (key ? obj?.[key.charAt(0).toUpperCase()+key.slice(1)] : undefined);
+      const findNode = () => {
+        for (const w of worlds) {
+          const nodesArr = (w.nodes || w.Nodes || []) as any[];
+          for (const n of nodesArr) {
+            const id = n.id || n.ID;
+            if (id === nodeId) return n;
+          }
+        }
+        return null;
+      };
+      const node = findNode();
+      const uploads = node?.requirements?.uploads || node?.Requirements?.Uploads || [];
+      const map: Record<string, { label?: string; required?: boolean }> = {} as any;
+      for (const up of uploads) {
+        const key = up.key || up.Key;
+        const lbl = up.label || up.Label || {};
+        const label = pick(lbl, lang.toLowerCase()) || pick(lbl, 'en') || key;
+        map[key] = { label, required: !!(up.required ?? up.Required) };
+      }
+      setSlotMeta(map);
+    }).catch(() => setSlotMeta({}));
+    return () => { mounted = false };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeId, i18n?.language]);
 
   const handleFileSelected = async (slotKey: string, files: FileList | null) => {
     const file = files?.[0];
@@ -132,7 +167,7 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
-                    {slot.key}
+                    {slotMeta[slot.key]?.label || slot.key}
                     {slot.required && <span className="text-red-500 ml-1">*</span>}
                   </p>
                   <p className="text-xs text-muted-foreground">
