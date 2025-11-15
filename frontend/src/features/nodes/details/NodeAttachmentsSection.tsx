@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NodeSubmissionDTO, attachNodeUpload, presignNodeUpload } from "@/api/journey";
+import { API_URL } from "@/api/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -251,15 +252,34 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
                               {statusLabel}
                             </Badge>
                           )}
-                          <Button variant="ghost" size="icon" asChild>
-                            <a
-                              href={att.download_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label={t("uploads.download", { defaultValue: "Download" })}
-                            >
-                              <Download className="h-4 w-4" />
-                            </a>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`${API_URL}${att.download_url}`, {
+                                  headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                  }
+                                });
+                                if (response.redirected) {
+                                  window.open(response.url, '_blank');
+                                } else {
+                                  const blob = await response.blob();
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = att.filename;
+                                  a.click();
+                                  URL.revokeObjectURL(url);
+                                }
+                              } catch (err) {
+                                console.error('Download failed:', err);
+                              }
+                            }}
+                            aria-label={t("uploads.download", { defaultValue: "Download" })}
+                          >
+                            <Download className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>

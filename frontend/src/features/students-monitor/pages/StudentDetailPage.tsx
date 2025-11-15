@@ -11,8 +11,12 @@ import {
   fetchStudentNodeFiles,
   reviewAttachment,
 } from "../api";
+import { API_URL } from "@/api/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+// Extract base URL without /api suffix
+const BASE_URL = API_URL.replace(/\/api$/, '');
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -41,6 +45,11 @@ import {
   Plus,
   Download,
   Loader2,
+  FileText,
+  File,
+  FileCheck,
+  AlertCircle,
+  Eye,
 } from "lucide-react";
 
 const STAGES = [
@@ -688,17 +697,24 @@ export function StudentDetailPage() {
 
           {/* Documents & Review */}
           <Card className="border shadow-sm">
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-6 space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold">
-                  {t("admin.review.title", { defaultValue: "Documents & Review" })}
-                </h3>
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {t("admin.review.title", { defaultValue: "Documents & Review" })}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("admin.review.subtitle", { 
+                      defaultValue: "Review and approve student submissions" 
+                    })}
+                  </p>
+                </div>
                 {stageNodes.length > 0 && (
                   <Select
                     value={selectedNodeId ?? ""}
                     onValueChange={setSelectedNodeId}
                   >
-                    <SelectTrigger className="w-full sm:w-72">
+                    <SelectTrigger className="w-full sm:w-80 bg-background">
                       <SelectValue
                         placeholder={t("admin.review.select_node", {
                           defaultValue: "Select node",
@@ -708,43 +724,68 @@ export function StudentDetailPage() {
                     <SelectContent>
                       {stageNodes.map((node: any) => (
                         <SelectItem key={node.node_id} value={node.node_id}>
-                          {nodeTitles[node.node_id] || node.node_id}
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                              {node.node_id}
+                            </code>
+                            <span>{nodeTitles[node.node_id] || node.node_id}</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               </div>
+              
               {reviewMessage && (
                 <div
-                  className={`rounded-md border p-3 text-sm ${
+                  className={`rounded-lg border p-4 text-sm flex items-start gap-3 ${
                     reviewMessage.tone === "error"
                       ? "border-destructive/50 bg-destructive/5 text-destructive"
                       : "border-emerald-200 bg-emerald-50 text-emerald-700"
                   }`}
                 >
-                  {reviewMessage.text}
+                  {reviewMessage.tone === "error" ? (
+                    <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  )}
+                  <span>{reviewMessage.text}</span>
                 </div>
               )}
+              
               {!selectedNodeId ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("admin.review.hint", {
-                    defaultValue: "Select a node above to inspect uploaded files.",
-                  })}
-                </p>
+                <div className="rounded-xl border-2 border-dashed bg-muted/20 p-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {t("admin.review.hint", {
+                      defaultValue: "Select a node above to inspect uploaded files.",
+                    })}
+                  </p>
+                </div>
               ) : nodeFilesLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("admin.review.loading", { defaultValue: "Loading files..." })}
+                <div className="flex items-center justify-center gap-3 py-12 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="text-sm font-medium">
+                    {t("admin.review.loading", { defaultValue: "Loading files..." })}
+                  </span>
                 </div>
               ) : nodeFiles.length === 0 ? (
-                <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  {t("admin.review.empty", {
-                    defaultValue: "No files uploaded for this node yet.",
-                  })}
+                <div className="rounded-xl border-2 border-dashed bg-muted/20 p-12 text-center">
+                  <File className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <h4 className="font-semibold text-foreground mb-2">
+                    {t("admin.review.empty_title", {
+                      defaultValue: "No submissions yet",
+                    })}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t("admin.review.empty", {
+                      defaultValue: "Student hasn't uploaded any files for this node.",
+                    })}
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {Object.entries(
                     nodeFiles.reduce((acc: Record<string, typeof nodeFiles>, f) => {
                       const k = (f as any).slot_key || 'default';
@@ -753,116 +794,268 @@ export function StudentDetailPage() {
                     }, {})
                   ).map(([slot, files]) => {
                     const meta = slotLabels[slot];
+                    const allApproved = files.every((f: any) => f.status === 'approved');
+                    const hasRejected = files.some((f: any) => f.status === 'rejected');
+                    
                     return (
-                      <div key={slot} className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-semibold">{meta?.label || slot}</h4>
-                          {meta?.required && (
-                            <Badge variant="outline" className="text-xxs uppercase">{t('common.required', { defaultValue: 'Required' })}</Badge>
-                          )}
-                        </div>
-                        {files.map((file) => {
-                      const statusBadge = attachmentStatuses[file.status] || {
-                        label: file.status,
-                        className:
-                          "bg-muted text-muted-foreground border border-border",
-                      };
-                    const working =
-                      pendingAttachment === file.attachment_id &&
-                      reviewMutation.isPending;
-                    const statusLabel = t(`uploads.status.${file.status}`, {
-                      defaultValue: statusBadge.label,
-                    });
-                    const uploadedByText = file.uploaded_by
-                      ? t("admin.review.uploaded_by", {
-                          defaultValue: ` · ${file.uploaded_by}`,
-                          name: file.uploaded_by,
-                        })
-                      : "";
-                    const uploadMeta = t("admin.review.uploaded_meta", {
-                      defaultValue: `Uploaded ${formatDateLabel(file.attached_at)}${uploadedByText}`,
-                      date: formatDateLabel(file.attached_at),
-                      by: uploadedByText,
-                    });
-                          return (
-                            <div
-                              key={file.attachment_id}
-                              className="rounded-lg border border-dashed px-4 py-3 space-y-3"
-                            >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-medium text-foreground break-all">
-                              {file.filename}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatBytes(file.size_bytes)} · {uploadMeta}
-                            </p>
-                            {file.review_note && (
-                              <p className="text-xs text-amber-700 mt-1">
-                                {t("uploads.note", {
-                                  defaultValue: "Reviewer note:",
-                                })}{" "}
-                                {file.review_note}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={statusBadge.className}>
-                              {statusLabel}
-                            </Badge>
-                            <Button variant="ghost" size="icon" asChild>
-                              <a
-                                href={file.download_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={t("uploads.download", {
-                                  defaultValue: "Download",
-                                })}
-                              >
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {file.status !== "approved" && (
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              disabled={working}
-                              onClick={() => handleApprove(file.attachment_id)}
-                            >
-                              {working ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              ) : (
-                                <CheckCircle2 className="h-4 w-4 mr-2" />
-                              )}
-                              {t("admin.review.approve", { defaultValue: "Approve" })}
-                            </Button>
-                          )}
-                          {file.status !== "rejected" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-200 text-red-700 hover:bg-red-50"
-                              disabled={working}
-                              onClick={() =>
-                                setReviewDialog({
-                                  attachmentId: file.attachment_id,
-                                  filename: file.filename,
-                                })
-                              }
-                            >
-                              <AlertTriangle className="h-4 w-4 mr-2" />
-                              {t("admin.review.request_changes", {
-                                defaultValue: "Request changes",
-                              })}
-                            </Button>
-                          )}
-                        </div>
+                      <div key={slot} className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${
+                              allApproved ? 'bg-emerald-100 text-emerald-700' :
+                              hasRejected ? 'bg-rose-100 text-rose-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {allApproved ? <FileCheck className="h-5 w-5" /> :
+                               hasRejected ? <AlertCircle className="h-5 w-5" /> :
+                               <FileText className="h-5 w-5" />}
                             </div>
-                          );
-                        })}
+                            <div>
+                              <h4 className="text-base font-semibold">
+                                {meta?.label || slot}
+                              </h4>
+                              <p className="text-xs text-muted-foreground">
+                                {files.length} {files.length === 1 ? 'file' : 'files'}
+                                {meta?.required && ' · Required'}
+                              </p>
+                            </div>
+                          </div>
+                          {meta?.required && (
+                            <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
+                              {t('common.required', { defaultValue: 'Required' })}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {files.map((file) => {
+                            const statusBadge = attachmentStatuses[file.status] || {
+                              label: file.status,
+                              className: "bg-muted text-muted-foreground border border-border",
+                            };
+                            const working =
+                              pendingAttachment === file.attachment_id &&
+                              reviewMutation.isPending;
+                            const statusLabel = t(`uploads.status.${file.status}`, {
+                              defaultValue: statusBadge.label,
+                            });
+                            const uploadedByText = file.uploaded_by
+                              ? t("admin.review.uploaded_by", {
+                                  defaultValue: ` · ${file.uploaded_by}`,
+                                  name: file.uploaded_by,
+                                })
+                              : "";
+                            const uploadMeta = t("admin.review.uploaded_meta", {
+                              defaultValue: `Uploaded ${formatDateLabel(file.attached_at)}${uploadedByText}`,
+                              date: formatDateLabel(file.attached_at),
+                              by: uploadedByText,
+                            });
+                            
+                            return (
+                              <div
+                                key={file.attachment_id}
+                                className="group rounded-lg border bg-card hover:border-primary/40 hover:shadow-md transition-all duration-200"
+                              >
+                                <div className="p-4 space-y-4">
+                                  <div className="flex items-start gap-4">
+                                    <div className={`p-3 rounded-lg flex-shrink-0 ${
+                                      file.status === 'approved' ? 'bg-emerald-50' :
+                                      file.status === 'rejected' ? 'bg-rose-50' :
+                                      'bg-amber-50'
+                                    }`}>
+                                      {file.mime_type?.includes('pdf') ? (
+                                        <FileText className="h-6 w-6 text-red-600" />
+                                      ) : (
+                                        <File className="h-6 w-6 text-blue-600" />
+                                      )}
+                                    </div>
+                                    
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-3 mb-2">
+                                        <div className="flex-1 min-w-0">
+                                          <h5 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                                            {file.filename}
+                                          </h5>
+                                          <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                            <span>{formatBytes(file.size_bytes)}</span>
+                                            <span>•</span>
+                                            <span>{uploadMeta}</span>
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          <Badge 
+                                            variant="outline" 
+                                            className={`${statusBadge.className} font-medium`}
+                                          >
+                                            {file.status === 'approved' && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                                            {file.status === 'rejected' && <AlertCircle className="h-3 w-3 mr-1" />}
+                                            {file.status === 'submitted' && <Clock className="h-3 w-3 mr-1" />}
+                                            {statusLabel}
+                                          </Badge>
+                                          
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon"
+                                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={async () => {
+                                              try {
+                                                const response = await fetch(`${BASE_URL}${file.download_url}`, {
+                                                  headers: {
+                                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                                  }
+                                                });
+                                                if (response.redirected) {
+                                                  window.open(response.url, '_blank');
+                                                } else {
+                                                  const blob = await response.blob();
+                                                  const url = URL.createObjectURL(blob);
+                                                  const a = document.createElement('a');
+                                                  a.href = url;
+                                                  a.download = file.filename;
+                                                  a.click();
+                                                  URL.revokeObjectURL(url);
+                                                }
+                                              } catch (err) {
+                                                console.error('Download failed:', err);
+                                              }
+                                            }}
+                                            aria-label={t("uploads.download", {
+                                              defaultValue: "Download",
+                                            })}
+                                          >
+                                            <Download className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      
+                                      {file.review_note && (
+                                        <div className="rounded-md bg-amber-50 border border-amber-200 p-3 mt-3">
+                                          <div className="flex items-start gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-medium text-amber-900 mb-1">
+                                                {t("uploads.reviewer_note", {
+                                                  defaultValue: "Reviewer feedback",
+                                                })}
+                                              </p>
+                                              <p className="text-xs text-amber-800">
+                                                {file.review_note}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {file.approved_at && file.approved_by && (
+                                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                                          <span>
+                                            Approved by {file.approved_by} on {formatDateLabel(file.approved_at)}
+                                          </span>
+                                        </div>
+                                      )}
+                                      
+                                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+                                        {file.status !== "approved" && (
+                                          <Button
+                                            size="sm"
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                                            disabled={working}
+                                            onClick={() => handleApprove(file.attachment_id)}
+                                          >
+                                            {working ? (
+                                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            ) : (
+                                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                                            )}
+                                            {t("admin.review.approve", { defaultValue: "Approve" })}
+                                          </Button>
+                                        )}
+                                        {file.status !== "rejected" && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                                            disabled={working}
+                                            onClick={() =>
+                                              setReviewDialog({
+                                                attachmentId: file.attachment_id,
+                                                filename: file.filename,
+                                              })
+                                            }
+                                          >
+                                            <AlertTriangle className="h-4 w-4 mr-2" />
+                                            {t("admin.review.request_changes", {
+                                              defaultValue: "Request changes",
+                                            })}
+                                          </Button>
+                                        )}
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="gap-2"
+                                          onClick={async () => {
+                                            try {
+                                              const response = await fetch(`${BASE_URL}${file.download_url}`, {
+                                                headers: {
+                                                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                                }
+                                              });
+                                              
+                                              // The response.url will be the presigned URL after redirect
+                                              if (response.url && response.url !== `${BASE_URL}${file.download_url}`) {
+                                                // We got redirected to presigned URL
+                                                // For PDF files, open in browser. For others, trigger download
+                                                const isPdf = file.mime_type?.includes('pdf') || file.filename.toLowerCase().endsWith('.pdf');
+                                                
+                                                if (isPdf) {
+                                                  // Open PDF in new tab for inline viewing
+                                                  window.open(response.url, '_blank');
+                                                } else {
+                                                  // For Word docs, download the file
+                                                  const link = document.createElement('a');
+                                                  link.href = response.url;
+                                                  link.download = file.filename;
+                                                  link.target = '_blank';
+                                                  document.body.appendChild(link);
+                                                  link.click();
+                                                  document.body.removeChild(link);
+                                                }
+                                              } else if (response.ok) {
+                                                // Direct file response, create blob
+                                                const blob = await response.blob();
+                                                const url = URL.createObjectURL(blob);
+                                                const isPdf = file.mime_type?.includes('pdf') || file.filename.toLowerCase().endsWith('.pdf');
+                                                
+                                                if (isPdf) {
+                                                  window.open(url, '_blank');
+                                                } else {
+                                                  const link = document.createElement('a');
+                                                  link.href = url;
+                                                  link.download = file.filename;
+                                                  document.body.appendChild(link);
+                                                  link.click();
+                                                  document.body.removeChild(link);
+                                                }
+                                                setTimeout(() => URL.revokeObjectURL(url), 10000);
+                                              }
+                                            } catch (err) {
+                                              console.error('Preview failed:', err);
+                                            }
+                                          }}
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                          {t("common.preview", { defaultValue: "Preview" })}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}
