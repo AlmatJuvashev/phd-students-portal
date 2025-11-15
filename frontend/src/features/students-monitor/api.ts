@@ -120,14 +120,14 @@ export type NodeFileRow = {
 
 export async function fetchStudentNodeFiles(
   studentId: string,
-  nodeId: string,
+  nodeId: string
 ): Promise<NodeFileRow[]> {
   return api(`/admin/students/${studentId}/nodes/${nodeId}/files`);
 }
 
 export async function reviewAttachment(
   attachmentId: string,
-  payload: { status: "approved" | "rejected" | "submitted"; note?: string },
+  payload: { status: "approved" | "rejected" | "submitted"; note?: string }
 ) {
   return api(`/admin/attachments/${attachmentId}/review`, {
     method: "PATCH",

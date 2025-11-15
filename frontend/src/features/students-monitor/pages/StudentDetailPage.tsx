@@ -16,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 // Extract base URL without /api suffix
-const BASE_URL = API_URL.replace(/\/api$/, '');
+const BASE_URL = API_URL.replace(/\/api$/, "");
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -62,23 +62,21 @@ const STAGES = [
   { id: "W7", label: "VII — Defense & Post-defense" },
 ];
 
-const attachmentStatuses: Record<
-  string,
-  { label: string; className: string }
-> = {
-  submitted: {
-    label: "Pending",
-    className: "bg-amber-50 text-amber-700 border border-amber-200",
-  },
-  approved: {
-    label: "Approved",
-    className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  },
-  rejected: {
-    label: "Needs fixes",
-    className: "bg-rose-50 text-rose-700 border border-rose-200",
-  },
-};
+const attachmentStatuses: Record<string, { label: string; className: string }> =
+  {
+    submitted: {
+      label: "Pending",
+      className: "bg-amber-50 text-amber-700 border border-amber-200",
+    },
+    approved: {
+      label: "Approved",
+      className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    },
+    rejected: {
+      label: "Needs fixes",
+      className: "bg-rose-50 text-rose-700 border border-rose-200",
+    },
+  };
 
 const formatBytes = (bytes?: number) => {
   if (!bytes && bytes !== 0) return "";
@@ -143,31 +141,36 @@ const nodeStates: Record<
   },
 };
 
-
 export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { i18n, t } = useTranslation('common');
+  const { i18n, t } = useTranslation("common");
   const [comment, setComment] = React.useState("");
   const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
   const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>(
     {}
   );
-  const [allNodeTitles, setAllNodeTitles] = React.useState<Record<string, string>>({});
+  const [allNodeTitles, setAllNodeTitles] = React.useState<
+    Record<string, string>
+  >({});
   const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(
-    null,
+    null
   );
-  const [slotLabels, setSlotLabels] = React.useState<Record<string, { label: string; required?: boolean }>>({});
-  const [reviewDialog, setReviewDialog] = React.useState<
-    { attachmentId: string; filename: string } | null
-  >(null);
+  const [slotLabels, setSlotLabels] = React.useState<
+    Record<string, { label: string; required?: boolean }>
+  >({});
+  const [reviewDialog, setReviewDialog] = React.useState<{
+    attachmentId: string;
+    filename: string;
+  } | null>(null);
   const [reviewNote, setReviewNote] = React.useState("");
-  const [reviewMessage, setReviewMessage] = React.useState<
-    { text: string; tone: "success" | "error" } | null
+  const [reviewMessage, setReviewMessage] = React.useState<{
+    text: string;
+    tone: "success" | "error";
+  } | null>(null);
+  const [pendingAttachment, setPendingAttachment] = React.useState<
+    string | null
   >(null);
-  const [pendingAttachment, setPendingAttachment] = React.useState<string | null>(
-    null,
-  );
 
   const {
     data: student,
@@ -264,15 +267,23 @@ export function StudentDetailPage() {
         if (!mounted) return;
         const pb = (mod && (mod.default || mod)) as any;
         const worlds = (pb.worlds || pb.Worlds || []) as any[];
-        const lang = (i18n?.language || 'en').toLowerCase();
-        const pick = (obj: any, key: string) => obj?.[key] || obj?.[key?.toUpperCase?.()] || (key ? obj?.[key.charAt(0).toUpperCase()+key.slice(1)] : undefined);
+        const lang = (i18n?.language || "en").toLowerCase();
+        const pick = (obj: any, key: string) =>
+          obj?.[key] ||
+          obj?.[key?.toUpperCase?.()] ||
+          (key ? obj?.[key.charAt(0).toUpperCase() + key.slice(1)] : undefined);
         const titles: Record<string, string> = {};
         worlds.forEach((w: any) => {
           const nodesArr = (w.nodes || w.Nodes || []) as any[];
           nodesArr.forEach((n: any) => {
             const id = n.id || n.ID;
             const t = n.title || n.Title || {};
-            titles[id] = pick(t, lang) || pick(t, 'en') || pick(t, 'ru') || pick(t, 'kz') || id;
+            titles[id] =
+              pick(t, lang) ||
+              pick(t, "en") ||
+              pick(t, "ru") ||
+              pick(t, "kz") ||
+              id;
           });
         });
         setAllNodeTitles(titles);
@@ -306,32 +317,36 @@ export function StudentDetailPage() {
       setSlotLabels({});
       return;
     }
-    import("@/playbooks/playbook.json").then((mod: any) => {
-      if (!mounted) return;
-      const pb = (mod && (mod.default || mod)) as any;
-      const worlds = (pb.worlds || pb.Worlds || []) as any[];
-      const lang = (i18n?.language || 'en').toLowerCase();
-      const findNode = () => {
-        for (const w of worlds) {
-          const nodesArr = (w.nodes || w.Nodes || []) as any[];
-          for (const n of nodesArr) {
-            const id = n.id || n.ID;
-            if (id === selectedNodeId) return n;
+    import("@/playbooks/playbook.json")
+      .then((mod: any) => {
+        if (!mounted) return;
+        const pb = (mod && (mod.default || mod)) as any;
+        const worlds = (pb.worlds || pb.Worlds || []) as any[];
+        const lang = (i18n?.language || "en").toLowerCase();
+        const findNode = () => {
+          for (const w of worlds) {
+            const nodesArr = (w.nodes || w.Nodes || []) as any[];
+            for (const n of nodesArr) {
+              const id = n.id || n.ID;
+              if (id === selectedNodeId) return n;
+            }
           }
+          return null;
+        };
+        const node = findNode();
+        const uploads =
+          node?.requirements?.uploads || node?.Requirements?.Uploads || [];
+        const map: Record<string, { label: string; required?: boolean }> = {};
+        for (const up of uploads) {
+          const key = up.key || up.Key;
+          const lbl = up.label || up.Label || {};
+          const label =
+            lbl[lang] || lbl[lang?.toUpperCase?.()] || lbl.en || lbl.EN || key;
+          map[key] = { label, required: !!(up.required ?? up.Required) };
         }
-        return null;
-      };
-      const node = findNode();
-      const uploads = node?.requirements?.uploads || node?.Requirements?.Uploads || [];
-      const map: Record<string, { label: string; required?: boolean }> = {};
-      for (const up of uploads) {
-        const key = up.key || up.Key;
-        const lbl = up.label || up.Label || {};
-        const label = lbl[lang] || lbl[lang?.toUpperCase?.()] || lbl.en || lbl.EN || key;
-        map[key] = { label, required: !!(up.required ?? up.Required) };
-      }
-      setSlotLabels(map);
-    }).catch(() => setSlotLabels({}));
+        setSlotLabels(map);
+      })
+      .catch(() => setSlotLabels({}));
     return () => {
       mounted = false;
     };
@@ -358,17 +373,17 @@ export function StudentDetailPage() {
       note?: string;
     }) => reviewAttachment(attachmentId, { status, note }),
     onSuccess: (_data, variables) => {
-    setReviewMessage({
-      tone: "success",
-      text:
-        variables.status === "approved"
-          ? t("admin.review.approved_toast", {
-              defaultValue: "Document approved",
-            })
-          : t("admin.review.requested_toast", {
-              defaultValue: "Requested changes sent",
-            }),
-    });
+      setReviewMessage({
+        tone: "success",
+        text:
+          variables.status === "approved"
+            ? t("admin.review.approved_toast", {
+                defaultValue: "Document approved",
+              })
+            : t("admin.review.requested_toast", {
+                defaultValue: "Requested changes sent",
+              }),
+      });
       refetchNodeFiles();
       refetchJourney();
     },
@@ -390,7 +405,7 @@ export function StudentDetailPage() {
       { attachmentId, status: "approved" },
       {
         onSettled: () => setPendingAttachment(null),
-      },
+      }
     );
   };
 
@@ -409,7 +424,7 @@ export function StudentDetailPage() {
           setReviewDialog(null);
           setReviewNote("");
         },
-      },
+      }
     );
   };
 
@@ -701,11 +716,13 @@ export function StudentDetailPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold">
-                    {t("admin.review.title", { defaultValue: "Documents & Review" })}
+                    {t("admin.review.title", {
+                      defaultValue: "Documents & Review",
+                    })}
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {t("admin.review.subtitle", { 
-                      defaultValue: "Review and approve student submissions" 
+                    {t("admin.review.subtitle", {
+                      defaultValue: "Review and approve student submissions",
                     })}
                   </p>
                 </div>
@@ -728,7 +745,9 @@ export function StudentDetailPage() {
                             <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
                               {node.node_id}
                             </code>
-                            <span>{nodeTitles[node.node_id] || node.node_id}</span>
+                            <span>
+                              {nodeTitles[node.node_id] || node.node_id}
+                            </span>
                           </div>
                         </SelectItem>
                       ))}
@@ -736,7 +755,7 @@ export function StudentDetailPage() {
                   </Select>
                 )}
               </div>
-              
+
               {reviewMessage && (
                 <div
                   className={`rounded-lg border p-4 text-sm flex items-start gap-3 ${
@@ -753,13 +772,14 @@ export function StudentDetailPage() {
                   <span>{reviewMessage.text}</span>
                 </div>
               )}
-              
+
               {!selectedNodeId ? (
                 <div className="rounded-xl border-2 border-dashed bg-muted/20 p-12 text-center">
                   <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
                   <p className="text-sm font-medium text-muted-foreground">
                     {t("admin.review.hint", {
-                      defaultValue: "Select a node above to inspect uploaded files.",
+                      defaultValue:
+                        "Select a node above to inspect uploaded files.",
                     })}
                   </p>
                 </div>
@@ -767,7 +787,9 @@ export function StudentDetailPage() {
                 <div className="flex items-center justify-center gap-3 py-12 text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin" />
                   <span className="text-sm font-medium">
-                    {t("admin.review.loading", { defaultValue: "Loading files..." })}
+                    {t("admin.review.loading", {
+                      defaultValue: "Loading files...",
+                    })}
                   </span>
                 </div>
               ) : nodeFiles.length === 0 ? (
@@ -780,65 +802,93 @@ export function StudentDetailPage() {
                   </h4>
                   <p className="text-sm text-muted-foreground">
                     {t("admin.review.empty", {
-                      defaultValue: "Student hasn't uploaded any files for this node.",
+                      defaultValue:
+                        "Student hasn't uploaded any files for this node.",
                     })}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {Object.entries(
-                    nodeFiles.reduce((acc: Record<string, typeof nodeFiles>, f) => {
-                      const k = (f as any).slot_key || 'default';
-                      (acc[k] ||= []).push(f);
-                      return acc;
-                    }, {})
+                    nodeFiles.reduce(
+                      (acc: Record<string, typeof nodeFiles>, f) => {
+                        const k = (f as any).slot_key || "default";
+                        (acc[k] ||= []).push(f);
+                        return acc;
+                      },
+                      {}
+                    )
                   ).map(([slot, files]) => {
                     const meta = slotLabels[slot];
-                    const allApproved = files.every((f: any) => f.status === 'approved');
-                    const hasRejected = files.some((f: any) => f.status === 'rejected');
-                    
+                    const allApproved = files.every(
+                      (f: any) => f.status === "approved"
+                    );
+                    const hasRejected = files.some(
+                      (f: any) => f.status === "rejected"
+                    );
+
                     return (
                       <div key={slot} className="space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${
-                              allApproved ? 'bg-emerald-100 text-emerald-700' :
-                              hasRejected ? 'bg-rose-100 text-rose-700' :
-                              'bg-amber-100 text-amber-700'
-                            }`}>
-                              {allApproved ? <FileCheck className="h-5 w-5" /> :
-                               hasRejected ? <AlertCircle className="h-5 w-5" /> :
-                               <FileText className="h-5 w-5" />}
+                            <div
+                              className={`p-2 rounded-lg ${
+                                allApproved
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : hasRejected
+                                  ? "bg-rose-100 text-rose-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {allApproved ? (
+                                <FileCheck className="h-5 w-5" />
+                              ) : hasRejected ? (
+                                <AlertCircle className="h-5 w-5" />
+                              ) : (
+                                <FileText className="h-5 w-5" />
+                              )}
                             </div>
                             <div>
                               <h4 className="text-base font-semibold">
                                 {meta?.label || slot}
                               </h4>
                               <p className="text-xs text-muted-foreground">
-                                {files.length} {files.length === 1 ? 'file' : 'files'}
-                                {meta?.required && ' · Required'}
+                                {files.length}{" "}
+                                {files.length === 1 ? "file" : "files"}
+                                {meta?.required && " · Required"}
                               </p>
                             </div>
                           </div>
                           {meta?.required && (
-                            <Badge variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20">
-                              {t('common.required', { defaultValue: 'Required' })}
+                            <Badge
+                              variant="outline"
+                              className="text-xs bg-primary/5 text-primary border-primary/20"
+                            >
+                              {t("common.required", {
+                                defaultValue: "Required",
+                              })}
                             </Badge>
                           )}
                         </div>
-                        
+
                         <div className="space-y-3">
                           {files.map((file) => {
-                            const statusBadge = attachmentStatuses[file.status] || {
+                            const statusBadge = attachmentStatuses[
+                              file.status
+                            ] || {
                               label: file.status,
-                              className: "bg-muted text-muted-foreground border border-border",
+                              className:
+                                "bg-muted text-muted-foreground border border-border",
                             };
                             const working =
                               pendingAttachment === file.attachment_id &&
                               reviewMutation.isPending;
-                            const statusLabel = t(`uploads.status.${file.status}`, {
-                              defaultValue: statusBadge.label,
-                            });
+                            const statusLabel = t(
+                              `uploads.status.${file.status}`,
+                              {
+                                defaultValue: statusBadge.label,
+                              }
+                            );
                             const uploadedByText = file.uploaded_by
                               ? t("admin.review.uploaded_by", {
                                   defaultValue: ` · ${file.uploaded_by}`,
@@ -846,11 +896,13 @@ export function StudentDetailPage() {
                                 })
                               : "";
                             const uploadMeta = t("admin.review.uploaded_meta", {
-                              defaultValue: `Uploaded ${formatDateLabel(file.attached_at)}${uploadedByText}`,
+                              defaultValue: `Uploaded ${formatDateLabel(
+                                file.attached_at
+                              )}${uploadedByText}`,
                               date: formatDateLabel(file.attached_at),
                               by: uploadedByText,
                             });
-                            
+
                             return (
                               <div
                                 key={file.attachment_id}
@@ -858,18 +910,22 @@ export function StudentDetailPage() {
                               >
                                 <div className="p-4 space-y-4">
                                   <div className="flex items-start gap-4">
-                                    <div className={`p-3 rounded-lg flex-shrink-0 ${
-                                      file.status === 'approved' ? 'bg-emerald-50' :
-                                      file.status === 'rejected' ? 'bg-rose-50' :
-                                      'bg-amber-50'
-                                    }`}>
-                                      {file.mime_type?.includes('pdf') ? (
+                                    <div
+                                      className={`p-3 rounded-lg flex-shrink-0 ${
+                                        file.status === "approved"
+                                          ? "bg-emerald-50"
+                                          : file.status === "rejected"
+                                          ? "bg-rose-50"
+                                          : "bg-amber-50"
+                                      }`}
+                                    >
+                                      {file.mime_type?.includes("pdf") ? (
                                         <FileText className="h-6 w-6 text-red-600" />
                                       ) : (
                                         <File className="h-6 w-6 text-blue-600" />
                                       )}
                                     </div>
-                                    
+
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-start justify-between gap-3 mb-2">
                                         <div className="flex-1 min-w-0">
@@ -877,47 +933,69 @@ export function StudentDetailPage() {
                                             {file.filename}
                                           </h5>
                                           <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
-                                            <span>{formatBytes(file.size_bytes)}</span>
+                                            <span>
+                                              {formatBytes(file.size_bytes)}
+                                            </span>
                                             <span>•</span>
                                             <span>{uploadMeta}</span>
                                           </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                          <Badge 
-                                            variant="outline" 
+                                          <Badge
+                                            variant="outline"
                                             className={`${statusBadge.className} font-medium`}
                                           >
-                                            {file.status === 'approved' && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                                            {file.status === 'rejected' && <AlertCircle className="h-3 w-3 mr-1" />}
-                                            {file.status === 'submitted' && <Clock className="h-3 w-3 mr-1" />}
+                                            {file.status === "approved" && (
+                                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                                            )}
+                                            {file.status === "rejected" && (
+                                              <AlertCircle className="h-3 w-3 mr-1" />
+                                            )}
+                                            {file.status === "submitted" && (
+                                              <Clock className="h-3 w-3 mr-1" />
+                                            )}
                                             {statusLabel}
                                           </Badge>
-                                          
-                                          <Button 
-                                            variant="ghost" 
+
+                                          <Button
+                                            variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                                             onClick={async () => {
                                               try {
-                                                const response = await fetch(`${BASE_URL}${file.download_url}`, {
-                                                  headers: {
-                                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                                const response = await fetch(
+                                                  `${BASE_URL}${file.download_url}`,
+                                                  {
+                                                    headers: {
+                                                      Authorization: `Bearer ${localStorage.getItem(
+                                                        "token"
+                                                      )}`,
+                                                    },
                                                   }
-                                                });
+                                                );
                                                 if (response.redirected) {
-                                                  window.open(response.url, '_blank');
+                                                  window.open(
+                                                    response.url,
+                                                    "_blank"
+                                                  );
                                                 } else {
-                                                  const blob = await response.blob();
-                                                  const url = URL.createObjectURL(blob);
-                                                  const a = document.createElement('a');
+                                                  const blob =
+                                                    await response.blob();
+                                                  const url =
+                                                    URL.createObjectURL(blob);
+                                                  const a =
+                                                    document.createElement("a");
                                                   a.href = url;
                                                   a.download = file.filename;
                                                   a.click();
                                                   URL.revokeObjectURL(url);
                                                 }
                                               } catch (err) {
-                                                console.error('Download failed:', err);
+                                                console.error(
+                                                  "Download failed:",
+                                                  err
+                                                );
                                               }
                                             }}
                                             aria-label={t("uploads.download", {
@@ -928,7 +1006,7 @@ export function StudentDetailPage() {
                                           </Button>
                                         </div>
                                       </div>
-                                      
+
                                       {file.review_note && (
                                         <div className="rounded-md bg-amber-50 border border-amber-200 p-3 mt-3">
                                           <div className="flex items-start gap-2">
@@ -936,7 +1014,8 @@ export function StudentDetailPage() {
                                             <div className="flex-1 min-w-0">
                                               <p className="text-xs font-medium text-amber-900 mb-1">
                                                 {t("uploads.reviewer_note", {
-                                                  defaultValue: "Reviewer feedback",
+                                                  defaultValue:
+                                                    "Reviewer feedback",
                                                 })}
                                               </p>
                                               <p className="text-xs text-amber-800">
@@ -946,30 +1025,35 @@ export function StudentDetailPage() {
                                           </div>
                                         </div>
                                       )}
-                                      
+
                                       {file.approved_at && file.approved_by && (
                                         <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                                           <span>
-                                            Approved by {file.approved_by} on {formatDateLabel(file.approved_at)}
+                                            Approved by {file.approved_by} on{" "}
+                                            {formatDateLabel(file.approved_at)}
                                           </span>
                                         </div>
                                       )}
-                                      
+
                                       <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
                                         {file.status !== "approved" && (
                                           <Button
                                             size="sm"
                                             className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
                                             disabled={working}
-                                            onClick={() => handleApprove(file.attachment_id)}
+                                            onClick={() =>
+                                              handleApprove(file.attachment_id)
+                                            }
                                           >
                                             {working ? (
                                               <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                             ) : (
                                               <CheckCircle2 className="h-4 w-4 mr-2" />
                                             )}
-                                            {t("admin.review.approve", { defaultValue: "Approve" })}
+                                            {t("admin.review.approve", {
+                                              defaultValue: "Approve",
+                                            })}
                                           </Button>
                                         )}
                                         {file.status !== "rejected" && (
@@ -980,7 +1064,8 @@ export function StudentDetailPage() {
                                             disabled={working}
                                             onClick={() =>
                                               setReviewDialog({
-                                                attachmentId: file.attachment_id,
+                                                attachmentId:
+                                                  file.attachment_id,
                                                 filename: file.filename,
                                               })
                                             }
@@ -997,56 +1082,101 @@ export function StudentDetailPage() {
                                           className="gap-2"
                                           onClick={async () => {
                                             try {
-                                              const response = await fetch(`${BASE_URL}${file.download_url}`, {
-                                                headers: {
-                                                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                              const response = await fetch(
+                                                `${BASE_URL}${file.download_url}`,
+                                                {
+                                                  headers: {
+                                                    Authorization: `Bearer ${localStorage.getItem(
+                                                      "token"
+                                                    )}`,
+                                                  },
                                                 }
-                                              });
-                                              
+                                              );
+
                                               // The response.url will be the presigned URL after redirect
-                                              if (response.url && response.url !== `${BASE_URL}${file.download_url}`) {
+                                              if (
+                                                response.url &&
+                                                response.url !==
+                                                  `${BASE_URL}${file.download_url}`
+                                              ) {
                                                 // We got redirected to presigned URL
                                                 // For PDF files, open in browser. For others, trigger download
-                                                const isPdf = file.mime_type?.includes('pdf') || file.filename.toLowerCase().endsWith('.pdf');
-                                                
+                                                const isPdf =
+                                                  file.mime_type?.includes(
+                                                    "pdf"
+                                                  ) ||
+                                                  file.filename
+                                                    .toLowerCase()
+                                                    .endsWith(".pdf");
+
                                                 if (isPdf) {
                                                   // Open PDF in new tab for inline viewing
-                                                  window.open(response.url, '_blank');
+                                                  window.open(
+                                                    response.url,
+                                                    "_blank"
+                                                  );
                                                 } else {
                                                   // For Word docs, download the file
-                                                  const link = document.createElement('a');
+                                                  const link =
+                                                    document.createElement("a");
                                                   link.href = response.url;
                                                   link.download = file.filename;
-                                                  link.target = '_blank';
-                                                  document.body.appendChild(link);
+                                                  link.target = "_blank";
+                                                  document.body.appendChild(
+                                                    link
+                                                  );
                                                   link.click();
-                                                  document.body.removeChild(link);
+                                                  document.body.removeChild(
+                                                    link
+                                                  );
                                                 }
                                               } else if (response.ok) {
                                                 // Direct file response, create blob
-                                                const blob = await response.blob();
-                                                const url = URL.createObjectURL(blob);
-                                                const isPdf = file.mime_type?.includes('pdf') || file.filename.toLowerCase().endsWith('.pdf');
-                                                
+                                                const blob =
+                                                  await response.blob();
+                                                const url =
+                                                  URL.createObjectURL(blob);
+                                                const isPdf =
+                                                  file.mime_type?.includes(
+                                                    "pdf"
+                                                  ) ||
+                                                  file.filename
+                                                    .toLowerCase()
+                                                    .endsWith(".pdf");
+
                                                 if (isPdf) {
-                                                  window.open(url, '_blank');
+                                                  window.open(url, "_blank");
                                                 } else {
-                                                  const link = document.createElement('a');
+                                                  const link =
+                                                    document.createElement("a");
                                                   link.href = url;
                                                   link.download = file.filename;
-                                                  document.body.appendChild(link);
+                                                  document.body.appendChild(
+                                                    link
+                                                  );
                                                   link.click();
-                                                  document.body.removeChild(link);
+                                                  document.body.removeChild(
+                                                    link
+                                                  );
                                                 }
-                                                setTimeout(() => URL.revokeObjectURL(url), 10000);
+                                                setTimeout(
+                                                  () =>
+                                                    URL.revokeObjectURL(url),
+                                                  10000
+                                                );
                                               }
                                             } catch (err) {
-                                              console.error('Preview failed:', err);
+                                              console.error(
+                                                "Preview failed:",
+                                                err
+                                              );
                                             }
                                           }}
                                         >
                                           <Eye className="h-4 w-4" />
-                                          {t("common.preview", { defaultValue: "Preview" })}
+                                          {t("common.preview", {
+                                            defaultValue: "Preview",
+                                          })}
                                         </Button>
                                       </div>
                                     </div>
@@ -1111,7 +1241,8 @@ export function StudentDetailPage() {
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <div className="flex flex-col">
                             <div className="text-sm font-medium text-foreground">
-                              {allNodeTitles[deadline.node_id] || deadline.node_id}
+                              {allNodeTitles[deadline.node_id] ||
+                                deadline.node_id}
                             </div>
                             <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
                               {deadline.node_id}
@@ -1149,7 +1280,9 @@ export function StudentDetailPage() {
         <div className="space-y-4">
           <div>
             <h4 className="text-lg font-semibold">
-              {t("admin.review.modal_title", { defaultValue: "Request changes" })}
+              {t("admin.review.modal_title", {
+                defaultValue: "Request changes",
+              })}
             </h4>
             <p className="text-sm text-muted-foreground">
               {t("admin.review.modal_hint", {

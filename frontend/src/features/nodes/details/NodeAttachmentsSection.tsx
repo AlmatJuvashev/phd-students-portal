@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NodeSubmissionDTO, attachNodeUpload, presignNodeUpload } from "@/api/journey";
+import {
+  NodeSubmissionDTO,
+  attachNodeUpload,
+  presignNodeUpload,
+} from "@/api/journey";
 import { API_URL } from "@/api/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,12 +46,22 @@ type Props = {
   onRefresh?: () => void;
 };
 
-export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh }: Props) {
+export function NodeAttachmentsSection({
+  nodeId,
+  slots = [],
+  canEdit,
+  onRefresh,
+}: Props) {
   const { t, i18n } = useTranslation("common");
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ text: string; tone: "error" | "success" } | null>(null);
+  const [message, setMessage] = useState<{
+    text: string;
+    tone: "error" | "success";
+  } | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
-  const [slotMeta, setSlotMeta] = useState<Record<string, { label?: string; required?: boolean }>>({});
+  const [slotMeta, setSlotMeta] = useState<
+    Record<string, { label?: string; required?: boolean }>
+  >({});
 
   if (!slots || slots.length === 0) {
     return null;
@@ -56,38 +70,50 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
   // Load slot labels from playbook for nicer display (fallback to key)
   useEffect(() => {
     let mounted = true;
-    import("@/playbooks/playbook.json").then((mod: any) => {
-      if (!mounted) return;
-      const pb = (mod && (mod.default || mod)) as any;
-      const worlds = (pb.worlds || pb.Worlds || []) as any[];
-      const lang = (i18n?.language || 'en');
-      const pick = (obj: any, key: string) => obj?.[key] || obj?.[key?.toUpperCase?.()] || (key ? obj?.[key.charAt(0).toUpperCase()+key.slice(1)] : undefined);
-      const findNode = () => {
-        for (const w of worlds) {
-          const nodesArr = (w.nodes || w.Nodes || []) as any[];
-          for (const n of nodesArr) {
-            const id = n.id || n.ID;
-            if (id === nodeId) return n;
+    import("@/playbooks/playbook.json")
+      .then((mod: any) => {
+        if (!mounted) return;
+        const pb = (mod && (mod.default || mod)) as any;
+        const worlds = (pb.worlds || pb.Worlds || []) as any[];
+        const lang = i18n?.language || "en";
+        const pick = (obj: any, key: string) =>
+          obj?.[key] ||
+          obj?.[key?.toUpperCase?.()] ||
+          (key ? obj?.[key.charAt(0).toUpperCase() + key.slice(1)] : undefined);
+        const findNode = () => {
+          for (const w of worlds) {
+            const nodesArr = (w.nodes || w.Nodes || []) as any[];
+            for (const n of nodesArr) {
+              const id = n.id || n.ID;
+              if (id === nodeId) return n;
+            }
           }
+          return null;
+        };
+        const node = findNode();
+        const uploads =
+          node?.requirements?.uploads || node?.Requirements?.Uploads || [];
+        const map: Record<string, { label?: string; required?: boolean }> =
+          {} as any;
+        for (const up of uploads) {
+          const key = up.key || up.Key;
+          const lbl = up.label || up.Label || {};
+          const label = pick(lbl, lang.toLowerCase()) || pick(lbl, "en") || key;
+          map[key] = { label, required: !!(up.required ?? up.Required) };
         }
-        return null;
-      };
-      const node = findNode();
-      const uploads = node?.requirements?.uploads || node?.Requirements?.Uploads || [];
-      const map: Record<string, { label?: string; required?: boolean }> = {} as any;
-      for (const up of uploads) {
-        const key = up.key || up.Key;
-        const lbl = up.label || up.Label || {};
-        const label = pick(lbl, lang.toLowerCase()) || pick(lbl, 'en') || key;
-        map[key] = { label, required: !!(up.required ?? up.Required) };
-      }
-      setSlotMeta(map);
-    }).catch(() => setSlotMeta({}));
-    return () => { mounted = false };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+        setSlotMeta(map);
+      })
+      .catch(() => setSlotMeta({}));
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId, i18n?.language]);
 
-  const handleFileSelected = async (slotKey: string, files: FileList | null) => {
+  const handleFileSelected = async (
+    slotKey: string,
+    files: FileList | null
+  ) => {
     const file = files?.[0];
     if (!file) return;
     setUploadingSlot(slotKey);
@@ -114,7 +140,8 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
       if (!uploadResp.ok) {
         throw new Error(`Upload failed (${uploadResp.status})`);
       }
-      const etag = uploadResp.headers.get("ETag")?.replace(/"/g, "") ?? undefined;
+      const etag =
+        uploadResp.headers.get("ETag")?.replace(/"/g, "") ?? undefined;
       await attachNodeUpload(nodeId, {
         slot_key: slotKey,
         filename: file.name,
@@ -123,13 +150,18 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
         size_bytes: file.size,
         etag,
       });
-      setMessage({ text: t("uploads.success", { defaultValue: "File uploaded" }), tone: "success" });
+      setMessage({
+        text: t("uploads.success", { defaultValue: "File uploaded" }),
+        tone: "success",
+      });
       onRefresh?.();
     } catch (error: any) {
       setMessage({
         text:
           error?.message ||
-          t("uploads.error", { defaultValue: "Failed to upload file. Try again." }),
+          t("uploads.error", {
+            defaultValue: "Failed to upload file. Try again.",
+          }),
         tone: "error",
       });
     } finally {
@@ -139,14 +171,19 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
     }
   };
 
-  const acceptFor = (mime: string[]) => (mime.length ? mime.join(",") : undefined);
+  const acceptFor = (mime: string[]) =>
+    mime.length ? mime.join(",") : undefined;
 
   return (
     <section className="space-y-4">
       <div>
-        <h3 className="text-base font-semibold">{t("uploads.title", { defaultValue: "Supporting documents" })}</h3>
+        <h3 className="text-base font-semibold">
+          {t("uploads.title", { defaultValue: "Supporting documents" })}
+        </h3>
         <p className="text-sm text-muted-foreground">
-          {t("uploads.subtitle", { defaultValue: "Attach the required files for this node." })}
+          {t("uploads.subtitle", {
+            defaultValue: "Attach the required files for this node.",
+          })}
         </p>
       </div>
       {message && (
@@ -162,14 +199,18 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
       )}
       <div className="space-y-4">
         {slots.map((slot) => {
-          const attachments = (slot.attachments || []).filter((att) => att.is_active);
+          const attachments = (slot.attachments || []).filter(
+            (att) => att.is_active
+          );
           return (
             <Card key={slot.key} className="p-4 space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
                     {slotMeta[slot.key]?.label || slot.key}
-                    {slot.required && <span className="text-red-500 ml-1">*</span>}
+                    {slot.required && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {slot.mime && slot.mime.length
@@ -187,7 +228,9 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
                       className="hidden"
                       accept={acceptFor(slot.mime)}
                       ref={(el) => (fileInputs.current[slot.key] = el)}
-                      onChange={(event) => handleFileSelected(slot.key, event.target.files)}
+                      onChange={(event) =>
+                        handleFileSelected(slot.key, event.target.files)
+                      }
                     />
                     <Button
                       type="button"
@@ -212,7 +255,9 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
               <div className="space-y-2">
                 {attachments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    {t("uploads.empty", { defaultValue: "No files uploaded yet." })}
+                    {t("uploads.empty", {
+                      defaultValue: "No files uploaded yet.",
+                    })}
                   </p>
                 ) : (
                   attachments.map((att) => {
@@ -235,14 +280,21 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
                         className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed px-3 py-2"
                       >
                         <div>
-                          <p className="text-sm font-medium text-foreground break-all">{att.filename}</p>
+                          <p className="text-sm font-medium text-foreground break-all">
+                            {att.filename}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {formatBytes(att.size_bytes)}
-                            {att.attached_at ? ` · ${formatDate(att.attached_at)}` : ""}
+                            {att.attached_at
+                              ? ` · ${formatDate(att.attached_at)}`
+                              : ""}
                           </p>
                           {att.review_note && (
                             <p className="text-xs text-amber-700 mt-1">
-                              {t("uploads.note", { defaultValue: "Reviewer note:" })} {att.review_note}
+                              {t("uploads.note", {
+                                defaultValue: "Reviewer note:",
+                              })}{" "}
+                              {att.review_note}
                             </p>
                           )}
                         </div>
@@ -252,32 +304,39 @@ export function NodeAttachmentsSection({ nodeId, slots = [], canEdit, onRefresh 
                               {statusLabel}
                             </Badge>
                           )}
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
                             onClick={async () => {
                               try {
-                                const response = await fetch(`${API_URL}${att.download_url}`, {
-                                  headers: {
-                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                const response = await fetch(
+                                  `${API_URL}${att.download_url}`,
+                                  {
+                                    headers: {
+                                      Authorization: `Bearer ${localStorage.getItem(
+                                        "token"
+                                      )}`,
+                                    },
                                   }
-                                });
+                                );
                                 if (response.redirected) {
-                                  window.open(response.url, '_blank');
+                                  window.open(response.url, "_blank");
                                 } else {
                                   const blob = await response.blob();
                                   const url = URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
+                                  const a = document.createElement("a");
                                   a.href = url;
                                   a.download = att.filename;
                                   a.click();
                                   URL.revokeObjectURL(url);
                                 }
                               } catch (err) {
-                                console.error('Download failed:', err);
+                                console.error("Download failed:", err);
                               }
                             }}
-                            aria-label={t("uploads.download", { defaultValue: "Download" })}
+                            aria-label={t("uploads.download", {
+                              defaultValue: "Download",
+                            })}
                           >
                             <Download className="h-4 w-4" />
                           </Button>
