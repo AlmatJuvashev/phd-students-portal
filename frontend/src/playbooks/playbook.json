@@ -2365,7 +2365,11 @@
           },
           
           "screen": {
-            "question": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?",
+            "question": {
+              "ru": "Вы получили справку НЦГНТЭ, подтверждающую публикации в индексируемых международных журналах?",
+              "kz": "Индекстелетін халықаралық журналдардағы жарияланымдарды растайтын НЦҒНТЭ анықтамасын алдыңыз ба?",
+              "en": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?"
+            },
             "buttons": [
               {
                 "id": "how_to_request",
