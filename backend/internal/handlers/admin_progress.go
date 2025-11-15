@@ -696,11 +696,16 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 	
 	rows, err := h.db.Queryx(`SELECT s.slot_key, a.id, a.filename, a.size_bytes, a.status, a.review_note,
 		a.attached_at, a.approved_at, a.approved_by, dv.id AS version_id, dv.mime_type,
-		COALESCE(u.first_name||' '||u.last_name,'') AS uploaded_by
+		COALESCE(u.first_name||' '||u.last_name,'') AS uploaded_by,
+		a.reviewed_document_version_id, a.reviewed_by, a.reviewed_at,
+		rdv.id AS reviewed_doc_id, rdv.mime_type AS reviewed_mime_type,
+		COALESCE(ru.first_name||' '||ru.last_name,'') AS reviewed_by_name
 		FROM node_instance_slots s
 		JOIN node_instance_slot_attachments a ON a.slot_id=s.id AND a.is_active=true
 		JOIN document_versions dv ON dv.id=a.document_version_id
 		LEFT JOIN users u ON u.id=a.attached_by
+		LEFT JOIN document_versions rdv ON rdv.id=a.reviewed_document_version_id
+		LEFT JOIN users ru ON ru.id=a.reviewed_by
 		WHERE s.node_instance_id=$1
 		ORDER BY a.attached_at DESC`, instanceID)
 	if err != nil {
@@ -714,10 +719,11 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 		var slotKey, attachmentID, filename, status, uploadedBy, versionID, mimeType string
 		var reviewNote sql.NullString
 		var sizeBytes int64
-		var attachedAt, approvedAt sql.NullTime
-		var approvedBy sql.NullString
+		var attachedAt, approvedAt, reviewedAt sql.NullTime
+		var approvedBy, reviewedVersionID, reviewedBy, reviewedDocID, reviewedMimeType, reviewedByName sql.NullString
 		if err := rows.Scan(&slotKey, &attachmentID, &filename, &sizeBytes, &status, &reviewNote,
-			&attachedAt, &approvedAt, &approvedBy, &versionID, &mimeType, &uploadedBy); err != nil {
+			&attachedAt, &approvedAt, &approvedBy, &versionID, &mimeType, &uploadedBy,
+			&reviewedVersionID, &reviewedBy, &reviewedAt, &reviewedDocID, &reviewedMimeType, &reviewedByName); err != nil {
 			log.Printf("[ListStudentNodeFiles] scan error: %v", err)
 			continue
 		}
@@ -743,6 +749,23 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 		}
 		if approvedBy.Valid {
 			item["approved_by"] = approvedBy.String
+		}
+		// Add reviewed document information if exists
+		if reviewedDocID.Valid && reviewedDocID.String != "" {
+			reviewedDoc := gin.H{
+				"version_id":   reviewedDocID.String,
+				"download_url": fmt.Sprintf("/api/documents/versions/%s/download", reviewedDocID.String),
+			}
+			if reviewedMimeType.Valid {
+				reviewedDoc["mime_type"] = reviewedMimeType.String
+			}
+			if reviewedByName.Valid {
+				reviewedDoc["reviewed_by"] = reviewedByName.String
+			}
+			if reviewedAt.Valid {
+				reviewedDoc["reviewed_at"] = reviewedAt.Time.Format(time.RFC3339)
+			}
+			item["reviewed_document"] = reviewedDoc
 		}
 		out = append(out, item)
 	}
@@ -906,6 +929,108 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		result["approved_at"] = resp.ApprovedAt.Time.Format(time.RFC3339)
 	}
 	c.JSON(200, result)
+}
+
+// UploadReviewedDocument allows admin/advisors to upload a document with comments as part of review.
+// POST /api/admin/attachments/:attachmentId/reviewed-document
+func (h *AdminHandler) UploadReviewedDocument(c *gin.Context) {
+	attachmentID := c.Param("attachmentId")
+	actorID := userIDFromClaims(c)
+	if actorID == "" {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	role := roleFromContext(c)
+	
+	var body struct {
+		DocumentVersionID string `json:"document_version_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	
+	tx, err := h.db.Beginx()
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer tx.Rollback()
+	
+	// Verify attachment exists and get metadata
+	var meta struct {
+		InstanceID string `db:"instance_id"`
+		StudentID  string `db:"user_id"`
+		NodeID     string `db:"node_id"`
+	}
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, ni.user_id, ni.node_id
+		FROM node_instance_slot_attachments a
+		JOIN node_instance_slots s ON s.id=a.slot_id
+		JOIN node_instances ni ON ni.id=s.node_instance_id
+		WHERE a.id=$1 AND a.is_active=true`, attachmentID).
+		Scan(&meta.InstanceID, &meta.StudentID, &meta.NodeID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(404, gin.H{"error": "attachment not found"})
+			return
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Check advisor permission
+	if role == "advisor" {
+		var allowedAdvisor bool
+		_ = tx.QueryRowx(`SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1 AND advisor_id=$2)`, meta.StudentID, actorID).Scan(&allowedAdvisor)
+		if !allowedAdvisor {
+			c.JSON(403, gin.H{"error": "forbidden"})
+			return
+		}
+	}
+	
+	// Verify document version exists and belongs to appropriate user
+	var versionExists bool
+	err = tx.QueryRowx(`SELECT EXISTS(SELECT 1 FROM document_versions WHERE id=$1)`, body.DocumentVersionID).Scan(&versionExists)
+	if err != nil || !versionExists {
+		c.JSON(400, gin.H{"error": "invalid document version"})
+		return
+	}
+	
+	log.Printf("[UploadReviewedDocument] attachmentID=%s versionID=%s actorID=%s", attachmentID, body.DocumentVersionID, actorID)
+	
+	// Update attachment with reviewed document
+	_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET 
+		reviewed_document_version_id=$1,
+		reviewed_by=$2,
+		reviewed_at=now()
+		WHERE id=$3`, body.DocumentVersionID, actorID, attachmentID)
+	
+	if err != nil {
+		log.Printf("[UploadReviewedDocument] UPDATE error: %v", err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Log event
+	payload := map[string]any{
+		"attachment_id":       attachmentID,
+		"reviewed_version_id": body.DocumentVersionID,
+	}
+	if err := insertNodeEvent(tx, meta.InstanceID, "reviewed_document_uploaded", actorID, payload); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
+	if err := tx.Commit(); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
+	c.JSON(200, gin.H{
+		"ok":                           true,
+		"reviewed_document_version_id": body.DocumentVersionID,
+		"reviewed_at":                  time.Now().Format(time.RFC3339),
+	})
 }
 
 // PatchStudentNodeState allows admin/advisor to change a student's node state.
