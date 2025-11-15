@@ -4,10 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react";
+import { Menu, LayoutDashboard, Users, UserPlus, UserCog, Monitor } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-function SidebarNav() {
+function SidebarNav({ collapsed }: { collapsed?: boolean }) {
   const { t } = useTranslation('common');
   const { user } = useAuth();
   const location = useLocation();
@@ -16,46 +16,62 @@ function SidebarNav() {
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   return (
-    <nav className="p-4 space-y-2">
-      <div className="text-xs uppercase text-muted-foreground px-2">{t('admin.sidebar.core','Core')}</div>
+    <nav className={cn("p-4 space-y-2", collapsed && "px-2") }>
+      {!collapsed && (
+        <div className="text-xs uppercase text-muted-foreground px-2">{t('admin.sidebar.core','Core')}</div>
+      )}
       <NavLink
         to="/admin"
         className={cn(
-          "block rounded px-3 py-2 hover:bg-muted",
-          isActive("/admin") && "bg-muted font-medium"
+          "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+          isActive("/admin") && "bg-muted font-medium",
+          collapsed && "justify-center px-2"
         )}
+        title={t('admin.sidebar.dashboard','Dashboard')}
       >
-        {t('admin.sidebar.dashboard','Dashboard')}
+        <LayoutDashboard className="h-4 w-4" />
+        {!collapsed && <span>{t('admin.sidebar.dashboard','Dashboard')}</span>}
       </NavLink>
       <NavLink
         to="/admin/students-monitor"
         className={cn(
-          "block rounded px-3 py-2 hover:bg-muted",
-          isActive("/admin/students-monitor") && "bg-muted font-medium"
+          "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+          isActive("/admin/students-monitor") && "bg-muted font-medium",
+          collapsed && "justify-center px-2"
         )}
+        title={t('admin.sidebar.students_monitor','Students Monitor')}
       >
-        {t('admin.sidebar.students_monitor','Students Monitor')}
+        <Monitor className="h-4 w-4" />
+        {!collapsed && <span>{t('admin.sidebar.students_monitor','Students Monitor')}</span>}
       </NavLink>
       {isAdmin && (
         <>
-          <div className="text-xs uppercase text-muted-foreground mt-4 px-2">{t('admin.sidebar.management','Management')}</div>
+          {!collapsed && (
+            <div className="text-xs uppercase text-muted-foreground mt-4 px-2">{t('admin.sidebar.management','Management')}</div>
+          )}
           <NavLink
             to="/admin/create-students"
             className={cn(
-              "block rounded px-3 py-2 hover:bg-muted",
-              isActive("/admin/create-students") && "bg-muted font-medium"
+              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/create-students") && "bg-muted font-medium",
+              collapsed && "justify-center px-2"
             )}
+            title={t('admin.sidebar.create_students','Create Students')}
           >
-            {t('admin.sidebar.create_students','Create Students')}
+            <Users className="h-4 w-4" />
+            {!collapsed && <span>{t('admin.sidebar.create_students','Create Students')}</span>}
           </NavLink>
           <NavLink
             to="/admin/create-advisors"
             className={cn(
-              "block rounded px-3 py-2 hover:bg-muted",
-              isActive("/admin/create-advisors") && "bg-muted font-medium"
+              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/create-advisors") && "bg-muted font-medium",
+              collapsed && "justify-center px-2"
             )}
+            title={t('admin.sidebar.create_advisors','Create Advisors')}
           >
-            {t('admin.sidebar.create_advisors','Create Advisors')}
+            <UserPlus className="h-4 w-4" />
+            {!collapsed && <span>{t('admin.sidebar.create_advisors','Create Advisors')}</span>}
           </NavLink>
         </>
       )}
@@ -63,11 +79,14 @@ function SidebarNav() {
         <NavLink
           to="/admin/create-admins"
           className={cn(
-            "block rounded px-3 py-2 hover:bg-muted",
-            isActive("/admin/create-admins") && "bg-muted font-medium"
+            "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+            isActive("/admin/create-admins") && "bg-muted font-medium",
+            collapsed && "justify-center px-2"
           )}
+          title={t('admin.sidebar.create_admins','Create Admins')}
         >
-          {t('admin.sidebar.create_admins','Create Admins')}
+          <UserCog className="h-4 w-4" />
+          {!collapsed && <span>{t('admin.sidebar.create_admins','Create Admins')}</span>}
         </NavLink>
       )}
     </nav>
@@ -77,13 +96,28 @@ function SidebarNav() {
 export function AdminLayout() {
   const { t } = useTranslation('common');
   const { user, logout } = useAuth();
+  const [collapsed, setCollapsed] = React.useState(false);
 
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="hidden md:block w-64 border-r bg-background">
-        <div className="h-14 flex items-center px-4 border-b font-semibold">{t('admin.topbar.admin_panel','Admin Panel')}</div>
-        <SidebarNav />
+      <aside className={cn("hidden md:block border-r bg-background transition-all duration-200", collapsed ? "w-16" : "w-64") }>
+        <div className={cn("h-14 flex items-center border-b", collapsed ? "justify-center" : "px-4 justify-between") }>
+          <div className="font-semibold truncate" title={t('admin.topbar.admin_panel','Admin Panel')}>
+            {collapsed ? "A" : t('admin.topbar.admin_panel','Admin Panel')}
+          </div>
+          {!collapsed && (
+            <Button variant="ghost" size="icon" onClick={() => setCollapsed(true)} aria-label={t('common.collapse','Collapse')}>
+              <span className="text-lg leading-none">«</span>
+            </Button>
+          )}
+          {collapsed && (
+            <Button variant="ghost" size="icon" onClick={() => setCollapsed(false)} aria-label={t('common.expand','Expand')}>
+              <span className="text-lg leading-none">»</span>
+            </Button>
+          )}
+        </div>
+        <SidebarNav collapsed={collapsed} />
       </aside>
 
       {/* Mobile top bar with sheet menu */}
