@@ -791,7 +791,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		FROM node_instance_slot_attachments a
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		JOIN node_instances ni ON ni.id=s.node_instance_id
-		WHERE a.id=$1 AND a.is_active=true AND ni.playbook_version_id=$2`, attachmentID, h.pb.VersionID).
+		WHERE a.id=$1 AND a.is_active=true`, attachmentID).
 		Scan(&meta.InstanceID, &meta.SlotID, &meta.SlotKey, &meta.NodeID, &meta.StudentID, &meta.State)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
