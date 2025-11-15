@@ -809,11 +809,29 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 			return
 		}
 	}
-	_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET status=$1, review_note=$2,
-		approved_by=CASE WHEN $1 IN ('approved','rejected') THEN $3 ELSE NULL END,
-		approved_at=CASE WHEN $1 IN ('approved','rejected') THEN now() ELSE NULL END
-		WHERE id=$4`, status, nullableString(body.Note), actorID, attachmentID)
+	log.Printf("[ReviewAttachment] attachmentID=%s status=%s note=%q actorID=%s", attachmentID, status, body.Note, actorID)
+	
+	// Update attachment with status and note
+	if status == "approved" || status == "rejected" {
+		// For approved/rejected, set approved_by and approved_at
+		_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET 
+			status=$1, 
+			review_note=$2,
+			approved_by=$3,
+			approved_at=now()
+			WHERE id=$4`, status, nullableString(body.Note), actorID, attachmentID)
+	} else {
+		// For submitted or other statuses, clear approved_by and approved_at
+		_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET 
+			status=$1, 
+			review_note=$2,
+			approved_by=NULL,
+			approved_at=NULL
+			WHERE id=$3`, status, nullableString(body.Note), attachmentID)
+	}
+	
 	if err != nil {
+		log.Printf("[ReviewAttachment] UPDATE error: %v", err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -842,16 +860,22 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	if total > 0 {
 		switch {
 		case counts.Rejected > 0:
+			// Any rejected files means student needs to fix and resubmit
 			newState = "needs_fixes"
 		case counts.Submitted == 0 && counts.Approved > 0:
+			// All files approved, node is complete
 			newState = "done"
+		case counts.Submitted > 0 && counts.Approved == 0 && counts.Rejected == 0:
+			// Files submitted but not yet reviewed
+			newState = "under_review"
 		default:
+			// Mixed state or initial submission
 			newState = "submitted"
 		}
 	}
 	if newState != meta.State {
 		query := "UPDATE node_instances SET state=$1, updated_at=now() WHERE id=$2"
-		if newState == "submitted" {
+		if newState == "submitted" || newState == "under_review" {
 			query = "UPDATE node_instances SET state=$1, submitted_at=COALESCE(submitted_at, now()), updated_at=now() WHERE id=$2"
 		}
 		if _, err := tx.Exec(query, newState, meta.InstanceID); err != nil {
