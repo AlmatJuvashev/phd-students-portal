@@ -50,6 +50,7 @@ import {
   FileCheck,
   AlertCircle,
   Eye,
+  FileSearch,
 } from "lucide-react";
 
 const STAGES = [
@@ -106,6 +107,7 @@ type NodeState =
   | "active"
   | "submitted"
   | "waiting"
+  | "under_review"
   | "needs_fixes"
   | "done";
 
@@ -128,6 +130,11 @@ const nodeStates: Record<
     label: "Waiting",
     color: "bg-amber-50 text-amber-700 border border-amber-200",
     icon: Clock,
+  },
+  under_review: {
+    label: "Under Review",
+    color: "bg-purple-50 text-purple-700 border border-purple-200",
+    icon: FileSearch,
   },
   needs_fixes: {
     label: "Needs Fixes",

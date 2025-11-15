@@ -879,6 +879,9 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		WHERE s.node_instance_id=$1 AND a.is_active`, meta.InstanceID).Scan(&counts.Submitted, &counts.Approved, &counts.Rejected)
 	total := counts.Submitted + counts.Approved + counts.Rejected
+	log.Printf("[ReviewAttachment] Counts: submitted=%d approved=%d rejected=%d total=%d currentState=%s", 
+		counts.Submitted, counts.Approved, counts.Rejected, total, meta.State)
+	
 	newState := meta.State
 	if total > 0 {
 		switch {
@@ -896,6 +899,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 			newState = "submitted"
 		}
 	}
+	log.Printf("[ReviewAttachment] State transition: %s -> %s", meta.State, newState)
 	if newState != meta.State {
 		query := "UPDATE node_instances SET state=$1, updated_at=now() WHERE id=$2"
 		if newState == "submitted" || newState == "under_review" {

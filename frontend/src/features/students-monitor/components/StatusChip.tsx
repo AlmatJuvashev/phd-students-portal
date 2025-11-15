@@ -6,6 +6,7 @@ export function StatusChip({ state }: { state: string }) {
     active: "bg-blue-100 text-blue-800",
     submitted: "bg-amber-100 text-amber-800",
     waiting: "bg-amber-100 text-amber-800",
+    under_review: "bg-purple-100 text-purple-800",
     needs_fixes: "bg-red-100 text-red-800",
     done: "bg-green-100 text-green-800",
   };
@@ -14,6 +15,7 @@ export function StatusChip({ state }: { state: string }) {
     active: "Active",
     submitted: "Submitted",
     waiting: "Waiting",
+    under_review: "Under review",
     needs_fixes: "Needs fixes",
     done: "Done",
   };
