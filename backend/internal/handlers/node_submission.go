@@ -211,8 +211,21 @@ func (h *NodeSubmissionHandler) PresignUpload(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "S3 not configured"})
 		return
 	}
+	
+	// Validate file size
+	if err := services.ValidateFileSize(req.SizeBytes); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Validate content type
+	if err := services.ValidateContentType(req.ContentType); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	
 	objectKey := storage.BuildNodeObjectKey(uid, nodeID, req.SlotKey, req.Filename)
-	expires := time.Minute * 15
+	expires := services.GetPresignExpires()
 	url, err := s3c.PresignPut(objectKey, req.ContentType, expires)
 	if err != nil {
 		handleNodeErr(c, err)

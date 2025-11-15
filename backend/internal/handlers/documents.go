@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
@@ -113,6 +112,13 @@ func (h *DocumentsHandler) PresignUpload(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// Validate content type
+	if err := services.ValidateContentType(r.ContentType); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	
 	s3c, err := services.NewS3FromEnv()
 	if err != nil {
 		c.JSON(500, gin.H{"error": "s3 init failed"})
@@ -123,7 +129,8 @@ func (h *DocumentsHandler) PresignUpload(c *gin.Context) {
 		return
 	}
 	key := fmt.Sprintf("%s/%s", docId, r.Filename)
-	url, err := s3c.PresignPut(key, r.ContentType, time.Minute*15)
+	expires := services.GetPresignExpires()
+	url, err := s3c.PresignPut(key, r.ContentType, expires)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "presign failed"})
 		return
@@ -149,7 +156,8 @@ func (h *DocumentsHandler) PresignGetLatest(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "S3 not configured"})
 		return
 	}
-	url, err := s3c.PresignGet(key, time.Minute*15)
+	expires := services.GetPresignExpires()
+	url, err := s3c.PresignGet(key, expires)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "presign failed"})
 		return
@@ -182,7 +190,8 @@ func (h *DocumentsHandler) DownloadVersion(c *gin.Context) {
 			c.JSON(500, gin.H{"error": "s3 not configured"})
 			return
 		}
-		url, err := s3c.PresignGet(row.ObjectKey.String, time.Minute*10)
+		expires := services.GetPresignExpires()
+		url, err := s3c.PresignGet(row.ObjectKey.String, expires)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "presign failed"})
 			return

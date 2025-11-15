@@ -112,6 +112,8 @@ export type NodeFileRow = {
   attached_at?: string;
   approved_at?: string;
   approved_by?: string;
+  uploaded_by?: string;
+  version_id?: string;
   mime_type?: string;
   download_url: string;
 };

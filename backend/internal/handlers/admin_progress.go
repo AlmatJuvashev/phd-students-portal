@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -681,35 +682,43 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
 func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 	studentID := c.Param("id")
 	nodeID := c.Param("nodeId")
+	log.Printf("[ListStudentNodeFiles] studentID=%s nodeID=%s", studentID, nodeID)
+	
 	// Pick the latest node_instance for this user/node (any playbook version) to surface uploads
 	var instanceID string
 	err := h.db.QueryRowx(`SELECT id FROM node_instances WHERE user_id=$1 AND node_id=$2 ORDER BY updated_at DESC LIMIT 1`, studentID, nodeID).Scan(&instanceID)
 	if err != nil {
+		log.Printf("[ListStudentNodeFiles] node instance not found: %v", err)
 		c.JSON(404, gin.H{"error": "node instance not found"})
 		return
 	}
+	log.Printf("[ListStudentNodeFiles] found instanceID=%s", instanceID)
+	
 	rows, err := h.db.Queryx(`SELECT s.slot_key, a.id, a.filename, a.size_bytes, a.status, a.review_note,
 		a.attached_at, a.approved_at, a.approved_by, dv.id AS version_id, dv.mime_type,
 		COALESCE(u.first_name||' '||u.last_name,'') AS uploaded_by
 		FROM node_instance_slots s
-		JOIN node_instance_slot_attachments a ON a.slot_id=s.id
+		JOIN node_instance_slot_attachments a ON a.slot_id=s.id AND a.is_active=true
 		JOIN document_versions dv ON dv.id=a.document_version_id
 		LEFT JOIN users u ON u.id=a.attached_by
 		WHERE s.node_instance_id=$1
 		ORDER BY a.attached_at DESC`, instanceID)
 	if err != nil {
+		log.Printf("[ListStudentNodeFiles] query error: %v", err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	defer rows.Close()
 	out := []gin.H{}
 	for rows.Next() {
-		var slotKey, attachmentID, filename, status, reviewNote, uploadedBy, versionID, mimeType string
+		var slotKey, attachmentID, filename, status, uploadedBy, versionID, mimeType string
+		var reviewNote sql.NullString
 		var sizeBytes int64
 		var attachedAt, approvedAt sql.NullTime
 		var approvedBy sql.NullString
 		if err := rows.Scan(&slotKey, &attachmentID, &filename, &sizeBytes, &status, &reviewNote,
 			&attachedAt, &approvedAt, &approvedBy, &versionID, &mimeType, &uploadedBy); err != nil {
+			log.Printf("[ListStudentNodeFiles] scan error: %v", err)
 			continue
 		}
 		item := gin.H{
@@ -723,8 +732,8 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 			"uploaded_by":   uploadedBy,
 			"download_url":  fmt.Sprintf("/api/documents/versions/%s/download", versionID),
 		}
-		if reviewNote != "" {
-			item["review_note"] = reviewNote
+		if reviewNote.Valid && reviewNote.String != "" {
+			item["review_note"] = reviewNote.String
 		}
 		if attachedAt.Valid {
 			item["attached_at"] = attachedAt.Time.Format(time.RFC3339)
@@ -737,6 +746,7 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 		}
 		out = append(out, item)
 	}
+	log.Printf("[ListStudentNodeFiles] returning %d files", len(out))
 	c.JSON(200, out)
 }
 

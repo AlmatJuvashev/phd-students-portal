@@ -2,19 +2,10 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api/client";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +56,9 @@ export function CreateStudents() {
   const queryClient = useQueryClient();
 
   const [advisorSearch, setAdvisorSearch] = React.useState("");
-  const [selectedAdvisors, setSelectedAdvisors] = React.useState<UserLite[]>([]);
+  const [selectedAdvisors, setSelectedAdvisors] = React.useState<UserLite[]>(
+    []
+  );
   const [showModal, setShowModal] = React.useState(false);
   const [created, setCreated] = React.useState<Creds | null>(null);
   const [resetInfo, setResetInfo] = React.useState<Creds | null>(null);
@@ -73,7 +66,9 @@ export function CreateStudents() {
   const [sortField, setSortField] = React.useState<
     "name" | "username" | "program" | "department" | "cohort" | "created_at"
   >("name");
-  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
+    "asc"
+  );
   const [page, setPage] = React.useState(1);
 
   const { data: advisors = [] } = useQuery<UserLite[]>({
@@ -227,7 +222,10 @@ export function CreateStudents() {
     return sorted;
   }, [normalizedStudents, searchTerm, sortField, sortDirection]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredStudents.length / PAGE_SIZE)
+  );
   const currentPage = Math.min(page, totalPages);
   const paginatedStudents = React.useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -239,7 +237,13 @@ export function CreateStudents() {
   }, [searchTerm, sortField, sortDirection, normalizedStudents.length]);
 
   const handleSort = (
-    field: "name" | "username" | "program" | "department" | "cohort" | "created_at"
+    field:
+      | "name"
+      | "username"
+      | "program"
+      | "department"
+      | "cohort"
+      | "created_at"
   ) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -276,7 +280,9 @@ export function CreateStudents() {
         </div>
         <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
-          {t("admin.forms.create_student.submit", { defaultValue: "Create Student" })}
+          {t("admin.forms.create_student.submit", {
+            defaultValue: "Create Student",
+          })}
         </Button>
       </div>
 
@@ -296,7 +302,9 @@ export function CreateStudents() {
                 <span className="font-mono">{created.username}</span>
               </div>
               <div className="text-sm">
-                {t("admin.forms.temp_password", { defaultValue: "Temp password" })}
+                {t("admin.forms.temp_password", {
+                  defaultValue: "Temp password",
+                })}
                 :&nbsp;
                 <span className="font-mono">{created.temp_password}</span>
               </div>
@@ -309,7 +317,9 @@ export function CreateStudents() {
               className="gap-2"
             >
               <Copy className="h-4 w-4" />
-              {t("admin.forms.copy_credentials", { defaultValue: "Copy credentials" })}
+              {t("admin.forms.copy_credentials", {
+                defaultValue: "Copy credentials",
+              })}
             </Button>
           </CardContent>
         </Card>
@@ -319,7 +329,9 @@ export function CreateStudents() {
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="text-blue-900">
-              {t("admin.review.password_reset", { defaultValue: "Password reset" })}
+              {t("admin.review.password_reset", {
+                defaultValue: "Password reset",
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-4">
@@ -329,7 +341,9 @@ export function CreateStudents() {
                 <span className="font-mono">{resetInfo.username}</span>
               </div>
               <div className="text-sm">
-                {t("admin.forms.temp_password", { defaultValue: "Temp password" })}
+                {t("admin.forms.temp_password", {
+                  defaultValue: "Temp password",
+                })}
                 :&nbsp;
                 <span className="font-mono">{resetInfo.temp_password}</span>
               </div>
@@ -342,7 +356,9 @@ export function CreateStudents() {
               className="gap-2"
             >
               <Copy className="h-4 w-4" />
-              {t("admin.forms.copy_credentials", { defaultValue: "Copy credentials" })}
+              {t("admin.forms.copy_credentials", {
+                defaultValue: "Copy credentials",
+              })}
             </Button>
           </CardContent>
         </Card>
@@ -353,11 +369,13 @@ export function CreateStudents() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>
-                {t("admin.forms.students_table", { defaultValue: "Students" })} · {normalizedStudents.length}
+                {t("admin.forms.students_table", { defaultValue: "Students" })}{" "}
+                · {normalizedStudents.length}
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 {t("admin.forms.students_summary", {
-                  defaultValue: "{{count}} students · page {{page}} of {{pages}}",
+                  defaultValue:
+                    "{{count}} students · page {{page}} of {{pages}}",
                 })
                   .replace("{{count}}", filteredStudents.length.toString())
                   .replace("{{page}}", currentPage.toString())
@@ -415,7 +433,9 @@ export function CreateStudents() {
                     onClick={() => handleSort("department")}
                   >
                     <div className="flex items-center">
-                      {t("admin.forms.department", { defaultValue: "Department" })}
+                      {t("admin.forms.department", {
+                        defaultValue: "Department",
+                      })}
                       {renderSortIcon("department")}
                     </div>
                   </th>
@@ -433,7 +453,9 @@ export function CreateStudents() {
                     onClick={() => handleSort("created_at")}
                   >
                     <div className="flex items-center">
-                      {t("admin.forms.registration_date", { defaultValue: "Registered" })}
+                      {t("admin.forms.registration_date", {
+                        defaultValue: "Registered",
+                      })}
                       {renderSortIcon("created_at")}
                     </div>
                   </th>
@@ -445,7 +467,10 @@ export function CreateStudents() {
               <tbody>
                 {studentsLoading && (
                   <tr>
-                    <td colSpan={8} className="py-6 text-center text-muted-foreground">
+                    <td
+                      colSpan={8}
+                      className="py-6 text-center text-muted-foreground"
+                    >
                       <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
                       {t("common.loading", { defaultValue: "Loading…" })}
                     </td>
@@ -454,7 +479,7 @@ export function CreateStudents() {
                 {studentsError && (
                   <tr>
                     <td colSpan={8} className="py-6 text-center text-red-600">
-                      {t("common.error", { defaultValue: "Error" })}: {" "}
+                      {t("common.error", { defaultValue: "Error" })}:{" "}
                       {t("admin.forms.students_error", {
                         defaultValue: "Unable to load students.",
                       })}
@@ -471,15 +496,20 @@ export function CreateStudents() {
                     </td>
                   </tr>
                 )}
-                {!studentsLoading && !studentsError && filteredStudents.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="py-6 text-center text-muted-foreground">
-                      {t("admin.forms.students_empty", {
-                        defaultValue: "No students yet.",
-                      })}
-                    </td>
-                  </tr>
-                )}
+                {!studentsLoading &&
+                  !studentsError &&
+                  filteredStudents.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="py-6 text-center text-muted-foreground"
+                      >
+                        {t("admin.forms.students_empty", {
+                          defaultValue: "No students yet.",
+                        })}
+                      </td>
+                    </tr>
+                  )}
                 {!studentsLoading &&
                   !studentsError &&
                   paginatedStudents.map((student, idx) => (
@@ -590,11 +620,16 @@ export function CreateStudents() {
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {t("admin.forms.create_student.subtitle", {
-                    defaultValue: "Add a new student with program details and advisors.",
+                    defaultValue:
+                      "Add a new student with program details and advisors.",
                   })}
                 </p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowModal(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowModal(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </CardHeader>
@@ -605,7 +640,9 @@ export function CreateStudents() {
               >
                 <div>
                   <Input
-                    placeholder={t("admin.forms.first_name", { defaultValue: "First name" })}
+                    placeholder={t("admin.forms.first_name", {
+                      defaultValue: "First name",
+                    })}
                     {...register("first_name")}
                   />
                   {errors.first_name && (
@@ -616,7 +653,9 @@ export function CreateStudents() {
                 </div>
                 <div>
                   <Input
-                    placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })}
+                    placeholder={t("admin.forms.last_name", {
+                      defaultValue: "Last name",
+                    })}
                     {...register("last_name")}
                   />
                   {errors.last_name && (
@@ -651,7 +690,9 @@ export function CreateStudents() {
 
                 <div>
                   <Input
-                    placeholder={t("admin.forms.program", { defaultValue: "Program" })}
+                    placeholder={t("admin.forms.program", {
+                      defaultValue: "Program",
+                    })}
                     {...register("program")}
                   />
                   {errors.program && (
@@ -662,7 +703,9 @@ export function CreateStudents() {
                 </div>
                 <div>
                   <Input
-                    placeholder={t("admin.forms.department", { defaultValue: "Department" })}
+                    placeholder={t("admin.forms.department", {
+                      defaultValue: "Department",
+                    })}
                     {...register("department")}
                   />
                   {errors.department && (
@@ -674,7 +717,9 @@ export function CreateStudents() {
 
                 <div>
                   <Input
-                    placeholder={t("admin.forms.cohort", { defaultValue: "Cohort" })}
+                    placeholder={t("admin.forms.cohort", {
+                      defaultValue: "Cohort",
+                    })}
                     {...register("cohort")}
                   />
                   {errors.cohort && (
@@ -696,7 +741,9 @@ export function CreateStudents() {
                           type="button"
                           className="ml-1 text-xs"
                           onClick={() => removeAdvisor(advisor.id)}
-                          aria-label={t("common.remove", { defaultValue: "Remove" })}
+                          aria-label={t("common.remove", {
+                            defaultValue: "Remove",
+                          })}
                         >
                           ×
                         </button>
@@ -732,11 +779,17 @@ export function CreateStudents() {
                 </div>
 
                 <div className="md:col-span-2 flex gap-2 pt-2">
-                  <Button type="submit" className="w-full" disabled={createStudentMutation.isPending}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={createStudentMutation.isPending}
+                  >
                     {createStudentMutation.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      t("admin.forms.create_student.submit", { defaultValue: "Create Student" })
+                      t("admin.forms.create_student.submit", {
+                        defaultValue: "Create Student",
+                      })
                     )}
                   </Button>
                 </div>
