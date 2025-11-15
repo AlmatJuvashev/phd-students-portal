@@ -15,23 +15,28 @@ Advisors can now upload reviewed documents with comments as an optional step in 
 ## Workflow
 
 ### 1. Student Uploads Document
+
 Student submits their document (e.g., dissertation chapter, publication) through the Antiplagiarism node or any other node with file upload slots.
 
 ### 2. Advisor Reviews Document
 
 **Option A: Approve/Reject without uploading**
+
 - Advisor reviews the document
 - Chooses "Одобрить" (Approve) or "Запросить правки" (Request Fixes)
 - Adds optional text note/feedback
 
 **Option B: Upload Reviewed Document with Comments**
+
 - Advisor downloads student's document
 - Adds comments/annotations using Word, PDF editor, etc.
 - Uploads the reviewed document via new endpoint
 - Student receives document with inline comments
 
 ### 3. Student Views Feedback
+
 Student sees:
+
 - Original submitted document
 - Advisor's text feedback (if any)
 - **NEW:** Reviewed document with comments (if uploaded)
@@ -41,6 +46,7 @@ Student sees:
 ## API Endpoints
 
 ### Upload Reviewed Document
+
 ```http
 POST /api/admin/attachments/:attachmentId/reviewed-document
 Authorization: Bearer <jwt_token>
@@ -52,6 +58,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -61,12 +68,14 @@ Content-Type: application/json
 ```
 
 ### Get Student Files (includes reviewed documents)
+
 ```http
 GET /api/admin/students/:studentId/nodes/:nodeId/files
 Authorization: Bearer <jwt_token>
 ```
 
 **Response:**
+
 ```json
 [
   {
@@ -91,6 +100,7 @@ Authorization: Bearer <jwt_token>
 ### Migration 0014: advisor_reviewed_document
 
 Added columns to `node_instance_slot_attachments`:
+
 - `reviewed_document_version_id` (uuid, nullable) - Points to document_versions
 - `reviewed_by` (uuid, nullable) - User who uploaded the reviewed document
 - `reviewed_at` (timestamptz, nullable) - When the document was uploaded
@@ -105,12 +115,12 @@ Index: `idx_slot_attachments_reviewed_doc` for fast queries.
 // Check if reviewed document exists
 if (file.reviewed_document) {
   const { download_url, reviewed_by, reviewed_at, mime_type } = file.reviewed_document;
-  
+
   // Show download button
   <a href={download_url} download>
     📄 Download Reviewed Document (with comments)
   </a>
-  
+
   // Show metadata
   <p>Reviewed by: {reviewed_by}</p>
   <p>Reviewed at: {formatDate(reviewed_at)}</p>
@@ -121,31 +131,31 @@ if (file.reviewed_document) {
 
 ```typescript
 // Step 1: Upload document to S3 (same as regular upload)
-const presignResponse = await fetch('/api/documents/:docId/presign', {
-  method: 'POST',
-  body: JSON.stringify({ 
-    content_type: file.type, 
-    size_bytes: file.size 
-  })
+const presignResponse = await fetch("/api/documents/:docId/presign", {
+  method: "POST",
+  body: JSON.stringify({
+    content_type: file.type,
+    size_bytes: file.size,
+  }),
 });
 
 const { presigned_url, version_id } = await presignResponse.json();
 
 // Step 2: Upload to S3
 await fetch(presigned_url, {
-  method: 'PUT',
+  method: "PUT",
   body: file,
-  headers: { 'Content-Type': file.type }
+  headers: { "Content-Type": file.type },
 });
 
 // Step 3: Attach as reviewed document
 await fetch(`/api/admin/attachments/${attachmentId}/reviewed-document`, {
-  method: 'POST',
+  method: "POST",
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
   },
-  body: JSON.stringify({ document_version_id: version_id })
+  body: JSON.stringify({ document_version_id: version_id }),
 });
 ```
 
@@ -174,18 +184,21 @@ When a reviewed document is uploaded, a `reviewed_document_uploaded` event is lo
 ## Use Cases
 
 ### 1. Dissertation Chapter Review
+
 - Student uploads dissertation chapter
 - Advisor downloads, adds Track Changes comments in Word
 - Advisor uploads reviewed document
 - Student sees exactly what needs to be changed
 
 ### 2. Publication Review
+
 - Student uploads publication draft
 - Advisor annotates PDF with comments
 - Advisor uploads annotated PDF
 - Student addresses specific comments
 
 ### 3. Antiplagiarism Report
+
 - Student uploads work for plagiarism check
 - Advisor highlights problematic sections
 - Advisor uploads marked-up version
@@ -194,12 +207,14 @@ When a reviewed document is uploaded, a `reviewed_document_uploaded` event is lo
 ## Migration Guide
 
 ### Apply Migration
+
 ```bash
 cd backend
 make migrate-up
 ```
 
 ### Rollback (if needed)
+
 ```bash
 make migrate-down
 ```
@@ -207,6 +222,7 @@ make migrate-down
 ## Testing
 
 ### Manual Test Flow
+
 1. Login as student, upload document to node
 2. Login as advisor
 3. Navigate to student details page
@@ -216,6 +232,7 @@ make migrate-down
 7. Verify download URLs work for both
 
 ### API Test
+
 ```bash
 # Get attachment ID from student files endpoint
 curl -H "Authorization: Bearer $TOKEN" \
