@@ -681,16 +681,22 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
 func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 	studentID := c.Param("id")
 	nodeID := c.Param("nodeId")
+	// Pick the latest node_instance for this user/node (any playbook version) to surface uploads
+	var instanceID string
+	err := h.db.QueryRowx(`SELECT id FROM node_instances WHERE user_id=$1 AND node_id=$2 ORDER BY updated_at DESC LIMIT 1`, studentID, nodeID).Scan(&instanceID)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "node instance not found"})
+		return
+	}
 	rows, err := h.db.Queryx(`SELECT s.slot_key, a.id, a.filename, a.size_bytes, a.status, a.review_note,
 		a.attached_at, a.approved_at, a.approved_by, dv.id AS version_id, dv.mime_type,
 		COALESCE(u.first_name||' '||u.last_name,'') AS uploaded_by
-		FROM node_instances ni
-		JOIN node_instance_slots s ON s.node_instance_id=ni.id
+		FROM node_instance_slots s
 		JOIN node_instance_slot_attachments a ON a.slot_id=s.id
 		JOIN document_versions dv ON dv.id=a.document_version_id
 		LEFT JOIN users u ON u.id=a.attached_by
-		WHERE ni.user_id=$1 AND ni.playbook_version_id=$2 AND ni.node_id=$3
-		ORDER BY a.attached_at DESC`, studentID, h.pb.VersionID, nodeID)
+		WHERE s.node_instance_id=$1
+		ORDER BY a.attached_at DESC`, instanceID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
