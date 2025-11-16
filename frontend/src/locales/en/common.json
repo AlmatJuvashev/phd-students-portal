@@ -184,6 +184,13 @@
       "search_advisors_input": "Search advisors…",
       "registration_date": "Registered",
       "copy_credentials": "Copy credentials",
+      "active_state": "Status",
+      "status_all": "All",
+      "status_active": "Active",
+      "status_inactive": "Inactive",
+      "all_programs": "All programs",
+      "all_departments": "All departments",
+      "all_cohorts": "All cohorts",
       "phone_optional": "Phone (optional)",
       "email_optional": "Email (optional)",
       "program": "Program",
@@ -214,7 +221,9 @@
         "heading": "Admin Details",
         "submit": "Create Admin",
         "success": "Admin Created"
-      }
+      },
+      "edit_advisor": "Edit Advisor",
+      "edit_admin": "Edit Admin"
     }
   },
   "table": {

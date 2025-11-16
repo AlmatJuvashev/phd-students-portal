@@ -93,7 +93,7 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
           <div className="flex items-center justify-between flex-1">
             <span>{t("admin.sidebar.notifications", "Notifications")}</span>
             {unreadCount > 0 && (
-              <Badge className="bg-red-500 text-white text-xs">
+              <Badge className="bg-red-500 text-white text-[10px] px-1 py-0.5 rounded-full min-w-[1.5rem] flex items-center justify-center">
                 {unreadCount}
               </Badge>
             )}
@@ -162,9 +162,14 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
 }
 
 export function AdminLayout() {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = React.useState(false);
+  const languages = [
+    { code: "ru", label: "RU" },
+    { code: "kz", label: "KZ" },
+    { code: "en", label: "EN" },
+  ];
 
   return (
     <div className="flex min-h-screen">
@@ -251,12 +256,31 @@ export function AdminLayout() {
       {/* Main content */}
       <section className="flex-1">
         {/* Desktop top bar */}
-        <div className="hidden md:flex h-14 items-center justify-between border-b px-6">
+        <div className="hidden md:flex h-14 items-center justify-between border-b px-6 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="text-sm text-muted-foreground">
             {t("admin.topbar.signed_in_as", "Signed in as")}{" "}
             <span className="font-medium">{user?.email}</span>
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 rounded-md border border-border/60 px-1 py-0.5 bg-muted/40">
+              {languages.map((lang) => {
+                const active = i18n.language?.startsWith(lang.code);
+                return (
+                  <Button
+                    key={lang.code}
+                    variant={active ? "default" : "ghost"}
+                    size="xs"
+                    className={cn(
+                      "px-2 text-xs",
+                      !active && "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => i18n.changeLanguage(lang.code)}
+                  >
+                    {lang.label}
+                  </Button>
+                );
+              })}
+            </div>
             <span className="text-xs px-2 py-1 rounded bg-muted">
               {user?.role}
             </span>
