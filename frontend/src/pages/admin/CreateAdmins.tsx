@@ -452,6 +452,7 @@ export function CreateAdmins() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="text-destructive hover:text-destructive/80"
                                   onClick={() => handleDeactivate(admin)}
                                 >
                                   {pendingActiveId === admin.id && setActiveMutation.isPending ? (

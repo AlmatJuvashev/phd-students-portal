@@ -877,6 +877,7 @@ export function CreateStudents() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="text-destructive hover:text-destructive/80"
                                   onClick={() => handleDeactivate(student)}
                                   aria-label={t("admin.forms.delete_student", {
                                     defaultValue: "Deactivate",
