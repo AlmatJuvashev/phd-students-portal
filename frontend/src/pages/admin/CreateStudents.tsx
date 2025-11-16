@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -79,10 +85,21 @@ export function CreateStudents() {
   const [showModal, setShowModal] = React.useState(false);
   const [created, setCreated] = React.useState<Creds | null>(null);
   const [resetInfo, setResetInfo] = React.useState<Creds | null>(null);
-  const [editModal, setEditModal] = React.useState<{ open: boolean; student: StudentRow | null }>({ open: false, student: null });
-  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
-  const [pendingActiveId, setPendingActiveId] = React.useState<string | null>(null);
-  const [confirmState, setConfirmState] = React.useState<{ open: boolean; kind: "reset" | "deactivate" | "activate" | null; student: StudentRow | null }>({ open: false, kind: null, student: null });
+  const [editModal, setEditModal] = React.useState<{
+    open: boolean;
+    student: StudentRow | null;
+  }>({ open: false, student: null });
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(
+    null
+  );
+  const [pendingActiveId, setPendingActiveId] = React.useState<string | null>(
+    null
+  );
+  const [confirmState, setConfirmState] = React.useState<{
+    open: boolean;
+    kind: "reset" | "deactivate" | "activate" | null;
+    student: StudentRow | null;
+  }>({ open: false, kind: null, student: null });
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortField, setSortField] = React.useState<
     "name" | "username" | "program" | "department" | "cohort" | "created_at"
@@ -92,7 +109,9 @@ export function CreateStudents() {
   );
   const [serverPage, setServerPage] = React.useState(1);
   const [clientPage, setClientPage] = React.useState(1);
-  const [activeFilter, setActiveFilter] = React.useState<"all" | "active" | "inactive">("all");
+  const [activeFilter, setActiveFilter] = React.useState<
+    "all" | "active" | "inactive"
+  >("all");
   const [filterProgram, setFilterProgram] = React.useState<string>("");
   const [filterDepartment, setFilterDepartment] = React.useState<string>("");
   const [filterCohort, setFilterCohort] = React.useState<string>("");
@@ -103,7 +122,10 @@ export function CreateStudents() {
       api(`/admin/users?role=advisor&q=${encodeURIComponent(advisorSearch)}`),
   });
 
-  const advisors = React.useMemo(() => advisorResponse?.data || [], [advisorResponse]);
+  const advisors = React.useMemo(
+    () => advisorResponse?.data || [],
+    [advisorResponse]
+  );
 
   const {
     data: usersResponse,
@@ -113,27 +135,41 @@ export function CreateStudents() {
   } = useQuery<PaginatedResponse>({
     queryKey: ["admin", "users", serverPage],
     queryFn: async () => {
-      const result = await api(`/admin/users?page=${serverPage}&limit=${SERVER_PAGE_SIZE}&active=all`);
+      const result = await api(
+        `/admin/users?page=${serverPage}&limit=${SERVER_PAGE_SIZE}&active=all`
+      );
       return result;
     },
     refetchOnMount: true,
     staleTime: 0,
   });
 
-  const allUsers = React.useMemo(() => usersResponse?.data || [], [usersResponse]);
+  const allUsers = React.useMemo(
+    () => usersResponse?.data || [],
+    [usersResponse]
+  );
   const programOptions = React.useMemo(
-    () => Array.from(new Set((allUsers || []).map((u: any) => u.program).filter(Boolean))).sort(),
+    () =>
+      Array.from(
+        new Set((allUsers || []).map((u: any) => u.program).filter(Boolean))
+      ).sort(),
     [allUsers]
   );
   const departmentOptions = React.useMemo(
-    () => Array.from(new Set((allUsers || []).map((u: any) => u.department).filter(Boolean))).sort(),
+    () =>
+      Array.from(
+        new Set((allUsers || []).map((u: any) => u.department).filter(Boolean))
+      ).sort(),
     [allUsers]
   );
   const cohortOptions = React.useMemo(
-    () => Array.from(new Set((allUsers || []).map((u: any) => u.cohort).filter(Boolean))).sort(),
+    () =>
+      Array.from(
+        new Set((allUsers || []).map((u: any) => u.cohort).filter(Boolean))
+      ).sort(),
     [allUsers]
   );
-  
+
   const students = React.useMemo(() => {
     return allUsers.filter((user) => user.role === "student");
   }, [allUsers]);
@@ -201,7 +237,15 @@ export function CreateStudents() {
   });
 
   const updateStudentMutation = useMutation({
-    mutationFn: (payload: { id: string; first_name: string; last_name: string; email: string; program?: string; department?: string; cohort?: string; }) =>
+    mutationFn: (payload: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      program?: string;
+      department?: string;
+      cohort?: string;
+    }) =>
       api(`/admin/users/${payload.id}`, {
         method: "PUT",
         body: JSON.stringify({
@@ -232,7 +276,8 @@ export function CreateStudents() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       refetchStudents();
     },
-    onError: (err: any) => alert(err?.message || "Failed to update active status"),
+    onError: (err: any) =>
+      alert(err?.message || "Failed to update active status"),
   });
 
   const [pendingResetId, setPendingResetId] = React.useState<string | null>(
@@ -301,7 +346,8 @@ export function CreateStudents() {
       if (activeFilter === "active" && s.is_active === false) return false;
       if (activeFilter === "inactive" && s.is_active !== false) return false;
       if (filterProgram && (s.program || "") !== filterProgram) return false;
-      if (filterDepartment && (s.department || "") !== filterDepartment) return false;
+      if (filterDepartment && (s.department || "") !== filterDepartment)
+        return false;
       if (filterCohort && (s.cohort || "") !== filterCohort) return false;
       return true;
     });
@@ -313,7 +359,16 @@ export function CreateStudents() {
       return 0;
     });
     return sorted;
-  }, [normalizedStudents, searchTerm, sortField, sortDirection, activeFilter, filterProgram, filterDepartment, filterCohort]);
+  }, [
+    normalizedStudents,
+    searchTerm,
+    sortField,
+    sortDirection,
+    activeFilter,
+    filterProgram,
+    filterDepartment,
+    filterCohort,
+  ]);
 
   const totalPages = Math.max(
     1,
@@ -356,7 +411,14 @@ export function CreateStudents() {
     );
   };
 
-  console.log("[CreateStudents] Render - Loading:", studentsLoading, "Error:", studentsError, "Paginated:", paginatedStudents.length);
+  console.log(
+    "[CreateStudents] Render - Loading:",
+    studentsLoading,
+    "Error:",
+    studentsError,
+    "Paginated:",
+    paginatedStudents.length
+  );
 
   return (
     <div className="space-y-6">
@@ -498,14 +560,29 @@ export function CreateStudents() {
               <label className="mb-1 block text-xs text-muted-foreground">
                 {t("admin.forms.active_state", { defaultValue: "Status" })}
               </label>
-              <Select value={activeFilter} onValueChange={(v: any) => setActiveFilter(v)}>
+              <Select
+                value={activeFilter}
+                onValueChange={(v: any) => setActiveFilter(v)}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("admin.forms.status_all", { defaultValue: "All" })} />
+                  <SelectValue
+                    placeholder={t("admin.forms.status_all", {
+                      defaultValue: "All",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t("admin.forms.status_all", { defaultValue: "All" })}</SelectItem>
-                  <SelectItem value="active">{t("admin.forms.status_active", { defaultValue: "Active" })}</SelectItem>
-                  <SelectItem value="inactive">{t("admin.forms.status_inactive", { defaultValue: "Inactive" })}</SelectItem>
+                  <SelectItem value="all">
+                    {t("admin.forms.status_all", { defaultValue: "All" })}
+                  </SelectItem>
+                  <SelectItem value="active">
+                    {t("admin.forms.status_active", { defaultValue: "Active" })}
+                  </SelectItem>
+                  <SelectItem value="inactive">
+                    {t("admin.forms.status_inactive", {
+                      defaultValue: "Inactive",
+                    })}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -520,14 +597,22 @@ export function CreateStudents() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("admin.forms.all_programs", { defaultValue: "All programs" })} />
+                  <SelectValue
+                    placeholder={t("admin.forms.all_programs", {
+                      defaultValue: "All programs",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all_programs__">
-                    {t("admin.forms.all_programs", { defaultValue: "All programs" })}
+                    {t("admin.forms.all_programs", {
+                      defaultValue: "All programs",
+                    })}
                   </SelectItem>
                   {programOptions.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -543,14 +628,22 @@ export function CreateStudents() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("admin.forms.all_departments", { defaultValue: "All departments" })} />
+                  <SelectValue
+                    placeholder={t("admin.forms.all_departments", {
+                      defaultValue: "All departments",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all_departments__">
-                    {t("admin.forms.all_departments", { defaultValue: "All departments" })}
+                    {t("admin.forms.all_departments", {
+                      defaultValue: "All departments",
+                    })}
                   </SelectItem>
                   {departmentOptions.map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -566,14 +659,22 @@ export function CreateStudents() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })} />
+                  <SelectValue
+                    placeholder={t("admin.forms.all_cohorts", {
+                      defaultValue: "All cohorts",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all_cohorts__">
-                    {t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })}
+                    {t("admin.forms.all_cohorts", {
+                      defaultValue: "All cohorts",
+                    })}
                   </SelectItem>
                   {cohortOptions.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -756,13 +857,17 @@ export function CreateStudents() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => openEdit(student)}
-                                aria-label={t("admin.forms.edit_student", { defaultValue: "Edit" })}
+                                aria-label={t("admin.forms.edit_student", {
+                                  defaultValue: "Edit",
+                                })}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {t("admin.forms.edit_student", { defaultValue: "Edit" })}
+                              {t("admin.forms.edit_student", {
+                                defaultValue: "Edit",
+                              })}
                             </TooltipContent>
                           </Tooltip>
                           {student.is_active ? (
@@ -772,9 +877,12 @@ export function CreateStudents() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => handleDeactivate(student)}
-                                  aria-label={t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                                  aria-label={t("admin.forms.delete_student", {
+                                    defaultValue: "Deactivate",
+                                  })}
                                 >
-                                  {pendingDeleteId === student.id && setActiveMutation.isPending ? (
+                                  {pendingDeleteId === student.id &&
+                                  setActiveMutation.isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
                                     <Trash2 className="h-4 w-4" />
@@ -782,7 +890,9 @@ export function CreateStudents() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                                {t("admin.forms.delete_student", {
+                                  defaultValue: "Deactivate",
+                                })}
                               </TooltipContent>
                             </Tooltip>
                           ) : (
@@ -792,9 +902,12 @@ export function CreateStudents() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => handleActivate(student)}
-                                  aria-label={t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
+                                  aria-label={t("admin.forms.mark_active", {
+                                    defaultValue: "Mark Active",
+                                  })}
                                 >
-                                  {pendingActiveId === student.id && setActiveMutation.isPending ? (
+                                  {pendingActiveId === student.id &&
+                                  setActiveMutation.isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
                                     <CheckCircle className="h-4 w-4 text-emerald-600" />
@@ -802,7 +915,9 @@ export function CreateStudents() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
+                                {t("admin.forms.mark_active", {
+                                  defaultValue: "Mark Active",
+                                })}
                               </TooltipContent>
                             </Tooltip>
                           )}
@@ -835,7 +950,9 @@ export function CreateStudents() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setClientPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setClientPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="gap-2"
               >
@@ -1045,7 +1162,9 @@ export function CreateStudents() {
         message={(() => {
           const st = confirmState.student;
           const name = st?.name || "";
-          const details = st ? `${st.username || "—"} · ${st.email || "—"}` : "";
+          const details = st
+            ? `${st.username || "—"} · ${st.email || "—"}`
+            : "";
           if (confirmState.kind === "reset") {
             const base = t("admin.review.confirm_reset", {
               defaultValue:
@@ -1115,17 +1234,26 @@ export function CreateStudents() {
       />
 
       {/* Edit Student Modal */}
-      <Modal open={editModal.open} onClose={() => setEditModal({ open: false, student: null })}>
+      <Modal
+        open={editModal.open}
+        onClose={() => setEditModal({ open: false, student: null })}
+      >
         {editModal.student && (
           <div className="max-w-2xl max-h-[85vh] overflow-y-auto p-1">
             <Card>
               <CardHeader className="flex flex-row items-start justify-between gap-2">
                 <div>
                   <CardTitle>
-                    {t("admin.forms.edit_student", { defaultValue: "Edit Student" })}
+                    {t("admin.forms.edit_student", {
+                      defaultValue: "Edit Student",
+                    })}
                   </CardTitle>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setEditModal({ open: false, student: null })}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEditModal({ open: false, student: null })}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -1152,7 +1280,23 @@ function splitName(name?: string) {
   return { first: parts[0], last: parts.slice(1).join(" ") };
 }
 
-function EditStudentForm({ student, onSubmit, busy }: { student: any; onSubmit: (p: { id: string; first_name: string; last_name: string; email: string; program?: string; department?: string; cohort?: string; }) => void; busy?: boolean; }) {
+function EditStudentForm({
+  student,
+  onSubmit,
+  busy,
+}: {
+  student: any;
+  onSubmit: (p: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    program?: string;
+    department?: string;
+    cohort?: string;
+  }) => void;
+  busy?: boolean;
+}) {
   const { t } = useTranslation("common");
   const { first, last } = splitName(student.name);
   const [firstName, setFirst] = React.useState(first);
@@ -1167,18 +1311,59 @@ function EditStudentForm({ student, onSubmit, busy }: { student: any; onSubmit: 
       className="grid grid-cols-1 gap-4 md:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit({ id: student.id, first_name: firstName, last_name: lastName, email, program, department, cohort });
+        onSubmit({
+          id: student.id,
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          program,
+          department,
+          cohort,
+        });
       }}
     >
-      <Input placeholder={t("admin.forms.first_name", { defaultValue: "First name" })} value={firstName} onChange={(e) => setFirst(e.target.value)} />
-      <Input placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })} value={lastName} onChange={(e) => setLast(e.target.value)} />
-      <Input type="email" placeholder={t("admin.forms.email_optional", { defaultValue: "Email" })} value={email} onChange={(e) => setEmail(e.target.value)} />
-      <Input placeholder={t("admin.forms.program", { defaultValue: "Program" })} value={program} onChange={(e) => setProgram(e.target.value)} />
-      <Input placeholder={t("admin.forms.department", { defaultValue: "Department" })} value={department} onChange={(e) => setDepartment(e.target.value)} />
-      <Input placeholder={t("admin.forms.cohort", { defaultValue: "Cohort" })} value={cohort} onChange={(e) => setCohort(e.target.value)} />
+      <Input
+        placeholder={t("admin.forms.first_name", {
+          defaultValue: "First name",
+        })}
+        value={firstName}
+        onChange={(e) => setFirst(e.target.value)}
+      />
+      <Input
+        placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })}
+        value={lastName}
+        onChange={(e) => setLast(e.target.value)}
+      />
+      <Input
+        type="email"
+        placeholder={t("admin.forms.email_optional", { defaultValue: "Email" })}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <Input
+        placeholder={t("admin.forms.program", { defaultValue: "Program" })}
+        value={program}
+        onChange={(e) => setProgram(e.target.value)}
+      />
+      <Input
+        placeholder={t("admin.forms.department", {
+          defaultValue: "Department",
+        })}
+        value={department}
+        onChange={(e) => setDepartment(e.target.value)}
+      />
+      <Input
+        placeholder={t("admin.forms.cohort", { defaultValue: "Cohort" })}
+        value={cohort}
+        onChange={(e) => setCohort(e.target.value)}
+      />
       <div className="md:col-span-2 flex gap-2 pt-2">
         <Button type="submit" disabled={busy} className="w-full">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save" })}
+          {busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            t("common.save", { defaultValue: "Save" })
+          )}
         </Button>
       </div>
     </form>
