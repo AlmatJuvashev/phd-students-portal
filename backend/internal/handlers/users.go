@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -250,7 +249,8 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 	query := base + where + " ORDER BY last_name LIMIT 200"
 	err := h.db.Select(&rows, query, args...)
 	if err != nil {
-		log.Printf("[ListUsers] ERROR executing query: %v", err)
+		c.JSON(500, gin.H{"error": "failed to fetch users"})
+		return
 	}
 	c.JSON(200, rows)
 }
