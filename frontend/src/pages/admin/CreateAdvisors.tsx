@@ -392,7 +392,7 @@ export function CreateAdvisors() {
                           {advisor.is_active !== false ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeactivate(advisor)}>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => handleDeactivate(advisor)}>
                                   {pendingActiveId === advisor.id && setActiveMutation.isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
