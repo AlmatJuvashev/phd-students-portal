@@ -20,7 +20,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle } from "lucide-react";
+import { ConfirmModal } from "@/features/forms/ConfirmModal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Form = {
   first_name: string;
@@ -35,6 +37,7 @@ type UserRow = {
   username?: string;
   role: string;
   created_at?: string;
+  is_active?: boolean;
 };
 type PaginatedResponse = {
   data: UserRow[];
@@ -60,6 +63,9 @@ export function CreateAdmins() {
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
   const [pendingResetId, setPendingResetId] = React.useState<string | null>(null);
   const [page, setPage] = React.useState(1);
+  const [pendingActiveId, setPendingActiveId] = React.useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = React.useState<"all" | "active" | "inactive">("all");
+  const [confirmState, setConfirmState] = React.useState<{ open: boolean; kind: "reset" | "deactivate" | "activate" | null; admin: UserRow | null }>({ open: false, kind: null, admin: null });
   const PAGE_SIZE = 10;
   const {
     register,
@@ -95,19 +101,15 @@ export function CreateAdmins() {
   };
 
   const handleReset = (admin: UserRow) => {
-    if (
-      confirm(
-        t("admin.review.confirm_reset", {
-          defaultValue:
-            "Reset this user's password? They will need the new temporary password to login.",
-        })
-      )
-    ) {
-      setPendingResetId(admin.id);
-      resetPasswordMutation.mutate(admin.id, {
-        onSettled: () => setPendingResetId(null),
-      });
-    }
+    setConfirmState({ open: true, kind: "reset", admin });
+  };
+
+  const handleDeactivate = (admin: UserRow) => {
+    setConfirmState({ open: true, kind: "deactivate", admin });
+  };
+
+  const handleActivate = (admin: UserRow) => {
+    setConfirmState({ open: true, kind: "activate", admin });
   };
 
   const formatDate = (value?: string) => {
@@ -127,14 +129,19 @@ export function CreateAdmins() {
             .includes(term)
         )
       : admins;
-    return [...filtered].sort((a, b) => {
+    const filteredByStatus = filtered.filter((admin) => {
+      if (activeFilter === "active" && admin.is_active === false) return false;
+      if (activeFilter === "inactive" && admin.is_active !== false) return false;
+      return true;
+    });
+    return [...filteredByStatus].sort((a, b) => {
       const aVal = (a[sortField] || "").toString().toLowerCase();
       const bVal = (b[sortField] || "").toString().toLowerCase();
       if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
       if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-  }, [admins, searchTerm, sortField, sortDirection]);
+  }, [admins, searchTerm, sortField, sortDirection, activeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAdmins.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -145,7 +152,7 @@ export function CreateAdmins() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [searchTerm, sortField, sortDirection, admins.length]);
+  }, [searchTerm, sortField, sortDirection, admins.length, activeFilter]);
 
   const handleSort = (field: typeof sortField) => {
     if (sortField === field) {
@@ -178,6 +185,19 @@ export function CreateAdmins() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
     onError: (err: any) => alert(err?.message || "Failed to reset password"),
+  });
+
+  const setActiveMutation = useMutation({
+    mutationFn: (payload: { id: string; active: boolean }) =>
+      api(`/admin/users/${payload.id}/active`, {
+        method: "PATCH",
+        body: JSON.stringify({ active: payload.active }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      refetch();
+    },
+    onError: (err: any) => alert(err?.message || "Failed to update status"),
   });
 
   async function onSubmit(data: Form) {
@@ -283,6 +303,23 @@ export function CreateAdmins() {
               />
             </div>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {t("admin.forms.active_state", { defaultValue: "Status" })}
+              </label>
+              <Select value={activeFilter} onValueChange={(v: any) => setActiveFilter(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("admin.forms.status_all", { defaultValue: "All" })} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("admin.forms.status_all", { defaultValue: "All" })}</SelectItem>
+                  <SelectItem value="active">{t("admin.forms.status_active", { defaultValue: "Active" })}</SelectItem>
+                  <SelectItem value="inactive">{t("admin.forms.status_inactive", { defaultValue: "Inactive" })}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="max-h-[60vh] overflow-auto rounded-md border border-border/50">
@@ -378,6 +415,45 @@ export function CreateAdmins() {
                               {t('admin.review.reset_password','Reset password')}
                             </TooltipContent>
                           </Tooltip>
+                          {admin.is_active !== false ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeactivate(admin)}
+                                >
+                                  {pendingActiveId === admin.id && setActiveMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleActivate(admin)}
+                                >
+                                  {pendingActiveId === admin.id && setActiveMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t("admin.forms.mark_active", { defaultValue: "Activate" })}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </TooltipProvider>
                       </td>
                     </tr>
@@ -416,6 +492,71 @@ export function CreateAdmins() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmModal
+        open={confirmState.open}
+        onOpenChange={(open) => setConfirmState((s) => ({ ...s, open }))}
+        message={(() => {
+          const adm = confirmState.admin;
+          if (!adm) return "";
+          const details = `${adm.username || "—"} · ${adm.email || "—"}`;
+          if (confirmState.kind === "reset") {
+            return `${t("admin.review.confirm_reset",{defaultValue:"Reset this user's password?"})}\n\n${adm.name} — ${details}`;
+          }
+          if (confirmState.kind === "deactivate") {
+            return `${t("admin.forms.confirm_deactivate_named",{defaultValue:"Deactivate this user?"})}\n\n${adm.name} — ${details}`;
+          }
+          if (confirmState.kind === "activate") {
+            return `${t("admin.forms.confirm_activate_named",{defaultValue:"Activate this user?"})}\n\n${adm.name} — ${details}`;
+          }
+          return "";
+        })()}
+        confirmLabel={t("common.confirm","Confirm")}
+        cancelLabel={t("common.cancel","Cancel")}
+        busy={
+          (confirmState.kind === "reset" && resetPasswordMutation.isPending) ||
+          (confirmState.kind !== "reset" && setActiveMutation.isPending)
+        }
+        onConfirm={() => {
+          const adm = confirmState.admin;
+          if (!adm) return;
+          if (confirmState.kind === "reset") {
+            setPendingResetId(adm.id);
+            resetPasswordMutation.mutate(adm.id, {
+              onSettled: () => {
+                setPendingResetId(null);
+                setConfirmState({ open: false, kind: null, admin: null });
+              },
+            });
+            return;
+          }
+          if (confirmState.kind === "deactivate") {
+            setPendingActiveId(adm.id);
+            setActiveMutation.mutate(
+              { id: adm.id, active: false },
+              {
+                onSettled: () => {
+                  setPendingActiveId(null);
+                  setConfirmState({ open: false, kind: null, admin: null });
+                },
+              }
+            );
+            return;
+          }
+          if (confirmState.kind === "activate") {
+            setPendingActiveId(adm.id);
+            setActiveMutation.mutate(
+              { id: adm.id, active: true },
+              {
+                onSettled: () => {
+                  setPendingActiveId(null);
+                  setConfirmState({ open: false, kind: null, admin: null });
+                },
+              }
+            );
+          }
+        }}
+      />
     </div>
   );
 }
