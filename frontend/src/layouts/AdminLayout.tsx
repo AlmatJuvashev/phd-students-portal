@@ -2,23 +2,49 @@ import React from "react";
 import { Outlet, NavLink, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Menu, LayoutDashboard, Users, UserPlus, UserCog, Monitor } from "lucide-react";
+import {
+  Menu,
+  LayoutDashboard,
+  Users,
+  UserPlus,
+  UserCog,
+  Monitor,
+  Bell,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/api/client";
+import { Badge } from "@/components/ui/badge";
 
 function SidebarNav({ collapsed }: { collapsed?: boolean }) {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation("common");
   const { user } = useAuth();
   const location = useLocation();
   const isActive = (to: string) => location.pathname === to;
   const canSeeAdmins = user?.role === "superadmin";
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
+  // Fetch unread notifications count
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ["admin", "notifications", "unread-count"],
+    queryFn: () => api("/admin/notifications/unread-count"),
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  const unreadCount = unreadData?.count || 0;
+
   return (
-    <nav className={cn("p-4 space-y-2", collapsed && "px-2") }>
+    <nav className={cn("p-4 space-y-2", collapsed && "px-2")}>
       {!collapsed && (
-        <div className="text-xs uppercase text-muted-foreground px-2">{t('admin.sidebar.core','Core')}</div>
+        <div className="text-xs uppercase text-muted-foreground px-2">
+          {t("admin.sidebar.core", "Core")}
+        </div>
       )}
       <NavLink
         to="/admin"
@@ -27,10 +53,10 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
           isActive("/admin") && "bg-muted font-medium",
           collapsed && "justify-center px-2"
         )}
-        title={t('admin.sidebar.dashboard','Dashboard')}
+        title={t("admin.sidebar.dashboard", "Dashboard")}
       >
         <LayoutDashboard className="h-4 w-4" />
-        {!collapsed && <span>{t('admin.sidebar.dashboard','Dashboard')}</span>}
+        {!collapsed && <span>{t("admin.sidebar.dashboard", "Dashboard")}</span>}
       </NavLink>
       <NavLink
         to="/admin/students-monitor"
@@ -39,15 +65,47 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
           isActive("/admin/students-monitor") && "bg-muted font-medium",
           collapsed && "justify-center px-2"
         )}
-        title={t('admin.sidebar.students_monitor','Students Monitor')}
+        title={t("admin.sidebar.students_monitor", "Students Monitor")}
       >
         <Monitor className="h-4 w-4" />
-        {!collapsed && <span>{t('admin.sidebar.students_monitor','Students Monitor')}</span>}
+        {!collapsed && (
+          <span>{t("admin.sidebar.students_monitor", "Students Monitor")}</span>
+        )}
+      </NavLink>
+      <NavLink
+        to="/admin/notifications"
+        className={cn(
+          "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted relative",
+          isActive("/admin/notifications") && "bg-muted font-medium",
+          collapsed && "justify-center px-2"
+        )}
+        title={t("admin.sidebar.notifications", "Notifications")}
+      >
+        <div className="relative">
+          <Bell className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <Badge className="absolute -top-2 -right-2 h-4 min-w-4 flex items-center justify-center p-0 text-[10px] bg-red-500 text-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </Badge>
+          )}
+        </div>
+        {!collapsed && (
+          <div className="flex items-center justify-between flex-1">
+            <span>{t("admin.sidebar.notifications", "Notifications")}</span>
+            {unreadCount > 0 && (
+              <Badge className="bg-red-500 text-white text-xs">
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
+        )}
       </NavLink>
       {isAdmin && (
         <>
           {!collapsed && (
-            <div className="text-xs uppercase text-muted-foreground mt-4 px-2">{t('admin.sidebar.management','Management')}</div>
+            <div className="text-xs uppercase text-muted-foreground mt-4 px-2">
+              {t("admin.sidebar.management", "Management")}
+            </div>
           )}
           <NavLink
             to="/admin/create-students"
@@ -56,10 +114,14 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               isActive("/admin/create-students") && "bg-muted font-medium",
               collapsed && "justify-center px-2"
             )}
-            title={t('admin.sidebar.create_students','Manage Students')}
+            title={t("admin.sidebar.create_students", "Manage Students")}
           >
             <Users className="h-4 w-4" />
-            {!collapsed && <span>{t('admin.sidebar.create_students','Manage Students')}</span>}
+            {!collapsed && (
+              <span>
+                {t("admin.sidebar.create_students", "Manage Students")}
+              </span>
+            )}
           </NavLink>
           <NavLink
             to="/admin/create-advisors"
@@ -68,10 +130,14 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               isActive("/admin/create-advisors") && "bg-muted font-medium",
               collapsed && "justify-center px-2"
             )}
-            title={t('admin.sidebar.create_advisors','Manage Advisors')}
+            title={t("admin.sidebar.create_advisors", "Manage Advisors")}
           >
             <UserPlus className="h-4 w-4" />
-            {!collapsed && <span>{t('admin.sidebar.create_advisors','Manage Advisors')}</span>}
+            {!collapsed && (
+              <span>
+                {t("admin.sidebar.create_advisors", "Manage Advisors")}
+              </span>
+            )}
           </NavLink>
         </>
       )}
@@ -83,10 +149,12 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
             isActive("/admin/create-admins") && "bg-muted font-medium",
             collapsed && "justify-center px-2"
           )}
-          title={t('admin.sidebar.create_admins','Manage Admins')}
+          title={t("admin.sidebar.create_admins", "Manage Admins")}
         >
           <UserCog className="h-4 w-4" />
-          {!collapsed && <span>{t('admin.sidebar.create_admins','Manage Admins')}</span>}
+          {!collapsed && (
+            <span>{t("admin.sidebar.create_admins", "Manage Admins")}</span>
+          )}
         </NavLink>
       )}
     </nav>
@@ -94,25 +162,48 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
 }
 
 export function AdminLayout() {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation("common");
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar */}
-      <aside className={cn("hidden md:block border-r bg-background transition-all duration-200", collapsed ? "w-16" : "w-64") }>
-        <div className={cn("h-14 flex items-center border-b", collapsed ? "justify-center" : "px-4 justify-between") }>
-          <div className="font-semibold truncate" title={t('admin.topbar.admin_panel','Admin Panel')}>
-            {collapsed ? "A" : t('admin.topbar.admin_panel','Admin Panel')}
+      <aside
+        className={cn(
+          "hidden md:block border-r bg-background transition-all duration-200",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
+        <div
+          className={cn(
+            "h-14 flex items-center border-b",
+            collapsed ? "justify-center" : "px-4 justify-between"
+          )}
+        >
+          <div
+            className="font-semibold truncate"
+            title={t("admin.topbar.admin_panel", "Admin Panel")}
+          >
+            {collapsed ? "A" : t("admin.topbar.admin_panel", "Admin Panel")}
           </div>
           {!collapsed && (
-            <Button variant="ghost" size="icon" onClick={() => setCollapsed(true)} aria-label={t('common.collapse','Collapse')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCollapsed(true)}
+              aria-label={t("common.collapse", "Collapse")}
+            >
               <span className="text-lg leading-none">«</span>
             </Button>
           )}
           {collapsed && (
-            <Button variant="ghost" size="icon" onClick={() => setCollapsed(false)} aria-label={t('common.expand','Expand')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCollapsed(false)}
+              aria-label={t("common.expand", "Expand")}
+            >
               <span className="text-lg leading-none">»</span>
             </Button>
           )}
@@ -129,23 +220,30 @@ export function AdminLayout() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
-            <SheetTitle className="sr-only">{t('admin.topbar.menu','Menu')}</SheetTitle>
+            <SheetTitle className="sr-only">
+              {t("admin.topbar.menu", "Menu")}
+            </SheetTitle>
             <div className="h-14 flex items-center px-4 border-b font-semibold">
-              {t('admin.topbar.admin_panel','Admin Panel')}
+              {t("admin.topbar.admin_panel", "Admin Panel")}
             </div>
             <SidebarNav />
           </SheetContent>
         </Sheet>
-        <div className="font-semibold">{t('admin.topbar.admin','Admin')}</div>
+        <div className="font-semibold">{t("admin.topbar.admin", "Admin")}</div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
             {user?.role?.toUpperCase()}
           </span>
-          <Link to="/" aria-label={t('admin.topbar.back_to_main','Back to main page')}>
-            <Button variant="ghost" size="sm">{t('admin.topbar.main','Main')}</Button>
+          <Link
+            to="/"
+            aria-label={t("admin.topbar.back_to_main", "Back to main page")}
+          >
+            <Button variant="ghost" size="sm">
+              {t("admin.topbar.main", "Main")}
+            </Button>
           </Link>
           <Button variant="ghost" size="sm" onClick={logout}>
-            {t('nav.logout','Logout')}
+            {t("nav.logout", "Logout")}
           </Button>
         </div>
       </div>
@@ -154,16 +252,24 @@ export function AdminLayout() {
       <section className="flex-1">
         {/* Desktop top bar */}
         <div className="hidden md:flex h-14 items-center justify-between border-b px-6">
-          <div className="text-sm text-muted-foreground">{t('admin.topbar.signed_in_as','Signed in as')} <span className="font-medium">{user?.email}</span></div>
+          <div className="text-sm text-muted-foreground">
+            {t("admin.topbar.signed_in_as", "Signed in as")}{" "}
+            <span className="font-medium">{user?.email}</span>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-xs px-2 py-1 rounded bg-muted">
               {user?.role}
             </span>
-            <Link to="/" aria-label={t('admin.topbar.back_to_main','Back to main page')}>
-              <Button variant="outline" size="sm">{t('admin.topbar.back_to_main_button','Back to main')}</Button>
+            <Link
+              to="/"
+              aria-label={t("admin.topbar.back_to_main", "Back to main page")}
+            >
+              <Button variant="outline" size="sm">
+                {t("admin.topbar.back_to_main_button", "Back to main")}
+              </Button>
             </Link>
             <Button variant="outline" size="sm" onClick={logout}>
-              {t('nav.logout','Logout')}
+              {t("nav.logout", "Logout")}
             </Button>
           </div>
         </div>
