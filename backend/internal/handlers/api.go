@@ -116,6 +116,13 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	admin.PATCH("/users/:id/active", users.SetActive)
 	admin.GET("/student-progress", adminHandler.StudentProgress)
 
+	// Notifications endpoints
+	notifications := NewNotificationsHandler(db)
+	admin.GET("/notifications", notifications.ListNotifications)
+	admin.GET("/notifications/unread-count", notifications.GetUnreadCount)
+	admin.PATCH("/notifications/:id/read", notifications.MarkAsRead)
+	admin.POST("/notifications/read-all", notifications.MarkAllAsRead)
+
 	// Monitor endpoints (admin/advisor access) - extend admin group
 	admin.GET("/monitor/students", adminHandler.MonitorStudents)
 	admin.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
