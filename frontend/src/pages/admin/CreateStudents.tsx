@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmModal } from "@/features/forms/ConfirmModal";
 import {
   Tooltip,
   TooltipContent,
@@ -78,6 +79,8 @@ export function CreateStudents() {
   const [resetInfo, setResetInfo] = React.useState<Creds | null>(null);
   const [editModal, setEditModal] = React.useState<{ open: boolean; student: StudentRow | null }>({ open: false, student: null });
   const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
+  const [pendingActiveId, setPendingActiveId] = React.useState<string | null>(null);
+  const [confirmState, setConfirmState] = React.useState<{ open: boolean; kind: "reset" | "deactivate" | "activate" | null; student: StudentRow | null }>({ open: false, kind: null, student: null });
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortField, setSortField] = React.useState<
     "name" | "username" | "program" | "department" | "cohort" | "created_at"
@@ -239,33 +242,15 @@ export function CreateStudents() {
   };
 
   const handleDeactivate = (student: StudentRow) => {
-    if (
-      confirm(
-        t("admin.forms.confirm_deactivate", { defaultValue: "Deactivate this student?" })
-      )
-    ) {
-      setPendingDeleteId(student.id);
-      setActiveMutation.mutate(
-        { id: student.id, active: false },
-        { onSettled: () => setPendingDeleteId(null) }
-      );
-    }
+    setConfirmState({ open: true, kind: "deactivate", student });
   };
 
   const handleResetPassword = (student: StudentRow) => {
-    if (
-      confirm(
-        t("admin.review.confirm_reset", {
-          defaultValue:
-            "Reset this student's password? They will need the new temporary password to login.",
-        })
-      )
-    ) {
-      setPendingResetId(student.id);
-      resetPasswordMutation.mutate(student.id, {
-        onSettled: () => setPendingResetId(null),
-      });
-    }
+    setConfirmState({ open: true, kind: "reset", student });
+  };
+
+  const handleActivate = (student: StudentRow) => {
+    setConfirmState({ open: true, kind: "activate", student });
   };
 
   const formatDate = (value?: string) => {
@@ -691,10 +676,14 @@ export function CreateStudents() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setActiveMutation.mutate({ id: student.id, active: true })}
+                                onClick={() => handleActivate(student)}
                                 aria-label={t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
                               >
-                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                {pendingActiveId === student.id && setActiveMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                )}
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -932,6 +921,77 @@ export function CreateStudents() {
           </Card>
         </div>
       </Modal>
+
+      {/* Action confirmation modal */}
+      <ConfirmModal
+        open={confirmState.open}
+        onOpenChange={(open) => setConfirmState((s) => ({ ...s, open }))}
+        message={(() => {
+          const name = confirmState.student?.name || "";
+          if (confirmState.kind === "reset") {
+            return t("admin.review.confirm_reset", {
+              defaultValue:
+                "Reset this student's password? They will need the new temporary password to login.",
+            });
+          }
+          if (confirmState.kind === "deactivate") {
+            return t("admin.forms.confirm_deactivate_named", {
+              defaultValue: `Deactivate student ${name}?`,
+            });
+          }
+          if (confirmState.kind === "activate") {
+            return t("admin.forms.confirm_activate_named", {
+              defaultValue: `Mark student ${name} as active?`,
+            });
+          }
+          return "";
+        })()}
+        confirmLabel={t("common.confirm", { defaultValue: "Confirm" })}
+        cancelLabel={t("common.cancel", { defaultValue: "Cancel" })}
+        busy={
+          (confirmState.kind === "reset" && resetPasswordMutation.isPending) ||
+          (confirmState.kind !== "reset" && setActiveMutation.isPending)
+        }
+        onConfirm={() => {
+          const st = confirmState;
+          if (!st.student) return;
+          if (st.kind === "reset") {
+            setPendingResetId(st.student.id);
+            resetPasswordMutation.mutate(st.student.id, {
+              onSettled: () => {
+                setPendingResetId(null);
+                setConfirmState({ open: false, kind: null, student: null });
+              },
+            });
+            return;
+          }
+          if (st.kind === "deactivate") {
+            setPendingDeleteId(st.student.id);
+            setActiveMutation.mutate(
+              { id: st.student.id, active: false },
+              {
+                onSettled: () => {
+                  setPendingDeleteId(null);
+                  setConfirmState({ open: false, kind: null, student: null });
+                },
+              }
+            );
+            return;
+          }
+          if (st.kind === "activate") {
+            setPendingActiveId(st.student.id);
+            setActiveMutation.mutate(
+              { id: st.student.id, active: true },
+              {
+                onSettled: () => {
+                  setPendingActiveId(null);
+                  setConfirmState({ open: false, kind: null, student: null });
+                },
+              }
+            );
+          }
+        }}
+      />
 
       {/* Edit Student Modal */}
       <Modal open={editModal.open} onClose={() => setEditModal({ open: false, student: null })}>
