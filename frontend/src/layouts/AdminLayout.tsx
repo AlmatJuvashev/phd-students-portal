@@ -56,10 +56,10 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               isActive("/admin/create-students") && "bg-muted font-medium",
               collapsed && "justify-center px-2"
             )}
-            title={t('admin.sidebar.create_students','Create Students')}
+            title={t('admin.sidebar.create_students','Manage Students')}
           >
             <Users className="h-4 w-4" />
-            {!collapsed && <span>{t('admin.sidebar.create_students','Create Students')}</span>}
+            {!collapsed && <span>{t('admin.sidebar.create_students','Manage Students')}</span>}
           </NavLink>
           <NavLink
             to="/admin/create-advisors"
@@ -68,10 +68,10 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               isActive("/admin/create-advisors") && "bg-muted font-medium",
               collapsed && "justify-center px-2"
             )}
-            title={t('admin.sidebar.create_advisors','Create Advisors')}
+            title={t('admin.sidebar.create_advisors','Manage Advisors')}
           >
             <UserPlus className="h-4 w-4" />
-            {!collapsed && <span>{t('admin.sidebar.create_advisors','Create Advisors')}</span>}
+            {!collapsed && <span>{t('admin.sidebar.create_advisors','Manage Advisors')}</span>}
           </NavLink>
         </>
       )}
@@ -83,10 +83,10 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
             isActive("/admin/create-admins") && "bg-muted font-medium",
             collapsed && "justify-center px-2"
           )}
-          title={t('admin.sidebar.create_admins','Create Admins')}
+          title={t('admin.sidebar.create_admins','Manage Admins')}
         >
           <UserCog className="h-4 w-4" />
-          {!collapsed && <span>{t('admin.sidebar.create_admins','Create Admins')}</span>}
+          {!collapsed && <span>{t('admin.sidebar.create_admins','Manage Admins')}</span>}
         </NavLink>
       )}
     </nav>

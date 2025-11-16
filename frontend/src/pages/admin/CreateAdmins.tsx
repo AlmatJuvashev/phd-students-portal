@@ -230,8 +230,8 @@ export function CreateAdmins() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">{t('admin.forms.create_admins.title','Create Admins')}</h2>
-        <p className="text-muted-foreground">{t('admin.forms.create_admins.subtitle','Only superadmins can create other admins.')}</p>
+        <h2 className="text-2xl font-bold">{t('admin.forms.create_admins.title','Manage Admins')}</h2>
+        <p className="text-muted-foreground">{t('admin.forms.create_admins.subtitle','Only superadmins can manage other admins.')}</p>
       </div>
       <Card>
         <CardHeader>
