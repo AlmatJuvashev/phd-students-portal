@@ -432,13 +432,13 @@ export function CreateAdvisors() {
           if (!adv) return "";
           const details = `${adv.username || "—"} · ${adv.email || "—"}`;
           if (confirmState.kind === "reset") {
-            return `${t('admin.review.confirm_reset',{defaultValue:\"Reset this user's password?\"})}\n\n${adv.name} — ${details}`;
+            return `${t("admin.review.confirm_reset", { defaultValue: "Reset this user's password?" })}\n\n${adv.name} — ${details}`;
           }
           if (confirmState.kind === "deactivate") {
-            return `${t('admin.forms.confirm_deactivate_named',{defaultValue:\"Deactivate this user?\"})}\n\n${adv.name} — ${details}`;
+            return `${t("admin.forms.confirm_deactivate_named", { defaultValue: "Deactivate this user?" })}\n\n${adv.name} — ${details}`;
           }
           if (confirmState.kind === "activate") {
-            return `${t('admin.forms.confirm_activate_named',{defaultValue:\"Activate this user?\"})}\n\n${adv.name} — ${details}`;
+            return `${t("admin.forms.confirm_activate_named", { defaultValue: "Activate this user?" })}\n\n${adv.name} — ${details}`;
           }
           return "";
         })()}

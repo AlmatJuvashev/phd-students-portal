@@ -501,13 +501,13 @@ export function CreateAdmins() {
           if (!adm) return "";
           const details = `${adm.username || "—"} · ${adm.email || "—"}`;
           if (confirmState.kind === "reset") {
-            return `${t("admin.review.confirm_reset",{defaultValue:"Reset this user's password?"})}\n\n${adm.name} — ${details}`;
+            return `${t("admin.review.confirm_reset", { defaultValue: "Reset this user's password?" })}\n\n${adm.name} — ${details}`;
           }
           if (confirmState.kind === "deactivate") {
-            return `${t("admin.forms.confirm_deactivate_named",{defaultValue:"Deactivate this user?"})}\n\n${adm.name} — ${details}`;
+            return `${t("admin.forms.confirm_deactivate_named", { defaultValue: "Deactivate this user?" })}\n\n${adm.name} — ${details}`;
           }
           if (confirmState.kind === "activate") {
-            return `${t("admin.forms.confirm_activate_named",{defaultValue:"Activate this user?"})}\n\n${adm.name} — ${details}`;
+            return `${t("admin.forms.confirm_activate_named", { defaultValue: "Activate this user?" })}\n\n${adm.name} — ${details}`;
           }
           return "";
         })()}
