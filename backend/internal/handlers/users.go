@@ -221,7 +221,7 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 	q := strings.TrimSpace(c.Query("q"))
 	roleFilter := strings.TrimSpace(c.Query("role"))
 	rows := []listUsersResp{}
-	base := `SELECT u.id,
+	base := `SELECT DISTINCT ON (u.id) u.id,
 	        (u.first_name||' '||u.last_name) AS name,
 	        u.email,
 	        u.role,
@@ -247,7 +247,7 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		}
 		args = append(args, q)
 	}
-	query := base + where + " ORDER BY last_name LIMIT 50"
+	query := base + where + " ORDER BY u.id, last_name LIMIT 100"
 	_ = h.db.Select(&rows, query, args...)
 	c.JSON(200, rows)
 }

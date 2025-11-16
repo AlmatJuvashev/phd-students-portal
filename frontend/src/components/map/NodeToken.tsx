@@ -102,7 +102,8 @@ const stateStyles = {
   under_review: {
     iconBg: "bg-gradient-to-br from-purple-400 to-purple-600",
     iconColor: "text-white",
-    badge: "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300",
+    badge:
+      "bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300",
     ring: "",
     opacity: "",
   },

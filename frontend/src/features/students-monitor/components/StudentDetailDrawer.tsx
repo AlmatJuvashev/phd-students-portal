@@ -321,7 +321,9 @@ export function StudentDetailDrawer({
                 placeholder="Add a comment... Use @ to mention advisors"
                 className="min-h-[80px]"
                 value={comment}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setComment(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setComment(e.target.value)
+                }
               />
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="outline">
