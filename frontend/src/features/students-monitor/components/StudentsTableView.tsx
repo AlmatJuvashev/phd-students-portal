@@ -68,7 +68,7 @@ export function StudentsTableView({
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="border-b bg-muted/30">
+            <thead className="border-b border-border/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
               <tr>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   <Checkbox

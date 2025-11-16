@@ -682,7 +682,7 @@ export function CreateStudents() {
           </div>
           <div className="max-h-[60vh] overflow-auto rounded-md border border-border/50">
             <table className="min-w-full text-sm">
-              <thead className="sticky top-0 z-20 bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <thead className="sticky top-0 z-20 border-b border-border/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-2.5 pr-4 text-left">#</th>
                   <th
