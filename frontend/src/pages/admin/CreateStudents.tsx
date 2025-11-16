@@ -116,6 +116,18 @@ export function CreateStudents() {
   });
 
   const allUsers = React.useMemo(() => usersResponse?.data || [], [usersResponse]);
+  const programOptions = React.useMemo(
+    () => Array.from(new Set((allUsers || []).map((u: any) => u.program).filter(Boolean))).sort(),
+    [allUsers]
+  );
+  const departmentOptions = React.useMemo(
+    () => Array.from(new Set((allUsers || []).map((u: any) => u.department).filter(Boolean))).sort(),
+    [allUsers]
+  );
+  const cohortOptions = React.useMemo(
+    () => Array.from(new Set((allUsers || []).map((u: any) => u.cohort).filter(Boolean))).sort(),
+    [allUsers]
+  );
   
   const students = React.useMemo(() => {
     return allUsers.filter((user) => user.role === "student");
@@ -264,7 +276,7 @@ export function CreateStudents() {
   const filteredStudents = React.useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     const base = normalizedStudents;
-    const filtered = term
+    const filteredBySearch = term
       ? base.filter((student) => {
           const haystack = [
             student.name,
@@ -280,7 +292,15 @@ export function CreateStudents() {
           return haystack.includes(term);
         })
       : base;
-    const sorted = [...filtered].sort((a, b) => {
+    const filtered = filteredBySearch.filter((s: any) => {
+      if (activeFilter === "active" && s.is_active === false) return false;
+      if (activeFilter === "inactive" && s.is_active !== false) return false;
+      if (filterProgram && (s.program || "") !== filterProgram) return false;
+      if (filterDepartment && (s.department || "") !== filterDepartment) return false;
+      if (filterCohort && (s.cohort || "") !== filterCohort) return false;
+      return true;
+    });
+    const sorted = [...filtered].sort((a: any, b: any) => {
       const aVal = (a[sortField] || "").toString().toLowerCase();
       const bVal = (b[sortField] || "").toString().toLowerCase();
       if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
@@ -288,7 +308,7 @@ export function CreateStudents() {
       return 0;
     });
     return sorted;
-  }, [normalizedStudents, searchTerm, sortField, sortDirection]);
+  }, [normalizedStudents, searchTerm, sortField, sortDirection, activeFilter, filterProgram, filterDepartment, filterCohort]);
 
   const totalPages = Math.max(
     1,
@@ -467,6 +487,72 @@ export function CreateStudents() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Filters */}
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {t("admin.forms.active_state", { defaultValue: "Status" })}
+              </label>
+              <Select value={activeFilter} onValueChange={(v: any) => setActiveFilter(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("admin.forms.status_all", { defaultValue: "All" })} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("admin.forms.status_all", { defaultValue: "All" })}</SelectItem>
+                  <SelectItem value="active">{t("admin.forms.status_active", { defaultValue: "Active" })}</SelectItem>
+                  <SelectItem value="inactive">{t("admin.forms.status_inactive", { defaultValue: "Inactive" })}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {t("admin.forms.program", { defaultValue: "Program" })}
+              </label>
+              <Select value={filterProgram} onValueChange={(v: any) => setFilterProgram(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("admin.forms.all_programs", { defaultValue: "All programs" })} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{t("admin.forms.all_programs", { defaultValue: "All programs" })}</SelectItem>
+                  {programOptions.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {t("admin.forms.department", { defaultValue: "Department" })}
+              </label>
+              <Select value={filterDepartment} onValueChange={(v: any) => setFilterDepartment(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("admin.forms.all_departments", { defaultValue: "All departments" })} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{t("admin.forms.all_departments", { defaultValue: "All departments" })}</SelectItem>
+                  {departmentOptions.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {t("admin.forms.cohort", { defaultValue: "Cohort" })}
+              </label>
+              <Select value={filterCohort} onValueChange={(v: any) => setFilterCohort(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })}</SelectItem>
+                  {cohortOptions.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="max-h-[60vh] overflow-auto rounded-md border border-border/50">
             <table className="min-w-full text-sm">
               <thead className="sticky top-0 z-20 bg-card/95 backdrop-blur text-left text-muted-foreground">
