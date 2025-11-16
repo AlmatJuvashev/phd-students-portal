@@ -682,11 +682,11 @@ export function CreateStudents() {
           </div>
           <div className="max-h-[60vh] overflow-auto rounded-md border border-border/50">
             <table className="min-w-full text-sm">
-              <thead className="sticky top-0 z-20 bg-card/95 backdrop-blur text-left text-muted-foreground">
+              <thead className="sticky top-0 z-20 bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-2 pr-4 font-medium">#</th>
+                  <th className="py-2.5 pr-4 text-left">#</th>
                   <th
-                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    className="py-2.5 pr-4 cursor-pointer select-none"
                     onClick={() => handleSort("name")}
                   >
                     <div className="flex items-center">
@@ -695,7 +695,7 @@ export function CreateStudents() {
                     </div>
                   </th>
                   <th
-                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    className="py-2.5 pr-4 cursor-pointer select-none"
                     onClick={() => handleSort("username")}
                   >
                     <div className="flex items-center">
@@ -704,7 +704,7 @@ export function CreateStudents() {
                     </div>
                   </th>
                   <th
-                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    className="py-2.5 pr-4 cursor-pointer select-none"
                     onClick={() => handleSort("program")}
                   >
                     <div className="flex items-center">
@@ -713,7 +713,7 @@ export function CreateStudents() {
                     </div>
                   </th>
                   <th
-                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    className="py-2.5 pr-4 cursor-pointer select-none"
                     onClick={() => handleSort("department")}
                   >
                     <div className="flex items-center">
@@ -724,7 +724,7 @@ export function CreateStudents() {
                     </div>
                   </th>
                   <th
-                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    className="py-2.5 pr-4 cursor-pointer select-none"
                     onClick={() => handleSort("cohort")}
                   >
                     <div className="flex items-center">
@@ -733,7 +733,7 @@ export function CreateStudents() {
                     </div>
                   </th>
                   <th
-                    className="py-2 pr-4 font-medium cursor-pointer select-none"
+                    className="py-2.5 pr-4 cursor-pointer select-none"
                     onClick={() => handleSort("created_at")}
                   >
                     <div className="flex items-center">
@@ -743,7 +743,7 @@ export function CreateStudents() {
                       {renderSortIcon("created_at")}
                     </div>
                   </th>
-                  <th className="py-2 text-right font-medium">
+                  <th className="py-2.5 pr-4 text-right">
                     {t("table.actions", { defaultValue: "Actions" })}
                   </th>
                 </tr>
@@ -796,11 +796,14 @@ export function CreateStudents() {
                   )}
                 {!studentsLoading &&
                   !studentsError &&
-                  paginatedStudents.map((student, idx) => (
-                    <tr
-                      key={student.id}
-                      className="border-t border-border/60 text-foreground"
-                    >
+                  paginatedStudents.map((student, idx) => {
+                    const rowClass =
+                      idx % 2 === 0 ? "bg-background" : "bg-muted/10";
+                    return (
+                      <tr
+                        key={student.id}
+                        className={`border-t border-border/60 text-foreground transition-colors hover:bg-muted/30 ${rowClass}`}
+                      >
                       <td className="py-3 pr-4 align-top text-muted-foreground">
                         {(currentPage - 1) * CLIENT_PAGE_SIZE + idx + 1}
                       </td>
@@ -927,7 +930,7 @@ export function CreateStudents() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );})}
               </tbody>
             </table>
           </div>
