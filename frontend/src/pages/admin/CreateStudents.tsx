@@ -364,7 +364,7 @@ export function CreateStudents() {
         <div>
           <h2 className="text-2xl font-bold">
             {t("admin.forms.create_students_title", {
-              defaultValue: "Create Students",
+              defaultValue: "Manage Students",
             })}
           </h2>
           <p className="text-sm text-muted-foreground">

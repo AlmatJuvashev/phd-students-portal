@@ -194,7 +194,7 @@ export function CreateAdvisors() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">{t('admin.forms.create_advisor.title','Create Advisor')}</h2>
+        <h2 className="text-2xl font-bold">{t('admin.forms.create_advisor.title','Manage Advisors')}</h2>
         <p className="text-muted-foreground">{t('admin.forms.create_advisor.subtitle','Add a new academic advisor.')}</p>
       </div>
       <Card>

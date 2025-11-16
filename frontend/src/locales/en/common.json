@@ -118,9 +118,9 @@
       "dashboard": "Dashboard",
       "student_progress": "Student Progress",
       "students_monitor": "Students Monitor",
-      "create_students": "Create Students",
-      "create_advisors": "Create Advisors",
-      "create_admins": "Create Admins"
+      "create_students": "Manage Students",
+      "create_advisors": "Manage Advisors",
+      "create_admins": "Manage Admins"
     },
     "topbar": {
       "admin_panel": "Admin Panel",
@@ -162,7 +162,7 @@
       "reset_password": "Reset password"
     },
     "forms": {
-      "create_students_title": "Create Students",
+      "create_students_title": "Manage Students",
       "create_students_subtitle": "Invite new students, assign advisors, and manage existing accounts.",
       "students_table": "Students",
       "students_summary": "{{count}} students · page {{page}} of {{pages}}",
@@ -200,6 +200,20 @@
         "heading": "Student Details",
         "submit": "Create Student",
         "success": "Student Created"
+      },
+      "create_advisor": {
+        "title": "Manage Advisors",
+        "subtitle": "Add or update academic advisors.",
+        "heading": "Advisor Details",
+        "submit": "Create Advisor",
+        "success": "Advisor Created"
+      },
+      "create_admins": {
+        "title": "Manage Admins",
+        "subtitle": "Only superadmins can manage other admins.",
+        "heading": "Admin Details",
+        "submit": "Create Admin",
+        "success": "Admin Created"
       }
     }
   },
