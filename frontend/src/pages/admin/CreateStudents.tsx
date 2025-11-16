@@ -84,14 +84,22 @@ export function CreateStudents() {
     refetch: refetchStudents,
   } = useQuery<StudentRow[]>({
     queryKey: ["admin", "users"],
-    queryFn: () => api(`/admin/users`),
+    queryFn: async () => {
+      console.log("[CreateStudents] Fetching users from /admin/users");
+      const result = await api(`/admin/users`);
+      console.log("[CreateStudents] Received users:", result?.length, "users");
+      return result;
+    },
     refetchOnMount: true, // Always refetch on mount to show latest data
+    staleTime: 0, // Consider data stale immediately
   });
 
-  const students = React.useMemo(
-    () => allUsers.filter((user) => user.role === "student"),
-    [allUsers]
-  );
+  const students = React.useMemo(() => {
+    const filtered = allUsers.filter((user) => user.role === "student");
+    console.log("[CreateStudents] Total users:", allUsers.length, "Students:", filtered.length);
+    return filtered;
+  }, [allUsers]);
+  
   const normalizedStudents = React.useMemo(() => students ?? [], [students]);
 
   const {
@@ -126,15 +134,20 @@ export function CreateStudents() {
         body: JSON.stringify({ ...payload, role: "student" }),
       }),
     onSuccess: (result: Creds) => {
+      console.log("[CreateStudents] Student created successfully:", result);
       setCreated(result);
       setShowModal(false);
       reset();
       setAdvisorSearch("");
       setSelectedAdvisors([]);
+      console.log("[CreateStudents] Invalidating queries and refetching...");
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      refetchStudents(); // Explicitly refetch to update the table
+      refetchStudents().then(() => {
+        console.log("[CreateStudents] Refetch complete");
+      });
     },
     onError: (err: any) => {
+      console.error("[CreateStudents] Error creating student:", err);
       alert(err?.message || "Failed to create student");
     },
   });
