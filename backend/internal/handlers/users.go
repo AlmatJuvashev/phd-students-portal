@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
@@ -90,10 +92,15 @@ type resetPwReq struct {
 }
 
 type updateUserReq struct {
-	FirstName string `json:"first_name" binding:"required"`
-	LastName  string `json:"last_name" binding:"required"`
-	Email     string `json:"email" binding:"required,email"`
-	Role      string `json:"role" binding:"required,oneof=student advisor chair admin"`
+    FirstName string `json:"first_name" binding:"required"`
+    LastName  string `json:"last_name" binding:"required"`
+    Email     string `json:"email" binding:"required,email"`
+    Role      string `json:"role" binding:"required,oneof=student advisor chair admin"`
+    // Optional student profile fields (ignored for non-students)
+    Phone      string `json:"phone" binding:"omitempty"`
+    Program    string `json:"program" binding:"omitempty"`
+    Department string `json:"department" binding:"omitempty"`
+    Cohort     string `json:"cohort" binding:"omitempty"`
 }
 
 // UpdateUser allows admin to update user details (except superadmin)
@@ -124,8 +131,10 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	_, err = h.db.Exec(`UPDATE users SET first_name=$1, last_name=$2, email=$3, role=$4, updated_at=now() WHERE id=$5`,
-		req.FirstName, req.LastName, req.Email, req.Role, id)
+    _, err = h.db.Exec(`UPDATE users SET first_name=$1, last_name=$2, email=$3, role=$4,
+        phone=$5, program=$6, department=$7, cohort=$8, updated_at=now() WHERE id=$9`,
+        req.FirstName, req.LastName, req.Email, req.Role,
+        nullable(req.Phone), nullable(req.Program), nullable(req.Department), nullable(req.Cohort), id)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "update failed"})
 		return
@@ -216,22 +225,35 @@ type listUsersResp struct {
 	CreatedAt  string `db:"created_at" json:"created_at"`
 }
 
-// ListUsers (admin/superadmin): basic list for mentions/autocomplete
+type listUsersResponse struct {
+	Data       []listUsersResp `json:"data"`
+	Total      int             `json:"total"`
+	Page       int             `json:"page"`
+	Limit      int             `json:"limit"`
+	TotalPages int             `json:"total_pages"`
+}
+
+// ListUsers (admin/superadmin): basic list for mentions/autocomplete with pagination
 func (h *UsersHandler) ListUsers(c *gin.Context) {
 	q := strings.TrimSpace(c.Query("q"))
 	roleFilter := strings.TrimSpace(c.Query("role"))
-	rows := []listUsersResp{}
-	base := `SELECT u.id,
-	        (u.first_name||' '||u.last_name) AS name,
-	        COALESCE(u.email, '') AS email,
-	        u.role,
-	        COALESCE(u.username, '') AS username,
-	        COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS program,
-	        COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS department,
-	        COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS cohort,
-	        to_char(u.created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') AS created_at
-	        FROM users u
-	        WHERE u.is_active=true`
+	
+	// Pagination parameters
+	page := 1
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	limit := 50
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 200 {
+			limit = parsed
+		}
+	}
+	offset := (page - 1) * limit
+
+	// Build WHERE clause for filtering
 	where := ""
 	args := []any{}
 	if roleFilter != "" {
@@ -239,20 +261,51 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		args = append(args, roleFilter)
 	}
 	if q != "" {
-		if len(args) == 0 {
-			where += " AND (first_name ILIKE '%'||$1||'%' OR last_name ILIKE '%'||$1||'%' OR email ILIKE '%'||$1||'%')"
-		} else {
-			where += " AND (first_name ILIKE '%'||$2||'%' OR last_name ILIKE '%'||$2||'%' OR email ILIKE '%'||$2||'%')"
-		}
+		paramNum := len(args) + 1
+		where += fmt.Sprintf(" AND (first_name ILIKE '%%'||$%d||'%%' OR last_name ILIKE '%%'||$%d||'%%' OR email ILIKE '%%'||$%d||'%%')", paramNum, paramNum, paramNum)
 		args = append(args, q)
 	}
-	query := base + where + " ORDER BY last_name LIMIT 200"
-	err := h.db.Select(&rows, query, args...)
+
+	// Get total count
+	var total int
+	countQuery := `SELECT COUNT(*) FROM users u WHERE u.is_active=true` + where
+	err := h.db.Get(&total, countQuery, args...)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to count users"})
+		return
+	}
+
+	// Get paginated data
+	rows := []listUsersResp{}
+	base := `SELECT u.id,
+	        (u.first_name||' '||u.last_name) AS name,
+	        COALESCE(u.email, '') AS email,
+	        u.role,
+	        COALESCE(u.username, '') AS username,
+	        COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS program,
+	        COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS department,
+	        COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS cohort,
+	        to_char(u.created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') AS created_at
+	        FROM users u
+	        WHERE u.is_active=true`
+	
+	query := base + where + fmt.Sprintf(" ORDER BY last_name LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
+	args = append(args, limit, offset)
+	
+	err = h.db.Select(&rows, query, args...)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to fetch users"})
 		return
 	}
-	c.JSON(200, rows)
+
+	totalPages := (total + limit - 1) / limit
+	c.JSON(200, listUsersResponse{
+		Data:       rows,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+	})
 }
 
 // nullable returns nil for empty string, used for optional fields
