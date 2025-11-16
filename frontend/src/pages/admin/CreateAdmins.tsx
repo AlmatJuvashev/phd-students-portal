@@ -36,6 +36,13 @@ type UserRow = {
   role: string;
   created_at?: string;
 };
+type PaginatedResponse = {
+  data: UserRow[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+};
 
 export function CreateAdmins() {
   const { user } = useAuth();
@@ -62,18 +69,19 @@ export function CreateAdmins() {
   } = useForm<Form>({ resolver: zodResolver(Schema) });
 
   const {
-    data: allUsers = [],
+    data: usersResponse,
     isLoading,
     isError,
     refetch,
-  } = useQuery<UserRow[]>({
-    queryKey: ["admin", "users"],
-    queryFn: () => api("/admin/users"),
+  } = useQuery<PaginatedResponse>({
+    queryKey: ["admin", "users", "admins"],
+    queryFn: () => api("/admin/users?role=admin&limit=200&active=all"),
+    enabled: !user || user.role === "superadmin",
   });
 
   const admins = React.useMemo(
-    () => allUsers.filter((u) => u.role === "admin"),
-    [allUsers]
+    () => usersResponse?.data || [],
+    [usersResponse]
   );
 
   if (user && user.role !== "superadmin") {

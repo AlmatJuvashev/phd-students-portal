@@ -28,6 +28,14 @@ type UserRow = {
   email: string;
   username?: string;
   created_at?: string;
+  role?: string;
+};
+type PaginatedResponse = {
+  data: UserRow[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
 };
 
 export function CreateAdvisors() {
@@ -43,15 +51,12 @@ export function CreateAdvisors() {
   const PAGE_SIZE = 10;
   const { register, handleSubmit, formState: { errors }, reset } = useForm<Form>({ resolver: zodResolver(Schema) });
 
-  const { data: allUsers = [], isLoading, isError, refetch } = useQuery<UserRow[]>({
-    queryKey: ["admin", "users"],
-    queryFn: () => api("/admin/users"),
+  const { data: usersResponse, isLoading, isError, refetch } = useQuery<PaginatedResponse>({
+    queryKey: ["admin", "users", "advisors"],
+    queryFn: () => api("/admin/users?role=advisor&limit=200&active=all"),
   });
 
-  const advisors = React.useMemo(
-    () => allUsers.filter((u) => u.role === "advisor"),
-    [allUsers]
-  );
+  const advisors = React.useMemo(() => usersResponse?.data || [], [usersResponse]);
 
   const createAdvisorMutation = useMutation({
     mutationFn: (payload: Form) =>
