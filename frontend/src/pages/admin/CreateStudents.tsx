@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -91,6 +92,10 @@ export function CreateStudents() {
   );
   const [serverPage, setServerPage] = React.useState(1);
   const [clientPage, setClientPage] = React.useState(1);
+  const [activeFilter, setActiveFilter] = React.useState<"all" | "active" | "inactive">("all");
+  const [filterProgram, setFilterProgram] = React.useState<string>("");
+  const [filterDepartment, setFilterDepartment] = React.useState<string>("");
+  const [filterCohort, setFilterCohort] = React.useState<string>("");
 
   const { data: advisorResponse } = useQuery<PaginatedResponse>({
     queryKey: ["admin", "advisors", advisorSearch],
@@ -508,12 +513,19 @@ export function CreateStudents() {
               <label className="mb-1 block text-xs text-muted-foreground">
                 {t("admin.forms.program", { defaultValue: "Program" })}
               </label>
-              <Select value={filterProgram} onValueChange={(v: any) => setFilterProgram(v)}>
+              <Select
+                value={filterProgram || "__all_programs__"}
+                onValueChange={(v: any) =>
+                  setFilterProgram(v === "__all_programs__" ? "" : v)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("admin.forms.all_programs", { defaultValue: "All programs" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("admin.forms.all_programs", { defaultValue: "All programs" })}</SelectItem>
+                  <SelectItem value="__all_programs__">
+                    {t("admin.forms.all_programs", { defaultValue: "All programs" })}
+                  </SelectItem>
                   {programOptions.map((p) => (
                     <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
@@ -524,12 +536,19 @@ export function CreateStudents() {
               <label className="mb-1 block text-xs text-muted-foreground">
                 {t("admin.forms.department", { defaultValue: "Department" })}
               </label>
-              <Select value={filterDepartment} onValueChange={(v: any) => setFilterDepartment(v)}>
+              <Select
+                value={filterDepartment || "__all_departments__"}
+                onValueChange={(v: any) =>
+                  setFilterDepartment(v === "__all_departments__" ? "" : v)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("admin.forms.all_departments", { defaultValue: "All departments" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("admin.forms.all_departments", { defaultValue: "All departments" })}</SelectItem>
+                  <SelectItem value="__all_departments__">
+                    {t("admin.forms.all_departments", { defaultValue: "All departments" })}
+                  </SelectItem>
                   {departmentOptions.map((d) => (
                     <SelectItem key={d} value={d}>{d}</SelectItem>
                   ))}
@@ -540,12 +559,19 @@ export function CreateStudents() {
               <label className="mb-1 block text-xs text-muted-foreground">
                 {t("admin.forms.cohort", { defaultValue: "Cohort" })}
               </label>
-              <Select value={filterCohort} onValueChange={(v: any) => setFilterCohort(v)}>
+              <Select
+                value={filterCohort || "__all_cohorts__"}
+                onValueChange={(v: any) =>
+                  setFilterCohort(v === "__all_cohorts__" ? "" : v)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })}</SelectItem>
+                  <SelectItem value="__all_cohorts__">
+                    {t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })}
+                  </SelectItem>
                   {cohortOptions.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
