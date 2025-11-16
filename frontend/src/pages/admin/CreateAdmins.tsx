@@ -347,34 +347,34 @@ export function CreateAdmins() {
         <CardContent>
           <div className="max-h-[60vh] overflow-auto rounded-md border border-border/50">
             <table className="min-w-full text-sm">
-              <thead className="sticky top-0 z-20 bg-card/95 backdrop-blur text-left text-muted-foreground">
+              <thead className="sticky top-0 z-20 bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-2 pr-4 font-medium">#</th>
-                  <th className="py-2 pr-4 font-medium cursor-pointer select-none" onClick={() => handleSort('name')}>
+                  <th className="py-2.5 pr-4 text-left">#</th>
+                  <th className="py-2.5 pr-4 cursor-pointer select-none" onClick={() => handleSort('name')}>
                     <div className="flex items-center">
                       {t('table.name','Name')}
                       {sortField === 'name' ? (sortDirection === 'asc' ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />) : null}
                     </div>
                   </th>
-                  <th className="py-2 pr-4 font-medium cursor-pointer select-none" onClick={() => handleSort('username')}>
+                  <th className="py-2.5 pr-4 cursor-pointer select-none" onClick={() => handleSort('username')}>
                     <div className="flex items-center">
                       Username
                       {sortField === 'username' ? (sortDirection === 'asc' ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />) : null}
                     </div>
                   </th>
-                  <th className="py-2 pr-4 font-medium cursor-pointer select-none" onClick={() => handleSort('email')}>
+                  <th className="py-2.5 pr-4 cursor-pointer select-none" onClick={() => handleSort('email')}>
                     <div className="flex items-center">
                       Email
                       {sortField === 'email' ? (sortDirection === 'asc' ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />) : null}
                     </div>
                   </th>
-                  <th className="py-2 pr-4 font-medium cursor-pointer select-none" onClick={() => handleSort('created_at')}>
+                  <th className="py-2.5 pr-4 cursor-pointer select-none" onClick={() => handleSort('created_at')}>
                     <div className="flex items-center">
                       {t('admin.forms.registration_date','Registered')}
                       {sortField === 'created_at' ? (sortDirection === 'asc' ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />) : null}
                     </div>
                   </th>
-                  <th className="py-2 text-right font-medium">{t('table.actions','Actions')}</th>
+                  <th className="py-2.5 pr-4 text-right">{t('table.actions','Actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -406,8 +406,10 @@ export function CreateAdmins() {
                   </tr>
                 )}
                 {!isLoading && !isError &&
-                  paginated.map((admin, idx) => (
-                    <tr key={admin.id} className="border-t border-border/60">
+                  paginated.map((admin, idx) => {
+                    const rowClass = idx % 2 === 0 ? "bg-background" : "bg-muted/10";
+                    return (
+                    <tr key={admin.id} className={`border-t border-border/60 transition-colors hover:bg-muted/30 ${rowClass}`}>
                       <td className="py-3 pr-4 text-muted-foreground">
                         {(currentPage - 1) * PAGE_SIZE + idx + 1}
                       </td>
@@ -418,7 +420,8 @@ export function CreateAdmins() {
                       <td className="py-3 pr-4 font-mono">{admin.username || '—'}</td>
                       <td className="py-3 pr-4">{admin.email}</td>
                       <td className="py-3 pr-4">{formatDate(admin.created_at)}</td>
-                      <td className="py-3 text-right">
+                      <td className="py-3 pr-4 text-right">
+                        <div className="flex justify-end gap-1">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -487,9 +490,10 @@ export function CreateAdmins() {
                             </Tooltip>
                           )}
                         </TooltipProvider>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
               </tbody>
             </table>
           </div>
