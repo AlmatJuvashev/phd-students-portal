@@ -27,6 +27,9 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
+  Pencil,
+  Trash2,
+  CheckCircle,
 } from "lucide-react";
 
 const Schema = z.object({
@@ -51,6 +54,17 @@ type StudentRow = UserLite & {
 };
 type Creds = { username: string; temp_password: string };
 
+type PaginatedResponse = {
+  data: StudentRow[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+};
+
+const SERVER_PAGE_SIZE = 50;
+const CLIENT_PAGE_SIZE = 10;
+
 export function CreateStudents() {
   const { t } = useTranslation("common");
   const queryClient = useQueryClient();
@@ -62,6 +76,8 @@ export function CreateStudents() {
   const [showModal, setShowModal] = React.useState(false);
   const [created, setCreated] = React.useState<Creds | null>(null);
   const [resetInfo, setResetInfo] = React.useState<Creds | null>(null);
+  const [editModal, setEditModal] = React.useState<{ open: boolean; student: StudentRow | null }>({ open: false, student: null });
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortField, setSortField] = React.useState<
     "name" | "username" | "program" | "department" | "cohort" | "created_at"
@@ -69,29 +85,34 @@ export function CreateStudents() {
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
     "asc"
   );
-  const [page, setPage] = React.useState(1);
+  const [serverPage, setServerPage] = React.useState(1);
+  const [clientPage, setClientPage] = React.useState(1);
 
-  const { data: advisors = [] } = useQuery<UserLite[]>({
+  const { data: advisorResponse } = useQuery<PaginatedResponse>({
     queryKey: ["admin", "advisors", advisorSearch],
     queryFn: () =>
       api(`/admin/users?role=advisor&q=${encodeURIComponent(advisorSearch)}`),
   });
 
+  const advisors = React.useMemo(() => advisorResponse?.data || [], [advisorResponse]);
+
   const {
-    data: allUsers = [],
+    data: usersResponse,
     isLoading: studentsLoading,
     isError: studentsError,
     refetch: refetchStudents,
-  } = useQuery<StudentRow[]>({
-    queryKey: ["admin", "users"],
+  } = useQuery<PaginatedResponse>({
+    queryKey: ["admin", "users", serverPage],
     queryFn: async () => {
-      const result = await api(`/admin/users`);
+      const result = await api(`/admin/users?page=${serverPage}&limit=${SERVER_PAGE_SIZE}`);
       return result;
     },
     refetchOnMount: true,
     staleTime: 0,
   });
 
+  const allUsers = React.useMemo(() => usersResponse?.data || [], [usersResponse]);
+  
   const students = React.useMemo(() => {
     return allUsers.filter((user) => user.role === "student");
   }, [allUsers]);
@@ -158,6 +179,41 @@ export function CreateStudents() {
     onError: (err: any) => alert(err?.message || "Failed to reset password"),
   });
 
+  const updateStudentMutation = useMutation({
+    mutationFn: (payload: { id: string; first_name: string; last_name: string; email: string; program?: string; department?: string; cohort?: string; }) =>
+      api(`/admin/users/${payload.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          first_name: payload.first_name,
+          last_name: payload.last_name,
+          email: payload.email,
+          role: "student",
+          program: payload.program || "",
+          department: payload.department || "",
+          cohort: payload.cohort || "",
+        }),
+      }),
+    onSuccess: () => {
+      setEditModal({ open: false, student: null });
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      refetchStudents();
+    },
+    onError: (err: any) => alert(err?.message || "Failed to update student"),
+  });
+
+  const setActiveMutation = useMutation({
+    mutationFn: (payload: { id: string; active: boolean }) =>
+      api(`/admin/users/${payload.id}/active`, {
+        method: "PATCH",
+        body: JSON.stringify({ active: payload.active }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      refetchStudents();
+    },
+    onError: (err: any) => alert(err?.message || "Failed to update active status"),
+  });
+
   const [pendingResetId, setPendingResetId] = React.useState<string | null>(
     null
   );
@@ -176,6 +232,24 @@ export function CreateStudents() {
   const copyCredentials = (creds: Creds) => {
     const message = `Username: ${creds.username}\nPassword: ${creds.temp_password}`;
     navigator.clipboard.writeText(message);
+  };
+
+  const openEdit = (student: StudentRow) => {
+    setEditModal({ open: true, student });
+  };
+
+  const handleDeactivate = (student: StudentRow) => {
+    if (
+      confirm(
+        t("admin.forms.confirm_deactivate", { defaultValue: "Deactivate this student?" })
+      )
+    ) {
+      setPendingDeleteId(student.id);
+      setActiveMutation.mutate(
+        { id: student.id, active: false },
+        { onSettled: () => setPendingDeleteId(null) }
+      );
+    }
   };
 
   const handleResetPassword = (student: StudentRow) => {
@@ -201,7 +275,6 @@ export function CreateStudents() {
     return d.toLocaleDateString();
   };
 
-  const PAGE_SIZE = 10;
   const filteredStudents = React.useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     const base = normalizedStudents;
@@ -233,22 +306,17 @@ export function CreateStudents() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredStudents.length / PAGE_SIZE)
+    Math.ceil(filteredStudents.length / CLIENT_PAGE_SIZE)
   );
-  const currentPage = Math.min(page, totalPages);
+  const currentPage = Math.min(clientPage, totalPages);
   const paginatedStudents = React.useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const result = filteredStudents.slice(start, start + PAGE_SIZE);
-    console.log("[CreateStudents] Paginated students for page", currentPage, ":", result.length, "items");
-    if (result.length > 0) {
-      console.log("[CreateStudents] First student:", result[0]);
-      console.log("[CreateStudents] All students:", result.map(s => ({ name: s.name, username: s.username, program: s.program })));
-    }
+    const start = (currentPage - 1) * CLIENT_PAGE_SIZE;
+    const result = filteredStudents.slice(start, start + CLIENT_PAGE_SIZE);
     return result;
   }, [filteredStudents, currentPage]);
 
   React.useEffect(() => {
-    setPage(1);
+    setClientPage(1);
   }, [searchTerm, sortField, sortDirection, normalizedStudents.length]);
 
   const handleSort = (
@@ -535,7 +603,7 @@ export function CreateStudents() {
                       className="border-t border-border/60 text-foreground"
                     >
                       <td className="py-3 pr-4 align-top text-muted-foreground">
-                        {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                        {(currentPage - 1) * CLIENT_PAGE_SIZE + idx + 1}
                       </td>
                       <td className="py-3 pr-4 align-top">
                         <div className="font-medium">{student.name}</div>
@@ -584,6 +652,55 @@ export function CreateStudents() {
                               })}
                             </TooltipContent>
                           </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEdit(student)}
+                                aria-label={t("admin.forms.edit_student", { defaultValue: "Edit" })}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("admin.forms.edit_student", { defaultValue: "Edit" })}
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeactivate(student)}
+                                aria-label={t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                              >
+                                {pendingDeleteId === student.id && setActiveMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setActiveMutation.mutate({ id: student.id, active: true })}
+                                aria-label={t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
+                              >
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
+                            </TooltipContent>
+                          </Tooltip>
                         </TooltipProvider>
                       </td>
                     </tr>
@@ -603,7 +720,7 @@ export function CreateStudents() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setClientPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 className="gap-2"
               >
@@ -613,7 +730,7 @@ export function CreateStudents() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setClientPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 className="gap-2"
               >
@@ -815,7 +932,75 @@ export function CreateStudents() {
           </Card>
         </div>
       </Modal>
+
+      {/* Edit Student Modal */}
+      <Modal open={editModal.open} onClose={() => setEditModal({ open: false, student: null })}>
+        {editModal.student && (
+          <div className="max-w-2xl max-h-[85vh] overflow-y-auto p-1">
+            <Card>
+              <CardHeader className="flex flex-row items-start justify-between gap-2">
+                <div>
+                  <CardTitle>
+                    {t("admin.forms.edit_student", { defaultValue: "Edit Student" })}
+                  </CardTitle>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setEditModal({ open: false, student: null })}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <EditStudentForm
+                  student={editModal.student}
+                  onSubmit={(payload) => updateStudentMutation.mutate(payload)}
+                  busy={updateStudentMutation.isPending}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </Modal>
     </div>
+  );
+}
+
+function splitName(name?: string) {
+  const n = (name || "").trim();
+  if (!n) return { first: "", last: "" };
+  const parts = n.split(/\s+/);
+  if (parts.length === 1) return { first: parts[0], last: "" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
+
+function EditStudentForm({ student, onSubmit, busy }: { student: any; onSubmit: (p: { id: string; first_name: string; last_name: string; email: string; program?: string; department?: string; cohort?: string; }) => void; busy?: boolean; }) {
+  const { t } = useTranslation("common");
+  const { first, last } = splitName(student.name);
+  const [firstName, setFirst] = React.useState(first);
+  const [lastName, setLast] = React.useState(last);
+  const [email, setEmail] = React.useState(student.email || "");
+  const [program, setProgram] = React.useState(student.program || "");
+  const [department, setDepartment] = React.useState(student.department || "");
+  const [cohort, setCohort] = React.useState(student.cohort || "");
+
+  return (
+    <form
+      className="grid grid-cols-1 gap-4 md:grid-cols-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({ id: student.id, first_name: firstName, last_name: lastName, email, program, department, cohort });
+      }}
+    >
+      <Input placeholder={t("admin.forms.first_name", { defaultValue: "First name" })} value={firstName} onChange={(e) => setFirst(e.target.value)} />
+      <Input placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })} value={lastName} onChange={(e) => setLast(e.target.value)} />
+      <Input type="email" placeholder={t("admin.forms.email_optional", { defaultValue: "Email" })} value={email} onChange={(e) => setEmail(e.target.value)} />
+      <Input placeholder={t("admin.forms.program", { defaultValue: "Program" })} value={program} onChange={(e) => setProgram(e.target.value)} />
+      <Input placeholder={t("admin.forms.department", { defaultValue: "Department" })} value={department} onChange={(e) => setDepartment(e.target.value)} />
+      <Input placeholder={t("admin.forms.cohort", { defaultValue: "Cohort" })} value={cohort} onChange={(e) => setCohort(e.target.value)} />
+      <div className="md:col-span-2 flex gap-2 pt-2">
+        <Button type="submit" disabled={busy} className="w-full">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save" })}
+        </Button>
+      </div>
+    </form>
   );
 }
 
