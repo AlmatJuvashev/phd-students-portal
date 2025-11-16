@@ -52,6 +52,7 @@ type StudentRow = UserLite & {
   department?: string;
   cohort?: string;
   created_at?: string;
+  is_active?: boolean;
 };
 type Creds = { username: string; temp_password: string };
 
@@ -107,7 +108,7 @@ export function CreateStudents() {
   } = useQuery<PaginatedResponse>({
     queryKey: ["admin", "users", serverPage],
     queryFn: async () => {
-      const result = await api(`/admin/users?page=${serverPage}&limit=${SERVER_PAGE_SIZE}`);
+      const result = await api(`/admin/users?page=${serverPage}&limit=${SERVER_PAGE_SIZE}&active=all`);
       return result;
     },
     refetchOnMount: true,
@@ -652,44 +653,47 @@ export function CreateStudents() {
                               {t("admin.forms.edit_student", { defaultValue: "Edit" })}
                             </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeactivate(student)}
-                                aria-label={t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
-                              >
-                                {pendingDeleteId === student.id && setActiveMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleActivate(student)}
-                                aria-label={t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
-                              >
-                                {pendingActiveId === student.id && setActiveMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <CheckCircle className="h-4 w-4 text-emerald-600" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
-                            </TooltipContent>
-                          </Tooltip>
+                          {student.is_active ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeactivate(student)}
+                                  aria-label={t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                                >
+                                  {pendingDeleteId === student.id && setActiveMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleActivate(student)}
+                                  aria-label={t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
+                                >
+                                  {pendingActiveId === student.id && setActiveMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t("admin.forms.mark_active", { defaultValue: "Mark Active" })}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </TooltipProvider>
                       </td>
                     </tr>
