@@ -214,15 +214,16 @@ func (h *UsersHandler) SetActive(c *gin.Context) {
 }
 
 type listUsersResp struct {
-	ID         string `db:"id" json:"id"`
-	Name       string `db:"name" json:"name"`
-	Email      string `db:"email" json:"email"`
-	Role       string `db:"role" json:"role"`
-	Username   string `db:"username" json:"username"`
-	Program    string `db:"program" json:"program"`
-	Department string `db:"department" json:"department"`
-	Cohort     string `db:"cohort" json:"cohort"`
-	CreatedAt  string `db:"created_at" json:"created_at"`
+    ID         string `db:"id" json:"id"`
+    Name       string `db:"name" json:"name"`
+    Email      string `db:"email" json:"email"`
+    Role       string `db:"role" json:"role"`
+    Username   string `db:"username" json:"username"`
+    Program    string `db:"program" json:"program"`
+    Department string `db:"department" json:"department"`
+    Cohort     string `db:"cohort" json:"cohort"`
+    CreatedAt  string `db:"created_at" json:"created_at"`
+    IsActive   bool   `db:"is_active" json:"is_active"`
 }
 
 type listUsersResponse struct {
@@ -235,8 +236,9 @@ type listUsersResponse struct {
 
 // ListUsers (admin/superadmin): basic list for mentions/autocomplete with pagination
 func (h *UsersHandler) ListUsers(c *gin.Context) {
-	q := strings.TrimSpace(c.Query("q"))
-	roleFilter := strings.TrimSpace(c.Query("role"))
+    q := strings.TrimSpace(c.Query("q"))
+    roleFilter := strings.TrimSpace(c.Query("role"))
+    activeFilter := strings.TrimSpace(c.Query("active")) // "true" (default), "false", or "all"
 	
 	// Pagination parameters
 	page := 1
@@ -266,9 +268,20 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		args = append(args, q)
 	}
 
-	// Get total count
-	var total int
-	countQuery := `SELECT COUNT(*) FROM users u WHERE u.is_active=true` + where
+    // Compose active condition
+    activeCond := ""
+    switch strings.ToLower(activeFilter) {
+    case "false":
+        activeCond = " AND u.is_active=false"
+    case "all":
+        // no filter
+    default:
+        activeCond = " AND u.is_active=true"
+    }
+
+    // Get total count
+    var total int
+    countQuery := `SELECT COUNT(*) FROM users u WHERE 1=1` + activeCond + where
 	err := h.db.Get(&total, countQuery, args...)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to count users"})
@@ -277,17 +290,18 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 
 	// Get paginated data
 	rows := []listUsersResp{}
-	base := `SELECT u.id,
-	        (u.first_name||' '||u.last_name) AS name,
-	        COALESCE(u.email, '') AS email,
-	        u.role,
-	        COALESCE(u.username, '') AS username,
-	        COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS program,
-	        COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS department,
-	        COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS cohort,
-	        to_char(u.created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') AS created_at
-	        FROM users u
-	        WHERE u.is_active=true`
+    base := `SELECT u.id,
+            (u.first_name||' '||u.last_name) AS name,
+            COALESCE(u.email, '') AS email,
+            u.role,
+            COALESCE(u.username, '') AS username,
+            COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS program,
+            COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS department,
+            COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS cohort,
+            to_char(u.created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') AS created_at,
+            u.is_active
+            FROM users u
+            WHERE 1=1` + activeCond
 	
 	query := base + where + fmt.Sprintf(" ORDER BY last_name LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
