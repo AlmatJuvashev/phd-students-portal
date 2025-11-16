@@ -96,10 +96,15 @@ export function CreateStudents() {
 
   const students = React.useMemo(() => {
     const filtered = allUsers.filter((user) => user.role === "student");
-    console.log("[CreateStudents] Total users:", allUsers.length, "Students:", filtered.length);
+    console.log(
+      "[CreateStudents] Total users:",
+      allUsers.length,
+      "Students:",
+      filtered.length
+    );
     return filtered;
   }, [allUsers]);
-  
+
   const normalizedStudents = React.useMemo(() => students ?? [], [students]);
 
   const {
@@ -242,7 +247,13 @@ export function CreateStudents() {
   const currentPage = Math.min(page, totalPages);
   const paginatedStudents = React.useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredStudents.slice(start, start + PAGE_SIZE);
+    const result = filteredStudents.slice(start, start + PAGE_SIZE);
+    console.log("[CreateStudents] Paginated students for page", currentPage, ":", result.length, "items");
+    if (result.length > 0) {
+      console.log("[CreateStudents] First student:", result[0]);
+      console.log("[CreateStudents] All students:", result.map(s => ({ name: s.name, username: s.username, program: s.program })));
+    }
+    return result;
   }, [filteredStudents, currentPage]);
 
   React.useEffect(() => {
@@ -274,6 +285,8 @@ export function CreateStudents() {
       <ChevronDown className="ml-1 h-3 w-3" />
     );
   };
+
+  console.log("[CreateStudents] Render - Loading:", studentsLoading, "Error:", studentsError, "Paginated:", paginatedStudents.length);
 
   return (
     <div className="space-y-6">

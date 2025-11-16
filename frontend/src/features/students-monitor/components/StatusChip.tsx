@@ -20,6 +20,9 @@ export function StatusChip({ state }: { state: string }) {
     done: "Done",
   };
   const cls = map[state] || "bg-gray-100 text-gray-800";
-  return <span className={`px-2 py-0.5 rounded text-xs ${cls}`}>{label[state] || state}</span>;
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs ${cls}`}>
+      {label[state] || state}
+    </span>
+  );
 }
-
