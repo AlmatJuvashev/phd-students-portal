@@ -13,9 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle, Pencil, X } from "lucide-react";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Modal } from "@/components/ui/modal";
 
 const Schema = z.object({
   first_name: z.string().min(1, "Required"),
@@ -53,6 +54,7 @@ export function CreateAdvisors() {
   const [pendingActiveId, setPendingActiveId] = React.useState<string | null>(null);
   const [activeFilter, setActiveFilter] = React.useState<"all" | "active" | "inactive">("all");
   const [confirmState, setConfirmState] = React.useState<{ open: boolean; kind: "reset" | "deactivate" | "activate" | null; advisor: UserRow | null }>({ open: false, kind: null, advisor: null });
+  const [editModal, setEditModal] = React.useState<{ open: boolean; advisor: UserRow | null }>({ open: false, advisor: null });
   const PAGE_SIZE = 10;
   const { register, handleSubmit, formState: { errors }, reset } = useForm<Form>({ resolver: zodResolver(Schema) });
 
@@ -100,11 +102,32 @@ export function CreateAdvisors() {
     onError: (err: any) => alert(err?.message || "Failed to update status"),
   });
 
+  const updateAdvisorMutation = useMutation({
+    mutationFn: (payload: { id: string; first_name: string; last_name: string; email: string }) =>
+      api(`/admin/users/${payload.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          first_name: payload.first_name,
+          last_name: payload.last_name,
+          email: payload.email,
+          role: "advisor",
+        }),
+      }),
+    onSuccess: () => {
+      setEditModal({ open: false, advisor: null });
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      refetch();
+    },
+    onError: (err: any) => alert(err?.message || "Failed to update advisor"),
+  });
+
   const onSubmit = (data: Form) => createAdvisorMutation.mutate(data);
 
   const copyCredentials = (creds: { username: string; temp_password: string }) => {
     navigator.clipboard.writeText(`Username: ${creds.username}\nPassword: ${creds.temp_password}`);
   };
+
+  const openEdit = (advisor: UserRow) => setEditModal({ open: true, advisor });
 
   const handleReset = (advisor: UserRow) => {
     setConfirmState({ open: true, kind: "reset", advisor });
@@ -358,6 +381,14 @@ export function CreateAdvisors() {
                             </TooltipTrigger>
                             <TooltipContent>{t('admin.review.reset_password','Reset password')}</TooltipContent>
                           </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(advisor)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("admin.forms.edit_student", { defaultValue: "Edit" })}</TooltipContent>
+                          </Tooltip>
                           {advisor.is_active !== false ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -488,8 +519,84 @@ export function CreateAdvisors() {
           }
         }}
       />
+      {editModal.advisor && (
+        <Modal open={editModal.open} onClose={() => setEditModal({ open: false, advisor: null })}>
+          <div className="max-w-xl rounded-lg bg-card p-1">
+            <Card>
+              <CardHeader className="flex flex-row items-start justify-between gap-2">
+                <CardTitle>{t("admin.forms.edit_advisor", { defaultValue: "Edit Advisor" })}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setEditModal({ open: false, advisor: null })}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <EditAdvisorForm
+                  advisor={editModal.advisor}
+                  busy={updateAdvisorMutation.isPending}
+                  onSubmit={(values) => updateAdvisorMutation.mutate(values)}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
 
 export default CreateAdvisors;
+
+function splitName(name?: string) {
+  const parts = (name || "").trim().split(/\s+/);
+  if (parts.length === 0) return { first: "", last: "" };
+  if (parts.length === 1) return { first: parts[0], last: "" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
+
+function EditAdvisorForm({
+  advisor,
+  onSubmit,
+  busy,
+}: {
+  advisor: UserRow;
+  onSubmit: (payload: { id: string; first_name: string; last_name: string; email: string }) => void;
+  busy?: boolean;
+}) {
+  const { t } = useTranslation("common");
+  const { first, last } = splitName(advisor.name);
+  const [firstName, setFirst] = React.useState(first);
+  const [lastName, setLast] = React.useState(last);
+  const [email, setEmail] = React.useState(advisor.email || "");
+
+  return (
+    <form
+      className="grid grid-cols-1 gap-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({ id: advisor.id, first_name: firstName, last_name: lastName, email });
+      }}
+    >
+      <Input
+        value={firstName}
+        onChange={(e) => setFirst(e.target.value)}
+        placeholder={t("admin.forms.first_name", { defaultValue: "First name" })}
+      />
+      <Input
+        value={lastName}
+        onChange={(e) => setLast(e.target.value)}
+        placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })}
+      />
+      <Input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder={t("admin.forms.email", { defaultValue: "Email" })}
+      />
+      <div className="pt-2">
+        <Button type="submit" disabled={busy} className="w-full">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save" })}
+        </Button>
+      </div>
+    </form>
+  );
+}
