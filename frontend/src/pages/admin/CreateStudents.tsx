@@ -927,22 +927,27 @@ export function CreateStudents() {
         open={confirmState.open}
         onOpenChange={(open) => setConfirmState((s) => ({ ...s, open }))}
         message={(() => {
-          const name = confirmState.student?.name || "";
+          const st = confirmState.student;
+          const name = st?.name || "";
+          const details = st ? `${st.username || "—"} · ${st.email || "—"}` : "";
           if (confirmState.kind === "reset") {
-            return t("admin.review.confirm_reset", {
+            const base = t("admin.review.confirm_reset", {
               defaultValue:
                 "Reset this student's password? They will need the new temporary password to login.",
             });
+            return `${base}\n\n${name} — ${details}`;
           }
           if (confirmState.kind === "deactivate") {
-            return t("admin.forms.confirm_deactivate_named", {
-              defaultValue: `Deactivate student ${name}?`,
+            const base = t("admin.forms.confirm_deactivate_named", {
+              defaultValue: "Deactivate this student?",
             });
+            return `${base}\n\n${name} — ${details}`;
           }
           if (confirmState.kind === "activate") {
-            return t("admin.forms.confirm_activate_named", {
-              defaultValue: `Mark student ${name} as active?`,
+            const base = t("admin.forms.confirm_activate_named", {
+              defaultValue: "Mark this student as active?",
             });
+            return `${base}\n\n${name} — ${details}`;
           }
           return "";
         })()}

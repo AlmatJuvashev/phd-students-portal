@@ -104,11 +104,11 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 	rpOnly := strings.TrimSpace(c.Query("rp_required")) == "1"
 	limit := 200
 	// base selector - phone, program, department, cohort are in profile_submissions.form_data as JSONB
-	base := `SELECT u.id, (u.first_name||' '||u.last_name) AS name, COALESCE(u.email,'') AS email,
-                    COALESCE((SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS phone,
-                    COALESCE((SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS program,
-                    COALESCE((SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS department,
-                    COALESCE((SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS cohort
+    base := `SELECT u.id, (u.first_name||' '||u.last_name) AS name, COALESCE(u.email,'') AS email,
+                    COALESCE(u.phone, (SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS phone,
+                    COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS program,
+                    COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS department,
+                    COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS cohort
              FROM users u`
 	where := " WHERE u.is_active=true AND u.role='student'"
 	args := []any{}
@@ -129,18 +129,18 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 		args = append(args, advisorID)
 	}
 	// filters - use JSONB fields from profile_submissions
-	if program != "" {
-		where += fmt.Sprintf(" AND (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1)=$%d", len(args)+1)
-		args = append(args, program)
-	}
-	if department != "" {
-		where += fmt.Sprintf(" AND (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1)=$%d", len(args)+1)
-		args = append(args, department)
-	}
-	if cohort != "" {
-		where += fmt.Sprintf(" AND (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1)=$%d", len(args)+1)
-		args = append(args, cohort)
-	}
+    if program != "" {
+        where += fmt.Sprintf(" AND COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1))=$%d", len(args)+1)
+        args = append(args, program)
+    }
+    if department != "" {
+        where += fmt.Sprintf(" AND COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1))=$%d", len(args)+1)
+        args = append(args, department)
+    }
+    if cohort != "" {
+        where += fmt.Sprintf(" AND COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1))=$%d", len(args)+1)
+        args = append(args, cohort)
+    }
 	if q != "" {
 		where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR ((SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1) ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
 		args = append(args, q)
