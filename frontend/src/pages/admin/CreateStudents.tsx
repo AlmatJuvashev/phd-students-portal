@@ -826,6 +826,7 @@ export function CreateStudents() {
                         {formatDate(student.created_at)}
                       </td>
                       <td className="py-3 text-right align-top">
+                        <div className="flex justify-end gap-1">
                         <TooltipProvider delayDuration={100}>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -922,6 +923,7 @@ export function CreateStudents() {
                             </Tooltip>
                           )}
                         </TooltipProvider>
+                        </div>
                       </td>
                     </tr>
                   ))}
