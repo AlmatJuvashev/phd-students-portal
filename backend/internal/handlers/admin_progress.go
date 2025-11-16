@@ -105,12 +105,11 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 	limit := 200
 	// base selector - phone, program, department, cohort are in profile_submissions.form_data as JSONB
 	base := `SELECT u.id, (u.first_name||' '||u.last_name) AS name, COALESCE(u.email,'') AS email,
-                    COALESCE(ps.form_data->>'phone','') AS phone,
-                    COALESCE(ps.form_data->>'program','') AS program,
-                    COALESCE(ps.form_data->>'department','') AS department,
-                    COALESCE(ps.form_data->>'cohort','') AS cohort
-             FROM users u
-             LEFT JOIN profile_submissions ps ON ps.user_id = u.id`
+                    COALESCE((SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS phone,
+                    COALESCE((SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS program,
+                    COALESCE((SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS department,
+                    COALESCE((SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1),'') AS cohort
+             FROM users u`
 	where := " WHERE u.is_active=true AND u.role='student'"
 	args := []any{}
 
@@ -131,19 +130,19 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 	}
 	// filters - use JSONB fields from profile_submissions
 	if program != "" {
-		where += fmt.Sprintf(" AND ps.form_data->>'program'=$%d", len(args)+1)
+		where += fmt.Sprintf(" AND (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1)=$%d", len(args)+1)
 		args = append(args, program)
 	}
 	if department != "" {
-		where += fmt.Sprintf(" AND ps.form_data->>'department'=$%d", len(args)+1)
+		where += fmt.Sprintf(" AND (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1)=$%d", len(args)+1)
 		args = append(args, department)
 	}
 	if cohort != "" {
-		where += fmt.Sprintf(" AND ps.form_data->>'cohort'=$%d", len(args)+1)
+		where += fmt.Sprintf(" AND (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1)=$%d", len(args)+1)
 		args = append(args, cohort)
 	}
 	if q != "" {
-		where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR (ps.form_data->>'phone' ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
+		where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR ((SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1) ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
 		args = append(args, q)
 	}
 	order := " ORDER BY u.last_name, u.first_name"

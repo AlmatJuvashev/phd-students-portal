@@ -85,24 +85,15 @@ export function CreateStudents() {
   } = useQuery<StudentRow[]>({
     queryKey: ["admin", "users"],
     queryFn: async () => {
-      console.log("[CreateStudents] Fetching users from /admin/users");
       const result = await api(`/admin/users`);
-      console.log("[CreateStudents] Received users:", result?.length, "users");
       return result;
     },
-    refetchOnMount: true, // Always refetch on mount to show latest data
-    staleTime: 0, // Consider data stale immediately
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const students = React.useMemo(() => {
-    const filtered = allUsers.filter((user) => user.role === "student");
-    console.log(
-      "[CreateStudents] Total users:",
-      allUsers.length,
-      "Students:",
-      filtered.length
-    );
-    return filtered;
+    return allUsers.filter((user) => user.role === "student");
   }, [allUsers]);
 
   const normalizedStudents = React.useMemo(() => students ?? [], [students]);

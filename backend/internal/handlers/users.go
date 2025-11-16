@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -221,17 +222,16 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 	q := strings.TrimSpace(c.Query("q"))
 	roleFilter := strings.TrimSpace(c.Query("role"))
 	rows := []listUsersResp{}
-	base := `SELECT DISTINCT ON (u.id) u.id,
+	base := `SELECT u.id,
 	        (u.first_name||' '||u.last_name) AS name,
-	        u.email,
+	        COALESCE(u.email, '') AS email,
 	        u.role,
-	        u.username,
-	        COALESCE(u.program, ps.form_data->>'program', '') AS program,
-	        COALESCE(u.department, ps.form_data->>'department', '') AS department,
-	        COALESCE(u.cohort, ps.form_data->>'cohort', '') AS cohort,
+	        COALESCE(u.username, '') AS username,
+	        COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS program,
+	        COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS department,
+	        COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS cohort,
 	        to_char(u.created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') AS created_at
 	        FROM users u
-	        LEFT JOIN profile_submissions ps ON ps.user_id=u.id
 	        WHERE u.is_active=true`
 	where := ""
 	args := []any{}
@@ -247,8 +247,11 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		}
 		args = append(args, q)
 	}
-	query := base + where + " ORDER BY u.id, last_name LIMIT 100"
-	_ = h.db.Select(&rows, query, args...)
+	query := base + where + " ORDER BY last_name LIMIT 200"
+	err := h.db.Select(&rows, query, args...)
+	if err != nil {
+		log.Printf("[ListUsers] ERROR executing query: %v", err)
+	}
 	c.JSON(200, rows)
 }
 
