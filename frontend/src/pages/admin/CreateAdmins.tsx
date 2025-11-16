@@ -20,9 +20,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle, Pencil, X } from "lucide-react";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Modal } from "@/components/ui/modal";
 
 type Form = {
   first_name: string;
@@ -66,6 +67,7 @@ export function CreateAdmins() {
   const [pendingActiveId, setPendingActiveId] = React.useState<string | null>(null);
   const [activeFilter, setActiveFilter] = React.useState<"all" | "active" | "inactive">("all");
   const [confirmState, setConfirmState] = React.useState<{ open: boolean; kind: "reset" | "deactivate" | "activate" | null; admin: UserRow | null }>({ open: false, kind: null, admin: null });
+  const [editModal, setEditModal] = React.useState<{ open: boolean; admin: UserRow | null }>({ open: false, admin: null });
   const PAGE_SIZE = 10;
   const {
     register,
@@ -99,6 +101,8 @@ export function CreateAdmins() {
       `Username: ${creds.username}\nPassword: ${creds.temp_password}`
     );
   };
+
+  const openEdit = (admin: UserRow) => setEditModal({ open: true, admin });
 
   const handleReset = (admin: UserRow) => {
     setConfirmState({ open: true, kind: "reset", admin });
@@ -198,6 +202,25 @@ export function CreateAdmins() {
       refetch();
     },
     onError: (err: any) => alert(err?.message || "Failed to update status"),
+  });
+
+  const updateAdminMutation = useMutation({
+    mutationFn: (payload: { id: string; first_name: string; last_name: string; email: string }) =>
+      api(`/admin/users/${payload.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          first_name: payload.first_name,
+          last_name: payload.last_name,
+          email: payload.email,
+          role: "admin",
+        }),
+      }),
+    onSuccess: () => {
+      setEditModal({ open: false, admin: null });
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      refetch();
+    },
+    onError: (err: any) => alert(err?.message || "Failed to update admin"),
   });
 
   async function onSubmit(data: Form) {
@@ -415,6 +438,14 @@ export function CreateAdmins() {
                               {t('admin.review.reset_password','Reset password')}
                             </TooltipContent>
                           </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(admin)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("admin.forms.edit_student", { defaultValue: "Edit" })}</TooltipContent>
+                          </Tooltip>
                           {admin.is_active !== false ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -557,8 +588,84 @@ export function CreateAdmins() {
           }
         }}
       />
+      {editModal.admin && (
+        <Modal open={editModal.open} onClose={() => setEditModal({ open: false, admin: null })}>
+          <div className="max-w-xl rounded-lg bg-card p-1">
+            <Card>
+              <CardHeader className="flex flex-row items-start justify-between gap-2">
+                <CardTitle>{t("admin.forms.edit_admin", { defaultValue: "Edit Admin" })}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setEditModal({ open: false, admin: null })}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <EditAdminForm
+                  admin={editModal.admin}
+                  busy={updateAdminMutation.isPending}
+                  onSubmit={(values) => updateAdminMutation.mutate(values)}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
 
 export default CreateAdmins;
+
+function splitName(name?: string) {
+  const parts = (name || "").trim().split(/\s+/);
+  if (parts.length === 0) return { first: "", last: "" };
+  if (parts.length === 1) return { first: parts[0], last: "" };
+  return { first: parts[0], last: parts.slice(1).join(" ") };
+}
+
+function EditAdminForm({
+  admin,
+  onSubmit,
+  busy,
+}: {
+  admin: UserRow;
+  onSubmit: (payload: { id: string; first_name: string; last_name: string; email: string }) => void;
+  busy?: boolean;
+}) {
+  const { t } = useTranslation("common");
+  const { first, last } = splitName(admin.name);
+  const [firstName, setFirst] = React.useState(first);
+  const [lastName, setLast] = React.useState(last);
+  const [email, setEmail] = React.useState(admin.email || "");
+
+  return (
+    <form
+      className="grid grid-cols-1 gap-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({ id: admin.id, first_name: firstName, last_name: lastName, email });
+      }}
+    >
+      <Input
+        value={firstName}
+        onChange={(e) => setFirst(e.target.value)}
+        placeholder={t("admin.forms.first_name", { defaultValue: "First name" })}
+      />
+      <Input
+        value={lastName}
+        onChange={(e) => setLast(e.target.value)}
+        placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })}
+      />
+      <Input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder={t("admin.forms.email", { defaultValue: "Email" })}
+      />
+      <div className="pt-2">
+        <Button type="submit" disabled={busy} className="w-full">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save", { defaultValue: "Save" })}
+        </Button>
+      </div>
+    </form>
+  );
+}
