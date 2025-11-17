@@ -300,7 +300,26 @@
                   "en": "Confirm the manuscript is fully formatted to the standard?"
                 }
               }
-            ],
+            ]
+          },
+          "requirements": {
+            "uploads": [
+              {
+                "key": "dissertation_draft_file",
+                "label": {
+                  "ru": "Файл текста диссертации (DOCX/PDF)",
+                  "kz": "Диссертация мәтіні файлы (DOCX/PDF)",
+                  "en": "Dissertation manuscript file (DOCX/PDF)"
+                },
+                "required": true,
+                "mime": [
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  "application/msword",
+                  "application/pdf"
+                ]
+              }
+            ]
+          },
           "on_confirm": {
             "status": "completed",
             "message": {
@@ -310,8 +329,7 @@
             },
             "next_node": "S1_antiplag"
           }
-        }
-      },
+        },
         {
           "id": "S1_antiplag",
           "title": {

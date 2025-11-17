@@ -312,7 +312,7 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		if err != nil {
 			return err
 		}
-		if err := h.insertEvent(tx, inst.ID, "file_attached", uid, map[string]any{"slot_key": req.SlotKey, "version_id": versionID}); err != nil {
+        if err := h.insertEvent(tx, inst.ID, "attachment_uploaded", uid, map[string]any{"slot_key": req.SlotKey, "version_id": versionID}); err != nil {
 			return err
 		}
 		if inst.State == "active" {

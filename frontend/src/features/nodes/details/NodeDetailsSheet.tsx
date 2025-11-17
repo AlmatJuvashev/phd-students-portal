@@ -241,8 +241,11 @@ export function NodeDetailsSheet({
                               (submission as any)?.state as any
                             ))
                         }
+                        onAttachmentsRefresh={() => refetch()}
                       />
-                      {submission?.slots && submission.slots.length > 0 && (
+                      {node?.type !== "confirmTask" &&
+                        submission?.slots &&
+                        submission.slots.length > 0 && (
                         <div className="pt-6">
                           <NodeAttachmentsSection
                             nodeId={node.id}

@@ -631,7 +631,13 @@ func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
 // StudentJourney returns node states and basic attachments count for a student.
 func (h *AdminHandler) StudentJourney(c *gin.Context) {
 	uid := c.Param("id")
-	rows, err := h.db.Queryx(`SELECT id, node_id, state, updated_at FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2`, uid, h.pb.VersionID)
+	// Get latest instance for each node_id regardless of playbook version (matching ListStudentNodeFiles behavior)
+	rows, err := h.db.Queryx(`
+		SELECT DISTINCT ON (node_id) id, node_id, state, updated_at 
+		FROM node_instances 
+		WHERE user_id=$1 
+		ORDER BY node_id, updated_at DESC
+	`, uid)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

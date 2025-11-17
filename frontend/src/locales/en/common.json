@@ -19,7 +19,8 @@
     "failed": "Login failed"
   },
   "templates": {
-    "heading": "Available Templates"
+    "heading": "Available Templates",
+    "profile_required": "Please complete your doctoral profile form to auto-fill templates."
   },
   "forms": {
     "validations_title": "Validations",
