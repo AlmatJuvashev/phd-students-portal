@@ -906,6 +906,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	}
 	log.Printf("[ReviewAttachment] State transition: %s -> %s", meta.State, newState)
 	if newState != meta.State {
+		// Update the current instance
 		query := "UPDATE node_instances SET state=$1, updated_at=now() WHERE id=$2"
 		if newState == "submitted" || newState == "under_review" {
 			query = "UPDATE node_instances SET state=$1, submitted_at=COALESCE(submitted_at, now()), updated_at=now() WHERE id=$2"
@@ -914,6 +915,16 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
+		
+		// Also update ALL other instances of this node for this user (across all playbook versions)
+		// This ensures student sees correct state regardless of which version they're on
+		_, err := tx.Exec(`UPDATE node_instances SET state=$1, updated_at=now() 
+			WHERE user_id=$2 AND node_id=$3 AND id != $4`,
+			newState, meta.StudentID, meta.NodeID, meta.InstanceID)
+		if err != nil {
+			log.Printf("[ReviewAttachment] Warning: failed to update other instances: %v", err)
+		}
+		
 		_, _ = tx.Exec(`INSERT INTO journey_states (user_id, node_id, state)
 			VALUES ($1,$2,$3)
 			ON CONFLICT (user_id,node_id) DO UPDATE SET state=$3, updated_at=now()`, meta.StudentID, meta.NodeID, newState)
