@@ -115,9 +115,9 @@ const stateStyles = {
     opacity: "",
   },
   done: {
-    iconBg: "bg-gradient-to-br from-green-400 to-green-600",
+    iconBg: "bg-gradient-to-br from-emerald-500/90 to-teal-600/90",
     iconColor: "text-white",
-    badge: "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300",
+    badge: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400",
     ring: "",
     opacity: "",
   },
@@ -172,7 +172,7 @@ export function NodeToken({
               "shadow-md": !isClickable,
               "ring-2 ring-white/50 dark:ring-gray-700/50":
                 !isDone && node.state !== "locked",
-              "ring-2 ring-green-300/60 dark:ring-green-700/60": isDone,
+              "ring-2 ring-emerald-200/50 dark:ring-emerald-800/50": isDone,
             },
             styles.iconBg,
             styles.ring,
@@ -189,7 +189,7 @@ export function NodeToken({
             fillOpacity={isDone ? 0.2 : 0}
           />
           {isDone && (
-            <div className="absolute -bottom-0.5 -right-0.5 bg-gradient-to-br from-green-400 to-green-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-gray-800 animate-in zoom-in duration-300">
+            <div className="absolute -bottom-0.5 -right-0.5 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-gray-800 animate-in zoom-in duration-300">
               <Check className="w-4 h-4" strokeWidth={3} />
             </div>
           )}
@@ -202,7 +202,7 @@ export function NodeToken({
             "font-bold text-base sm:text-lg leading-tight transition-colors duration-200",
             {
               "text-primary": node.state === "active",
-              "text-green-700 dark:text-green-400": isDone,
+              "text-emerald-700 dark:text-emerald-400": isDone,
               "group-hover:text-primary":
                 isClickable && node.state !== "active" && !isDone,
               truncate: !isBossNode,
