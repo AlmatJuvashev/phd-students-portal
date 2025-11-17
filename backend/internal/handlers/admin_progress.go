@@ -1434,10 +1434,11 @@ func (h *AdminHandler) AttachReviewedDocument(c *gin.Context) {
 		NodeID     string `db:"node_id"`
 		DocumentID string `db:"document_id"`
 	}
-	err = tx.QueryRowx(`SELECT ni.id AS instance_id, ni.user_id, ni.node_id, a.document_id
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, ni.user_id, ni.node_id, dv.document_id
 		FROM node_instance_slot_attachments a
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		JOIN node_instances ni ON ni.id=s.node_instance_id
+		JOIN document_versions dv ON dv.id=a.document_version_id
 		WHERE a.id=$1 AND a.is_active=true`, attachmentID).
 		Scan(&meta.InstanceID, &meta.StudentID, &meta.NodeID, &meta.DocumentID)
 	if err != nil {
