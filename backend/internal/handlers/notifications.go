@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 )
@@ -36,8 +38,8 @@ func (h *NotificationsHandler) ListNotifications(c *gin.Context) {
 		SELECT 
 			n.id,
 			n.student_id,
-			(u.first_name || ' ' || u.last_name) as student_name,
-			u.email as student_email,
+			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
+			COALESCE(u.email, '') as student_email,
 			n.node_id,
 			COALESCE(n.node_instance_id::text, '') as node_instance_id,
 			n.event_type,
@@ -58,6 +60,7 @@ func (h *NotificationsHandler) ListNotifications(c *gin.Context) {
 	var notifications []Notification
 	err := h.db.Select(&notifications, query)
 	if err != nil {
+		log.Printf("[ListNotifications] Query error: %v", err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}

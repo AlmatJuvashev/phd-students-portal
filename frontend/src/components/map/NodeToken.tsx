@@ -117,7 +117,8 @@ const stateStyles = {
   done: {
     iconBg: "bg-gradient-to-br from-emerald-500/90 to-teal-600/90",
     iconColor: "text-white",
-    badge: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400",
+    badge:
+      "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400",
     ring: "",
     opacity: "",
   },
