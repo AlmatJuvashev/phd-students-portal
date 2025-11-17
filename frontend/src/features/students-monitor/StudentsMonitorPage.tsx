@@ -12,18 +12,11 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Languages } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function StudentsMonitorPage() {
+  const { t } = useTranslation("common");
   const [filters, setFilters] = React.useState<Filters>({});
-  const [language, setLanguage] = React.useState<"EN" | "RU" | "KZ">("EN");
   const {
     data = [],
     isLoading,
@@ -160,30 +153,17 @@ export function StudentsMonitorPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-bold tracking-tight">
-                Student Monitoring
+                {t("admin.monitor.title", { defaultValue: "Student Monitoring" })}
               </h1>
               <Badge
                 variant="secondary"
                 className="h-6 px-2.5 text-sm font-medium"
               >
-                {data.length} {data.length === 1 ? "student" : "students"}
+                {t("admin.monitor.count_label", {
+                  defaultValue: "{{count}} students",
+                  count: data.length,
+                })}
               </Badge>
-            </div>
-            <div className="flex items-center gap-3">
-              <Select
-                value={language}
-                onValueChange={(val) => setLanguage(val as any)}
-              >
-                <SelectTrigger className="w-[120px] h-9">
-                  <Languages className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EN">English</SelectItem>
-                  <SelectItem value="RU">Русский</SelectItem>
-                  <SelectItem value="KZ">Қазақша</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </div>
@@ -199,9 +179,15 @@ export function StudentsMonitorPage() {
       <div className="px-8 py-4 border-b">
         <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
           <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="table">Table View</TabsTrigger>
-            <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="table">
+              {t("admin.monitor.tabs.table", { defaultValue: "Table View" })}
+            </TabsTrigger>
+            <TabsTrigger value="kanban">
+              {t("admin.monitor.tabs.kanban", { defaultValue: "Kanban Board" })}
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              {t("admin.monitor.tabs.analytics", { defaultValue: "Analytics" })}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -210,11 +196,15 @@ export function StudentsMonitorPage() {
       <div className="px-8 py-6">
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">
-            Loading students...
+            {t("admin.monitor.loading", {
+              defaultValue: "Loading students...",
+            })}
           </div>
         ) : data.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            No students match your filters.
+            {t("admin.monitor.empty", {
+              defaultValue: "No students match your filters.",
+            })}
           </div>
         ) : tab === "table" ? (
           <StudentsTableView
@@ -233,7 +223,7 @@ export function StudentsMonitorPage() {
             }
           />
         ) : tab === "kanban" ? (
-          <KanbanView rows={data} language={language} />
+          <KanbanView rows={data} />
         ) : (
           <AnalyticsView filters={filters} />
         )}
@@ -242,15 +232,22 @@ export function StudentsMonitorPage() {
       <Modal open={bulkOpen} onClose={() => setBulkOpen(false)}>
         <div className="space-y-3">
           <div className="text-sm font-semibold">
-            New reminder for {data?.length || 0} students
+            {t("admin.monitor.bulk.title", {
+              defaultValue: "New reminder for {{count}} students",
+              count: data.length || 0,
+            })}
           </div>
           <Input
-            placeholder="Title"
+            placeholder={t("admin.monitor.bulk.title_placeholder", {
+              defaultValue: "Title",
+            })}
             value={bulkTitle}
             onChange={(e) => setBulkTitle(e.target.value)}
           />
           <Input
-            placeholder="Message (optional)"
+            placeholder={t("admin.monitor.bulk.message_placeholder", {
+              defaultValue: "Message (optional)",
+            })}
             value={bulkMessage}
             onChange={(e) => setBulkMessage(e.target.value)}
           />
@@ -259,13 +256,16 @@ export function StudentsMonitorPage() {
             value={bulkDue}
             onChange={(e) => setBulkDue(e.target.value)}
             className="border rounded px-2 py-1 w-full"
+            aria-label={t("admin.monitor.bulk.due_label", {
+              defaultValue: "Due date",
+            })}
           />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setBulkOpen(false)}>
-              Cancel
+              {t("common.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button onClick={sendBulkReminder} disabled={!bulkTitle}>
-              Send
+              {t("admin.monitor.bulk.send", { defaultValue: "Send" })}
             </Button>
           </div>
         </div>

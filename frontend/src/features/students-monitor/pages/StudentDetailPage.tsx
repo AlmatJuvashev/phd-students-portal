@@ -11,6 +11,7 @@ import {
   fetchStudentNodeFiles,
   reviewAttachment,
 } from "../api";
+import { stageLabel } from "../utils";
 import { API_URL } from "@/api/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,14 +54,14 @@ import {
   FileSearch,
 } from "lucide-react";
 
-const STAGES = [
-  { id: "W1", label: "I — Preparation" },
-  { id: "W2", label: "II — Pre-examination (SC)" },
-  { id: "W3", label: "III — RP (conditional)", conditional: true },
-  { id: "W4", label: "IV — Submission to DC" },
-  { id: "W5", label: "V — Restoration" },
-  { id: "W6", label: "VI — After DC acceptance" },
-  { id: "W7", label: "VII — Defense & Post-defense" },
+const STAGES: Array<{ id: string; conditional?: boolean }> = [
+  { id: "W1" },
+  { id: "W2" },
+  { id: "W3", conditional: true },
+  { id: "W4" },
+  { id: "W5" },
+  { id: "W6" },
+  { id: "W7" },
 ];
 
 const attachmentStatuses: Record<string, { label: string; className: string }> =
@@ -152,6 +153,7 @@ export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { i18n, t } = useTranslation("common");
+  const language = i18n.language || "en";
   const [comment, setComment] = React.useState("");
   const [stageNodeIds, setStageNodeIds] = React.useState<string[] | null>(null);
   const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>(
@@ -438,7 +440,11 @@ export function StudentDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-muted-foreground">Loading student details...</div>
+        <div className="text-muted-foreground">
+          {t("admin.monitor.detail.loading", {
+            defaultValue: "Loading student details...",
+          })}
+        </div>
       </div>
     );
   }
@@ -446,7 +452,11 @@ export function StudentDetailPage() {
   if (error || !student) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-destructive">Failed to load student details.</div>
+        <div className="text-destructive">
+          {t("admin.monitor.detail.error", {
+            defaultValue: "Failed to load student details.",
+          })}
+        </div>
       </div>
     );
   }
@@ -464,10 +474,16 @@ export function StudentDetailPage() {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Students
+              {t("admin.monitor.detail.back", {
+                defaultValue: "Back to Students",
+              })}
             </Button>
             <Separator orientation="vertical" className="h-6" />
-            <h1 className="text-xl font-semibold">Student Details</h1>
+            <h1 className="text-xl font-semibold">
+              {t("admin.monitor.detail.title", {
+                defaultValue: "Student Details",
+              })}
+            </h1>
             <Badge
               variant="outline"
               className="bg-primary/5 text-primary border-primary/20"
@@ -518,7 +534,9 @@ export function StudentDetailPage() {
                         variant="outline"
                         className="bg-amber-50 text-amber-700 border-amber-200"
                       >
-                        RP Required
+                        {t("admin.monitor.kanban.rp_required", {
+                          defaultValue: "RP Required",
+                        })}
                       </Badge>
                     )}
                   </div>
@@ -552,7 +570,9 @@ export function StudentDetailPage() {
                     disabled
                   >
                     <Copy className="h-4 w-4" />
-                    Copy Link
+                    {t("admin.monitor.detail.copy_link", {
+                      defaultValue: "Copy Link",
+                    })}
                   </Button>
                 </div>
               </div>
@@ -562,7 +582,9 @@ export function StudentDetailPage() {
               <div className="grid grid-cols-3 gap-6">
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">
-                    Advisors
+                    {t("admin.monitor.detail.advisors", {
+                      defaultValue: "Advisors",
+                    })}
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {(student.advisors || []).map((advisor: any) => (
@@ -576,14 +598,18 @@ export function StudentDetailPage() {
                     ))}
                     {(!student.advisors || student.advisors.length === 0) && (
                       <span className="text-sm text-muted-foreground">
-                        No advisor assigned
+                        {t("admin.monitor.detail.no_advisor", {
+                          defaultValue: "No advisor assigned",
+                        })}
                       </span>
                     )}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">
-                    Overall Progress
+                    {t("admin.monitor.detail.overall_progress", {
+                      defaultValue: "Overall Progress",
+                    })}
                   </div>
                   <div className="flex items-center gap-3">
                     <Progress
@@ -597,17 +623,25 @@ export function StudentDetailPage() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">
-                    Status
+                    {t("admin.monitor.detail.status", {
+                      defaultValue: "Status",
+                    })}
                   </div>
                   <Badge
                     variant="outline"
                     className={`text-xs ${
                       student.overdue
                         ? "bg-red-50 text-red-700 border-red-200"
-                        : "bg-muted/20"
+                      : "bg-muted/20"
                     }`}
                   >
-                    {student.overdue ? "OVERDUE" : "NORMAL"}
+                    {student.overdue
+                      ? t("admin.monitor.detail.status_overdue", {
+                          defaultValue: "OVERDUE",
+                        })
+                      : t("admin.monitor.detail.status_normal", {
+                          defaultValue: "NORMAL",
+                        })}
                   </Badge>
                 </div>
               </div>
@@ -618,7 +652,9 @@ export function StudentDetailPage() {
           <Card className="border shadow-sm">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-6">
-                Dissertation Journey Map
+                {t("admin.monitor.detail.journey_card", {
+                  defaultValue: "Dissertation Journey Map",
+                })}
               </h3>
               <div className="flex items-center gap-2 overflow-x-auto pb-2">
                 {STAGES.filter(
@@ -639,16 +675,16 @@ export function StudentDetailPage() {
                       className="flex items-center flex-shrink-0"
                     >
                       <div
-                        className={`px-4 py-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                          isCurrent
-                            ? "bg-primary text-primary-foreground shadow-md scale-105"
-                            : isCompleted
-                            ? "bg-green-100 text-green-800"
-                            : "bg-muted/30 text-muted-foreground"
-                        }`}
-                      >
-                        {stage.label}
-                      </div>
+                      className={`px-4 py-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                        isCurrent
+                          ? "bg-primary text-primary-foreground shadow-md scale-105"
+                          : isCompleted
+                          ? "bg-green-100 text-green-800"
+                          : "bg-muted/30 text-muted-foreground"
+                      }`}
+                    >
+                      {stageLabel(stage.id, language)}
+                    </div>
                       {idx < arr.length - 1 && (
                         <div className="w-12 h-0.5 bg-border mx-2 flex-shrink-0" />
                       )}
@@ -664,19 +700,26 @@ export function StudentDetailPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">
-                  Current Stage:{" "}
-                  {STAGES.find((s) => s.id === student.current_stage)?.label ||
-                    "—"}
+                  {t("admin.monitor.detail.current_stage", {
+                    defaultValue: "Current Stage: {{stage}}",
+                    stage:
+                      stageLabel(student.current_stage, language) || "—",
+                  })}
                 </h3>
                 <Badge variant="outline" className="text-sm">
-                  {stageNodes.length} nodes
+                  {t("admin.monitor.detail.stage_nodes_badge", {
+                    defaultValue: "{{count}} nodes",
+                    count: stageNodes.length,
+                  })}
                 </Badge>
               </div>
 
               <div className="grid gap-4">
                 {stageNodes.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    No nodes available for this stage
+                    {t("admin.monitor.detail.stage_empty", {
+                      defaultValue: "No nodes available for this stage",
+                    })}
                   </div>
                 ) : (
                   stageNodes.map((node: any) => (
@@ -697,20 +740,30 @@ export function StudentDetailPage() {
           {/* Comments */}
           <Card className="border shadow-sm">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Comments & Notes</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                {t("admin.monitor.detail.comments.title", {
+                  defaultValue: "Comments & Notes",
+                })}
+              </h3>
               <div className="space-y-3">
                 <Textarea
-                  placeholder="Add a comment... Use @ to mention advisors"
+                  placeholder={t("admin.monitor.detail.comments.placeholder", {
+                    defaultValue: "Add a comment... Use @ to mention advisors",
+                  })}
                   className="min-h-[100px]"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
                 <div className="flex justify-end gap-2">
                   <Button size="sm" variant="outline">
-                    Attach File
+                    {t("admin.monitor.detail.comments.attach", {
+                      defaultValue: "Attach File",
+                    })}
                   </Button>
                   <Button size="sm" disabled={!comment.trim()}>
-                    Add Comment
+                    {t("admin.monitor.detail.comments.add", {
+                      defaultValue: "Add Comment",
+                    })}
                   </Button>
                 </div>
               </div>
@@ -860,9 +913,18 @@ export function StudentDetailPage() {
                                 {meta?.label || slot}
                               </h4>
                               <p className="text-xs text-muted-foreground">
-                                {files.length}{" "}
-                                {files.length === 1 ? "file" : "files"}
-                                {meta?.required && " · Required"}
+                                {t("admin.monitor.detail.files_count", {
+                                  defaultValue: "{{count}} files",
+                                  count: files.length,
+                                })}
+                                {meta?.required && (
+                                  <span>
+                                    {" · "}
+                                    {t("common.required", {
+                                      defaultValue: "Required",
+                                    })}
+                                  </span>
+                                )}
                               </p>
                             </div>
                           </div>
@@ -1205,7 +1267,9 @@ export function StudentDetailPage() {
           <Card className="border shadow-sm">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-6">
-                Deadlines & Reminders
+                {t("admin.monitor.detail.deadlines.title", {
+                  defaultValue: "Deadlines & Reminders",
+                })}
               </h3>
               <div className="space-y-3">
                 {student.due_next && (
@@ -1214,12 +1278,20 @@ export function StudentDetailPage() {
                       <Calendar className="h-5 w-5 text-primary" />
                       <div>
                         <div className="text-sm font-medium text-foreground">
-                          Next Due:{" "}
-                          {new Date(student.due_next).toLocaleDateString()}
+                          {t("admin.monitor.detail.deadlines.next_due", {
+                            defaultValue: "Next due:",
+                          })}{" "}
+                          {new Date(student.due_next).toLocaleDateString(
+                            language
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {student.stage_done}/{student.stage_total} nodes
-                          completed in current stage
+                          {t("admin.monitor.detail.deadlines.stage_progress", {
+                            defaultValue:
+                              "{{done}}/{{total}} nodes completed in current stage",
+                            done: student.stage_done ?? 0,
+                            total: student.stage_total ?? 0,
+                          })}
                         </div>
                       </div>
                     </div>
@@ -1228,7 +1300,9 @@ export function StudentDetailPage() {
                         variant="outline"
                         className="bg-red-50 text-red-700 border-red-200"
                       >
-                        Overdue
+                        {t("admin.monitor.detail.deadlines.overdue_badge", {
+                          defaultValue: "Overdue",
+                        })}
                       </Badge>
                     )}
                   </div>
@@ -1237,7 +1311,9 @@ export function StudentDetailPage() {
                 {deadlinesList && deadlinesList.length > 0 && (
                   <div className="space-y-2 mt-4">
                     <div className="text-sm font-medium text-foreground mb-2">
-                      Upcoming Deadlines
+                      {t("admin.monitor.detail.deadlines.upcoming", {
+                        defaultValue: "Upcoming Deadlines",
+                      })}
                     </div>
                     {deadlinesList.slice(0, 5).map((deadline) => (
                       <div
@@ -1257,7 +1333,7 @@ export function StudentDetailPage() {
                           </div>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {new Date(deadline.due_at).toLocaleString()}
+                          {new Date(deadline.due_at).toLocaleString(language)}
                         </div>
                       </div>
                     ))}
@@ -1270,7 +1346,9 @@ export function StudentDetailPage() {
                   className="w-full gap-2 mt-4"
                 >
                   <Plus className="h-4 w-4" />
-                  Add New Reminder
+                  {t("admin.monitor.detail.deadlines.add", {
+                    defaultValue: "Add New Reminder",
+                  })}
                 </Button>
               </div>
             </CardContent>
@@ -1350,6 +1428,8 @@ function NodeCard({
   dueDate?: string;
   onSetDue: (due: string) => void;
 }) {
+  const { t, i18n } = useTranslation("common");
+  const locale = i18n.language || "en";
   const stateConfig = nodeStates[state];
   const StateIcon = stateConfig.icon;
 
@@ -1363,7 +1443,9 @@ function NodeCard({
             </code>
             <Badge variant="outline" className={`text-xs ${stateConfig.color}`}>
               <StateIcon className="h-3 w-3 mr-1" />
-              {stateConfig.label}
+              {t(`admin.monitor.detail.node_states.${state}`, {
+                defaultValue: stateConfig.label,
+              })}
             </Badge>
           </div>
           <div className="text-sm font-medium text-foreground truncate">
@@ -1372,17 +1454,24 @@ function NodeCard({
           {dueDate && (
             <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="h-3.5 w-3.5" />
-              Due: {new Date(dueDate).toLocaleString()}
+              {t("admin.monitor.detail.node_card.due", {
+                defaultValue: "Due:",
+              })}{" "}
+              {new Date(dueDate).toLocaleString(locale)}
             </div>
           )}
         </div>
         <div className="w-48 ml-4">
           <label className="block text-xs text-muted-foreground mb-1">
-            Set deadline
+            {t("admin.monitor.detail.node_card.set_label", {
+              defaultValue: "Set deadline",
+            })}
           </label>
           <input
             type="datetime-local"
-            aria-label="Set due date"
+            aria-label={t("admin.monitor.detail.node_card.set_aria", {
+              defaultValue: "Set due date",
+            })}
             className="w-full border rounded-md px-2 py-1 text-xs"
             value={dueDate ? dueDate.slice(0, 16) : ""}
             onChange={(e) => onSetDue(e.target.value)}

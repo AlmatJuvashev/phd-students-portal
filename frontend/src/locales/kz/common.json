@@ -61,7 +61,8 @@
     "success": "Сақталды.",
     "error": "Қате",
     "info": "Ақпарат",
-    "not_implemented": "Әлі қолжетімді емес."
+    "not_implemented": "Әлі қолжетімді емес.",
+    "required": "Міндетті"
   },
   "gateway": {
     "prompt": "Келесі бөлімге өтесіз бе? Қазір ашуға болады.",
@@ -82,6 +83,10 @@
   "decision": {
     "instructions": "Бұл кезеңнің дайын екенін растаңыз.",
     "submit": "Дайын деп белгілеу"
+  },
+  "validation": {
+    "required": "Міндетті өріс",
+    "invalid_email": "Жарамсыз email"
   },
   "forms.nk.done_info": "Жауаптар сақталды. Келесі қадамға өту…",
   "home": {
@@ -140,11 +145,169 @@
       "view_journey": "Картаны ашу",
       "tooltip_progress": "{{done}} / {{total}} түйін орындалды ({{pct}}%)"
     },
+    "monitor": {
+      "title": "Студенттер мониторингі",
+      "count_label": "{{count}} студент",
+      "tabs": {
+        "table": "Кесте",
+        "kanban": "Канбан",
+        "analytics": "Аналитика"
+      },
+      "loading": "Студенттер тізімі жүктелуде...",
+      "empty": "Сүзгілерге сәйкес студенттер жоқ.",
+      "bulk": {
+        "title": "{{count}} студентке жаңа ескерту",
+        "title_placeholder": "Тақырып",
+        "message_placeholder": "Хабарлама (міндетті емес)",
+        "due_label": "Мерзімі",
+        "send": "Жіберу"
+      },
+      "filters": {
+        "search_placeholder": "Аты, ID, телефон немесе email бойынша іздеу...",
+        "program_placeholder": "Бағдарлама",
+        "department_placeholder": "Кафедра",
+        "cohort_placeholder": "Ағын",
+        "program_all": "Барлық бағдарламалар",
+        "department_all": "Барлық кафедралар",
+        "cohort_all": "Барлық ағындар",
+        "more": "Қосымша сүзгілер",
+        "rp_only": "Тек RP бар",
+        "overdue_only": "Тек мерзімі өткендер",
+        "clear": "Тазалау",
+        "apply": "Сүзгілерді қолдану",
+        "export": "CSV экспорт",
+        "bulk": "Жаппай хабарлама",
+        "new_reminder": "Жаңа ескерту",
+        "programs": {
+          "phd_cs": "PhD Компьютерлік ғылымдар",
+          "phd_physics": "PhD Физика",
+          "phd_chemistry": "PhD Химия",
+          "phd_biomed": "PhD Биомедициналық инженерия",
+          "phd_math": "PhD Қолданбалы математика"
+        },
+        "departments": {
+          "cs": "Компьютерлік ғылымдар кафедрасы",
+          "physics": "Физика кафедрасы",
+          "chemistry": "Химия кафедрасы",
+          "biomed": "Биомедициналық инженерия",
+          "math": "Қолданбалы математика"
+        }
+      },
+      "detail": {
+        "loading": "Студент деректері жүктелуде...",
+        "error": "Студент деректерін жүктеу мүмкін болмады.",
+        "back": "Тізімге оралу",
+        "title": "Студент картасы",
+        "copy_link": "Сілтемені көшіру",
+        "advisors": "Кеңесшілер",
+        "no_advisor": "Кеңесші тағайындалмаған",
+        "overall_progress": "Жалпы прогресс",
+        "status": "Статус",
+        "status_overdue": "МЕРЗІМІ ӨТТІ",
+        "status_normal": "ҚАЛЫПТЫ",
+        "journey_card": "Диссертация картасы",
+        "current_stage": "Ағымдағы кезең: {{stage}}",
+        "stage_nodes_badge": "{{count}} түйін",
+        "stage_empty": "Бұл кезеңде түйіндер жоқ",
+        "comments": {
+          "title": "Пікірлер мен жазбалар",
+          "placeholder": "Пікір қосыңыз... Кеңесшілерді атау үшін @ қолданыңыз",
+          "attach": "Файл тіркеу",
+          "add": "Пікір қосу"
+        },
+        "deadlines": {
+          "title": "Дедлайндар мен ескертулер",
+          "next_due": "Келесі мерзім:",
+          "stage_progress": "{{done}}/{{total}} түйін осы кезеңде аяқталды",
+          "overdue_badge": "Мерзімі өтті",
+          "upcoming": "Алдағы дедлайндар",
+          "add": "Ескерту қосу"
+        },
+        "files_count_one": "{{count}} файл",
+        "files_count_other": "{{count}} файл",
+        "node_states": {
+          "locked": "Бұғатталған",
+          "active": "Белсенді",
+          "submitted": "Жіберілді",
+          "waiting": "Күту",
+          "under_review": "Қаралуда",
+          "needs_fixes": "Түзету керек",
+          "done": "Аяқталды"
+        },
+        "node_card": {
+          "due": "Мерзімі:",
+          "set_label": "Дедлайн қою",
+          "set_aria": "Тапсыру мерзімін қою"
+        }
+      },
+      "table": {
+        "columns": {
+          "student": "Студент",
+          "program_department": "Бағдарлама · Кафедра",
+          "stage": "Кезең",
+          "progress": "Прогресс",
+          "cohort": "Ағын",
+          "due": "Мерзімі",
+          "last_activity": "Соңғы әрекет"
+        },
+        "select_all": "Барлығын таңдау",
+        "select_student": "{{name}} таңдау",
+        "stage_nodes": "{{done}}/{{total}} түйін",
+        "overdue_badge": "Мерзімі өтті",
+        "stage_states": {
+          "completed": "Аяқталды",
+          "in-progress": "Орындауда",
+          "at-risk": "Қауіп бар",
+          "pending": "Күтілуде"
+        }
+      },
+      "kanban": {
+        "empty_stage": "Бұл кезеңде студенттер жоқ",
+        "progress": "Прогресс",
+        "due_label": "Мерзімі:",
+        "overdue_label": "Мерзімі өтті:",
+        "rp_required": "RP қажет"
+      },
+      "analytics": {
+        "loading": "Аналитика жүктелуде...",
+        "error": "Қате: {{message}}",
+        "metrics": {
+          "antiplag": {
+            "title": "Антиплагиат сәйкестігі",
+            "description": "S1_antiplag ≥85% студенттер"
+          },
+          "w2": {
+            "title": "W2 кезеңіндегі орташа күн",
+            "description": "Алдын ала сараптаманың орташа уақыты"
+          },
+          "bottleneck": {
+            "title": "Тұйық түйін",
+            "description": "{{count}} студент күтіп тұр"
+          },
+          "rp": {
+            "title": "RP қажет",
+            "description": "Research proposal қажет студенттер"
+          },
+          "completion": {
+            "title": "Аяқтау үлесі",
+            "description": "Жоспар бойынша келе жатқан студенттер"
+          },
+          "overdue": {
+            "title": "Мерзімі өткен тапсырмалар",
+            "description": "Мерзімі өтіп кеткен тапсырмалар"
+          }
+        },
+        "distribution_title": "Кезеңдер бойынша бөлу",
+        "distribution_placeholder": "Диаграмма жақында көрсетіледі..."
+      }
+    },
     "review": {
       "title": "Құжаттар және тексеру",
+      "subtitle": "Студент жіберген файлдарды қарап, растаңыз",
       "select_node": "Узел таңдаңыз",
       "hint": "Жүктелген файлдарды көру үшін узел таңдаңыз.",
       "loading": "Файлдар жүктелуде...",
+      "empty_title": "Файлдар жоқ",
       "empty": "Бұл узелде әзірше файл жоқ.",
       "approve": "Қабылдау",
       "request_changes": "Түзетуді сұрау",
@@ -160,6 +323,35 @@
       "confirm_reset": "Осы студенттің құпиясөзін қалпына келтіресіз бе? Оған жаңа уақытша құпиясөз керек болады.",
       "password_reset": "Құпиясөз жаңартылды",
       "reset_password": "Құпиясөзді қалпына келтіру"
+    },
+    "notifications": {
+      "title": "Хабарламалар",
+      "subtitle": "Студенттерден жаңа құжаттар мен жаңартулар",
+      "show_all": "Барлығын көрсету",
+      "show_unread": "Тек оқылмаған",
+      "mark_all_read": "Барлығын оқылған белгілеу",
+      "no_unread": "Оқылмаған хабарламалар жоқ",
+      "empty": "Хабарламалар әлі жоқ",
+      "event_labels": {
+        "document_submitted": "Құжат жіберілді",
+        "document_uploaded": "Файл жүктелді",
+        "form_submitted": "Форма жіберілді",
+        "default": "Хабарлама"
+      },
+      "messages": {
+        "document_submitted": "{{node}} бойынша құжаттар жіберілді",
+        "document_uploaded": "{{node}} ішінде жаңа файл жүктелді",
+        "form_submitted": "{{node}} ішінде форма жіберілді",
+        "default": "{{node}} узелінде жаңарту"
+      },
+      "relative": {
+        "just_now": "Жаңа ғана",
+        "minutes": "{{count}} мин бұрын",
+        "hours": "{{count}} сағ бұрын",
+        "yesterday": "Кеше",
+        "days": "{{count}} күн бұрын",
+        "short_date": "{{date}}"
+      }
     },
     "forms": {
       "create_students_title": "Студенттерді қосу",
@@ -194,6 +386,14 @@
       "creating": "Жасалуда…",
       "username": "Логин",
       "temp_password": "Уақытша құпиясөз",
+      "errors": {
+        "create_advisor": "Кеңесшіні қосу мүмкін болмады",
+        "create_admin": "Админді қосу мүмкін болмады",
+        "reset_password": "Құпиясөзді қалпына келтіру мүмкін болмады",
+        "status_update": "Статусты жаңарту мүмкін болмады",
+        "update_advisor": "Кеңесшіні жаңарту мүмкін болмады",
+        "update_admin": "Админді жаңарту мүмкін болмады"
+      },
       "create_student": {
         "title": "Студент қосу",
         "subtitle": "Бағдарлама деректерімен және кеңесшілермен студент қосыңыз.",

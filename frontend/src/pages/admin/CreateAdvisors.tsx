@@ -13,18 +13,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle, Pencil, X } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle, Pencil, X, Plus } from "lucide-react";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
 
-const Schema = z.object({
-  first_name: z.string().min(1, "Required"),
-  last_name: z.string().min(1, "Required"),
-  email: z.string().email("Invalid email"),
-});
+const buildSchema = (t: (key: string, options?: any) => string) =>
+  z.object({
+    first_name: z
+      .string()
+      .min(1, t("validation.required", { defaultValue: "Required" })),
+    last_name: z
+      .string()
+      .min(1, t("validation.required", { defaultValue: "Required" })),
+    email: z
+      .string()
+      .email(t("validation.invalid_email", { defaultValue: "Invalid email" })),
+  });
 
-type Form = z.infer<typeof Schema>;
+type Form = {
+  first_name: string;
+  last_name: string;
+  email: string;
+};
 type UserRow = {
   id: string;
   name: string;
@@ -44,6 +55,7 @@ type PaginatedResponse = {
 export function CreateAdvisors() {
   const { t } = useTranslation('common');
   const queryClient = useQueryClient();
+  const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [created, setCreated] = React.useState<{ username: string; temp_password: string } | null>(null);
   const [resetInfo, setResetInfo] = React.useState<{ username: string; temp_password: string } | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -56,7 +68,8 @@ export function CreateAdvisors() {
   const [confirmState, setConfirmState] = React.useState<{ open: boolean; kind: "reset" | "deactivate" | "activate" | null; advisor: UserRow | null }>({ open: false, kind: null, advisor: null });
   const [editModal, setEditModal] = React.useState<{ open: boolean; advisor: UserRow | null }>({ open: false, advisor: null });
   const PAGE_SIZE = 10;
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<Form>({ resolver: zodResolver(Schema) });
+  const schema = React.useMemo(() => buildSchema(t), [t]);
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<Form>({ resolver: zodResolver(schema) });
 
   const { data: usersResponse, isLoading, isError, refetch } = useQuery<PaginatedResponse>({
     queryKey: ["admin", "users", "advisors"],
@@ -74,9 +87,16 @@ export function CreateAdvisors() {
     onSuccess: (res: { username: string; temp_password: string }) => {
       setCreated(res);
       reset();
+      setShowCreateModal(false);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
-    onError: (err: any) => alert(err?.message || "Failed to create advisor"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.create_advisor", {
+            defaultValue: "Failed to create advisor",
+          })
+      ),
   });
 
   const resetPasswordMutation = useMutation({
@@ -86,7 +106,13 @@ export function CreateAdvisors() {
       setResetInfo(res);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
-    onError: (err: any) => alert(err?.message || "Failed to reset password"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.reset_password", {
+            defaultValue: "Failed to reset password",
+          })
+      ),
   });
 
   const setActiveMutation = useMutation({
@@ -99,7 +125,13 @@ export function CreateAdvisors() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       refetch();
     },
-    onError: (err: any) => alert(err?.message || "Failed to update status"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.status_update", {
+            defaultValue: "Failed to update status",
+          })
+      ),
   });
 
   const updateAdvisorMutation = useMutation({
@@ -118,7 +150,13 @@ export function CreateAdvisors() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       refetch();
     },
-    onError: (err: any) => alert(err?.message || "Failed to update advisor"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.update_advisor", {
+            defaultValue: "Failed to update advisor",
+          })
+      ),
   });
 
   const onSubmit = (data: Form) => createAdvisorMutation.mutate(data);
@@ -193,34 +231,16 @@ export function CreateAdvisors() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">{t('admin.forms.create_advisor.title','Manage Advisors')}</h2>
-        <p className="text-muted-foreground">{t('admin.forms.create_advisor.subtitle','Add a new academic advisor.')}</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">{t('admin.forms.create_advisor.title','Manage Advisors')}</h2>
+          <p className="text-muted-foreground">{t('admin.forms.create_advisor.subtitle','Add a new academic advisor.')}</p>
+        </div>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
+          {t('admin.forms.create_advisor.submit','Create Advisor')}
+        </Button>
       </div>
-      <Card>
-        <CardHeader><CardTitle>{t('admin.forms.create_advisor.heading','Advisor Details')}</CardTitle></CardHeader>
-        <CardContent>
-          <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <Input placeholder={t('admin.forms.first_name','First name')} {...register("first_name")} />
-              {errors.first_name && <div className="text-xs text-red-600 mt-1">{errors.first_name.message}</div>}
-            </div>
-            <div>
-              <Input placeholder={t('admin.forms.last_name','Last name')} {...register("last_name")} />
-              {errors.last_name && <div className="text-xs text-red-600 mt-1">{errors.last_name.message}</div>}
-            </div>
-            <div className="md:col-span-2">
-              <Input type="email" placeholder={t('admin.forms.email','Email')} {...register("email")} />
-              {errors.email && <div className="text-xs text-red-600 mt-1">{errors.email.message}</div>}
-            </div>
-            <div className="md:col-span-2 pt-2">
-              <Button type="submit" className="w-full md:w-auto" disabled={createAdvisorMutation.isPending}>
-                {createAdvisorMutation.isPending ? t('admin.forms.creating','Creating…') : t('admin.forms.create_advisor.submit','Create Advisor')}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
 
       {created && (
         <Card className="border-green-200 bg-green-50">
@@ -458,6 +478,45 @@ export function CreateAdvisors() {
           </div>
         </CardContent>
       </Card>
+
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="max-w-xl w-full p-1">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-2">
+              <div>
+                <CardTitle>{t('admin.forms.create_advisor.heading','Advisor Details')}</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {t('admin.forms.create_advisor.subtitle','Add a new academic advisor.')}
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
+                <div>
+                  <Input placeholder={t('admin.forms.first_name','First name')} {...register("first_name")} />
+                  {errors.first_name && <div className="text-xs text-red-600 mt-1">{errors.first_name.message}</div>}
+                </div>
+                <div>
+                  <Input placeholder={t('admin.forms.last_name','Last name')} {...register("last_name")} />
+                  {errors.last_name && <div className="text-xs text-red-600 mt-1">{errors.last_name.message}</div>}
+                </div>
+                <div className="md:col-span-2">
+                  <Input type="email" placeholder={t('admin.forms.email','Email')} {...register("email")} />
+                  {errors.email && <div className="text-xs text-red-600 mt-1">{errors.email.message}</div>}
+                </div>
+                <div className="md:col-span-2 pt-2">
+                  <Button type="submit" className="w-full md:w-auto" disabled={createAdvisorMutation.isPending}>
+                    {createAdvisorMutation.isPending ? t('admin.forms.creating','Creating…') : t('admin.forms.create_advisor.submit','Create Advisor')}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </Modal>
 
       <ConfirmModal
         open={confirmState.open}

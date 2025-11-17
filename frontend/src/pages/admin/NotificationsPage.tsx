@@ -49,7 +49,11 @@ function getEventBadgeColor(eventType: string) {
   }
 }
 
-function getRelativeTime(dateString: string): string {
+function getRelativeTime(
+  dateString: string,
+  t: (key: string, options?: any) => string,
+  locale = "en"
+): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -57,14 +61,36 @@ function getRelativeTime(dateString: string): string {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMins < 1) return "только что";
-  if (diffMins < 60) return `${diffMins} мин назад`;
-  if (diffHours < 24) return `${diffHours} ч назад`;
-  if (diffDays === 1) return "вчера";
-  if (diffDays < 7) return `${diffDays} дн назад`;
-  return date.toLocaleDateString("ru-RU", {
+  if (diffMins < 1)
+    return t("admin.notifications.relative.just_now", {
+      defaultValue: "Just now",
+    });
+  if (diffMins < 60)
+    return t("admin.notifications.relative.minutes", {
+      defaultValue: "{{count}} min ago",
+      count: diffMins,
+    });
+  if (diffHours < 24)
+    return t("admin.notifications.relative.hours", {
+      defaultValue: "{{count}} h ago",
+      count: diffHours,
+    });
+  if (diffDays === 1)
+    return t("admin.notifications.relative.yesterday", {
+      defaultValue: "Yesterday",
+    });
+  if (diffDays < 7)
+    return t("admin.notifications.relative.days", {
+      defaultValue: "{{count}} d ago",
+      count: diffDays,
+    });
+  const shortDate = date.toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
+  });
+  return t("admin.notifications.relative.short_date", {
+    defaultValue: shortDate,
+    date: shortDate,
   });
 }
 
@@ -76,11 +102,121 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+function getEventLabel(
+  eventType: string,
+  t: (key: string, options?: any) => string
+) {
+  switch (eventType) {
+    case "document_submitted":
+      return t("admin.notifications.event_labels.document_submitted", {
+        defaultValue: "Document submitted",
+      });
+    case "document_uploaded":
+      return t("admin.notifications.event_labels.document_uploaded", {
+        defaultValue: "Document uploaded",
+      });
+    case "form_submitted":
+      return t("admin.notifications.event_labels.form_submitted", {
+        defaultValue: "Form submitted",
+      });
+    default:
+      return t("admin.notifications.event_labels.default", {
+        defaultValue: "Notification",
+      });
+  }
+}
+
+function parseMetadata(raw?: string | null) {
+  if (!raw) return {};
+  if (typeof raw !== "string") return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function getNotificationMessage(
+  notification: Notification,
+  nodeTitle: string,
+  metadata: Record<string, any>,
+  t: (key: string, options?: any) => string
+) {
+  const context = {
+    node: nodeTitle,
+    slot: metadata?.slot_key || "",
+    file: metadata?.filename || "",
+  };
+  switch (notification.event_type) {
+    case "document_submitted":
+      return t("admin.notifications.messages.document_submitted", {
+        defaultValue: "Documents submitted for {{node}}",
+        ...context,
+      });
+    case "document_uploaded":
+      return t("admin.notifications.messages.document_uploaded", {
+        defaultValue: "New file uploaded in {{node}}",
+        ...context,
+      });
+    case "form_submitted":
+      return t("admin.notifications.messages.form_submitted", {
+        defaultValue: "Form submitted in {{node}}",
+        ...context,
+      });
+    default:
+      return t("admin.notifications.messages.default", {
+        defaultValue: "Update in {{node}}",
+        ...context,
+      });
+  }
+}
+
 export function NotificationsPage() {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showUnreadOnly, setShowUnreadOnly] = React.useState(false);
+  const [nodeTitles, setNodeTitles] = React.useState<Record<string, string>>(
+    {}
+  );
+  const locale = i18n.language || "en";
+
+  React.useEffect(() => {
+    let mounted = true;
+    import("@/playbooks/playbook.json")
+      .then((mod: any) => {
+        if (!mounted) return;
+        const pb = mod?.default ?? mod;
+        const worlds = pb?.worlds || pb?.Worlds || [];
+        const lang = (i18n.language || "en").toLowerCase();
+        const pick = (obj: any, key: string) =>
+          obj?.[key] ||
+          obj?.[key?.toUpperCase?.()] ||
+          (key
+            ? obj?.[key.charAt(0).toUpperCase() + key.slice(1)]
+            : undefined);
+        const titles: Record<string, string> = {};
+        worlds.forEach((w: any) => {
+          const nodes = w?.nodes || w?.Nodes || [];
+          nodes.forEach((node: any) => {
+            const id = node?.id || node?.ID;
+            if (!id) return;
+            const titleObj = node?.title || node?.Title || {};
+            titles[id] =
+              pick(titleObj, lang) ||
+              pick(titleObj, "en") ||
+              pick(titleObj, "ru") ||
+              pick(titleObj, "kz") ||
+              id;
+          });
+        });
+        setNodeTitles(titles);
+      })
+      .catch(() => setNodeTitles({}));
+    return () => {
+      mounted = false;
+    };
+  }, [i18n.language]);
 
   const { data: notificationsData, isLoading } = useQuery<Notification[]>({
     queryKey: ["admin", "notifications", showUnreadOnly],
@@ -212,18 +348,27 @@ export function NotificationsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={cn(
-                    "p-4 rounded-lg border transition-all cursor-pointer hover:shadow-md",
-                    !notification.is_read
-                      ? "bg-blue-50 border-blue-200 font-medium"
-                      : "bg-white hover:bg-gray-50"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
+              {notifications.map((notification) => {
+                const metadata = parseMetadata(notification.metadata);
+                const nodeTitle =
+                  nodeTitles[notification.node_id] ||
+                  metadata?.node_title ||
+                  notification.node_id;
+                const localizedMessage =
+                  getNotificationMessage(notification, nodeTitle, metadata, t) ||
+                  notification.message;
+                return (
+                  <div
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={cn(
+                      "p-4 rounded-lg border transition-all cursor-pointer hover:shadow-md",
+                      !notification.is_read
+                        ? "bg-blue-50 border-blue-200 font-medium"
+                        : "bg-white hover:bg-gray-50"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
                     {/* Avatar */}
                     <div
                       className={cn(
@@ -236,53 +381,57 @@ export function NotificationsPage() {
                       {getInitials(notification.student_name)}
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={cn(
+                                "font-medium",
+                                !notification.is_read && "text-primary"
+                              )}
+                            >
+                              {notification.student_name}
+                            </span>
+                            <Badge
+                              className={getEventBadgeColor(
+                                notification.event_type
+                              )}
+                            >
+                              {getEventIcon(notification.event_type)}{" "}
+                              {getEventLabel(notification.event_type, t)}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+                            <Clock className="h-3 w-3" />
+                            {getRelativeTime(notification.created_at, t, locale)}
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-foreground mb-1">
+                          {localizedMessage}
+                        </p>
+
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span
-                            className={cn(
-                              "font-medium",
-                              !notification.is_read && "text-primary"
-                            )}
+                            className="bg-muted px-2 py-0.5 rounded"
+                            title={notification.node_id}
                           >
-                            {notification.student_name}
+                            {nodeTitle}
                           </span>
-                          <Badge
-                            className={getEventBadgeColor(
-                              notification.event_type
-                            )}
-                          >
-                            {getEventIcon(notification.event_type)}{" "}
-                            {notification.event_type}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
-                          <Clock className="h-3 w-3" />
-                          {getRelativeTime(notification.created_at)}
+                          <span>•</span>
+                          <span>{notification.student_email}</span>
                         </div>
                       </div>
 
-                      <p className="text-sm text-foreground mb-1">
-                        {notification.message}
-                      </p>
-
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="font-mono bg-muted px-2 py-0.5 rounded">
-                          {notification.node_id}
-                        </span>
-                        <span>•</span>
-                        <span>{notification.student_email}</span>
-                      </div>
+                      {/* Unread indicator */}
+                      {!notification.is_read && (
+                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
+                      )}
                     </div>
-
-                    {/* Unread indicator */}
-                    {!notification.is_read && (
-                      <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
