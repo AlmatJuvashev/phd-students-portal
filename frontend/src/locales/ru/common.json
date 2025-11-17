@@ -61,7 +61,8 @@
     "success": "Сохранено.",
     "error": "Ошибка",
     "info": "Информация",
-    "not_implemented": "Действие пока недоступно."
+    "not_implemented": "Действие пока недоступно.",
+    "required": "Обязательно"
   },
   "gateway": {
     "prompt": "Перейти к следующей главе? Вы можете открыть доступ сейчас.",
@@ -82,6 +83,10 @@
   "decision": {
     "instructions": "Подтвердите готовность этого этапа.",
     "submit": "Отметить готовым"
+  },
+  "validation": {
+    "required": "Обязательное поле",
+    "invalid_email": "Некорректный email"
   },
   "forms.nk.done_info": "Ответы зафиксированы. Переход к следующему шагу…",
   "home": {
@@ -141,11 +146,171 @@
       "view_journey": "Открыть карту",
       "tooltip_progress": "Выполнено {{done}} из {{total}} узлов ({{pct}}%)"
     },
+    "monitor": {
+      "title": "Мониторинг студентов",
+      "count_label": "{{count}} студентов",
+      "tabs": {
+        "table": "Таблица",
+        "kanban": "Канбан-доска",
+        "analytics": "Аналитика"
+      },
+      "loading": "Загрузка списка студентов...",
+      "empty": "Нет студентов по выбранным фильтрам.",
+      "bulk": {
+        "title": "Новое напоминание для {{count}} студентов",
+        "title_placeholder": "Заголовок",
+        "message_placeholder": "Сообщение (необязательно)",
+        "due_label": "Срок",
+        "send": "Отправить"
+      },
+      "filters": {
+        "search_placeholder": "Поиск по имени, ID, телефону или email...",
+        "program_placeholder": "Программа",
+        "department_placeholder": "Кафедра",
+        "cohort_placeholder": "Поток",
+        "program_all": "Все программы",
+        "department_all": "Все кафедры",
+        "cohort_all": "Все потоки",
+        "more": "Больше фильтров",
+        "rp_only": "Только с RP",
+        "overdue_only": "Только просроченные",
+        "clear": "Сбросить",
+        "apply": "Применить фильтры",
+        "export": "Экспорт CSV",
+        "bulk": "Массовое сообщение",
+        "new_reminder": "Новое напоминание",
+        "programs": {
+          "phd_cs": "PhD Компьютерные науки",
+          "phd_physics": "PhD Физика",
+          "phd_chemistry": "PhD Химия",
+          "phd_biomed": "PhD Биомедицинская инженерия",
+          "phd_math": "PhD Прикладная математика"
+        },
+        "departments": {
+          "cs": "Кафедра компьютерных наук",
+          "physics": "Кафедра физики",
+          "chemistry": "Кафедра химии",
+          "biomed": "Биомедицинская инженерия",
+          "math": "Прикладная математика"
+        }
+      },
+      "detail": {
+        "loading": "Загрузка данных студента...",
+        "error": "Не удалось загрузить данные студента.",
+        "back": "Назад к списку",
+        "title": "Карточка студента",
+        "copy_link": "Скопировать ссылку",
+        "advisors": "Научные руководители",
+        "no_advisor": "Руководитель не назначен",
+        "overall_progress": "Общий прогресс",
+        "status": "Статус",
+        "status_overdue": "ПРОСРОЧЕНО",
+        "status_normal": "В НОРМЕ",
+        "journey_card": "Карта диссертации",
+        "current_stage": "Текущий этап: {{stage}}",
+        "stage_nodes_badge": "{{count}} узлов",
+        "stage_empty": "Для этого этапа нет узлов",
+        "comments": {
+          "title": "Комментарии и заметки",
+          "placeholder": "Добавьте комментарий... Используйте @, чтобы упомянуть консультантов",
+          "attach": "Прикрепить файл",
+          "add": "Добавить комментарий"
+        },
+        "deadlines": {
+          "title": "Дедлайны и напоминания",
+          "next_due": "Ближайший срок:",
+          "stage_progress": "{{done}}/{{total}} узлов завершено на этом этапе",
+          "overdue_badge": "Просрочено",
+          "upcoming": "Предстоящие дедлайны",
+          "add": "Добавить напоминание"
+        },
+        "files_count_one": "{{count}} файл",
+        "files_count_few": "{{count}} файла",
+        "files_count_many": "{{count}} файлов",
+        "files_count_other": "{{count}} файла",
+        "node_states": {
+          "locked": "Заблокировано",
+          "active": "Активно",
+          "submitted": "Отправлено",
+          "waiting": "Ожидает",
+          "under_review": "На проверке",
+          "needs_fixes": "Требует правок",
+          "done": "Готово"
+        },
+        "node_card": {
+          "due": "Срок:",
+          "set_label": "Назначить дедлайн",
+          "set_aria": "Назначить дату сдачи"
+        }
+      },
+      "table": {
+        "columns": {
+          "student": "Студент",
+          "program_department": "Программа · Кафедра",
+          "stage": "Этап",
+          "progress": "Прогресс",
+          "cohort": "Поток",
+          "due": "Срок",
+          "last_activity": "Последняя активность"
+        },
+        "select_all": "Выбрать всех",
+        "select_student": "Выбрать {{name}}",
+        "stage_nodes": "{{done}}/{{total}} узлов",
+        "overdue_badge": "Просрочено",
+        "stage_states": {
+          "completed": "Завершено",
+          "in-progress": "В процессе",
+          "at-risk": "Риск просрочки",
+          "pending": "Ожидает"
+        }
+      },
+      "kanban": {
+        "empty_stage": "На этом этапе нет студентов",
+        "progress": "Прогресс",
+        "due_label": "Срок:",
+        "overdue_label": "Просрочено:",
+        "rp_required": "Требуется RP"
+      },
+      "analytics": {
+        "loading": "Загрузка аналитики...",
+        "error": "Ошибка: {{message}}",
+        "metrics": {
+          "antiplag": {
+            "title": "Соответствие антиплагиату",
+            "description": "Студенты с S1_antiplag ≥85%"
+          },
+          "w2": {
+            "title": "Медианное время на этапе W2",
+            "description": "Средняя длительность предварительной экспертизы"
+          },
+          "bottleneck": {
+            "title": "Узкое место",
+            "description": "{{count}} студентов в ожидании"
+          },
+          "rp": {
+            "title": "Требуется RP",
+            "description": "Студенты, которым нужен research proposal"
+          },
+          "completion": {
+            "title": "Процент завершения",
+            "description": "Студенты, идущие по графику"
+          },
+          "overdue": {
+            "title": "Просроченные задачи",
+            "description": "Задачи, вышедшие за срок"
+          }
+        },
+        "distribution_title": "Распределение по этапам",
+        "distribution_placeholder": "Визуализация появится скоро..."
+      }
+    },
     "review": {
       "title": "Документы и рецензирование",
+      "subtitle": "Проверяйте и утверждайте загрузки студентов",
       "select_node": "Выберите узел",
       "hint": "Выберите узел, чтобы просмотреть загруженные файлы.",
       "loading": "Загрузка файлов...",
+      "empty_title": "Нет загрузок",
       "empty": "Для этого узла ещё нет файлов.",
       "approve": "Одобрить",
       "request_changes": "Запросить правки",
@@ -169,7 +334,27 @@
       "show_unread": "Только непрочитанные",
       "mark_all_read": "Отметить все прочитанными",
       "no_unread": "Нет непрочитанных уведомлений",
-      "empty": "Уведомлений пока нет"
+      "empty": "Уведомлений пока нет",
+      "event_labels": {
+        "document_submitted": "Документ отправлен",
+        "document_uploaded": "Файл загружен",
+        "form_submitted": "Форма отправлена",
+        "default": "Уведомление"
+      },
+      "messages": {
+        "document_submitted": "Документы отправлены по узлу {{node}}",
+        "document_uploaded": "Новый файл загружен в узел {{node}}",
+        "form_submitted": "Форма отправлена в узле {{node}}",
+        "default": "Обновление в узле {{node}}"
+      },
+      "relative": {
+        "just_now": "только что",
+        "minutes": "{{count}} мин назад",
+        "hours": "{{count}} ч назад",
+        "yesterday": "вчера",
+        "days": "{{count}} дн назад",
+        "short_date": "{{date}}"
+      }
     },
     "forms": {
       "create_students_title": "Управление студентами",
@@ -204,6 +389,14 @@
       "creating": "Создание…",
       "username": "Логин",
       "temp_password": "Временный пароль",
+      "errors": {
+        "create_advisor": "Не удалось создать консультанта",
+        "create_admin": "Не удалось создать администратора",
+        "reset_password": "Не удалось сбросить пароль",
+        "status_update": "Не удалось обновить статус",
+        "update_advisor": "Не удалось обновить консультанта",
+        "update_admin": "Не удалось обновить администратора"
+      },
       "create_student": {
         "title": "Создать студента",
         "subtitle": "Добавьте нового студента с программой и консультантами.",

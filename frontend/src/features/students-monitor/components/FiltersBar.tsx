@@ -10,6 +10,41 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Download, Mail, Plus, Filter } from "lucide-react";
+import { useTranslation } from "react-i18next";
+
+const PROGRAM_OPTIONS = [
+  { value: "PhD Computer Science", key: "phd_cs", fallback: "PhD Computer Science" },
+  { value: "PhD Physics", key: "phd_physics", fallback: "PhD Physics" },
+  { value: "PhD Chemistry", key: "phd_chemistry", fallback: "PhD Chemistry" },
+  {
+    value: "PhD Biomedical Engineering",
+    key: "phd_biomed",
+    fallback: "PhD Biomedical Engineering",
+  },
+  {
+    value: "PhD Applied Mathematics",
+    key: "phd_math",
+    fallback: "PhD Applied Mathematics",
+  },
+];
+
+const DEPARTMENT_OPTIONS = [
+  { value: "Computer Science", key: "cs", fallback: "Computer Science" },
+  { value: "Physics", key: "physics", fallback: "Physics" },
+  { value: "Chemistry", key: "chemistry", fallback: "Chemistry" },
+  {
+    value: "Biomedical Engineering",
+    key: "biomed",
+    fallback: "Biomedical Engineering",
+  },
+  {
+    value: "Applied Mathematics",
+    key: "math",
+    fallback: "Applied Mathematics",
+  },
+];
+
+const COHORT_OPTIONS = ["2025", "2024", "2023", "2022"];
 
 export type Filters = {
   q?: string;
@@ -32,6 +67,7 @@ export function FiltersBar({
   onChange: (f: Filters) => void;
   onRefresh: () => void;
 }) {
+  const { t } = useTranslation("common");
   const [local, setLocal] = React.useState<Filters>(value);
   React.useEffect(() => setLocal(value), [value]);
 
@@ -53,7 +89,9 @@ export function FiltersBar({
           <div className="relative flex-1 min-w-[320px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, ID, phone, or email..."
+              placeholder={t("admin.monitor.filters.search_placeholder", {
+                defaultValue: "Search by name, ID, phone, or email...",
+              })}
               className="pl-10 h-10"
               value={local.q || ""}
               onChange={(e) => setLocal({ ...local, q: e.target.value })}
@@ -69,21 +107,25 @@ export function FiltersBar({
             }
           >
             <SelectTrigger className="w-[180px] h-10">
-              <SelectValue placeholder="Program" />
+              <SelectValue
+                placeholder={t("admin.monitor.filters.program_placeholder", {
+                  defaultValue: "Program",
+                })}
+              />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Programs</SelectItem>
-              <SelectItem value="PhD Computer Science">
-                PhD Computer Science
+              <SelectItem value="all">
+                {t("admin.monitor.filters.program_all", {
+                  defaultValue: "All Programs",
+                })}
               </SelectItem>
-              <SelectItem value="PhD Physics">PhD Physics</SelectItem>
-              <SelectItem value="PhD Chemistry">PhD Chemistry</SelectItem>
-              <SelectItem value="PhD Biomedical Engineering">
-                PhD Biomedical Engineering
-              </SelectItem>
-              <SelectItem value="PhD Applied Mathematics">
-                PhD Applied Mathematics
-              </SelectItem>
+              {PROGRAM_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {t(`admin.monitor.filters.programs.${option.key}`, {
+                    defaultValue: option.fallback,
+                  })}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -98,19 +140,25 @@ export function FiltersBar({
             }
           >
             <SelectTrigger className="w-[180px] h-10">
-              <SelectValue placeholder="Department" />
+              <SelectValue
+                placeholder={t("admin.monitor.filters.department_placeholder", {
+                  defaultValue: "Department",
+                })}
+              />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              <SelectItem value="Computer Science">Computer Science</SelectItem>
-              <SelectItem value="Physics">Physics</SelectItem>
-              <SelectItem value="Chemistry">Chemistry</SelectItem>
-              <SelectItem value="Biomedical Engineering">
-                Biomedical Engineering
+              <SelectItem value="all">
+                {t("admin.monitor.filters.department_all", {
+                  defaultValue: "All Departments",
+                })}
               </SelectItem>
-              <SelectItem value="Applied Mathematics">
-                Applied Mathematics
-              </SelectItem>
+              {DEPARTMENT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {t(`admin.monitor.filters.departments.${option.key}`, {
+                    defaultValue: option.fallback,
+                  })}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -122,21 +170,32 @@ export function FiltersBar({
             }
           >
             <SelectTrigger className="w-[150px] h-10">
-              <SelectValue placeholder="Cohort" />
+              <SelectValue
+                placeholder={t("admin.monitor.filters.cohort_placeholder", {
+                  defaultValue: "Cohort",
+                })}
+              />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Cohorts</SelectItem>
-              <SelectItem value="2025">2025</SelectItem>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2023">2023</SelectItem>
-              <SelectItem value="2022">2022</SelectItem>
+              <SelectItem value="all">
+                {t("admin.monitor.filters.cohort_all", {
+                  defaultValue: "All Cohorts",
+                })}
+              </SelectItem>
+              {COHORT_OPTIONS.map((cohort) => (
+                <SelectItem key={cohort} value={cohort}>
+                  {cohort}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
           {/* More Filters Button */}
           <Button variant="outline" size="sm" className="gap-2 h-10">
             <Filter className="h-4 w-4" />
-            More Filters
+            {t("admin.monitor.filters.more", {
+              defaultValue: "More Filters",
+            })}
           </Button>
 
           {/* RP Required Toggle */}
@@ -152,7 +211,9 @@ export function FiltersBar({
               htmlFor="rp-only"
               className="text-sm text-muted-foreground cursor-pointer"
             >
-              RP required only
+              {t("admin.monitor.filters.rp_only", {
+                defaultValue: "RP required only",
+              })}
             </label>
           </div>
 
@@ -169,7 +230,9 @@ export function FiltersBar({
               htmlFor="overdue-only"
               className="text-sm text-muted-foreground cursor-pointer"
             >
-              Overdue only
+              {t("admin.monitor.filters.overdue_only", {
+                defaultValue: "Overdue only",
+              })}
             </label>
           </div>
 
@@ -178,10 +241,12 @@ export function FiltersBar({
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleClear}>
-              Clear
+              {t("admin.monitor.filters.clear", { defaultValue: "Clear" })}
             </Button>
             <Button variant="default" size="sm" onClick={handleApply}>
-              Apply Filters
+              {t("admin.monitor.filters.apply", {
+                defaultValue: "Apply Filters",
+              })}
             </Button>
             <div className="h-6 w-px bg-border mx-1" />
             <Button
@@ -191,7 +256,9 @@ export function FiltersBar({
               onClick={() => exportCSV(local)}
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              {t("admin.monitor.filters.export", {
+                defaultValue: "Export CSV",
+              })}
             </Button>
             <Button
               variant="outline"
@@ -200,7 +267,9 @@ export function FiltersBar({
               onClick={() => bulkReminder(local)}
             >
               <Mail className="h-4 w-4" />
-              Bulk Message
+              {t("admin.monitor.filters.bulk", {
+                defaultValue: "Bulk Message",
+              })}
             </Button>
             <Button
               size="sm"
@@ -208,7 +277,9 @@ export function FiltersBar({
               onClick={() => bulkReminder(local)}
             >
               <Plus className="h-4 w-4" />
-              New Reminder
+              {t("admin.monitor.filters.new_reminder", {
+                defaultValue: "New Reminder",
+              })}
             </Button>
           </div>
         </div>

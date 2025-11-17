@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,7 @@ import { AlertCircle } from "lucide-react";
 import type { MonitorStudent } from "../api";
 import { stageLabel } from "../utils";
 import { computeTimeAgo } from "@/lib/time";
+import { useTranslation } from "react-i18next";
 
 const STAGES = ["W1", "W2", "W3", "W4", "W5", "W6", "W7"];
 
@@ -51,7 +51,9 @@ export function StudentsTableView({
   onToggleAll: (checked: boolean) => void;
 }) {
   const navigate = useNavigate();
-  const { i18n } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
+
+  const lang = i18n.language || "en";
 
   const getRowClass = (student: MonitorStudent, index: number) => {
     const baseClass = index % 2 === 0 ? "bg-white" : "bg-muted/5";
@@ -74,26 +76,44 @@ export function StudentsTableView({
                   <Checkbox
                     checked={selected.size > 0 && selected.size === rows.length}
                     onCheckedChange={(checked) => onToggleAll(!!checked)}
-                    aria-label="Select all"
+                    aria-label={t("admin.monitor.table.select_all", {
+                      defaultValue: "Select all",
+                    })}
                   />
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Student
+                  {t("admin.monitor.table.columns.student", {
+                    defaultValue: "Student",
+                  })}
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Program · Department
+                  {t("admin.monitor.table.columns.program_department", {
+                    defaultValue: "Program · Department",
+                  })}
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Stage
+                  {t("admin.monitor.table.columns.stage", {
+                    defaultValue: "Stage",
+                  })}
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Progress
+                  {t("admin.monitor.table.columns.progress", {
+                    defaultValue: "Progress",
+                  })}
                 </th>
                 <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Cohort
+                  {t("admin.monitor.table.columns.cohort", {
+                    defaultValue: "Cohort",
+                  })}
                 </th>
-                <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">Due</th>
-                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Last Activity</th>
+                <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.due", { defaultValue: "Due" })}
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.last_activity", {
+                    defaultValue: "Last activity",
+                  })}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -115,7 +135,10 @@ export function StudentsTableView({
                       onCheckedChange={(checked) =>
                         onToggle(student.id, !!checked)
                       }
-                      aria-label={`Select ${student.name}`}
+                      aria-label={t("admin.monitor.table.select_student", {
+                        defaultValue: "Select {{name}}",
+                        name: student.name,
+                      })}
                     />
                   </td>
                   <td className="py-2.5 px-4">
@@ -152,7 +175,11 @@ export function StudentsTableView({
                     <div className="text-xs text-muted-foreground">
                       {typeof student.stage_done === "number" &&
                       typeof student.stage_total === "number"
-                        ? `${student.stage_done}/${student.stage_total} nodes`
+                        ? t("admin.monitor.table.stage_nodes", {
+                            defaultValue: "{{done}}/{{total}} nodes",
+                            done: student.stage_done,
+                            total: student.stage_total,
+                          })
                         : "—"}
                     </div>
                   </td>
@@ -170,7 +197,12 @@ export function StudentsTableView({
                               ? "bg-red-600 text-white"
                               : "bg-muted/30 text-muted-foreground"
                           }`}
-                          title={`${stage.stage}: ${stage.status}`}
+                          title={`${stageLabel(stage.stage, lang)}: ${t(
+                            `admin.monitor.table.stage_states.${stage.status}`,
+                            {
+                              defaultValue: stage.status,
+                            }
+                          )}`}
                         >
                           {stage.stage.replace("W", "")}
                         </div>
@@ -196,7 +228,9 @@ export function StudentsTableView({
                     {student.overdue && (
                       <div className="text-xs text-red-600 flex items-center justify-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        Overdue
+                        {t("admin.monitor.table.overdue_badge", {
+                          defaultValue: "Overdue",
+                        })}
                       </div>
                     )}
                   </td>
@@ -205,11 +239,19 @@ export function StudentsTableView({
                       <div className="text-sm text-foreground">
                         {(() => {
                           const rel = computeTimeAgo(student.last_update);
-                          if (!rel) return new Date(student.last_update).toLocaleString(i18n.language);
+                          const abs = new Date(
+                            student.last_update
+                          ).toLocaleString(i18n.language);
+                          if (!rel) return abs;
                           const unitKey = `time.units.${rel.unit}` as const;
-                          const unitLabel = (i18n as any).t ? (i18n as any).t(unitKey) : rel.unit;
-                          const ago = (i18n as any).t ? (i18n as any).t('time.ago', { value: rel.value, unit: unitLabel }) : `${rel.value} ${unitLabel} ago`;
-                          const abs = new Date(student.last_update).toLocaleString(i18n.language);
+                          const unitLabel = t(unitKey, {
+                            defaultValue: rel.unit,
+                          });
+                          const ago = t("time.ago", {
+                            defaultValue: "{{value}} {{unit}} ago",
+                            value: rel.value,
+                            unit: unitLabel,
+                          });
                           return (
                             <>
                               <span className="font-medium">{ago}</span>
@@ -230,7 +272,9 @@ export function StudentsTableView({
                     colSpan={8}
                     className="p-8 text-center text-muted-foreground"
                   >
-                    No students match your filters.
+                    {t("admin.monitor.empty", {
+                      defaultValue: "No students match your filters.",
+                    })}
                   </td>
                 </tr>
               )}

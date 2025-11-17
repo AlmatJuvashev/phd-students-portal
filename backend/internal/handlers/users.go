@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -48,31 +50,17 @@ func (h *UsersHandler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "only superadmin can create superadmin"})
 		return
 	}
-	base := strings.ToLower(auth.Slugify(req.FirstName) + "." + auth.Slugify(req.LastName))
-	// Find unique username with random 3 digits
-	username := ""
-	for i := 0; i < 1000; i++ {
-		pw := auth.GeneratePass() // we also use this loop to try different suffixes
-		suffix := pw[len(pw)-2:]
-		u := base + suffix
-		var exists bool
-		_ = h.db.Get(&exists, `SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)`, u)
-		if !exists {
-			username = u
-			break
-		}
-	}
-	if username == "" {
+	username, err := h.generateUsername(req.FirstName, req.LastName)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate username"})
 		return
 	}
 	temp := auth.GeneratePass()
 	hash, _ := auth.HashPassword(temp)
-	_, err := h.db.Exec(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active, phone, program, department, cohort)
+	if _, err = h.db.Exec(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active, phone, program, department, cohort)
         VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8,$9,$10)`,
 		username, nullable(req.Email), req.FirstName, req.LastName, req.Role, hash,
-		nullable(req.Phone), nullable(req.Program), nullable(req.Department), nullable(req.Cohort))
-	if err != nil {
+		nullable(req.Phone), nullable(req.Program), nullable(req.Department), nullable(req.Cohort)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "insert failed"})
 		return
 	}
@@ -92,15 +80,15 @@ type resetPwReq struct {
 }
 
 type updateUserReq struct {
-    FirstName string `json:"first_name" binding:"required"`
-    LastName  string `json:"last_name" binding:"required"`
-    Email     string `json:"email" binding:"required,email"`
-    Role      string `json:"role" binding:"required,oneof=student advisor chair admin"`
-    // Optional student profile fields (ignored for non-students)
-    Phone      string `json:"phone" binding:"omitempty"`
-    Program    string `json:"program" binding:"omitempty"`
-    Department string `json:"department" binding:"omitempty"`
-    Cohort     string `json:"cohort" binding:"omitempty"`
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Role      string `json:"role" binding:"required,oneof=student advisor chair admin"`
+	// Optional student profile fields (ignored for non-students)
+	Phone      string `json:"phone" binding:"omitempty"`
+	Program    string `json:"program" binding:"omitempty"`
+	Department string `json:"department" binding:"omitempty"`
+	Cohort     string `json:"cohort" binding:"omitempty"`
 }
 
 // UpdateUser allows admin to update user details (except superadmin)
@@ -131,10 +119,10 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-    _, err = h.db.Exec(`UPDATE users SET first_name=$1, last_name=$2, email=$3, role=$4,
+	_, err = h.db.Exec(`UPDATE users SET first_name=$1, last_name=$2, email=$3, role=$4,
         phone=$5, program=$6, department=$7, cohort=$8, updated_at=now() WHERE id=$9`,
-        req.FirstName, req.LastName, req.Email, req.Role,
-        nullable(req.Phone), nullable(req.Program), nullable(req.Department), nullable(req.Cohort), id)
+		req.FirstName, req.LastName, req.Email, req.Role,
+		nullable(req.Phone), nullable(req.Program), nullable(req.Department), nullable(req.Cohort), id)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "update failed"})
 		return
@@ -214,16 +202,16 @@ func (h *UsersHandler) SetActive(c *gin.Context) {
 }
 
 type listUsersResp struct {
-    ID         string `db:"id" json:"id"`
-    Name       string `db:"name" json:"name"`
-    Email      string `db:"email" json:"email"`
-    Role       string `db:"role" json:"role"`
-    Username   string `db:"username" json:"username"`
-    Program    string `db:"program" json:"program"`
-    Department string `db:"department" json:"department"`
-    Cohort     string `db:"cohort" json:"cohort"`
-    CreatedAt  string `db:"created_at" json:"created_at"`
-    IsActive   bool   `db:"is_active" json:"is_active"`
+	ID         string `db:"id" json:"id"`
+	Name       string `db:"name" json:"name"`
+	Email      string `db:"email" json:"email"`
+	Role       string `db:"role" json:"role"`
+	Username   string `db:"username" json:"username"`
+	Program    string `db:"program" json:"program"`
+	Department string `db:"department" json:"department"`
+	Cohort     string `db:"cohort" json:"cohort"`
+	CreatedAt  string `db:"created_at" json:"created_at"`
+	IsActive   bool   `db:"is_active" json:"is_active"`
 }
 
 type listUsersResponse struct {
@@ -236,10 +224,10 @@ type listUsersResponse struct {
 
 // ListUsers (admin/superadmin): basic list for mentions/autocomplete with pagination
 func (h *UsersHandler) ListUsers(c *gin.Context) {
-    q := strings.TrimSpace(c.Query("q"))
-    roleFilter := strings.TrimSpace(c.Query("role"))
-    activeFilter := strings.TrimSpace(c.Query("active")) // "true" (default), "false", or "all"
-	
+	q := strings.TrimSpace(c.Query("q"))
+	roleFilter := strings.TrimSpace(c.Query("role"))
+	activeFilter := strings.TrimSpace(c.Query("active")) // "true" (default), "false", or "all"
+
 	// Pagination parameters
 	page := 1
 	if p := c.Query("page"); p != "" {
@@ -268,20 +256,20 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		args = append(args, q)
 	}
 
-    // Compose active condition
-    activeCond := ""
-    switch strings.ToLower(activeFilter) {
-    case "false":
-        activeCond = " AND u.is_active=false"
-    case "all":
-        // no filter
-    default:
-        activeCond = " AND u.is_active=true"
-    }
+	// Compose active condition
+	activeCond := ""
+	switch strings.ToLower(activeFilter) {
+	case "false":
+		activeCond = " AND u.is_active=false"
+	case "all":
+		// no filter
+	default:
+		activeCond = " AND u.is_active=true"
+	}
 
-    // Get total count
-    var total int
-    countQuery := `SELECT COUNT(*) FROM users u WHERE 1=1` + activeCond + where
+	// Get total count
+	var total int
+	countQuery := `SELECT COUNT(*) FROM users u WHERE 1=1` + activeCond + where
 	err := h.db.Get(&total, countQuery, args...)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to count users"})
@@ -290,7 +278,7 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 
 	// Get paginated data
 	rows := []listUsersResp{}
-    base := `SELECT u.id,
+	base := `SELECT u.id,
             (u.first_name||' '||u.last_name) AS name,
             COALESCE(u.email, '') AS email,
             u.role,
@@ -302,10 +290,10 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
             u.is_active
             FROM users u
             WHERE 1=1` + activeCond
-	
+
 	query := base + where + fmt.Sprintf(" ORDER BY last_name LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
-	
+
 	err = h.db.Select(&rows, query, args...)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to fetch users"})
@@ -328,4 +316,54 @@ func nullable(s string) any {
 		return nil
 	}
 	return s
+}
+
+func firstLatinInitial(input string) string {
+	slug := auth.Slugify(input)
+	for _, ch := range slug {
+		if ch >= 'a' && ch <= 'z' {
+			return string(ch)
+		}
+	}
+	return ""
+}
+
+func randomDigitsSuffix(length int) (string, error) {
+	max := big.NewInt(1)
+	for i := 0; i < length; i++ {
+		max.Mul(max, big.NewInt(10))
+	}
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return "", err
+	}
+	format := fmt.Sprintf("%%0%dd", length)
+	return fmt.Sprintf(format, n.Int64()), nil
+}
+
+func (h *UsersHandler) generateUsername(firstName, lastName string) (string, error) {
+	first := firstLatinInitial(firstName)
+	if first == "" {
+		first = "x"
+	}
+	last := firstLatinInitial(lastName)
+	if last == "" {
+		last = "x"
+	}
+	base := first + last
+	for attempt := 0; attempt < 10; attempt++ {
+		suffix, err := randomDigitsSuffix(4)
+		if err != nil {
+			return "", err
+		}
+		candidate := base + suffix
+		var exists bool
+		if err := h.db.Get(&exists, `SELECT EXISTS(SELECT 1 FROM users WHERE username=$1)`, candidate); err != nil {
+			return "", err
+		}
+		if !exists {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("could not generate username")
 }

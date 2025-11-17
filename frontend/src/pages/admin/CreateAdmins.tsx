@@ -20,7 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle, Pencil, X } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Trash2, CheckCircle, Pencil, X, Plus } from "lucide-react";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
@@ -52,11 +52,23 @@ export function CreateAdmins() {
   const { user } = useAuth();
   const { t } = useTranslation('common');
   const queryClient = useQueryClient();
-  const Schema = React.useMemo(() => z.object({
-    first_name: z.string().min(1, t('validation.required','Required')),
-    last_name: z.string().min(1, t('validation.required','Required')),
-    email: z.string().email(t('validation.invalid_email','Invalid email')),
-  }), [t]);
+  const Schema = React.useMemo(
+    () =>
+      z.object({
+        first_name: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        last_name: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        email: z
+          .string()
+          .email(
+            t("validation.invalid_email", { defaultValue: "Invalid email" })
+          ),
+      }),
+    [t]
+  );
   const [created, setCreated] = React.useState<{ username: string; temp_password: string } | null>(null);
   const [resetInfo, setResetInfo] = React.useState<{ username: string; temp_password: string } | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -68,6 +80,7 @@ export function CreateAdmins() {
   const [activeFilter, setActiveFilter] = React.useState<"all" | "active" | "inactive">("all");
   const [confirmState, setConfirmState] = React.useState<{ open: boolean; kind: "reset" | "deactivate" | "activate" | null; admin: UserRow | null }>({ open: false, kind: null, admin: null });
   const [editModal, setEditModal] = React.useState<{ open: boolean; admin: UserRow | null }>({ open: false, admin: null });
+  const [showCreateModal, setShowCreateModal] = React.useState(false);
   const PAGE_SIZE = 10;
   const {
     register,
@@ -176,9 +189,16 @@ export function CreateAdmins() {
     onSuccess: (res: { username: string; temp_password: string }) => {
       setCreated(res);
       reset();
+      setShowCreateModal(false);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
-    onError: (err: any) => alert(err?.message || "Failed to create admin"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.create_admin", {
+            defaultValue: "Failed to create admin",
+          })
+      ),
   });
 
   const resetPasswordMutation = useMutation({
@@ -188,7 +208,13 @@ export function CreateAdmins() {
       setResetInfo(res);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
-    onError: (err: any) => alert(err?.message || "Failed to reset password"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.reset_password", {
+            defaultValue: "Failed to reset password",
+          })
+      ),
   });
 
   const setActiveMutation = useMutation({
@@ -201,7 +227,13 @@ export function CreateAdmins() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       refetch();
     },
-    onError: (err: any) => alert(err?.message || "Failed to update status"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.status_update", {
+            defaultValue: "Failed to update status",
+          })
+      ),
   });
 
   const updateAdminMutation = useMutation({
@@ -220,7 +252,13 @@ export function CreateAdmins() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       refetch();
     },
-    onError: (err: any) => alert(err?.message || "Failed to update admin"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.update_admin", {
+            defaultValue: "Failed to update admin",
+          })
+      ),
   });
 
   async function onSubmit(data: Form) {
@@ -229,42 +267,16 @@ export function CreateAdmins() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">{t('admin.forms.create_admins.title','Manage Admins')}</h2>
-        <p className="text-muted-foreground">{t('admin.forms.create_admins.subtitle','Only superadmins can manage other admins.')}</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">{t('admin.forms.create_admins.title','Manage Admins')}</h2>
+          <p className="text-muted-foreground">{t('admin.forms.create_admins.subtitle','Only superadmins can manage other admins.')}</p>
+        </div>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
+          {t('admin.forms.create_admins.submit','Create Admin')}
+        </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('admin.forms.create_admins.heading','New Admin')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <Input placeholder={t('admin.forms.first_name','First name')} {...register("first_name")} />
-              {errors.first_name && (
-                <div className="text-xs text-red-600 mt-1">{errors.first_name.message}</div>
-              )}
-            </div>
-            <div>
-              <Input placeholder={t('admin.forms.last_name','Last name')} {...register("last_name")} />
-              {errors.last_name && (
-                <div className="text-xs text-red-600 mt-1">{errors.last_name.message}</div>
-              )}
-            </div>
-            <div className="md:col-span-2">
-              <Input type="email" placeholder={t('admin.forms.email','Email')} {...register("email")} />
-              {errors.email && (
-                <div className="text-xs text-red-600 mt-1">{errors.email.message}</div>
-              )}
-            </div>
-            <div className="md:col-span-2 pt-2">
-              <Button type="submit" className="w-full md:w-auto" disabled={createAdminMutation.isPending}>
-                {createAdminMutation.isPending ? t('admin.forms.creating','Creating…') : t('admin.forms.create_admins.submit','Create Admin')}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
 
       {created && (
         <Card className="border-green-200 bg-green-50">
@@ -528,6 +540,51 @@ export function CreateAdmins() {
           </div>
         </CardContent>
       </Card>
+
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="max-w-xl w-full p-1">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-2">
+              <div>
+                <CardTitle>{t('admin.forms.create_admins.heading','New Admin')}</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {t('admin.forms.create_admins.subtitle','Only superadmins can manage other admins.')}
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <form className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
+                <div>
+                  <Input placeholder={t('admin.forms.first_name','First name')} {...register("first_name")} />
+                  {errors.first_name && (
+                    <div className="text-xs text-red-600 mt-1">{errors.first_name.message}</div>
+                  )}
+                </div>
+                <div>
+                  <Input placeholder={t('admin.forms.last_name','Last name')} {...register("last_name")} />
+                  {errors.last_name && (
+                    <div className="text-xs text-red-600 mt-1">{errors.last_name.message}</div>
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <Input type="email" placeholder={t('admin.forms.email','Email')} {...register("email")} />
+                  {errors.email && (
+                    <div className="text-xs text-red-600 mt-1">{errors.email.message}</div>
+                  )}
+                </div>
+                <div className="md:col-span-2 pt-2">
+                  <Button type="submit" className="w-full md:w-auto" disabled={createAdminMutation.isPending}>
+                    {createAdminMutation.isPending ? t('admin.forms.creating','Creating…') : t('admin.forms.create_admins.submit','Create Admin')}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </Modal>
 
       <ConfirmModal
         open={confirmState.open}

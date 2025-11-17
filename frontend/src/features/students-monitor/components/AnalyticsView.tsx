@@ -9,8 +9,10 @@ import {
   TrendingUp,
   AlertCircle,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
+  const { t } = useTranslation("common");
   const [data, setData] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -35,7 +37,9 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-sm text-muted-foreground">
-          Loading analytics...
+          {t("admin.monitor.analytics.loading", {
+            defaultValue: "Loading analytics...",
+          })}
         </div>
       </div>
     );
@@ -44,7 +48,12 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
   if (error) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-destructive">Error: {error}</div>
+        <div className="text-sm text-destructive">
+          {t("admin.monitor.analytics.error", {
+            defaultValue: "Error: {{message}}",
+            message: error,
+          })}
+        </div>
       </div>
     );
   }
@@ -52,49 +61,74 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
   const metrics = [
     {
       icon: CheckCircle2,
-      title: "Antiplagiarism Compliance",
+      title: t("admin.monitor.analytics.metrics.antiplag.title", {
+        defaultValue: "Antiplagiarism Compliance",
+      }),
       value: `${Math.round(data?.antiplag_done_percent || 0)}%`,
-      description: "Students with S1_antiplag ≥85% confirmed",
+      description: t("admin.monitor.analytics.metrics.antiplag.description", {
+        defaultValue: "Students with S1_antiplag ≥85% confirmed",
+      }),
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
       icon: Clock,
-      title: "Median Days in W2",
+      title: t("admin.monitor.analytics.metrics.w2.title", {
+        defaultValue: "Median Days in W2",
+      }),
       value: `${Math.round(data?.w2_median_days || 0)}`,
-      description: "Average time spent in pre-examination stage",
+      description: t("admin.monitor.analytics.metrics.w2.description", {
+        defaultValue: "Average time spent in pre-examination stage",
+      }),
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
       icon: AlertTriangle,
-      title: "Bottleneck Node",
+      title: t("admin.monitor.analytics.metrics.bottleneck.title", {
+        defaultValue: "Bottleneck Node",
+      }),
       value: data?.bottleneck_node_id || "—",
-      description: `${data?.bottleneck_count || 0} students waiting`,
+      description: t("admin.monitor.analytics.metrics.bottleneck.description", {
+        defaultValue: "{{count}} students waiting",
+        count: data?.bottleneck_count || 0,
+      }),
       color: "text-amber-600",
       bgColor: "bg-amber-50",
     },
     {
       icon: Users,
-      title: "RP Required",
+      title: t("admin.monitor.analytics.metrics.rp.title", {
+        defaultValue: "RP Required",
+      }),
       value: `${data?.rp_required_count || 0}`,
-      description: "Students requiring research proposal",
+      description: t("admin.monitor.analytics.metrics.rp.description", {
+        defaultValue: "Students requiring research proposal",
+      }),
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       icon: TrendingUp,
-      title: "Completion Rate",
+      title: t("admin.monitor.analytics.metrics.completion.title", {
+        defaultValue: "Completion Rate",
+      }),
       value: "94%",
-      description: "Students on track for graduation",
+      description: t("admin.monitor.analytics.metrics.completion.description", {
+        defaultValue: "Students on track for graduation",
+      }),
       color: "text-teal-600",
       bgColor: "bg-teal-50",
     },
     {
       icon: AlertCircle,
-      title: "Overdue Items",
+      title: t("admin.monitor.analytics.metrics.overdue.title", {
+        defaultValue: "Overdue Items",
+      }),
       value: `${data?.overdue_count || 0}`,
-      description: "Tasks past their due date",
+      description: t("admin.monitor.analytics.metrics.overdue.description", {
+        defaultValue: "Tasks past their due date",
+      }),
       color: "text-red-600",
       bgColor: "bg-red-50",
     },
@@ -131,11 +165,17 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
       {/* Additional charts could go here */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Stage Distribution</CardTitle>
+          <CardTitle className="text-base">
+            {t("admin.monitor.analytics.distribution_title", {
+              defaultValue: "Stage Distribution",
+            })}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground py-8 text-center">
-            Chart visualization coming soon...
+            {t("admin.monitor.analytics.distribution_placeholder", {
+              defaultValue: "Chart visualization coming soon...",
+            })}
           </div>
         </CardContent>
       </Card>
