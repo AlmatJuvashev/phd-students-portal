@@ -923,6 +923,16 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// If node is now done, activate next nodes in playbook
+	if newState == "done" && newState != meta.State {
+		log.Printf("[ReviewAttachment] Node %s is done, activating next nodes", meta.NodeID)
+		if err := h.activateNextNodes(meta.StudentID, meta.NodeID); err != nil {
+			log.Printf("[ReviewAttachment] Failed to activate next nodes: %v", err)
+			// Don't fail the request, just log the error
+		}
+	}
+	
 	var resp struct {
 		Status     string         `db:"status" json:"status"`
 		ReviewNote sql.NullString `db:"review_note" json:"review_note"`
@@ -1222,4 +1232,83 @@ func insertNodeEvent(tx *sqlx.Tx, nodeInstanceID, eventType, actorID string, pay
 	_, err = tx.Exec(`INSERT INTO node_events (node_instance_id, event_type, payload, actor_id)
 		VALUES ($1,$2,$3,$4)`, nodeInstanceID, eventType, data, actorID)
 	return err
+}
+
+// activateNextNodes activates the next nodes in the playbook after a node is completed
+func (h *AdminHandler) activateNextNodes(userID, completedNodeID string) error {
+	// Parse playbook to get next nodes
+	var pb struct {
+		Worlds []struct {
+			Nodes []struct {
+				ID   string   `json:"id"`
+				Next []string `json:"next"`
+			} `json:"nodes"`
+		} `json:"worlds"`
+	}
+	
+	if err := json.Unmarshal(h.pb.Raw, &pb); err != nil {
+		return fmt.Errorf("parse playbook: %w", err)
+	}
+	
+	// Find the completed node and get its next nodes
+	var nextNodes []string
+	for _, world := range pb.Worlds {
+		for _, node := range world.Nodes {
+			if node.ID == completedNodeID {
+				nextNodes = node.Next
+				break
+			}
+		}
+		if len(nextNodes) > 0 {
+			break
+		}
+	}
+	
+	if len(nextNodes) == 0 {
+		log.Printf("[activateNextNodes] No next nodes found for %s", completedNodeID)
+		return nil
+	}
+	
+	log.Printf("[activateNextNodes] Activating next nodes %v for user %s", nextNodes, userID)
+	
+	// Activate each next node
+	for _, nodeID := range nextNodes {
+		// Check if node instance already exists
+		var existingID string
+		err := h.db.QueryRowx(`SELECT id FROM node_instances WHERE user_id=$1 AND node_id=$2 AND playbook_version_id=$3`,
+			userID, nodeID, h.pb.VersionID).Scan(&existingID)
+		
+		if err == sql.ErrNoRows {
+			// Create new node instance in active state
+			var newID string
+			err = h.db.QueryRowx(`INSERT INTO node_instances (user_id, playbook_version_id, node_id, state, opened_at)
+				VALUES ($1, $2, $3, 'active', now()) RETURNING id`,
+				userID, h.pb.VersionID, nodeID).Scan(&newID)
+			if err != nil {
+				log.Printf("[activateNextNodes] Failed to create instance for %s: %v", nodeID, err)
+				continue
+			}
+			log.Printf("[activateNextNodes] Created new instance %s for node %s", newID, nodeID)
+		} else if err != nil {
+			log.Printf("[activateNextNodes] Error checking instance for %s: %v", nodeID, err)
+			continue
+		} else {
+			// Instance exists, update to active if it's locked
+			_, err = h.db.Exec(`UPDATE node_instances SET state='active', updated_at=now() 
+				WHERE id=$1 AND state='locked'`, existingID)
+			if err != nil {
+				log.Printf("[activateNextNodes] Failed to activate instance %s: %v", existingID, err)
+			} else {
+				log.Printf("[activateNextNodes] Activated existing instance %s for node %s", existingID, nodeID)
+			}
+		}
+		
+		// Update journey_states
+		_, _ = h.db.Exec(`INSERT INTO journey_states (user_id, node_id, state)
+			VALUES ($1, $2, 'active')
+			ON CONFLICT (user_id, node_id) DO UPDATE SET state='active', updated_at=now()`,
+			userID, nodeID)
+	}
+	
+	return nil
 }
