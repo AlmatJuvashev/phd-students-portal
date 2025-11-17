@@ -11,6 +11,10 @@ import {
   fetchStudentNodeFiles,
   reviewAttachment,
 } from "../api";
+import {
+  presignReviewedDocumentUpload,
+  attachReviewedDocument,
+} from "@/api/admin";
 import { stageLabel } from "../utils";
 import { API_URL } from "@/api/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -173,6 +177,8 @@ export function StudentDetailPage() {
     filename: string;
   } | null>(null);
   const [reviewNote, setReviewNote] = React.useState("");
+  const [reviewedFile, setReviewedFile] = React.useState<File | null>(null);
+  const [isUploadingReviewed, setIsUploadingReviewed] = React.useState(false);
   const [reviewMessage, setReviewMessage] = React.useState<{
     text: string;
     tone: "success" | "error";
@@ -418,23 +424,79 @@ export function StudentDetailPage() {
     );
   };
 
-  const submitRequestChanges = () => {
+  const submitRequestChanges = async () => {
     if (!reviewDialog) return;
+
     setPendingAttachment(reviewDialog.attachmentId);
-    reviewMutation.mutate(
-      {
-        attachmentId: reviewDialog.attachmentId,
-        status: "rejected",
-        note: reviewNote || undefined,
-      },
-      {
-        onSettled: () => {
-          setPendingAttachment(null);
-          setReviewDialog(null);
-          setReviewNote("");
-        },
+    setIsUploadingReviewed(true);
+
+    try {
+      // Step 1: Upload reviewed document if file is selected
+      if (reviewedFile) {
+        // Get presigned URL
+        const presignData = await presignReviewedDocumentUpload(
+          reviewDialog.attachmentId,
+          {
+            filename: reviewedFile.name,
+            content_type: reviewedFile.type,
+            size_bytes: reviewedFile.size,
+          }
+        );
+
+        // Upload file to S3
+        const uploadResponse = await fetch(presignData.upload_url, {
+          method: "PUT",
+          body: reviewedFile,
+          headers: {
+            "Content-Type": reviewedFile.type,
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload file to S3");
+        }
+
+        const etag =
+          uploadResponse.headers.get("ETag")?.replace(/"/g, "") || "";
+
+        // Attach the uploaded file
+        await attachReviewedDocument(reviewDialog.attachmentId, {
+          object_key: presignData.object_key,
+          filename: reviewedFile.name,
+          content_type: reviewedFile.type,
+          size_bytes: reviewedFile.size,
+          etag,
+        });
       }
-    );
+
+      // Step 2: Submit the review with rejection status
+      reviewMutation.mutate(
+        {
+          attachmentId: reviewDialog.attachmentId,
+          status: "rejected",
+          note: reviewNote || undefined,
+        },
+        {
+          onSettled: () => {
+            setPendingAttachment(null);
+            setReviewDialog(null);
+            setReviewNote("");
+            setReviewedFile(null);
+            setIsUploadingReviewed(false);
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error uploading reviewed document:", error);
+      setReviewMessage({
+        text: t("admin.review.upload_error", {
+          defaultValue: "Failed to upload reviewed document",
+        }),
+        tone: "error",
+      });
+      setPendingAttachment(null);
+      setIsUploadingReviewed(false);
+    }
   };
 
   if (isLoading) {
@@ -632,7 +694,7 @@ export function StudentDetailPage() {
                     className={`text-xs ${
                       student.overdue
                         ? "bg-red-50 text-red-700 border-red-200"
-                      : "bg-muted/20"
+                        : "bg-muted/20"
                     }`}
                   >
                     {student.overdue
@@ -675,16 +737,16 @@ export function StudentDetailPage() {
                       className="flex items-center flex-shrink-0"
                     >
                       <div
-                      className={`px-4 py-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                        isCurrent
-                          ? "bg-primary text-primary-foreground shadow-md scale-105"
-                          : isCompleted
-                          ? "bg-green-100 text-green-800"
-                          : "bg-muted/30 text-muted-foreground"
-                      }`}
-                    >
-                      {stageLabel(stage.id, language)}
-                    </div>
+                        className={`px-4 py-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                          isCurrent
+                            ? "bg-primary text-primary-foreground shadow-md scale-105"
+                            : isCompleted
+                            ? "bg-green-100 text-green-800"
+                            : "bg-muted/30 text-muted-foreground"
+                        }`}
+                      >
+                        {stageLabel(stage.id, language)}
+                      </div>
                       {idx < arr.length - 1 && (
                         <div className="w-12 h-0.5 bg-border mx-2 flex-shrink-0" />
                       )}
@@ -702,8 +764,7 @@ export function StudentDetailPage() {
                 <h3 className="text-lg font-semibold">
                   {t("admin.monitor.detail.current_stage", {
                     defaultValue: "Current Stage: {{stage}}",
-                    stage:
-                      stageLabel(student.current_stage, language) || "—",
+                    stage: stageLabel(student.current_stage, language) || "—",
                   })}
                 </h3>
                 <Badge variant="outline" className="text-sm">
@@ -773,48 +834,134 @@ export function StudentDetailPage() {
           {/* Documents & Review */}
           <Card className="border shadow-sm">
             <CardContent className="p-6 space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {t("admin.review.title", {
-                      defaultValue: "Documents & Review",
-                    })}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {t("admin.review.subtitle", {
-                      defaultValue: "Review and approve student submissions",
-                    })}
-                  </p>
-                </div>
-                {stageNodes.length > 0 && (
-                  <Select
-                    value={selectedNodeId ?? ""}
-                    onValueChange={setSelectedNodeId}
-                  >
-                    <SelectTrigger className="w-full sm:w-80 bg-background">
-                      <SelectValue
-                        placeholder={t("admin.review.select_node", {
-                          defaultValue: "Select node",
-                        })}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stageNodes.map((node: any) => (
-                        <SelectItem key={node.node_id} value={node.node_id}>
-                          <div className="flex items-center gap-2">
-                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                              {node.node_id}
-                            </code>
-                            <span>
-                              {nodeTitles[node.node_id] || node.node_id}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {t("admin.review.title", {
+                    defaultValue: "Documents & Review",
+                  })}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t("admin.review.subtitle", {
+                    defaultValue: "Review and approve student submissions",
+                  })}
+                </p>
               </div>
+
+              {/* Node Selection Cards */}
+              {stageNodes.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {stageNodes.map((node: any) => {
+                    const nodeId = node.node_id;
+                    const isSelected = selectedNodeId === nodeId;
+                    const nodeData = nodes.find(
+                      (n: any) => n.node_id === nodeId
+                    );
+                    const filesList = nodeData?.files || [];
+
+                    // Calculate status indicators
+                    const allApproved =
+                      filesList.length > 0 &&
+                      filesList.every((f: any) => f.status === "approved");
+                    const hasRejected = filesList.some(
+                      (f: any) => f.status === "rejected"
+                    );
+                    const hasPending = filesList.some(
+                      (f: any) => f.status === "pending"
+                    );
+                    const isEmpty = filesList.length === 0;
+
+                    return (
+                      <button
+                        key={nodeId}
+                        onClick={() => setSelectedNodeId(nodeId)}
+                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-border hover:border-primary/50 hover:shadow-sm"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`p-2 rounded-lg flex-shrink-0 ${
+                              allApproved
+                                ? "bg-emerald-100 text-emerald-700"
+                                : hasRejected
+                                ? "bg-rose-100 text-rose-700"
+                                : hasPending
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {allApproved ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : hasRejected ? (
+                              <AlertCircle className="h-4 w-4" />
+                            ) : hasPending ? (
+                              <FileText className="h-4 w-4" />
+                            ) : (
+                              <File className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono block mb-1">
+                              {nodeId}
+                            </code>
+                            <h4 className="font-medium text-sm truncate">
+                              {nodeTitles[nodeId] || nodeId}
+                            </h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {isEmpty
+                                ? t("admin.review.no_files", {
+                                    defaultValue: "No files",
+                                  })
+                                : t("admin.review.files_count", {
+                                    defaultValue: "{{count}} files",
+                                    count: filesList.length,
+                                  })}
+                            </p>
+                            {allApproved && (
+                              <div className="mt-1">
+                                <Badge className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
+                                  ✓{" "}
+                                  {t("admin.review.approved", {
+                                    defaultValue: "Approved",
+                                  })}
+                                </Badge>
+                              </div>
+                            )}
+                            {hasRejected && (
+                              <div className="mt-1">
+                                <Badge
+                                  variant="destructive"
+                                  className="text-xs"
+                                >
+                                  !{" "}
+                                  {t("admin.review.rejected", {
+                                    defaultValue: "Rejected",
+                                  })}
+                                </Badge>
+                              </div>
+                            )}
+                            {!allApproved && !hasRejected && hasPending && (
+                              <div className="mt-1">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-amber-50 text-amber-700 border-amber-200"
+                                >
+                                  ⏱{" "}
+                                  {t("admin.review.pending", {
+                                    defaultValue: "Pending",
+                                  })}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {reviewMessage && (
                 <div
@@ -1044,11 +1191,14 @@ export function StudentDetailPage() {
                                                     },
                                                   }
                                                 );
-                                                
+
                                                 // Download as blob to avoid redirect issues
-                                                const blob = await response.blob();
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement("a");
+                                                const blob =
+                                                  await response.blob();
+                                                const url =
+                                                  URL.createObjectURL(blob);
+                                                const a =
+                                                  document.createElement("a");
                                                 a.href = url;
                                                 a.download = file.filename;
                                                 document.body.appendChild(a);
@@ -1355,6 +1505,7 @@ export function StudentDetailPage() {
         onClose={() => {
           setReviewDialog(null);
           setReviewNote("");
+          setReviewedFile(null);
         }}
       >
         <div className="space-y-4">
@@ -1379,12 +1530,65 @@ export function StudentDetailPage() {
             value={reviewNote}
             onChange={(event) => setReviewNote(event.target.value)}
           />
+
+          {/* Optional file upload section */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              {t("admin.review.upload_edited", {
+                defaultValue: "Upload edited document (optional)",
+              })}
+            </label>
+            <p className="text-xs text-muted-foreground">
+              {t("admin.review.upload_hint", {
+                defaultValue: "Upload a corrected version with your comments",
+              })}
+            </p>
+            {reviewedFile ? (
+              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm flex-1 truncate">
+                  {reviewedFile.name}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setReviewedFile(null)}
+                >
+                  ✕
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".pdf,.doc,.docx";
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) setReviewedFile(file);
+                  };
+                  input.click();
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {t("admin.review.choose_file", {
+                  defaultValue: "Choose file",
+                })}
+              </Button>
+            )}
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
               onClick={() => {
                 setReviewDialog(null);
                 setReviewNote("");
+                setReviewedFile(null);
               }}
             >
               {t("common.cancel", { defaultValue: "Cancel" })}
@@ -1393,12 +1597,14 @@ export function StudentDetailPage() {
               onClick={submitRequestChanges}
               disabled={
                 !reviewNote.trim() ||
+                isUploadingReviewed ||
                 (pendingAttachment === reviewDialog?.attachmentId &&
                   reviewMutation.isPending)
               }
             >
-              {pendingAttachment === reviewDialog?.attachmentId &&
-              reviewMutation.isPending ? (
+              {isUploadingReviewed ||
+              (pendingAttachment === reviewDialog?.attachmentId &&
+                reviewMutation.isPending) ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               {t("admin.review.send", { defaultValue: "Send request" })}

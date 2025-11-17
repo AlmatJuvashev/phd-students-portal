@@ -192,9 +192,7 @@ export function NotificationsPage() {
         const pick = (obj: any, key: string) =>
           obj?.[key] ||
           obj?.[key?.toUpperCase?.()] ||
-          (key
-            ? obj?.[key.charAt(0).toUpperCase() + key.slice(1)]
-            : undefined);
+          (key ? obj?.[key.charAt(0).toUpperCase() + key.slice(1)] : undefined);
         const titles: Record<string, string> = {};
         worlds.forEach((w: any) => {
           const nodes = w?.nodes || w?.Nodes || [];
@@ -353,8 +351,12 @@ export function NotificationsPage() {
                   metadata?.node_title ||
                   notification.node_id;
                 const localizedMessage =
-                  getNotificationMessage(notification, nodeTitle, metadata, t) ||
-                  notification.message;
+                  getNotificationMessage(
+                    notification,
+                    nodeTitle,
+                    metadata,
+                    t
+                  ) || notification.message;
                 return (
                   <div
                     key={notification.id}
@@ -367,17 +369,17 @@ export function NotificationsPage() {
                     )}
                   >
                     <div className="flex items-start gap-3">
-                    {/* Avatar */}
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0",
-                        !notification.is_read
-                          ? "bg-primary"
-                          : "bg-muted-foreground"
-                      )}
-                    >
-                      {getInitials(notification.student_name)}
-                    </div>
+                      {/* Avatar */}
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0",
+                          !notification.is_read
+                            ? "bg-primary"
+                            : "bg-muted-foreground"
+                        )}
+                      >
+                        {getInitials(notification.student_name)}
+                      </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
@@ -402,7 +404,11 @@ export function NotificationsPage() {
                           </div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
                             <Clock className="h-3 w-3" />
-                            {getRelativeTime(notification.created_at, t, locale)}
+                            {getRelativeTime(
+                              notification.created_at,
+                              t,
+                              locale
+                            )}
                           </div>
                         </div>
 

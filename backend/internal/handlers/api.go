@@ -132,6 +132,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	admin.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
 	admin.PATCH("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
 	admin.POST("/attachments/:attachmentId/reviewed-document", adminHandler.UploadReviewedDocument)
+	admin.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
+	admin.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
 	admin.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
 	admin.PUT("/students/:id/nodes/:nodeId/deadline", adminHandler.PutStudentDeadline)
 	admin.POST("/reminders", adminHandler.PostReminders)
