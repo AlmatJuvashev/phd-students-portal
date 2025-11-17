@@ -38,7 +38,7 @@ export async function getNodeSubmission(nodeId: string) {
 
 export async function saveNodeSubmission(
   nodeId: string,
-  payload: { form_data?: any; state?: string },
+  payload: { form_data?: any; state?: string }
 ) {
   return api(`/journey/nodes/${nodeId}/submission`, {
     method: "PUT",
@@ -53,7 +53,7 @@ export async function presignNodeUpload(
     filename: string;
     content_type: string;
     size_bytes: number;
-  },
+  }
 ) {
   return api(`/journey/nodes/${nodeId}/uploads/presign`, {
     method: "POST",
@@ -70,7 +70,7 @@ export async function attachNodeUpload(
     content_type: string;
     size_bytes: number;
     etag?: string;
-  },
+  }
 ) {
   return api(`/journey/nodes/${nodeId}/uploads/attach`, {
     method: "POST",
@@ -80,7 +80,7 @@ export async function attachNodeUpload(
 
 export async function patchNodeState(
   nodeId: string,
-  payload: { state: string },
+  payload: { state: string }
 ) {
   return api(`/journey/nodes/${nodeId}/state`, {
     method: "PATCH",

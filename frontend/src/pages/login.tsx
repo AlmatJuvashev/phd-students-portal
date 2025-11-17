@@ -22,6 +22,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [errorMessage, setErrorMessage] = React.useState<string>("");
   const {
     register,
     handleSubmit,
@@ -29,13 +30,15 @@ export function LoginPage() {
   } = useForm<Form>({ resolver: zodResolver(Schema) });
   const onSubmit = async (data: Form) => {
     try {
+      setErrorMessage("");
       // Use AuthContext for login to refresh user state
       await login({ username: data.username, password: data.password })
       const from = (location.state as any)?.from || "/journey"
       navigate(from, { replace: true })
     } catch (e: any) {
       console.error("Login failed", e);
-      alert(T("auth.failed"));
+      const message = e?.message || T("auth.failed");
+      setErrorMessage(message);
     }
   };
   return (
@@ -47,6 +50,11 @@ export function LoginPage() {
             {T("app.name", { defaultValue: "PhD Portal" })}
           </p>
         </div>
+        {errorMessage && (
+          <div className="mb-4 p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+            {errorMessage}
+          </div>
+        )}
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-1">
             <Label htmlFor="username">{T("auth.username")}</Label>

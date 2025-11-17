@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -29,11 +30,11 @@ func NewNodeSubmissionHandler(db *sqlx.DB, cfg config.AppConfig, pb *playbook.Ma
 }
 
 type nodeInstanceRecord struct {
-	ID         string `db:"id"`
-	NodeID     string `db:"node_id"`
-	State      string `db:"state"`
-	CurrentRev int    `db:"current_rev"`
-	Locale     string `db:"locale"`
+	ID         string         `db:"id"`
+	NodeID     string         `db:"node_id"`
+	State      string         `db:"state"`
+	CurrentRev int            `db:"current_rev"`
+	Locale     sql.NullString `db:"locale"`
 }
 
 // GET /api/journey/nodes/:nodeId/submission
@@ -261,75 +262,124 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
+	log.Printf("[AttachUpload] Starting: nodeID=%s, userID=%s", nodeID, uid)
 	role := roleFromContext(c)
 	var req nodeAttachReq
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[AttachUpload] JSON bind error: %v", err)
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	log.Printf("[AttachUpload] Request: slotKey=%s, filename=%s, size=%d", req.SlotKey, req.Filename, req.SizeBytes)
 	s3c, err := services.NewS3FromEnv()
 	if err != nil {
+		log.Printf("[AttachUpload] S3 init error: %v", err)
 		handleNodeErr(c, err)
 		return
 	}
 	if s3c == nil {
+		log.Printf("[AttachUpload] S3 not configured")
 		c.JSON(400, gin.H{"error": "S3 not configured"})
 		return
 	}
 	bucket := s3c.Bucket()
 	locale := h.resolveLocale(c.Query("locale"))
+	log.Printf("[AttachUpload] Starting transaction")
 	err = h.withTx(func(tx *sqlx.Tx) error {
+		log.Printf("[AttachUpload] ensureNodeInstanceTx...")
 		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
 		if err != nil {
+			log.Printf("[AttachUpload] ensureNodeInstanceTx error: %v", err)
 			return err
 		}
+		log.Printf("[AttachUpload] Instance: id=%s, state=%s", inst.ID, inst.State)
+		
+		log.Printf("[AttachUpload] getSlot...")
 		slot, err := h.getSlot(tx, inst.ID, req.SlotKey)
 		if err != nil {
+			log.Printf("[AttachUpload] getSlot error: %v", err)
 			return err
 		}
+		log.Printf("[AttachUpload] Slot: id=%s, multiplicity=%s", slot.ID, slot.Multiplicity)
+		
+		log.Printf("[AttachUpload] ensureDocumentForSlot...")
 		docID, err := h.ensureDocumentForSlot(tx, uid, nodeID, req.SlotKey)
 		if err != nil {
+			log.Printf("[AttachUpload] ensureDocumentForSlot error: %v", err)
 			return err
 		}
+		log.Printf("[AttachUpload] Document ID: %s", docID)
+		
+		log.Printf("[AttachUpload] Inserting document_version...")
 		var versionID string
 		err = tx.QueryRowx(`INSERT INTO document_versions (document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
 			docID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, uid, nullableString(req.ETag)).Scan(&versionID)
 		if err != nil {
+			log.Printf("[AttachUpload] Insert document_version error: %v", err)
 			return err
 		}
+		log.Printf("[AttachUpload] Version ID: %s", versionID)
+		
+		log.Printf("[AttachUpload] Updating document current_version_id...")
 		_, err = tx.Exec(`UPDATE documents SET current_version_id=$1 WHERE id=$2`, versionID, docID)
 		if err != nil {
+			log.Printf("[AttachUpload] Update document error: %v", err)
 			return err
 		}
+		
 		if slot.Multiplicity == "single" {
+			log.Printf("[AttachUpload] Deactivating old attachments...")
 			if _, err := tx.Exec(`UPDATE node_instance_slot_attachments SET is_active=false WHERE slot_id=$1 AND is_active=true`, slot.ID); err != nil {
+				log.Printf("[AttachUpload] Deactivate old attachments error: %v", err)
 				return err
 			}
 		}
+		
+		log.Printf("[AttachUpload] Inserting slot attachment...")
 		_, err = tx.Exec(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, filename, size_bytes, attached_by, status)
 			VALUES ($1,$2,$3,$4,$5,'submitted')`, slot.ID, versionID, req.Filename, req.SizeBytes, uid)
 		if err != nil {
+			log.Printf("[AttachUpload] Insert slot attachment error: %v", err)
 			return err
 		}
+		
+		log.Printf("[AttachUpload] Inserting event...")
         if err := h.insertEvent(tx, inst.ID, "attachment_uploaded", uid, map[string]any{"slot_key": req.SlotKey, "version_id": versionID}); err != nil {
+			log.Printf("[AttachUpload] Insert event error: %v", err)
 			return err
 		}
+		
 		if inst.State == "active" {
-			_ = h.transitionState(tx, inst, uid, role, "submitted")
+			log.Printf("[AttachUpload] Transitioning state to submitted...")
+			if err := h.transitionState(tx, inst, uid, role, "submitted"); err != nil {
+				log.Printf("[AttachUpload] Transition state error: %v", err)
+				return err
+			}
 		}
+		log.Printf("[AttachUpload] Transaction completed successfully")
 		return nil
 	})
 	if err != nil {
+		log.Printf("[AttachUpload] Transaction error: %v", err)
 		handleNodeErr(c, err)
 		return
 	}
-	inst, _ := h.loadInstance(uid, nodeID)
+	log.Printf("[AttachUpload] Loading instance...")
+	inst, err := h.loadInstance(uid, nodeID)
+	if err != nil {
+		log.Printf("[AttachUpload] loadInstance error: %v", err)
+		handleNodeErr(c, err)
+		return
+	}
+	log.Printf("[AttachUpload] Building submission DTO...")
 	dto, err := h.buildSubmissionDTO(inst.ID)
 	if err != nil {
+		log.Printf("[AttachUpload] buildSubmissionDTO error: %v", err)
 		handleNodeErr(c, err)
 		return
 	}
+	log.Printf("[AttachUpload] Success! Returning 200")
 	c.JSON(200, dto)
 }
 
@@ -619,21 +669,25 @@ func (h *NodeSubmissionHandler) insertEvent(tx *sqlx.Tx, nodeInstanceID, eventTy
 
 func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, error) {
 	var inst struct {
-		ID         string `db:"id"`
-		NodeID     string `db:"node_id"`
-		State      string `db:"state"`
-		Locale     string `db:"locale"`
-		CurrentRev int    `db:"current_rev"`
+		ID         string         `db:"id"`
+		NodeID     string         `db:"node_id"`
+		State      string         `db:"state"`
+		Locale     sql.NullString `db:"locale"`
+		CurrentRev int            `db:"current_rev"`
 	}
 	err := h.db.QueryRowx(`SELECT id, node_id, state, locale, current_rev FROM node_instances WHERE id=$1`, instanceID).Scan(&inst.ID, &inst.NodeID, &inst.State, &inst.Locale, &inst.CurrentRev)
 	if err != nil {
 		return nil, err
 	}
+	localeStr := ""
+	if inst.Locale.Valid {
+		localeStr = inst.Locale.String
+	}
 	dto := gin.H{
 		"node_id":             inst.NodeID,
 		"playbook_version_id": h.pb.VersionID,
 		"state":               inst.State,
-		"locale":              inst.Locale,
+		"locale":              localeStr,
 	}
 	if inst.CurrentRev > 0 {
 		var rev struct {

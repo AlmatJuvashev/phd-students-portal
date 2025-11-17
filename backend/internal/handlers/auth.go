@@ -33,11 +33,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var id, hash, role string
 	err := h.db.QueryRowx(`SELECT id, password_hash, role FROM users WHERE username=$1 AND is_active=true`, req.Username).Scan(&id, &hash, &role)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный логин или пароль"})
 		return
 	}
 	if !auth.CheckPassword(hash, req.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный логин или пароль"})
 		return
 	}
 	jwt, err := auth.GenerateJWT(id, role, []byte(h.cfg.JWTSecret), h.cfg.JWTExpDays)

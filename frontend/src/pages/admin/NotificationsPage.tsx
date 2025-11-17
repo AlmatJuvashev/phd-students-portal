@@ -257,10 +257,8 @@ export function NotificationsPage() {
       markAsReadMutation.mutate(notification.id);
     }
 
-    // Navigate to student detail in StudentsMonitor
-    navigate(
-      `/admin/students-monitor?student=${notification.student_id}&node=${notification.node_id}`
-    );
+    // Navigate to student detail page
+    navigate(`/admin/students-monitor/${notification.student_id}`);
   };
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;

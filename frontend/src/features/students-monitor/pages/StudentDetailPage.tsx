@@ -1033,6 +1033,7 @@ export function StudentDetailPage() {
                                             className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                                             onClick={async () => {
                                               try {
+                                                // Fetch the download URL which will redirect to presigned S3 URL
                                                 const response = await fetch(
                                                   `${BASE_URL}${file.download_url}`,
                                                   {
@@ -1043,23 +1044,17 @@ export function StudentDetailPage() {
                                                     },
                                                   }
                                                 );
-                                                if (response.redirected) {
-                                                  window.open(
-                                                    response.url,
-                                                    "_blank"
-                                                  );
-                                                } else {
-                                                  const blob =
-                                                    await response.blob();
-                                                  const url =
-                                                    URL.createObjectURL(blob);
-                                                  const a =
-                                                    document.createElement("a");
-                                                  a.href = url;
-                                                  a.download = file.filename;
-                                                  a.click();
-                                                  URL.revokeObjectURL(url);
-                                                }
+                                                
+                                                // Download as blob to avoid redirect issues
+                                                const blob = await response.blob();
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement("a");
+                                                a.href = url;
+                                                a.download = file.filename;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                                URL.revokeObjectURL(url);
                                               } catch (err) {
                                                 console.error(
                                                   "Download failed:",
