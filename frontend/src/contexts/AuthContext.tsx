@@ -7,6 +7,8 @@ export type Role = 'student' | 'advisor' | 'secretary' | 'chair' | 'admin' | 'su
 export interface User {
   id: string
   full_name?: string
+  first_name?: string
+  last_name?: string
   email?: string
   role: Role
   progress?: Record<string, any>
@@ -64,4 +66,3 @@ export const useAuth = () => {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
 }
-

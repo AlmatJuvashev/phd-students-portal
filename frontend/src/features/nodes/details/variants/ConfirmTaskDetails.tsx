@@ -5,17 +5,28 @@ import { getAssetUrl } from "@/lib/assets";
 import { t, safeText } from "@/lib/playbook";
 import type { NodeVM } from "@/lib/playbook";
 import i18n from "i18next";
+import type { NodeSubmissionDTO } from "@/api/journey";
 import { NodeAttachmentsSection } from "../NodeAttachmentsSection";
 
 type ConfirmTaskDetailsProps = {
   node: NodeVM | any;
   onComplete?: () => void;
+  onReset?: () => void;
+  slots?: NodeSubmissionDTO["slots"];
+  canEdit?: boolean;
+  onRefresh?: () => void;
 };
 
 const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
   node,
-  onComplete,
+  onComplete: _onComplete,
+  onReset: _onReset,
+  slots,
+  canEdit,
+  onRefresh,
 }) => {
+  void _onComplete;
+  void _onReset;
   // Localized question (string or i18n map)
   const question: string | undefined = safeText(
     node?.screen?.question as any,
@@ -103,6 +114,22 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
       "Инструкция по прохождению"
     )
   );
+
+  const fallbackSlots = React.useMemo(() => {
+    const uploads =
+      ((node?.requirements as any)?.uploads as Array<any> | undefined) || [];
+    if (!Array.isArray(uploads) || uploads.length === 0) return [];
+    return uploads.map((up) => ({
+      key: up?.key,
+      required: !!up?.required,
+      multiplicity: up?.multiplicity || "single",
+      mime: Array.isArray(up?.mime) ? up.mime : [],
+      attachments: [],
+    }));
+  }, [node]);
+
+  const attachmentSlots =
+    Array.isArray(slots) && slots.length > 0 ? slots : fallbackSlots;
 
   return (
     <Card className="bg-gradient-to-br from-card to-card/50">
@@ -196,25 +223,26 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
           )}
         </div>
 
-        {/* Поддерживающие документы - student uploads documents here, advisor reviews */}
-        <div className="pt-2">
-          <div className="text-sm font-semibold text-foreground mb-3">
-            {t(
-              {
-                ru: "Поддерживающие документы",
-                kz: "Қолдаушы құжаттар",
-                en: "Supporting Documents",
-              },
-              "Поддерживающие документы"
-            )}
+        {attachmentSlots.length > 0 && (
+          <div className="pt-2">
+            <div className="text-sm font-semibold text-foreground mb-3">
+              {t(
+                {
+                  ru: "Поддерживающие документы",
+                  kz: "Қолдаушы құжаттар",
+                  en: "Supporting Documents",
+                },
+                "Поддерживающие документы"
+              )}
+            </div>
+            <NodeAttachmentsSection
+              nodeId={node?.node_id || node?.id}
+              slots={attachmentSlots}
+              canEdit={canEdit ?? node?.state !== "done"}
+              onRefresh={onRefresh}
+            />
           </div>
-          <NodeAttachmentsSection
-            nodeId={node?.node_id || node?.id}
-            slots={node?.slots}
-            canEdit={node?.state !== "done"}
-            onRefresh={onComplete}
-          />
-        </div>
+        )}
       </CardContent>
     </Card>
   );
