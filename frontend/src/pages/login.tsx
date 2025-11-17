@@ -8,8 +8,8 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Label } from "../components/ui/label";
 import { useTranslation } from "react-i18next";
-import { useAuth } from '@/contexts/AuthContext'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from "@/contexts/AuthContext";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Schema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -19,9 +19,9 @@ type Form = z.infer<typeof Schema>;
 
 export function LoginPage() {
   const { t: T } = useTranslation("common");
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [errorMessage, setErrorMessage] = React.useState<string>("");
   const {
     register,
@@ -32,9 +32,9 @@ export function LoginPage() {
     try {
       setErrorMessage("");
       // Use AuthContext for login to refresh user state
-      await login({ username: data.username, password: data.password })
-      const from = (location.state as any)?.from || "/journey"
-      navigate(from, { replace: true })
+      await login({ username: data.username, password: data.password });
+      const from = (location.state as any)?.from || "/journey";
+      navigate(from, { replace: true });
     } catch (e: any) {
       console.error("Login failed", e);
       const message = e?.message || T("auth.failed");
@@ -87,12 +87,19 @@ export function LoginPage() {
               </div>
             )}
           </div>
-          <Button className="w-full h-11" disabled={isSubmitting} aria-busy={isSubmitting}>
+          <Button
+            className="w-full h-11"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+          >
             {T("auth.signin")}
           </Button>
         </form>
         <div className="mt-4 text-sm text-center">
-          <a href="/forgot-password" className="text-muted-foreground hover:underline">
+          <a
+            href="/forgot-password"
+            className="text-muted-foreground hover:underline"
+          >
             {T("auth.forgot")}
           </a>
         </div>

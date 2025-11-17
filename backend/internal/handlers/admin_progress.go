@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -1322,4 +1323,193 @@ func (h *AdminHandler) activateNextNodes(userID, completedNodeID string) error {
 	}
 	
 	return nil
+}
+
+// PresignReviewedDocumentUpload creates a presigned URL for uploading reviewed document
+// POST /api/admin/attachments/:attachmentId/presign
+func (h *AdminHandler) PresignReviewedDocumentUpload(c *gin.Context) {
+	attachmentID := c.Param("attachmentId")
+	actorID := userIDFromClaims(c)
+	if actorID == "" {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	
+	var req struct {
+		Filename    string `json:"filename" binding:"required"`
+		ContentType string `json:"content_type" binding:"required"`
+		SizeBytes   int64  `json:"size_bytes" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Verify attachment exists
+	var studentID string
+	err := h.db.QueryRowx(`SELECT ni.user_id
+		FROM node_instance_slot_attachments a
+		JOIN node_instance_slots s ON s.id=a.slot_id
+		JOIN node_instances ni ON ni.id=s.node_instance_id
+		WHERE a.id=$1 AND a.is_active=true`, attachmentID).Scan(&studentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(404, gin.H{"error": "attachment not found"})
+			return
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Check permissions (admin or assigned advisor)
+	role := roleFromContext(c)
+	if role == "advisor" {
+		var allowed bool
+		_ = h.db.QueryRowx(`SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1 AND advisor_id=$2)`,
+			studentID, actorID).Scan(&allowed)
+		if !allowed {
+			c.JSON(403, gin.H{"error": "forbidden"})
+			return
+		}
+	}
+	
+	// Get S3 client
+	s3c, err := services.NewS3FromEnv()
+	if err != nil || s3c == nil {
+		c.JSON(500, gin.H{"error": "S3 not configured"})
+		return
+	}
+	
+	// Generate object key: reviewed_documents/{attachment_id}/{timestamp}-{filename}
+	timestamp := time.Now().Format("20060102-150405")
+	objectKey := fmt.Sprintf("reviewed_documents/%s/%s-%s", attachmentID, timestamp, req.Filename)
+	
+	expires := services.GetPresignExpires()
+	url, err := s3c.PresignPut(objectKey, req.ContentType, expires)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "presign failed"})
+		return
+	}
+	
+	c.JSON(200, gin.H{
+		"upload_url": url,
+		"object_key": objectKey,
+	})
+}
+
+// AttachReviewedDocument creates document version record and links it to attachment
+// POST /api/admin/attachments/:attachmentId/attach-reviewed
+func (h *AdminHandler) AttachReviewedDocument(c *gin.Context) {
+	attachmentID := c.Param("attachmentId")
+	actorID := userIDFromClaims(c)
+	if actorID == "" {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	role := roleFromContext(c)
+	
+	var req struct {
+		ObjectKey   string `json:"object_key" binding:"required"`
+		Filename    string `json:"filename" binding:"required"`
+		ContentType string `json:"content_type" binding:"required"`
+		SizeBytes   int64  `json:"size_bytes" binding:"required"`
+		ETag        string `json:"etag"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	
+	tx, err := h.db.Beginx()
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer tx.Rollback()
+	
+	// Verify attachment and get metadata
+	var meta struct {
+		InstanceID string `db:"instance_id"`
+		StudentID  string `db:"user_id"`
+		NodeID     string `db:"node_id"`
+		DocumentID string `db:"document_id"`
+	}
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, ni.user_id, ni.node_id, a.document_id
+		FROM node_instance_slot_attachments a
+		JOIN node_instance_slots s ON s.id=a.slot_id
+		JOIN node_instances ni ON ni.id=s.node_instance_id
+		WHERE a.id=$1 AND a.is_active=true`, attachmentID).
+		Scan(&meta.InstanceID, &meta.StudentID, &meta.NodeID, &meta.DocumentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(404, gin.H{"error": "attachment not found"})
+			return
+		}
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Check permissions
+	if role == "advisor" {
+		var allowed bool
+		_ = tx.QueryRowx(`SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1 AND advisor_id=$2)`,
+			meta.StudentID, actorID).Scan(&allowed)
+		if !allowed {
+			c.JSON(403, gin.H{"error": "forbidden"})
+			return
+		}
+	}
+	
+	// Get S3 bucket
+	s3c, err := services.NewS3FromEnv()
+	if err != nil || s3c == nil {
+		c.JSON(500, gin.H{"error": "S3 not configured"})
+		return
+	}
+	bucket := s3c.Bucket()
+	
+	// Create document version
+	var versionID string
+	err = tx.QueryRowx(`INSERT INTO document_versions (
+		document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+		meta.DocumentID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, actorID, nullableString(req.ETag)).
+		Scan(&versionID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to create document version"})
+		return
+	}
+	
+	// Update attachment with reviewed document
+	_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET 
+		reviewed_document_version_id=$1,
+		reviewed_by=$2,
+		reviewed_at=now()
+		WHERE id=$3`, versionID, actorID, attachmentID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to attach reviewed document"})
+		return
+	}
+	
+	// Log event
+	payload := map[string]any{
+		"attachment_id":       attachmentID,
+		"reviewed_version_id": versionID,
+		"filename":            req.Filename,
+	}
+	if err := insertNodeEvent(tx, meta.InstanceID, "reviewed_document_uploaded", actorID, payload); err != nil {
+		c.JSON(500, gin.H{"error": "failed to log event"})
+		return
+	}
+	
+	if err := tx.Commit(); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
+	c.JSON(200, gin.H{
+		"ok":                           true,
+		"reviewed_document_version_id": versionID,
+		"reviewed_at":                  time.Now().Format(time.RFC3339),
+	})
 }
