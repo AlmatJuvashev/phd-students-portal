@@ -22,6 +22,15 @@ export type NodeSubmissionDTO = {
       review_note?: string;
       approved_at?: string;
       approved_by?: string;
+      reviewed_document?: {
+        version_id: string;
+        filename?: string;
+        size_bytes?: number;
+        mime_type?: string;
+        download_url: string;
+        reviewed_at?: string;
+        reviewed_by?: string;
+      };
     }>;
   }>;
   outcomes?: Array<{
