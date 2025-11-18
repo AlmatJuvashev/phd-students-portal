@@ -328,13 +328,8 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 			return err
 		}
 		
-		if slot.Multiplicity == "single" {
-			log.Printf("[AttachUpload] Deactivating old attachments...")
-			if _, err := tx.Exec(`UPDATE node_instance_slot_attachments SET is_active=false WHERE slot_id=$1 AND is_active=true`, slot.ID); err != nil {
-				log.Printf("[AttachUpload] Deactivate old attachments error: %v", err)
-				return err
-			}
-		}
+		// Keep all attachments active to maintain submission history
+		// Students can upload multiple versions and see the full history
 		
 		log.Printf("[AttachUpload] Inserting slot attachment...")
 		_, err = tx.Exec(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, filename, size_bytes, attached_by, status)
@@ -739,17 +734,21 @@ func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, er
 }
 
 func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
+	log.Printf("[fetchSlots] instanceID=%s", instanceID)
 	rows, err := h.db.Queryx(`SELECT s.id, s.slot_key, s.required, s.multiplicity, s.mime_whitelist,
 		a.id AS attachment_id, a.document_version_id, a.filename, a.size_bytes, a.attached_at, a.is_active,
 		a.status, a.review_note, a.approved_at, a.approved_by,
 		a.reviewed_document_version_id, a.reviewed_at, a.reviewed_by,
-		rdv.filename AS reviewed_filename, rdv.size_bytes AS reviewed_size_bytes, rdv.mime_type AS reviewed_mime_type
+		rdv.size_bytes AS reviewed_size_bytes, rdv.mime_type AS reviewed_mime_type,
+		COALESCE(ru.first_name || ' ' || ru.last_name, '') AS reviewed_by_name
 		FROM node_instance_slots s
 		LEFT JOIN node_instance_slot_attachments a ON a.slot_id=s.id
 		LEFT JOIN document_versions rdv ON rdv.id=a.reviewed_document_version_id
+		LEFT JOIN users ru ON ru.id=a.reviewed_by
 		WHERE s.node_instance_id=$1
 		ORDER BY s.slot_key, a.attached_at DESC`, instanceID)
 	if err != nil {
+		log.Printf("[fetchSlots] query error: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -772,17 +771,22 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 		ReviewedDocumentVersionID sql.NullString `db:"reviewed_document_version_id"`
 		ReviewedAt                sql.NullTime   `db:"reviewed_at"`
 		ReviewedBy                sql.NullString `db:"reviewed_by"`
-		ReviewedFilename          sql.NullString `db:"reviewed_filename"`
 		ReviewedSizeBytes         sql.NullInt64  `db:"reviewed_size_bytes"`
 		ReviewedMimeType          sql.NullString `db:"reviewed_mime_type"`
+		ReviewedByName            sql.NullString `db:"reviewed_by_name"`
 	}
 	slots := []gin.H{}
 	slotMap := map[string]gin.H{}
+	rowCount := 0
 	for rows.Next() {
+		rowCount++
 		var r row
 		if err := rows.StructScan(&r); err != nil {
+			log.Printf("[fetchSlots] scan error on row %d: %v", rowCount, err)
 			return nil, err
 		}
+		log.Printf("[fetchSlots] row %d: slot=%s attachment_id=%v version_id=%v is_active=%v reviewed_doc_id=%v", 
+			rowCount, r.SlotKey, r.AttachmentID.String, r.VersionID.String, r.IsActive.Bool, r.ReviewedDocumentVersionID.String)
 		key := r.SlotKey
 		slot, exists := slotMap[key]
 		if !exists {
@@ -822,12 +826,11 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 			att["download_url"] = fmt.Sprintf("/api/documents/versions/%s/download", r.VersionID.String)
 			// Add reviewed document information if exists
 			if r.ReviewedDocumentVersionID.Valid && r.ReviewedDocumentVersionID.String != "" {
+				log.Printf("[fetchSlots] adding reviewed_document for attachment %s: reviewed_version_id=%s", 
+					r.VersionID.String, r.ReviewedDocumentVersionID.String)
 				reviewedDoc := gin.H{
 					"version_id":   r.ReviewedDocumentVersionID.String,
 					"download_url": fmt.Sprintf("/api/documents/versions/%s/download", r.ReviewedDocumentVersionID.String),
-				}
-				if r.ReviewedFilename.Valid {
-					reviewedDoc["filename"] = r.ReviewedFilename.String
 				}
 				if r.ReviewedSizeBytes.Valid {
 					reviewedDoc["size_bytes"] = r.ReviewedSizeBytes.Int64
@@ -838,8 +841,8 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 				if r.ReviewedAt.Valid {
 					reviewedDoc["reviewed_at"] = r.ReviewedAt.Time.Format(time.RFC3339)
 				}
-				if r.ReviewedBy.Valid {
-					reviewedDoc["reviewed_by"] = r.ReviewedBy.String
+				if r.ReviewedByName.Valid && r.ReviewedByName.String != "" {
+					reviewedDoc["reviewed_by"] = r.ReviewedByName.String
 				}
 				att["reviewed_document"] = reviewedDoc
 			}
@@ -847,6 +850,7 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 			slot["attachments"] = attachments
 		}
 	}
+	log.Printf("[fetchSlots] returning %d slots with total attachments", len(slots))
 	return slots, nil
 }
 

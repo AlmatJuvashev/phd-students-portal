@@ -246,13 +246,15 @@ export function NodeAttachmentsSection({
                         <Upload className="h-4 w-4" />
                       )}
                       {attachments.length > 0
-                        ? t("uploads.replace", { defaultValue: "Replace file" })
+                        ? t("uploads.add_version", {
+                            defaultValue: "Add new version",
+                          })
                         : t("uploads.add", { defaultValue: "Upload file" })}
                     </Button>
                   </div>
                 )}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {attachments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     {t("uploads.empty", {
@@ -260,7 +262,8 @@ export function NodeAttachmentsSection({
                     })}
                   </p>
                 ) : (
-                  attachments.map((att) => {
+                  <>
+                    {attachments.map((att, index) => {
                     const statusClass = att.status
                       ? statusStyles[att.status] || statusStyles.submitted
                       : null;
@@ -275,6 +278,7 @@ export function NodeAttachmentsSection({
                         })
                       : null;
                     const hasReviewedDoc = att.reviewed_document?.version_id;
+                    const versionNumber = attachments.length - index;
                     return (
                       <div
                         key={att.version_id}
@@ -284,6 +288,20 @@ export function NodeAttachmentsSection({
                             : "border-dashed"
                         } p-3 space-y-3`}
                       >
+                        {/* Version header */}
+                        <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                          <span className="text-xs font-semibold text-gray-500">
+                            {t("uploads.version", {
+                              defaultValue: "Version",
+                            })}{" "}
+                            {versionNumber}
+                          </span>
+                          <span className="text-xs text-gray-400">·</span>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(att.attached_at)}
+                          </span>
+                        </div>
+                        
                         {/* Student's original submission */}
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
@@ -302,9 +320,42 @@ export function NodeAttachmentsSection({
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm font-medium text-foreground break-all">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(
+                                    `${API_URL}${att.download_url}`,
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${localStorage.getItem(
+                                          "token"
+                                        )}`,
+                                      },
+                                    }
+                                  );
+                                  if (response.redirected) {
+                                    window.open(response.url, "_blank");
+                                  } else {
+                                    const blob = await response.blob();
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = att.filename;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                  }
+                                } catch (err) {
+                                  console.error("Download failed:", err);
+                                }
+                              }}
+                              className="text-sm font-medium text-blue-600 break-all text-left hover:underline hover:text-blue-700 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                              title={t("uploads.click_to_download", {
+                                defaultValue: "Click to download",
+                              })}
+                            >
+                              <Download className="h-3.5 w-3.5 flex-shrink-0" />
                               {att.filename}
-                            </p>
+                            </button>
                             <p className="text-xs text-muted-foreground">
                               {formatBytes(att.size_bytes)}
                               {att.attached_at
@@ -372,10 +423,45 @@ export function NodeAttachmentsSection({
                                   })}
                                 </p>
                               </div>
-                              <p className="text-sm font-medium text-foreground break-all">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(
+                                      `${API_URL}${att.reviewed_document!.download_url}`,
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${localStorage.getItem(
+                                            "token"
+                                          )}`,
+                                        },
+                                      }
+                                    );
+                                    if (response.redirected) {
+                                      window.open(response.url, "_blank");
+                                    } else {
+                                      const blob = await response.blob();
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement("a");
+                                      a.href = url;
+                                      a.download =
+                                        att.reviewed_document!.filename ||
+                                        `Reviewed_${att.filename}`;
+                                      a.click();
+                                      URL.revokeObjectURL(url);
+                                    }
+                                  } catch (err) {
+                                    console.error("Download failed:", err);
+                                  }
+                                }}
+                                className="text-sm font-medium text-emerald-600 break-all text-left hover:underline hover:text-emerald-700 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                                title={t("uploads.click_to_download", {
+                                  defaultValue: "Click to download",
+                                })}
+                              >
+                                <Download className="h-3.5 w-3.5 flex-shrink-0" />
                                 {att.reviewed_document.filename ||
                                   `Reviewed_${att.filename}`}
-                              </p>
+                              </button>
                               <p className="text-xs text-muted-foreground">
                                 {formatBytes(att.reviewed_document.size_bytes)}
                                 {att.reviewed_document.reviewed_at
@@ -384,7 +470,9 @@ export function NodeAttachmentsSection({
                                     )}`
                                   : ""}
                                 {att.reviewed_document.reviewed_by
-                                  ? ` · ${att.reviewed_document.reviewed_by}`
+                                  ? ` · ${t("uploads.reviewed_by_prefix", {
+                                      defaultValue: "by",
+                                    })} ${att.reviewed_document.reviewed_by}`
                                   : ""}
                               </p>
                             </div>
@@ -430,7 +518,8 @@ export function NodeAttachmentsSection({
                         )}
                       </div>
                     );
-                  })
+                    })}
+                  </>
                 )}
               </div>
             </Card>
