@@ -274,36 +274,55 @@ export function NodeAttachmentsSection({
                               : "Pending",
                         })
                       : null;
+                    const hasReviewedDoc = att.reviewed_document?.version_id;
                     return (
                       <div
                         key={att.version_id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed px-3 py-2"
+                        className={`rounded-md border ${
+                          hasReviewedDoc
+                            ? "border-blue-200 bg-blue-50/30"
+                            : "border-dashed"
+                        } p-3 space-y-3`}
                       >
-                        <div>
-                          <p className="text-sm font-medium text-foreground break-all">
-                            {att.filename}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatBytes(att.size_bytes)}
-                            {att.attached_at
-                              ? ` · ${formatDate(att.attached_at)}`
-                              : ""}
-                          </p>
-                          {att.review_note && (
-                            <p className="text-xs text-amber-700 mt-1">
-                              {t("uploads.note", {
-                                defaultValue: "Reviewer note:",
-                              })}{" "}
-                              {att.review_note}
+                        {/* Student's original submission */}
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-xs font-semibold text-blue-600">
+                                {t("uploads.your_submission", {
+                                  defaultValue: "📤 Your submission",
+                                })}
+                              </p>
+                              {statusClass && statusLabel && (
+                                <Badge
+                                  variant="outline"
+                                  className={statusClass}
+                                >
+                                  {statusLabel}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm font-medium text-foreground break-all">
+                              {att.filename}
                             </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {statusClass && statusLabel && (
-                            <Badge variant="outline" className={statusClass}>
-                              {statusLabel}
-                            </Badge>
-                          )}
+                            <p className="text-xs text-muted-foreground">
+                              {formatBytes(att.size_bytes)}
+                              {att.attached_at
+                                ? ` · ${formatDate(att.attached_at)}`
+                                : ""}
+                            </p>
+                            {att.review_note && (
+                              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
+                                <p className="font-semibold mb-1">
+                                  💬{" "}
+                                  {t("uploads.advisor_note", {
+                                    defaultValue: "Advisor's feedback:",
+                                  })}
+                                </p>
+                                <p>{att.review_note}</p>
+                              </div>
+                            )}
+                          </div>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -341,6 +360,74 @@ export function NodeAttachmentsSection({
                             <Download className="h-4 w-4" />
                           </Button>
                         </div>
+
+                        {/* Advisor's reviewed document (if exists) */}
+                        {hasReviewedDoc && att.reviewed_document && (
+                          <div className="flex flex-wrap items-start justify-between gap-3 pt-3 border-t border-blue-200">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-xs font-semibold text-emerald-600">
+                                  {t("uploads.advisor_reviewed", {
+                                    defaultValue: "📥 Advisor reviewed file",
+                                  })}
+                                </p>
+                              </div>
+                              <p className="text-sm font-medium text-foreground break-all">
+                                {att.reviewed_document.filename ||
+                                  `Reviewed_${att.filename}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatBytes(att.reviewed_document.size_bytes)}
+                                {att.reviewed_document.reviewed_at
+                                  ? ` · ${formatDate(
+                                      att.reviewed_document.reviewed_at
+                                    )}`
+                                  : ""}
+                                {att.reviewed_document.reviewed_by
+                                  ? ` · ${att.reviewed_document.reviewed_by}`
+                                  : ""}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(
+                                    `${API_URL}${att.reviewed_document!.download_url}`,
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${localStorage.getItem(
+                                          "token"
+                                        )}`,
+                                      },
+                                    }
+                                  );
+                                  if (response.redirected) {
+                                    window.open(response.url, "_blank");
+                                  } else {
+                                    const blob = await response.blob();
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download =
+                                      att.reviewed_document!.filename ||
+                                      `Reviewed_${att.filename}`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                  }
+                                } catch (err) {
+                                  console.error("Download failed:", err);
+                                }
+                              }}
+                              aria-label={t("uploads.download_reviewed", {
+                                defaultValue: "Download reviewed file",
+                              })}
+                            >
+                              <Download className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     );
                   })

@@ -741,9 +741,12 @@ func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, er
 func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 	rows, err := h.db.Queryx(`SELECT s.id, s.slot_key, s.required, s.multiplicity, s.mime_whitelist,
 		a.id AS attachment_id, a.document_version_id, a.filename, a.size_bytes, a.attached_at, a.is_active,
-		a.status, a.review_note, a.approved_at, a.approved_by
+		a.status, a.review_note, a.approved_at, a.approved_by,
+		a.reviewed_document_version_id, a.reviewed_at, a.reviewed_by,
+		rdv.filename AS reviewed_filename, rdv.size_bytes AS reviewed_size_bytes, rdv.mime_type AS reviewed_mime_type
 		FROM node_instance_slots s
 		LEFT JOIN node_instance_slot_attachments a ON a.slot_id=s.id
+		LEFT JOIN document_versions rdv ON rdv.id=a.reviewed_document_version_id
 		WHERE s.node_instance_id=$1
 		ORDER BY s.slot_key, a.attached_at DESC`, instanceID)
 	if err != nil {
@@ -751,21 +754,27 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 	}
 	defer rows.Close()
 	type row struct {
-		SlotID       string         `db:"id"`
-		SlotKey      string         `db:"slot_key"`
-		Required     bool           `db:"required"`
-		Multiplicity string         `db:"multiplicity"`
-		Mime         pq.StringArray `db:"mime_whitelist"`
-		AttachmentID sql.NullString `db:"attachment_id"`
-		VersionID    sql.NullString `db:"document_version_id"`
-		Filename     sql.NullString `db:"filename"`
-		SizeBytes    sql.NullInt64  `db:"size_bytes"`
-		AttachedAt   sql.NullTime   `db:"attached_at"`
-		IsActive     sql.NullBool   `db:"is_active"`
-		Status       sql.NullString `db:"status"`
-		ReviewNote   sql.NullString `db:"review_note"`
-		ApprovedAt   sql.NullTime   `db:"approved_at"`
-		ApprovedBy   sql.NullString `db:"approved_by"`
+		SlotID                    string         `db:"id"`
+		SlotKey                   string         `db:"slot_key"`
+		Required                  bool           `db:"required"`
+		Multiplicity              string         `db:"multiplicity"`
+		Mime                      pq.StringArray `db:"mime_whitelist"`
+		AttachmentID              sql.NullString `db:"attachment_id"`
+		VersionID                 sql.NullString `db:"document_version_id"`
+		Filename                  sql.NullString `db:"filename"`
+		SizeBytes                 sql.NullInt64  `db:"size_bytes"`
+		AttachedAt                sql.NullTime   `db:"attached_at"`
+		IsActive                  sql.NullBool   `db:"is_active"`
+		Status                    sql.NullString `db:"status"`
+		ReviewNote                sql.NullString `db:"review_note"`
+		ApprovedAt                sql.NullTime   `db:"approved_at"`
+		ApprovedBy                sql.NullString `db:"approved_by"`
+		ReviewedDocumentVersionID sql.NullString `db:"reviewed_document_version_id"`
+		ReviewedAt                sql.NullTime   `db:"reviewed_at"`
+		ReviewedBy                sql.NullString `db:"reviewed_by"`
+		ReviewedFilename          sql.NullString `db:"reviewed_filename"`
+		ReviewedSizeBytes         sql.NullInt64  `db:"reviewed_size_bytes"`
+		ReviewedMimeType          sql.NullString `db:"reviewed_mime_type"`
 	}
 	slots := []gin.H{}
 	slotMap := map[string]gin.H{}
@@ -811,6 +820,29 @@ func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
 				att["approved_by"] = r.ApprovedBy.String
 			}
 			att["download_url"] = fmt.Sprintf("/api/documents/versions/%s/download", r.VersionID.String)
+			// Add reviewed document information if exists
+			if r.ReviewedDocumentVersionID.Valid && r.ReviewedDocumentVersionID.String != "" {
+				reviewedDoc := gin.H{
+					"version_id":   r.ReviewedDocumentVersionID.String,
+					"download_url": fmt.Sprintf("/api/documents/versions/%s/download", r.ReviewedDocumentVersionID.String),
+				}
+				if r.ReviewedFilename.Valid {
+					reviewedDoc["filename"] = r.ReviewedFilename.String
+				}
+				if r.ReviewedSizeBytes.Valid {
+					reviewedDoc["size_bytes"] = r.ReviewedSizeBytes.Int64
+				}
+				if r.ReviewedMimeType.Valid {
+					reviewedDoc["mime_type"] = r.ReviewedMimeType.String
+				}
+				if r.ReviewedAt.Valid {
+					reviewedDoc["reviewed_at"] = r.ReviewedAt.Time.Format(time.RFC3339)
+				}
+				if r.ReviewedBy.Valid {
+					reviewedDoc["reviewed_by"] = r.ReviewedBy.String
+				}
+				att["reviewed_document"] = reviewedDoc
+			}
 			attachments = append(attachments, att)
 			slot["attachments"] = attachments
 		}
