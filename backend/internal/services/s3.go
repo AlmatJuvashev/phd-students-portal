@@ -135,6 +135,14 @@ func (s *S3Client) Bucket() string {
 	return s.cfg.Bucket
 }
 
+// Client returns the underlying S3 client for advanced operations
+func (s *S3Client) Client() *s3.Client {
+	if s == nil {
+		return nil
+	}
+	return s.client
+}
+
 func firstNonEmpty(values ...string) string {
 	for _, v := range values {
 		if strings.TrimSpace(v) != "" {
