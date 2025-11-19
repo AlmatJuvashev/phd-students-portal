@@ -228,6 +228,20 @@ export function NotificationsPage() {
     ? notificationsData
     : [];
 
+  console.log("[NotificationsPage] isLoading:", isLoading);
+  console.log("[NotificationsPage] notificationsData:", notificationsData);
+  console.log("[NotificationsPage] notifications array:", notifications);
+  console.log(
+    "[NotificationsPage] notifications.length:",
+    notifications.length
+  );
+  if (notifications.length > 0) {
+    console.log(
+      "[NotificationsPage] First notification:",
+      JSON.stringify(notifications[0], null, 2)
+    );
+  }
+
   const markAsReadMutation = useMutation({
     mutationFn: (id: string) =>
       api(`/admin/notifications/${id}/read`, { method: "PATCH" }),
@@ -260,6 +274,11 @@ export function NotificationsPage() {
   };
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  console.log("[NotificationsPage] About to render. Conditions:");
+  console.log("  - isLoading:", isLoading);
+  console.log("  - notifications.length:", notifications.length);
+  console.log("  - showUnreadOnly:", showUnreadOnly);
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
@@ -344,7 +363,12 @@ export function NotificationsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {notifications.map((notification) => {
+              {notifications.map((notification, index) => {
+                console.log(
+                  `[NotificationsPage] Rendering notification ${index}:`,
+                  notification.id,
+                  notification.student_name
+                );
                 const metadata = parseMetadata(notification.metadata);
                 const nodeTitle =
                   nodeTitles[notification.node_id] ||

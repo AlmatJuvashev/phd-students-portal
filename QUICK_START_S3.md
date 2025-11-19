@@ -39,8 +39,8 @@ cd frontend && npm run dev
 
 1. Войти: http://localhost:5173
 
-   - Email: `juvashev@gmail.com`
-   - Password: `almatjuvashevHandHygieneApp2025!`
+   - Email: (see `ADMIN_EMAIL` in backend/.env)
+   - Password: (see `ADMIN_PASSWORD` in backend/.env)
 
 2. Admin → Students → Выбрать студента
 
