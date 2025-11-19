@@ -9,7 +9,7 @@ import { API_URL } from "@/api/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Loader2, Upload } from "lucide-react";
+import { Download, Loader2, Upload, FileText, MessageSquare } from "lucide-react";
 
 const statusStyles: Record<string, string> = {
   submitted: "bg-amber-50 text-amber-700 border border-amber-200",
@@ -38,6 +38,28 @@ function formatDate(value?: string) {
   const d = new Date(value);
   return d.toLocaleDateString();
 }
+
+function formatDateTime(value?: string) {
+  if (!value) return "";
+  const d = new Date(value);
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
+
+type TimelineEvent = {
+  id: string;
+  type: "student_upload" | "advisor_review";
+  timestamp: string;
+  filename: string;
+  downloadUrl: string;
+  sizeBytes?: number;
+  status?: string;
+  reviewNote?: string;
+  reviewedBy?: string;
+  versionNumber?: number;
+};
 
 type Props = {
   nodeId: string;
@@ -174,6 +196,68 @@ export function NodeAttachmentsSection({
   const acceptFor = (mime: string[]) =>
     mime.length ? mime.join(",") : undefined;
 
+  const handleDownload = async (downloadUrl: string, filename: string) => {
+    try {
+      const response = await fetch(`${API_URL}${downloadUrl}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.redirected) {
+        window.open(response.url, "_blank");
+      } else {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
+
+  const buildTimeline = (attachments: any[]): TimelineEvent[] => {
+    const events: TimelineEvent[] = [];
+    const sortedAttachments = [...attachments].reverse(); // Oldest first
+
+    sortedAttachments.forEach((att, index) => {
+      const versionNumber = index + 1;
+
+      // Student upload event
+      events.push({
+        id: `student-${att.version_id}`,
+        type: "student_upload",
+        timestamp: att.attached_at,
+        filename: att.filename,
+        downloadUrl: att.download_url,
+        sizeBytes: att.size_bytes,
+        status: att.status,
+        reviewNote: att.review_note,
+        versionNumber,
+      });
+
+      // Advisor review event (if exists)
+      if (att.reviewed_document?.version_id) {
+        events.push({
+          id: `advisor-${att.reviewed_document.version_id}`,
+          type: "advisor_review",
+          timestamp:
+            att.reviewed_document.reviewed_at || att.reviewed_document.created_at,
+          filename:
+            att.reviewed_document.filename || `Reviewed_${att.filename}`,
+          downloadUrl: att.reviewed_document.download_url,
+          sizeBytes: att.reviewed_document.size_bytes,
+          reviewedBy: att.reviewed_document.reviewed_by,
+        });
+      }
+    });
+
+    return events;
+  };
+
   return (
     <section className="space-y-4">
       <div>
@@ -254,7 +338,8 @@ export function NodeAttachmentsSection({
                   </div>
                 )}
               </div>
-              <div className="space-y-4">
+              {/* Timeline View */}
+              <div className="space-y-0">
                 {attachments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     {t("uploads.empty", {
@@ -262,264 +347,170 @@ export function NodeAttachmentsSection({
                     })}
                   </p>
                 ) : (
-                  <>
-                    {attachments.map((att, index) => {
-                    const statusClass = att.status
-                      ? statusStyles[att.status] || statusStyles.submitted
-                      : null;
-                    const statusLabel = att.status
-                      ? t(`uploads.status.${att.status}`, {
-                          defaultValue:
-                            att.status === "approved"
-                              ? "Approved"
-                              : att.status === "rejected"
-                              ? "Needs fixes"
-                              : "Pending",
-                        })
-                      : null;
-                    const hasReviewedDoc = att.reviewed_document?.version_id;
-                    const versionNumber = attachments.length - index;
-                    return (
-                      <div
-                        key={att.version_id}
-                        className={`rounded-md border ${
-                          hasReviewedDoc
-                            ? "border-blue-200 bg-blue-50/30"
-                            : "border-dashed"
-                        } p-3 space-y-3`}
-                      >
-                        {/* Version header */}
-                        <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-                          <span className="text-xs font-semibold text-gray-500">
-                            {t("uploads.version", {
-                              defaultValue: "Version",
-                            })}{" "}
-                            {versionNumber}
-                          </span>
-                          <span className="text-xs text-gray-400">·</span>
-                          <span className="text-xs text-gray-500">
-                            {formatDate(att.attached_at)}
-                          </span>
-                        </div>
-                        
-                        {/* Student's original submission */}
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="text-xs font-semibold text-blue-600">
-                                {t("uploads.your_submission", {
-                                  defaultValue: "📤 Your submission",
-                                })}
-                              </p>
-                              {statusClass && statusLabel && (
-                                <Badge
-                                  variant="outline"
-                                  className={statusClass}
-                                >
-                                  {statusLabel}
-                                </Badge>
-                              )}
-                            </div>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch(
-                                    `${API_URL}${att.download_url}`,
-                                    {
-                                      headers: {
-                                        Authorization: `Bearer ${localStorage.getItem(
-                                          "token"
-                                        )}`,
-                                      },
-                                    }
-                                  );
-                                  if (response.redirected) {
-                                    window.open(response.url, "_blank");
-                                  } else {
-                                    const blob = await response.blob();
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement("a");
-                                    a.href = url;
-                                    a.download = att.filename;
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                  }
-                                } catch (err) {
-                                  console.error("Download failed:", err);
-                                }
-                              }}
-                              className="text-sm font-medium text-blue-600 break-all text-left hover:underline hover:text-blue-700 transition-colors cursor-pointer inline-flex items-center gap-1.5"
-                              title={t("uploads.click_to_download", {
-                                defaultValue: "Click to download",
-                              })}
-                            >
-                              <Download className="h-3.5 w-3.5 flex-shrink-0" />
-                              {att.filename}
-                            </button>
-                            <p className="text-xs text-muted-foreground">
-                              {formatBytes(att.size_bytes)}
-                              {att.attached_at
-                                ? ` · ${formatDate(att.attached_at)}`
-                                : ""}
-                            </p>
-                            {att.review_note && (
-                              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
-                                <p className="font-semibold mb-1">
-                                  💬{" "}
-                                  {t("uploads.advisor_note", {
-                                    defaultValue: "Advisor's feedback:",
-                                  })}
-                                </p>
-                                <p>{att.review_note}</p>
-                              </div>
+                  <div className="relative">
+                    {/* Timeline vertical line */}
+                    <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-gradient-to-b from-blue-200 via-emerald-200 to-blue-200" />
+
+                    {buildTimeline(attachments).map((event, index) => {
+                      const isStudent = event.type === "student_upload";
+                      const statusClass = event.status
+                        ? statusStyles[event.status] || statusStyles.submitted
+                        : null;
+                      const statusLabel = event.status
+                        ? t(`uploads.status.${event.status}`, {
+                            defaultValue:
+                              event.status === "approved"
+                                ? "Approved"
+                                : event.status === "rejected"
+                                ? "Needs fixes"
+                                : "Pending",
+                          })
+                        : null;
+
+                      return (
+                        <div
+                          key={event.id}
+                          className={`relative flex gap-4 pb-6 ${
+                            index === 0 ? "pt-0" : ""
+                          }`}
+                        >
+                          {/* Timeline dot */}
+                          <div
+                            className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center z-10 ${
+                              isStudent
+                                ? "bg-blue-100 border-2 border-blue-400"
+                                : "bg-emerald-100 border-2 border-emerald-400"
+                            }`}
+                          >
+                            {isStudent ? (
+                              <FileText className="h-5 w-5 text-blue-600" />
+                            ) : (
+                              <MessageSquare className="h-5 w-5 text-emerald-600" />
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={async () => {
-                              try {
-                                const response = await fetch(
-                                  `${API_URL}${att.download_url}`,
-                                  {
-                                    headers: {
-                                      Authorization: `Bearer ${localStorage.getItem(
-                                        "token"
-                                      )}`,
-                                    },
-                                  }
-                                );
-                                if (response.redirected) {
-                                  window.open(response.url, "_blank");
-                                } else {
-                                  const blob = await response.blob();
-                                  const url = URL.createObjectURL(blob);
-                                  const a = document.createElement("a");
-                                  a.href = url;
-                                  a.download = att.filename;
-                                  a.click();
-                                  URL.revokeObjectURL(url);
-                                }
-                              } catch (err) {
-                                console.error("Download failed:", err);
-                              }
-                            }}
-                            aria-label={t("uploads.download", {
-                              defaultValue: "Download",
-                            })}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
 
-                        {/* Advisor's reviewed document (if exists) */}
-                        {hasReviewedDoc && att.reviewed_document && (
-                          <div className="flex flex-wrap items-start justify-between gap-3 pt-3 border-t border-blue-200">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="text-xs font-semibold text-emerald-600">
-                                  {t("uploads.advisor_reviewed", {
-                                    defaultValue: "📥 Advisor reviewed file",
-                                  })}
-                                </p>
-                              </div>
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    const response = await fetch(
-                                      `${API_URL}${att.reviewed_document!.download_url}`,
-                                      {
-                                        headers: {
-                                          Authorization: `Bearer ${localStorage.getItem(
-                                            "token"
-                                          )}`,
-                                        },
-                                      }
-                                    );
-                                    if (response.redirected) {
-                                      window.open(response.url, "_blank");
-                                    } else {
-                                      const blob = await response.blob();
-                                      const url = URL.createObjectURL(blob);
-                                      const a = document.createElement("a");
-                                      a.href = url;
-                                      a.download =
-                                        att.reviewed_document!.filename ||
-                                        `Reviewed_${att.filename}`;
-                                      a.click();
-                                      URL.revokeObjectURL(url);
-                                    }
-                                  } catch (err) {
-                                    console.error("Download failed:", err);
-                                  }
-                                }}
-                                className="text-sm font-medium text-emerald-600 break-all text-left hover:underline hover:text-emerald-700 transition-colors cursor-pointer inline-flex items-center gap-1.5"
-                                title={t("uploads.click_to_download", {
-                                  defaultValue: "Click to download",
-                                })}
-                              >
-                                <Download className="h-3.5 w-3.5 flex-shrink-0" />
-                                {att.reviewed_document.filename ||
-                                  `Reviewed_${att.filename}`}
-                              </button>
-                              <p className="text-xs text-muted-foreground">
-                                {formatBytes(att.reviewed_document.size_bytes)}
-                                {att.reviewed_document.reviewed_at
-                                  ? ` · ${formatDate(
-                                      att.reviewed_document.reviewed_at
-                                    )}`
-                                  : ""}
-                                {att.reviewed_document.reviewed_by
-                                  ? ` · ${t("uploads.reviewed_by_prefix", {
-                                      defaultValue: "by",
-                                    })} ${att.reviewed_document.reviewed_by}`
-                                  : ""}
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch(
-                                    `${API_URL}${att.reviewed_document!.download_url}`,
-                                    {
-                                      headers: {
-                                        Authorization: `Bearer ${localStorage.getItem(
-                                          "token"
-                                        )}`,
-                                      },
-                                    }
-                                  );
-                                  if (response.redirected) {
-                                    window.open(response.url, "_blank");
-                                  } else {
-                                    const blob = await response.blob();
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement("a");
-                                    a.href = url;
-                                    a.download =
-                                      att.reviewed_document!.filename ||
-                                      `Reviewed_${att.filename}`;
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                  }
-                                } catch (err) {
-                                  console.error("Download failed:", err);
-                                }
-                              }}
-                              aria-label={t("uploads.download_reviewed", {
-                                defaultValue: "Download reviewed file",
-                              })}
+                          {/* Event content */}
+                          <div
+                            className={`flex-1 ${
+                              isStudent ? "ml-0" : "ml-0"
+                            }`}
+                          >
+                            <div
+                              className={`rounded-lg border p-4 ${
+                                isStudent
+                                  ? "bg-blue-50/50 border-blue-200"
+                                  : "bg-emerald-50/50 border-emerald-200"
+                              }`}
                             >
-                              <Download className="h-4 w-4 text-emerald-600" />
-                            </Button>
+                              {/* Header */}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span
+                                      className={`text-sm font-semibold ${
+                                        isStudent
+                                          ? "text-blue-700"
+                                          : "text-emerald-700"
+                                      }`}
+                                    >
+                                      {isStudent
+                                        ? event.versionNumber
+                                          ? `${t("uploads.version", {
+                                              defaultValue: "Version",
+                                            })} ${event.versionNumber}`
+                                          : t("uploads.your_submission", {
+                                              defaultValue: "Your submission",
+                                            })
+                                        : t("uploads.advisor_reviewed", {
+                                            defaultValue: "Advisor reviewed",
+                                          })}
+                                    </span>
+                                    {statusClass && statusLabel && isStudent && (
+                                      <Badge
+                                        variant="outline"
+                                        className={statusClass}
+                                      >
+                                        {statusLabel}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {formatDateTime(event.timestamp)}
+                                    {event.reviewedBy &&
+                                      ` · ${t("uploads.reviewed_by_prefix", {
+                                        defaultValue: "by",
+                                      })} ${event.reviewedBy}`}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* File info */}
+                              <div className="flex items-center justify-between gap-3">
+                                <button
+                                  onClick={() =>
+                                    handleDownload(
+                                      event.downloadUrl,
+                                      event.filename
+                                    )
+                                  }
+                                  className={`text-sm font-medium break-all text-left hover:underline transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                                    isStudent
+                                      ? "text-blue-600 hover:text-blue-700"
+                                      : "text-emerald-600 hover:text-emerald-700"
+                                  }`}
+                                  title={t("uploads.click_to_download", {
+                                    defaultValue: "Click to download",
+                                  })}
+                                >
+                                  <Download className="h-3.5 w-3.5 flex-shrink-0" />
+                                  {event.filename}
+                                </button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDownload(
+                                      event.downloadUrl,
+                                      event.filename
+                                    )
+                                  }
+                                  aria-label={t("uploads.download", {
+                                    defaultValue: "Download",
+                                  })}
+                                >
+                                  <Download
+                                    className={`h-4 w-4 ${
+                                      isStudent
+                                        ? "text-blue-600"
+                                        : "text-emerald-600"
+                                    }`}
+                                  />
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatBytes(event.sizeBytes)}
+                              </p>
+
+                              {/* Review note */}
+                              {event.reviewNote && (
+                                <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-md">
+                                  <p className="text-xs font-semibold text-amber-900 mb-1 flex items-center gap-1.5">
+                                    <MessageSquare className="h-3.5 w-3.5" />
+                                    {t("uploads.advisor_note", {
+                                      defaultValue: "Advisor's feedback:",
+                                    })}
+                                  </p>
+                                  <p className="text-xs text-amber-900">
+                                    {event.reviewNote}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    );
+                        </div>
+                      );
                     })}
-                  </>
+                  </div>
                 )}
               </div>
             </Card>
