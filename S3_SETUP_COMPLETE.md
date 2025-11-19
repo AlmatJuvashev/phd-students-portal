@@ -49,8 +49,8 @@
 
 **Admin:**
 
-- Email: `juvashev@gmail.com`
-- Password: `almatjuvashevHandHygieneApp2025!`
+- Email: (see `ADMIN_EMAIL` in backend/.env)
+- Password: (see `ADMIN_PASSWORD` in backend/.env)
 - Может просматривать файлы всех студентов
 
 **Student:**

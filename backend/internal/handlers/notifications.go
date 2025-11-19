@@ -33,6 +33,7 @@ type Notification struct {
 // GET /api/admin/notifications?unread_only=true
 func (h *NotificationsHandler) ListNotifications(c *gin.Context) {
 	unreadOnly := c.Query("unread_only") == "true"
+	log.Printf("[ListNotifications] Starting - unreadOnly: %v", unreadOnly)
 
 	query := `
 		SELECT 
@@ -57,6 +58,7 @@ func (h *NotificationsHandler) ListNotifications(c *gin.Context) {
 
 	query += " ORDER BY n.created_at DESC LIMIT 100"
 
+	log.Printf("[ListNotifications] Executing query: %s", query)
 	var notifications []Notification
 	err := h.db.Select(&notifications, query)
 	if err != nil {
@@ -65,11 +67,18 @@ func (h *NotificationsHandler) ListNotifications(c *gin.Context) {
 		return
 	}
 
+	log.Printf("[ListNotifications] Found %d notifications", len(notifications))
+	if len(notifications) > 0 {
+		log.Printf("[ListNotifications] First notification: id=%s, student=%s, node=%s, message=%s", 
+			notifications[0].ID, notifications[0].StudentName, notifications[0].NodeID, notifications[0].Message)
+	}
+
 	// Ensure we return empty array instead of null
 	if notifications == nil {
 		notifications = []Notification{}
 	}
 
+	log.Printf("[ListNotifications] Returning %d notifications", len(notifications))
 	c.JSON(200, notifications)
 }
 
