@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/logging"
 
@@ -10,6 +14,8 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/db"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/seed"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/worker"
 	"github.com/joho/godotenv"
 
 	"github.com/gin-gonic/gin"
@@ -68,8 +74,36 @@ func main() {
 
 	api := handlers.BuildAPI(r, conn, cfg, pbManager)
 
-	logging.Info("API listening", "port", cfg.Port)
-	if err := api.Run(":" + cfg.Port); err != nil {
-		log.Fatal(err)
+	// Initialize S3 cleanup worker if S3 is configured
+	s3Client, err := services.NewS3FromEnv()
+	if err != nil {
+		log.Printf("S3 initialization error: %v", err)
 	}
+	
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if s3Client != nil && s3Client.Client() != nil {
+		cleanupWorker := worker.NewCleanupWorker(conn, s3Client.Client(), s3Client.Bucket())
+		go cleanupWorker.Start(ctx)
+		log.Println("S3 cleanup worker started")
+	} else {
+		log.Println("S3 not configured, cleanup worker disabled")
+	}
+
+	// Setup graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		logging.Info("API listening", "port", cfg.Port)
+		if err := api.Run(":" + cfg.Port); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	<-quit
+	log.Println("Shutting down server...")
+	cancel() // Stop cleanup worker
+	log.Println("Server stopped")
 }
