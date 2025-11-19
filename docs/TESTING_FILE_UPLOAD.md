@@ -95,8 +95,8 @@ npm run dev
 
 1. **Войдите как admin:**
 
-   - Email: `juvashev@gmail.com`
-   - Password: `almatjuvashevHandHygieneApp2025!`
+   - Email: `admin@example.com` (see your `.env` file for actual credentials)
+   - Password: (see `ADMIN_PASSWORD` in `.env`)
 
 2. **Найдите студента:**
 
