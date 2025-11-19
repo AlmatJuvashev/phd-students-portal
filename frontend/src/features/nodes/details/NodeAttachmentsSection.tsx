@@ -9,7 +9,8 @@ import { API_URL } from "@/api/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Loader2, Upload, FileText, MessageSquare } from "lucide-react";
+import { Download, Loader2, Upload, FileText, MessageSquare, Eye } from "lucide-react";
+import { DocumentPreviewDrawer } from "@/components/ui/DocumentPreviewDrawer";
 
 const statusStyles: Record<string, string> = {
   submitted: "bg-amber-50 text-amber-700 border border-amber-200",
@@ -84,6 +85,17 @@ export function NodeAttachmentsSection({
   const [slotMeta, setSlotMeta] = useState<
     Record<string, { label?: string; required?: boolean }>
   >({});
+  const [previewState, setPreviewState] = useState<{
+    isOpen: boolean;
+    fileUrl: string;
+    filename: string;
+    contentType?: string;
+  }>({
+    isOpen: false,
+    fileUrl: "",
+    filename: "",
+    contentType: undefined,
+  });
 
   if (!slots || slots.length === 0) {
     return null;
@@ -219,6 +231,55 @@ export function NodeAttachmentsSection({
     }
   };
 
+  const handlePreview = async (
+    downloadUrl: string,
+    filename: string,
+    contentType?: string
+  ) => {
+    try {
+      const response = await fetch(`${API_URL}${downloadUrl}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      let previewUrl: string;
+      if (response.redirected) {
+        // S3 presigned URL
+        previewUrl = response.url;
+      } else {
+        // Create blob URL for local preview
+        const blob = await response.blob();
+        previewUrl = URL.createObjectURL(blob);
+      }
+
+      setPreviewState({
+        isOpen: true,
+        fileUrl: previewUrl,
+        filename,
+        contentType,
+      });
+    } catch (err) {
+      console.error("Preview failed:", err);
+    }
+  };
+
+  const closePreview = () => {
+    // Cleanup blob URL if it was created
+    if (
+      previewState.fileUrl &&
+      previewState.fileUrl.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(previewState.fileUrl);
+    }
+    setPreviewState({
+      isOpen: false,
+      fileUrl: "",
+      filename: "",
+      contentType: undefined,
+    });
+  };
+
   const buildTimeline = (attachments: any[]): TimelineEvent[] => {
     const events: TimelineEvent[] = [];
     const sortedAttachments = [...attachments].reverse(); // Oldest first
@@ -260,6 +321,13 @@ export function NodeAttachmentsSection({
 
   return (
     <section className="space-y-4">
+      <DocumentPreviewDrawer
+        isOpen={previewState.isOpen}
+        onClose={closePreview}
+        fileUrl={previewState.fileUrl}
+        filename={previewState.filename}
+        contentType={previewState.contentType}
+      />
       <div>
         <h3 className="text-base font-semibold">
           {t("uploads.title", { defaultValue: "Supporting documents" })}
@@ -465,27 +533,53 @@ export function NodeAttachmentsSection({
                                   <Download className="h-3.5 w-3.5 flex-shrink-0" />
                                   {event.filename}
                                 </button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDownload(
-                                      event.downloadUrl,
-                                      event.filename
-                                    )
-                                  }
-                                  aria-label={t("uploads.download", {
-                                    defaultValue: "Download",
-                                  })}
-                                >
-                                  <Download
-                                    className={`h-4 w-4 ${
-                                      isStudent
-                                        ? "text-blue-600"
-                                        : "text-emerald-600"
-                                    }`}
-                                  />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handlePreview(
+                                        event.downloadUrl,
+                                        event.filename
+                                      )
+                                    }
+                                    aria-label={t("uploads.preview", {
+                                      defaultValue: "Preview",
+                                    })}
+                                    title={t("uploads.preview", {
+                                      defaultValue: "Preview",
+                                    })}
+                                  >
+                                    <Eye
+                                      className={`h-4 w-4 ${
+                                        isStudent
+                                          ? "text-blue-600"
+                                          : "text-emerald-600"
+                                      }`}
+                                    />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDownload(
+                                        event.downloadUrl,
+                                        event.filename
+                                      )
+                                    }
+                                    aria-label={t("uploads.download", {
+                                      defaultValue: "Download",
+                                    })}
+                                  >
+                                    <Download
+                                      className={`h-4 w-4 ${
+                                        isStudent
+                                          ? "text-blue-600"
+                                          : "text-emerald-600"
+                                      }`}
+                                    />
+                                  </Button>
+                                </div>
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">
                                 {formatBytes(event.sizeBytes)}
