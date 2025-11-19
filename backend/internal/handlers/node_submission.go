@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/storage"
 	"github.com/gin-gonic/gin"
@@ -20,13 +22,19 @@ import (
 )
 
 type NodeSubmissionHandler struct {
-	db  *sqlx.DB
-	cfg config.AppConfig
-	pb  *playbook.Manager
+	db     *sqlx.DB
+	cfg    config.AppConfig
+	pb     *playbook.Manager
+	mailer *mailer.Mailer
 }
 
 func NewNodeSubmissionHandler(db *sqlx.DB, cfg config.AppConfig, pb *playbook.Manager) *NodeSubmissionHandler {
-	return &NodeSubmissionHandler{db: db, cfg: cfg, pb: pb}
+	return &NodeSubmissionHandler{
+		db:     db,
+		cfg:    cfg,
+		pb:     pb,
+		mailer: mailer.NewMailer(),
+	}
 }
 
 type nodeInstanceRecord struct {
@@ -614,6 +622,10 @@ func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, inst *nodeInstanceR
 	}
 	inst.State = newState
 	payload := map[string]any{"from": previous, "to": newState}
+	
+	// Send email notification after successful state transition
+	go h.sendStateChangeEmail(userID, inst.NodeID, previous, newState)
+	
 	return h.insertEvent(tx, inst.ID, "state_changed", userID, payload)
 }
 
@@ -660,6 +672,58 @@ func (h *NodeSubmissionHandler) insertEvent(tx *sqlx.Tx, nodeInstanceID, eventTy
 	}
 	_, err = tx.Exec(`INSERT INTO node_events (node_instance_id, event_type, payload, actor_id) VALUES ($1,$2,$3,$4)`, nodeInstanceID, eventType, data, actorID)
 	return err
+}
+
+func (h *NodeSubmissionHandler) sendStateChangeEmail(userID, nodeID, fromState, toState string) {
+	// Get user email and name
+	var user struct {
+		Email     string `db:"email"`
+		FirstName string `db:"first_name"`
+		LastName  string `db:"last_name"`
+	}
+	err := h.db.QueryRowx(`SELECT email, first_name, last_name FROM users WHERE id=$1`, userID).Scan(&user.Email, &user.FirstName, &user.LastName)
+	if err != nil {
+		log.Printf("[sendStateChangeEmail] Error fetching user: %v", err)
+		return
+	}
+
+	studentName := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+	frontendURL := os.Getenv("FRONTEND_BASE_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+
+	// Send email to student when state changes to "approved" or "changes_requested"
+	if toState == "approved" || toState == "changes_requested" {
+		err = h.mailer.SendStateChangeNotification(user.Email, studentName, nodeID, fromState, toState, frontendURL)
+		if err != nil {
+			log.Printf("[sendStateChangeEmail] Error sending email to student: %v", err)
+		}
+	}
+
+	// Send email to admin when student submits
+	if toState == "submitted" {
+		adminEmail := os.Getenv("ADMIN_EMAIL")
+		if adminEmail != "" {
+			subject := fmt.Sprintf("PhD Portal: New Submission - %s", nodeID)
+			body := fmt.Sprintf(`
+				<html>
+				<body style="font-family: Arial, sans-serif;">
+					<h2>New Student Submission</h2>
+					<p><strong>Student:</strong> %s</p>
+					<p><strong>Node:</strong> %s</p>
+					<p><strong>Status:</strong> %s → %s</p>
+					<p><a href="%s/admin/students-monitor">View in Admin Panel</a></p>
+				</body>
+				</html>
+			`, studentName, nodeID, fromState, toState, frontendURL)
+			
+			err = h.mailer.SendNotificationEmail(adminEmail, subject, body)
+			if err != nil {
+				log.Printf("[sendStateChangeEmail] Error sending email to admin: %v", err)
+			}
+		}
+	}
 }
 
 func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, error) {
