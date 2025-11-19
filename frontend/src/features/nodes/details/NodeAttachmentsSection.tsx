@@ -96,6 +96,24 @@ export function NodeAttachmentsSection({
     filename: "",
     contentType: undefined,
   });
+  const [lastViewedTimestamp, setLastViewedTimestamp] = useState<number>(0);
+
+  // Load last viewed timestamp from localStorage
+  useEffect(() => {
+    const key = `last_viewed_node_${nodeId}`;
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      setLastViewedTimestamp(parseInt(stored, 10));
+    }
+  }, [nodeId]);
+
+  // Update last viewed timestamp when component mounts/unmounts
+  useEffect(() => {
+    return () => {
+      const key = `last_viewed_node_${nodeId}`;
+      localStorage.setItem(key, Date.now().toString());
+    };
+  }, [nodeId]);
 
   if (!slots || slots.length === 0) {
     return null;
@@ -319,6 +337,12 @@ export function NodeAttachmentsSection({
     return events;
   };
 
+  const isNewEvent = (timestamp: string): boolean => {
+    if (!lastViewedTimestamp) return false;
+    const eventTime = new Date(timestamp).getTime();
+    return eventTime > lastViewedTimestamp;
+  };
+
   return (
     <section className="space-y-4">
       <DocumentPreviewDrawer
@@ -421,6 +445,7 @@ export function NodeAttachmentsSection({
 
                     {buildTimeline(attachments).map((event, index) => {
                       const isStudent = event.type === "student_upload";
+                      const isNew = isNewEvent(event.timestamp);
                       const statusClass = event.status
                         ? statusStyles[event.status] || statusStyles.submitted
                         : null;
@@ -493,6 +518,14 @@ export function NodeAttachmentsSection({
                                             defaultValue: "Advisor reviewed",
                                           })}
                                     </span>
+                                    {isNew && (
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-rose-100 text-rose-700 border-rose-300 font-semibold animate-pulse"
+                                      >
+                                        NEW
+                                      </Badge>
+                                    )}
                                     {statusClass && statusLabel && isStudent && (
                                       <Badge
                                         variant="outline"
