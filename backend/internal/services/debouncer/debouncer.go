@@ -1,96 +1,94 @@
 package debouncer
-package debouncer
 
 import (
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}	return nil	}		return d.client.Close()	if d.client != nil {func (d *NotificationDebouncer) Close() error {}	return fmt.Sprintf("notif:debounce:%d:%s:%s", userID, nodeID, eventType)func (d *NotificationDebouncer) buildKey(userID int, nodeID, eventType string) string {}	return true	}		fmt.Printf("Redis error setting debounce key: %v\n", err)	if err := d.client.Set(ctx, key, time.Now().Unix(), d.window).Err(); err != nil {	// Key doesn't exist, set it and allow notification	}		return false		// Key exists, skip notification	if exists > 0 {	}		return true // On error, allow notification		fmt.Printf("Redis error checking debounce key: %v\n", err)	if err != nil {	exists, err := d.client.Exists(ctx, key).Result()	// Check if key exists (notification was sent recently)	key := d.buildKey(userID, nodeID, eventType)	}		return true // Always notify if Redis is unavailable	if d.disabled {func (d *NotificationDebouncer) ShouldNotify(ctx context.Context, userID int, nodeID, eventType string) bool {// Returns true if notification should be sent, false if it should be skipped// ShouldNotify checks if a notification should be sent based on debouncing rules}	}		disabled: disabled,		window:   time.Duration(windowMinutes) * time.Minute,		client:   client,	return &NotificationDebouncer{	}		disabled = true		fmt.Printf("Redis connection failed (debouncing disabled): %v\n", err)	if err := client.Ping(ctx).Err(); err != nil {	disabled := false	defer cancel()	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)	// Test connection	})		DB:       0,		Password: redisPassword,		Addr:     redisAddr,	client := redis.NewClient(&redis.Options{	}		}			windowMinutes = int(parsed.Minutes())		if parsed, err := time.ParseDuration(env + "m"); err == nil {	if env := os.Getenv("NOTIFICATION_DEBOUNCE_MINUTES"); env != "" {	windowMinutes := 10 // Default: 10 minutes	redisPassword := os.Getenv("REDIS_PASSWORD")	}		redisAddr = "localhost:6381"	if redisAddr == "" {	redisAddr := os.Getenv("REDIS_ADDR")func NewNotificationDebouncer() *NotificationDebouncer {}	disabled bool	window   time.Duration	client   *redis.Clienttype NotificationDebouncer struct {)	"github.com/redis/go-redis/v9"	"time"	"os"	"fmt"	"context"
+	"context"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+type NotificationDebouncer struct {
+	client   *redis.Client
+	window   time.Duration
+	disabled bool
+}
+
+func NewNotificationDebouncer() *NotificationDebouncer {
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6381"
+	}
+
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+
+	windowMinutes := 10 // Default: 10 minutes
+	if env := os.Getenv("NOTIFICATION_DEBOUNCE_MINUTES"); env != "" {
+		if parsed, err := time.ParseDuration(env + "m"); err == nil {
+			windowMinutes = int(parsed.Minutes())
+		}
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: redisPassword,
+		DB:       0,
+	})
+
+	// Test connection
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	disabled := false
+	if err := client.Ping(ctx).Err(); err != nil {
+		fmt.Printf("Redis connection failed (debouncing disabled): %v\n", err)
+		disabled = true
+	}
+
+	return &NotificationDebouncer{
+		client:   client,
+		window:   time.Duration(windowMinutes) * time.Minute,
+		disabled: disabled,
+	}
+}
+
+// ShouldNotify checks if a notification should be sent based on debouncing rules
+// Returns true if notification should be sent, false if it should be skipped
+func (d *NotificationDebouncer) ShouldNotify(ctx context.Context, userID int, nodeID, eventType string) bool {
+	if d.disabled {
+		return true // Always notify if Redis is unavailable
+	}
+
+	key := d.buildKey(userID, nodeID, eventType)
+
+	// Check if key exists (notification was sent recently)
+	exists, err := d.client.Exists(ctx, key).Result()
+	if err != nil {
+		fmt.Printf("Redis error checking debounce key: %v\n", err)
+		return true // On error, allow notification
+	}
+
+	if exists > 0 {
+		// Key exists, skip notification
+		return false
+	}
+
+	// Key doesn't exist, set it and allow notification
+	if err := d.client.Set(ctx, key, time.Now().Unix(), d.window).Err(); err != nil {
+		fmt.Printf("Redis error setting debounce key: %v\n", err)
+	}
+
+	return true
+}
+
+func (d *NotificationDebouncer) buildKey(userID int, nodeID, eventType string) string {
+	return fmt.Sprintf("notif:debounce:%d:%s:%s", userID, nodeID, eventType)
+}
+
+func (d *NotificationDebouncer) Close() error {
+	if d.client != nil {
+		return d.client.Close()
+	}
+	return nil
+}
