@@ -55,7 +55,7 @@ func NewNotificationDebouncer() *NotificationDebouncer {
 
 // ShouldNotify checks if a notification should be sent based on debouncing rules
 // Returns true if notification should be sent, false if it should be skipped
-func (d *NotificationDebouncer) ShouldNotify(ctx context.Context, userID int, nodeID, eventType string) bool {
+func (d *NotificationDebouncer) ShouldNotify(ctx context.Context, userID string, nodeID, eventType string) bool {
 	if d.disabled {
 		return true // Always notify if Redis is unavailable
 	}
@@ -82,8 +82,8 @@ func (d *NotificationDebouncer) ShouldNotify(ctx context.Context, userID int, no
 	return true
 }
 
-func (d *NotificationDebouncer) buildKey(userID int, nodeID, eventType string) string {
-	return fmt.Sprintf("notif:debounce:%d:%s:%s", userID, nodeID, eventType)
+func (d *NotificationDebouncer) buildKey(userID string, nodeID, eventType string) string {
+	return fmt.Sprintf("notif:debounce:%s:%s:%s", userID, nodeID, eventType)
 }
 
 func (d *NotificationDebouncer) Close() error {

@@ -5,6 +5,7 @@
 Before testing, ensure these services are running:
 
 ### 1. PostgreSQL Database
+
 ```bash
 # Check if running
 pg_isready -h localhost -p 5435
@@ -14,6 +15,7 @@ docker-compose up -d postgres
 ```
 
 ### 2. Redis (for debouncing)
+
 ```bash
 # Check if running
 redis-cli -p 6381 ping
@@ -24,6 +26,7 @@ docker run -d -p 6381:6379 --name phd-redis redis:7-alpine
 ```
 
 ### 3. MinIO (S3-compatible storage)
+
 ```bash
 # Check if running
 curl http://localhost:9090/minio/health/live
@@ -44,6 +47,7 @@ docker run -d \
 ```
 
 ### 4. Mailpit (Email testing)
+
 ```bash
 # Check if running
 curl http://localhost:8025
@@ -62,24 +66,28 @@ docker run -d \
 ## Starting the Application
 
 ### Backend
+
 ```bash
 cd backend
 go run cmd/server/main.go
 ```
 
 Expected output:
+
 ```
 INFO: API listening on port 8280
 S3 cleanup worker started
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm run dev
 ```
 
 Expected output:
+
 ```
 VITE ready in 500ms
 Local: http://localhost:5173
@@ -92,20 +100,24 @@ Local: http://localhost:5173
 **Test that students receive emails when advisor reviews their work**
 
 1. **Login as Student**
+
    - Go to http://localhost:5173
    - Login with test student credentials
 
 2. **Upload Document**
+
    - Navigate to a node that requires document upload
    - Click "Upload file"
    - Select a PDF or image file
    - Submit
 
 3. **Login as Advisor/Admin**
+
    - Logout and login with admin credentials
    - Find the student's submission in notifications
 
 4. **Review Document**
+
    - Open the submission
    - Change state to "Approved" or "Changes Requested"
    - Add feedback note (if requesting changes)
@@ -123,6 +135,7 @@ Local: http://localhost:5173
 **Expected Result:** ✅ Email appears in Mailpit within seconds
 
 **Troubleshooting:**
+
 - Check backend logs for "Email sent to..."
 - If you see "SMTP not configured", verify `.env` has SMTP_HOST and SMTP_PORT
 - Mailpit should be accessible at http://localhost:8025
@@ -134,6 +147,7 @@ Local: http://localhost:5173
 **Test that document history displays chronologically**
 
 1. **Upload Multiple Versions**
+
    - Login as student
    - Upload document version 1
    - Wait a few seconds
@@ -141,6 +155,7 @@ Local: http://localhost:5173
    - Upload document version 3
 
 2. **Verify Timeline**
+
    - Open the node details page
    - Scroll to "Supporting documents" section
    - You should see:
@@ -151,6 +166,7 @@ Local: http://localhost:5173
      - File sizes
 
 3. **Test Advisor Review**
+
    - Login as advisor
    - Upload reviewed document with comments
    - Logout and login as student again
@@ -170,17 +186,20 @@ Local: http://localhost:5173
 **Test in-browser file preview**
 
 1. **Upload Different File Types**
+
    - Upload a PDF file
    - Upload a JPG/PNG image
    - Upload a DOCX file (optional)
 
 2. **Test PDF Preview**
+
    - Click the eye icon 👁️ next to PDF file
    - Drawer should slide in from right
    - PDF should display in iframe
    - Click X to close
 
 3. **Test Image Preview**
+
    - Click eye icon on image file
    - Image should display centered in drawer
    - Should be zoomable/scrollable
@@ -201,16 +220,19 @@ Local: http://localhost:5173
 **Test unread file indicators**
 
 1. **Setup**
+
    - Login as student
    - View a node with documents
    - Note the current time
 
 2. **Trigger New Upload (as advisor)**
+
    - Login as advisor
    - Upload reviewed document
    - Logout
 
 3. **Check Badge**
+
    - Login as student again
    - Navigate to the same node
    - New advisor upload should have red "NEW" badge
@@ -232,6 +254,7 @@ Local: http://localhost:5173
 **Test orphaned file deletion**
 
 1. **Create Orphaned File**
+
    - Manually upload a file to MinIO Console (http://localhost:9091)
    - Bucket: phd-portal
    - Upload any file with name like: `orphan-test-file.pdf`
@@ -244,6 +267,7 @@ Local: http://localhost:5173
 
 **For Quick Testing:**
 Modify `backend/internal/worker/cleanup.go`:
+
 ```go
 ticker := time.NewTicker(1 * time.Minute) // Change from 24 hours
 ```
@@ -257,12 +281,14 @@ ticker := time.NewTicker(1 * time.Minute) // Change from 24 hours
 **Test that rapid uploads don't spam notifications**
 
 1. **Upload 3 Files Quickly**
+
    - Login as student
    - Upload file v1
    - Immediately upload file v2
    - Immediately upload file v3
 
 2. **Check Notifications**
+
    - Login as admin
    - Check notification page
 
@@ -292,24 +318,29 @@ After testing, verify:
 ## Common Issues
 
 ### "SMTP not configured" in logs
+
 - Check `.env` file has SMTP_HOST and SMTP_PORT
 - Verify Mailpit is running on port 1027
 
 ### "Redis connection failed"
+
 - Start Redis: `docker run -d -p 6381:6379 redis:7-alpine`
 - System will work without Redis (debouncing disabled)
 
 ### Timeline not showing
+
 - Check browser console for errors
 - Verify API returns `slots` data with `attachments`
 
 ### Preview drawer empty
+
 - Check that presigned URLs are being generated
 - Verify S3_ENDPOINT in `.env`
 
 ## Success Criteria
 
 ✅ **System is ready for production if:**
+
 1. All 6 scenarios pass
 2. No errors in backend logs
 3. No console errors in frontend
@@ -319,6 +350,7 @@ After testing, verify:
 ## Next Steps
 
 After local testing succeeds:
+
 1. Review `docs/PRODUCTION_CONFIG.md`
 2. Configure production SMTP (Gmail/SendGrid/SES)
 3. Set up production Redis

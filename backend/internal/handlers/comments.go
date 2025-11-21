@@ -15,56 +15,49 @@ func NewCommentsHandler(db *sqlx.DB, cfg config.AppConfig) *CommentsHandler {
 	return &CommentsHandler{db: db, cfg: cfg}
 }
 
-func (h *CommentsHandler) ListComments(c *gin.Context) {
-	doc := c.Param("docId")
-	var rows []struct {
-		ID       string `db:"id" json:"id"`
-		Body     string `db:"body" json:"body"`
-		Author   string `db:"author_id" json:"author_id"`
-		Resolved bool   `db:"resolved" json:"resolved"`
+// CreateComment adds a new comment to a document.
+func (h *CommentsHandler) CreateComment(c *gin.Context) {
+	docId := c.Param("docId")
+	userId := c.GetString("userID") // Assuming userID is set by auth middleware
+
+	type req struct {
+		Content  string  `json:"content" binding:"required"`
+		ParentID *string `json:"parent_id"`
 	}
-	_ = h.db.Select(&rows, `SELECT id, body, author_id, resolved FROM comments WHERE document_id=$1 ORDER BY created_at`, doc)
-	c.JSON(200, rows)
-}
-
-type addReq struct {
-	Body     string   `json:"body" binding:"required"`
-	ParentID *string  `json:"parent_id"`
-	Mentions []string `json:"mentions"`
-}
-
-func (h *CommentsHandler) AddComment(c *gin.Context) {
-	doc := c.Param("docId")
-	var r addReq
+	var r req
 	if err := c.ShouldBindJSON(&r); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	_, err := h.db.Exec(`INSERT INTO comments (document_id, body, author_id, parent_id, mentions) VALUES ($1,$2,(SELECT id FROM users ORDER BY created_at LIMIT 1), $3, $4)`, doc, r.Body, r.ParentID, r.Mentions)
+
+	var commentID string
+	err := h.db.QueryRowx(`INSERT INTO comments (document_id, user_id, content, parent_id) VALUES ($1, $2, $3, $4) RETURNING id`,
+		docId, userId, r.Content, r.ParentID).Scan(&commentID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "insert failed"})
 		return
 	}
-	c.JSON(200, gin.H{"ok": true})
+	c.JSON(201, gin.H{"id": commentID})
 }
 
-type updReq struct {
-	Resolved *bool   `json:"resolved"`
-	Body     *string `json:"body"`
-}
+// GetComments retrieves all comments for a document.
+func (h *CommentsHandler) GetComments(c *gin.Context) {
+	docId := c.Param("docId")
 
-func (h *CommentsHandler) UpdateComment(c *gin.Context) {
-	id := c.Param("id")
-	var r updReq
-	if err := c.ShouldBindJSON(&r); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+	type Comment struct {
+		ID        string  `db:"id" json:"id"`
+		UserID    string  `db:"user_id" json:"user_id"`
+		Content   string  `db:"content" json:"content"`
+		ParentID  *string `db:"parent_id" json:"parent_id"`
+		CreatedAt string  `db:"created_at" json:"created_at"`
+	}
+
+	var comments []Comment
+	err := h.db.Select(&comments, `SELECT id, user_id, content, parent_id, to_char(created_at,'YYYY-MM-DD HH24:MI:SS') as created_at FROM comments WHERE document_id = $1 ORDER BY created_at ASC`, docId)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "select failed"})
 		return
 	}
-	if r.Resolved != nil {
-		_, _ = h.db.Exec(`UPDATE comments SET resolved=$1 WHERE id=$2`, *r.Resolved, id)
-	}
-	if r.Body != nil {
-		_, _ = h.db.Exec(`UPDATE comments SET body=$1 WHERE id=$2`, *r.Body, id)
-	}
-	c.JSON(200, gin.H{"ok": true})
+
+	c.JSON(200, comments)
 }

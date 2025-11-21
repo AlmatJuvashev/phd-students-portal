@@ -9,7 +9,16 @@ import { API_URL } from "@/api/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Loader2, Upload, FileText, MessageSquare, Eye } from "lucide-react";
+
+const BASE_URL = API_URL.replace(/\/api$/, "");
+import {
+  Download,
+  Loader2,
+  Upload,
+  FileText,
+  MessageSquare,
+  Eye,
+} from "lucide-react";
 import { DocumentPreviewDrawer } from "@/components/ui/DocumentPreviewDrawer";
 
 const statusStyles: Record<string, string> = {
@@ -228,7 +237,7 @@ export function NodeAttachmentsSection({
 
   const handleDownload = async (downloadUrl: string, filename: string) => {
     try {
-      const response = await fetch(`${API_URL}${downloadUrl}`, {
+      const response = await fetch(`${BASE_URL}${downloadUrl}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -255,7 +264,7 @@ export function NodeAttachmentsSection({
     contentType?: string
   ) => {
     try {
-      const response = await fetch(`${API_URL}${downloadUrl}`, {
+      const response = await fetch(`${BASE_URL}${downloadUrl}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -284,10 +293,7 @@ export function NodeAttachmentsSection({
 
   const closePreview = () => {
     // Cleanup blob URL if it was created
-    if (
-      previewState.fileUrl &&
-      previewState.fileUrl.startsWith("blob:")
-    ) {
+    if (previewState.fileUrl && previewState.fileUrl.startsWith("blob:")) {
       URL.revokeObjectURL(previewState.fileUrl);
     }
     setPreviewState({
@@ -324,7 +330,8 @@ export function NodeAttachmentsSection({
           id: `advisor-${att.reviewed_document.version_id}`,
           type: "advisor_review",
           timestamp:
-            att.reviewed_document.reviewed_at || att.reviewed_document.created_at,
+            att.reviewed_document.reviewed_at ||
+            att.reviewed_document.created_at,
           filename:
             att.reviewed_document.filename || `Reviewed_${att.filename}`,
           downloadUrl: att.reviewed_document.download_url,
@@ -484,9 +491,7 @@ export function NodeAttachmentsSection({
 
                           {/* Event content */}
                           <div
-                            className={`flex-1 ${
-                              isStudent ? "ml-0" : "ml-0"
-                            }`}
+                            className={`flex-1 ${isStudent ? "ml-0" : "ml-0"}`}
                           >
                             <div
                               className={`rounded-lg border p-4 ${
@@ -526,14 +531,16 @@ export function NodeAttachmentsSection({
                                         NEW
                                       </Badge>
                                     )}
-                                    {statusClass && statusLabel && isStudent && (
-                                      <Badge
-                                        variant="outline"
-                                        className={statusClass}
-                                      >
-                                        {statusLabel}
-                                      </Badge>
-                                    )}
+                                    {statusClass &&
+                                      statusLabel &&
+                                      isStudent && (
+                                        <Badge
+                                          variant="outline"
+                                          className={statusClass}
+                                        >
+                                          {statusLabel}
+                                        </Badge>
+                                      )}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     {formatDateTime(event.timestamp)}

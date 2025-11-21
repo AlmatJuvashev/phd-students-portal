@@ -7,6 +7,7 @@ This guide helps you configure the PhD Portal for production deployment.
 ### 1. SMTP Email Configuration
 
 **Current (Development):**
+
 ```env
 SMTP_HOST=localhost
 SMTP_PORT=1027
@@ -61,6 +62,7 @@ SMTP_FROM="PhD Portal <noreply@yourdomain.com>"
 ### 2. Redis Configuration
 
 **Current (Development):**
+
 ```env
 REDIS_ADDR=localhost:6381
 REDIS_PASSWORD=
@@ -69,6 +71,7 @@ REDIS_PASSWORD=
 #### Production Setup:
 
 **Option A: Redis Cloud (Recommended)**
+
 1. Create account at https://redis.com/try-free/
 2. Get connection details
 3. Update `.env`:
@@ -79,6 +82,7 @@ REDIS_PASSWORD=your-redis-password-here
 ```
 
 **Option B: Self-hosted Redis**
+
 1. Install Redis: `apt install redis-server` (Ubuntu)
 2. Configure password in `/etc/redis/redis.conf`:
    ```
@@ -92,6 +96,7 @@ REDIS_PASSWORD=your-strong-password
 ```
 
 **Option C: Docker Compose**
+
 ```yaml
 redis:
   image: redis:7-alpine
@@ -108,6 +113,7 @@ REDIS_PASSWORD=yourpassword
 ### 3. Database Configuration
 
 **Production PostgreSQL:**
+
 ```env
 DATABASE_URL=postgres://username:password@hostname:5432/dbname?sslmode=require
 ```
@@ -117,6 +123,7 @@ DATABASE_URL=postgres://username:password@hostname:5432/dbname?sslmode=require
 ### 4. S3 Storage Configuration
 
 **Current (Development - MinIO):**
+
 ```env
 S3_ENDPOINT=http://localhost:9090
 S3_ACCESS_KEY=minioadmin
@@ -125,6 +132,7 @@ S3_USE_PATH_STYLE=true
 ```
 
 **Production (AWS S3):**
+
 1. Create S3 bucket in AWS Console
 2. Create IAM user with S3 access
 3. Update `.env`:
@@ -141,6 +149,7 @@ S3_USE_PATH_STYLE=false
 ### 5. Security Settings
 
 **Change these values:**
+
 ```env
 JWT_SECRET=generate-random-64-character-string-here
 ADMIN_PASSWORD=strong-unique-password-here
@@ -192,18 +201,21 @@ Before deploying to production, verify:
 ## Common Issues
 
 ### Emails not sending
+
 - Check SMTP credentials
 - Verify firewall allows outbound port 587/465
 - Check server logs for detailed error messages
 - Test SMTP connection: `telnet smtp.gmail.com 587`
 
 ### Redis connection failed
+
 - Verify Redis is running: `redis-cli ping`
 - Check REDIS_ADDR format (host:port)
 - Verify REDIS_PASSWORD if authentication is enabled
 - System will fall back to allowing all notifications if Redis fails
 
 ### S3 upload errors
+
 - Verify bucket exists and is in correct region
 - Check IAM permissions include `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`
 - For MinIO, ensure `S3_USE_PATH_STYLE=true`
@@ -212,6 +224,7 @@ Before deploying to production, verify:
 ## Support
 
 For deployment assistance, contact the development team or refer to:
+
 - SMTP issues: Check provider documentation
 - Redis issues: https://redis.io/docs/
 - AWS S3 issues: https://docs.aws.amazon.com/s3/

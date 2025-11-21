@@ -1469,6 +1469,9 @@ func (h *AdminHandler) AttachReviewedDocument(c *gin.Context) {
 	}
 	bucket := s3c.Bucket()
 	
+	log.Printf("[AttachReviewedDocument] Creating version: doc_id=%s object_key=%s bucket=%s size=%d mime=%s", 
+		meta.DocumentID, req.ObjectKey, bucket, req.SizeBytes, req.ContentType)
+	
 	// Create document version
 	var versionID string
 	err = tx.QueryRowx(`INSERT INTO document_versions (
@@ -1477,9 +1480,12 @@ func (h *AdminHandler) AttachReviewedDocument(c *gin.Context) {
 		meta.DocumentID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, actorID, nullableString(req.ETag)).
 		Scan(&versionID)
 	if err != nil {
+		log.Printf("[AttachReviewedDocument] Failed to create version: %v", err)
 		c.JSON(500, gin.H{"error": "failed to create document version"})
 		return
 	}
+	
+	log.Printf("[AttachReviewedDocument] Created version_id=%s, updating attachment %s", versionID, attachmentID)
 	
 	// Update attachment with reviewed document
 	_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET 

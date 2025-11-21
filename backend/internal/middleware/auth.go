@@ -57,7 +57,7 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 	}
 }
 
-type userLite struct {
+type UserLite struct {
 	ID        string `db:"id" json:"id"`
 	Username  string `db:"username" json:"username"`
 	Email     string `db:"email" json:"email"`
@@ -83,17 +83,36 @@ func HydrateUserFromClaims(c *gin.Context, dbx *sqlx.DB, rds interface{}) {
 	}
 	if rc != nil {
 		if s, err := db.CacheGet(rc, "user:"+sub); err == nil && s != "" {
-			var u userLite
+			var u UserLite
 			_ = json.Unmarshal([]byte(s), &u)
 			c.Set("current_user", u)
+			c.Set("userID", u.ID)
+			c.Set("userRole", u.Role)
 			return
 		}
 	}
-	var u userLite
+	var u UserLite
 	_ = dbx.Get(&u, `SELECT id,username,email,first_name,last_name,role FROM users WHERE id=$1`, sub)
 	b, _ := json.Marshal(u)
 	if rc != nil {
 		db.CacheSet(rc, "user:"+sub, string(b), time.Minute*10)
 	}
 	c.Set("current_user", u)
+	c.Set("userID", u.ID)
+	c.Set("userRole", u.Role)
+}
+
+func AuthMiddleware(secret []byte, dbx *sqlx.DB, rds *redis.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		AuthRequired(secret)(c)
+		if c.IsAborted() {
+			return
+		}
+		HydrateUserFromClaims(c, dbx, rds)
+		if _, exists := c.Get("current_user"); !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+			return
+		}
+		c.Next()
+	}
 }

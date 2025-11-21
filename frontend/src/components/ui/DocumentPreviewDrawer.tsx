@@ -132,9 +132,7 @@ export function DocumentPreviewDrawer({
           <p className="text-muted-foreground mb-2">
             Preview not available for this file type
           </p>
-          <p className="text-sm text-muted-foreground mb-4">
-            File: {filename}
-          </p>
+          <p className="text-sm text-muted-foreground mb-4">File: {filename}</p>
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
