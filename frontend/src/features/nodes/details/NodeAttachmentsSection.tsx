@@ -17,7 +17,9 @@ import {
   Upload,
   FileText,
   MessageSquare,
+  X,
   Eye,
+  Plus,
 } from "lucide-react";
 import { DocumentPreviewDrawer } from "@/components/ui/DocumentPreviewDrawer";
 
@@ -385,6 +387,10 @@ export function NodeAttachmentsSection({
           const attachments = (slot.attachments || []).filter(
             (att) => att.is_active
           );
+          const canUpload =
+            canEdit &&
+            (slot.multiplicity === "multiple" || attachments.length === 0);
+
           return (
             <Card key={slot.key} className="p-4 space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -446,7 +452,7 @@ export function NodeAttachmentsSection({
                     })}
                   </p>
                 ) : (
-                  <div className="relative">
+                  <div className="relative pb-16">
                     {/* Timeline vertical line */}
                     <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-gradient-to-b from-blue-200 via-emerald-200 to-blue-200" />
 
@@ -646,11 +652,69 @@ export function NodeAttachmentsSection({
                     })}
                   </div>
                 )}
+
+                {/* Bottom upload button - shown only when there are many attachments (>2) */}
+                {canEdit && attachments.length > 2 && (
+                  <div className="mt-6 pt-4 border-t">
+                    <Button
+                      onClick={() => fileInputs.current[slot.key]?.click()}
+                      disabled={uploadingSlot === slot.key}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      {uploadingSlot === slot.key ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t("uploads.uploading", {
+                            defaultValue: "Uploading...",
+                          })}
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          {t("uploads.resubmit", {
+                            defaultValue: "Upload New Version",
+                          })}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           );
         })}
       </div>
+
+      {/* Floating Action Button - appears when there are attachments */}
+      {canEdit && slots.some(
+        (slot) => {
+          const activeAttachments = (slot.attachments || []).filter(att => att.is_active);
+          return activeAttachments.length > 0;
+        }
+      ) && (
+        <button
+          onClick={() => {
+            // Scroll to top and focus first upload button
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            setTimeout(() => {
+              const firstSlot = slots[0];
+              if (firstSlot) {
+                fileInputs.current[firstSlot.key]?.click();
+              }
+            }, 500);
+          }}
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 flex items-center justify-center z-50 group"
+          aria-label={t("uploads.upload_new", {
+            defaultValue: "Upload new file",
+          })}
+        >
+          <Plus className="h-6 w-6 group-hover:scale-110 transition-transform" />
+          <span className="absolute -top-10 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            {t("uploads.upload_new", { defaultValue: "Upload new file" })}
+          </span>
+        </button>
+      )}
     </section>
   );
 }
