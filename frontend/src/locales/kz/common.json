@@ -115,7 +115,8 @@
     "graduation_date": "Бағдарламаны бітірген күні",
     "advisors_full_names": "Жетекшілердің толық аты-жөні",
     "dissertation_form": "Диссертация формасы",
-    "dissertation_form_other": "Басқа (нақтылаңыз)"
+    "dissertation_form_other": "Басқа (нақтылаңыз)",
+    "select_date": "Күнді таңдаңыз"
   },
   "admin": {
     "sidebar": {

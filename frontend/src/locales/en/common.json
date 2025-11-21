@@ -109,13 +109,14 @@
     "student_fallback_name": "Student"
   },
   "fields": {
-    "full_name": "Full name",
+    "full_name": "Full Name",
     "specialty": "Specialty",
     "program": "Program",
-    "graduation_date": "Graduation date",
-    "advisors_full_names": "Advisors' full names",
-    "dissertation_form": "Dissertation form",
-    "dissertation_form_other": "Other (specify)"
+    "graduation_date": "Graduation Date",
+    "advisors_full_names": "Advisors' Full Names",
+    "dissertation_form": "Dissertation Form",
+    "dissertation_form_other": "Other (please specify)",
+    "select_date": "Select a date"
   },
   "admin": {
     "sidebar": {
