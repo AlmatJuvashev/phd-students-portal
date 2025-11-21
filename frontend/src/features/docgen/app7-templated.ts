@@ -28,6 +28,11 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 import { getAssetUrl } from "@/lib/assets";
+import {
+  StudentTemplateData,
+  buildSnippet,
+  injectSnippet,
+} from "./student-template";
 
 // Minimal entry shape coming from S1 form (see playbook.json)
 type Entry = {
@@ -176,7 +181,8 @@ function pickTemplateId(lang: "ru" | "kz" | "en") {
  */
 export async function generateApp7FromTemplate(
   values: S1Values,
-  lang: "ru" | "kz" | "en"
+  lang: "ru" | "kz" | "en",
+  studentData?: StudentTemplateData
 ) {
   // 1) Resolve and fetch the template binary
   const assetId = pickTemplateId(lang);
@@ -189,6 +195,17 @@ export async function generateApp7FromTemplate(
 
   // 2) Prepare docxtemplater engine
   const zip = new PizZip(ab);
+
+  // Inject student data snippet if provided
+  if (studentData) {
+    const docFile = zip.file("word/document.xml");
+    if (docFile) {
+      const currentXml = docFile.asText();
+      const withSnippet = injectSnippet(currentXml, lang);
+      zip.file("word/document.xml", withSnippet);
+    }
+  }
+
   const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
   // 3) Map S1 form collections to loop rows (6 columns only)
@@ -198,7 +215,13 @@ export async function generateApp7FromTemplate(
   const iv_rows = toRows(lang, values.ip, { ip: true }); // IP: 'format' becomes '—'
 
   // 4) Inject data and render
-  doc.setData({ i_rows, ii_rows, iii_rows, iv_rows });
+  doc.setData({
+    i_rows,
+    ii_rows,
+    iii_rows,
+    iv_rows,
+    ...(studentData || {}),
+  });
   try {
     doc.render();
   } catch (e) {

@@ -166,7 +166,14 @@ const BooleanField = memo(
 BooleanField.displayName = "BooleanField";
 
 const DateField = memo(
-  ({ field, value, onChange, disabled, canEdit, T }: FieldRendererProps & { T: ReturnType<typeof useTranslation>["t"] }) => (
+  ({
+    field,
+    value,
+    onChange,
+    disabled,
+    canEdit,
+    T,
+  }: FieldRendererProps & { T: ReturnType<typeof useTranslation>["t"] }) => (
     <div className="grid gap-1">
       <Label htmlFor={field.key}>
         {t(field.label, field.key)}{" "}
