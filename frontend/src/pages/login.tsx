@@ -10,6 +10,7 @@ import { Label } from "../components/ui/label";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 const Schema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -23,6 +24,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [errorMessage, setErrorMessage] = React.useState<string>("");
+  const [showPassword, setShowPassword] = React.useState(false);
   const {
     register,
     handleSubmit,
@@ -73,14 +75,29 @@ export function LoginPage() {
           </div>
           <div className="grid gap-1">
             <Label htmlFor="password">{T("auth.password")}</Label>
-            <Input
-              id="password"
-              placeholder={T("auth.password")}
-              type="password"
-              aria-invalid={!!errors.password}
-              aria-describedby={errors.password ? "password-error" : undefined}
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                placeholder={T("auth.password")}
+                type={showPassword ? "text" : "password"}
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? "password-error" : undefined}
+                className="pr-10"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showPassword ? T("auth.hide_password") : T("auth.show_password")}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <div id="password-error" className="text-xs text-rose-600">
                 {errors.password.message}

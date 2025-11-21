@@ -16,7 +16,9 @@
     "password": "Password",
     "signin": "Sign in",
     "forgot": "Forgot password?",
-    "failed": "Login failed"
+    "failed": "Login failed",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "templates": {
     "heading": "Available Templates",
