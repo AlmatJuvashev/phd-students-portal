@@ -81,7 +81,9 @@ export function LoginPage() {
                 placeholder={T("auth.password")}
                 type={showPassword ? "text" : "password"}
                 aria-invalid={!!errors.password}
-                aria-describedby={errors.password ? "password-error" : undefined}
+                aria-describedby={
+                  errors.password ? "password-error" : undefined
+                }
                 className="pr-10"
                 {...register("password")}
               />
@@ -89,7 +91,11 @@ export function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={showPassword ? T("auth.hide_password") : T("auth.show_password")}
+                aria-label={
+                  showPassword
+                    ? T("auth.hide_password")
+                    : T("auth.show_password")
+                }
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />

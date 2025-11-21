@@ -713,7 +713,7 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 		LEFT JOIN document_versions rdv ON rdv.id=a.reviewed_document_version_id
 		LEFT JOIN users ru ON ru.id=a.reviewed_by
 		WHERE s.node_instance_id=$1
-		ORDER BY a.attached_at DESC`, instanceID)
+		ORDER BY a.attached_at ASC`, instanceID)
 	if err != nil {
 		log.Printf("[ListStudentNodeFiles] query error: %v", err)
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -872,6 +872,21 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+	// Check the status of the most recently submitted file (latest by attached_at)
+	var latestFileStatus string
+	err = tx.QueryRowx(`SELECT a.status
+		FROM node_instance_slot_attachments a
+		JOIN node_instance_slots s ON s.id=a.slot_id
+		WHERE s.node_instance_id=$1 AND a.is_active
+		ORDER BY a.attached_at DESC
+		LIMIT 1`, meta.InstanceID).Scan(&latestFileStatus)
+	
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("[ReviewAttachment] Error fetching latest file status: %v", err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	
 	var counts struct {
 		Submitted int `db:"submitted"`
 		Approved  int `db:"approved"`
@@ -885,23 +900,23 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		WHERE s.node_instance_id=$1 AND a.is_active`, meta.InstanceID).Scan(&counts.Submitted, &counts.Approved, &counts.Rejected)
 	total := counts.Submitted + counts.Approved + counts.Rejected
-	log.Printf("[ReviewAttachment] Counts: submitted=%d approved=%d rejected=%d total=%d currentState=%s", 
-		counts.Submitted, counts.Approved, counts.Rejected, total, meta.State)
+	log.Printf("[ReviewAttachment] Counts: submitted=%d approved=%d rejected=%d total=%d currentState=%s latestFileStatus=%s", 
+		counts.Submitted, counts.Approved, counts.Rejected, total, meta.State, latestFileStatus)
 	
 	newState := meta.State
 	if total > 0 {
 		switch {
-		case counts.Rejected > 0:
-			// Any rejected files means student needs to fix and resubmit
-			newState = "needs_fixes"
-		case counts.Submitted == 0 && counts.Approved > 0:
-			// All files approved, node is complete
+		case latestFileStatus == "approved":
+			// Latest file is approved - node is complete
 			newState = "done"
-		case counts.Submitted > 0 && counts.Approved == 0 && counts.Rejected == 0:
-			// Files submitted but not yet reviewed
+		case latestFileStatus == "rejected":
+			// Latest file is rejected - student needs to fix and resubmit
+			newState = "needs_fixes"
+		case latestFileStatus == "submitted":
+			// Latest file is submitted but not yet reviewed
 			newState = "under_review"
 		default:
-			// Mixed state or initial submission
+			// No files or other edge cases
 			newState = "submitted"
 		}
 	}
