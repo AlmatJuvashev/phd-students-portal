@@ -115,7 +115,8 @@
     "graduation_date": "Дата выпуска из программы",
     "advisors_full_names": "ФИО консультантов",
     "dissertation_form": "Форма диссертации",
-    "dissertation_form_other": "Другое (уточните)"
+    "dissertation_form_other": "Другое (уточните)",
+    "select_date": "Выберите дату"
   },
   "admin": {
     "sidebar": {

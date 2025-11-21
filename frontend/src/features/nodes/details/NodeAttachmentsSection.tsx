@@ -687,34 +687,35 @@ export function NodeAttachmentsSection({
       </div>
 
       {/* Floating Action Button - appears when there are attachments */}
-      {canEdit && slots.some(
-        (slot) => {
-          const activeAttachments = (slot.attachments || []).filter(att => att.is_active);
+      {canEdit &&
+        slots.some((slot) => {
+          const activeAttachments = (slot.attachments || []).filter(
+            (att) => att.is_active
+          );
           return activeAttachments.length > 0;
-        }
-      ) && (
-        <button
-          onClick={() => {
-            // Scroll to top and focus first upload button
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            setTimeout(() => {
-              const firstSlot = slots[0];
-              if (firstSlot) {
-                fileInputs.current[firstSlot.key]?.click();
-              }
-            }, 500);
-          }}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 flex items-center justify-center z-50 group"
-          aria-label={t("uploads.upload_new", {
-            defaultValue: "Upload new file",
-          })}
-        >
-          <Plus className="h-6 w-6 group-hover:scale-110 transition-transform" />
-          <span className="absolute -top-10 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            {t("uploads.upload_new", { defaultValue: "Upload new file" })}
-          </span>
-        </button>
-      )}
+        }) && (
+          <button
+            onClick={() => {
+              // Scroll to top and focus first upload button
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              setTimeout(() => {
+                const firstSlot = slots[0];
+                if (firstSlot) {
+                  fileInputs.current[firstSlot.key]?.click();
+                }
+              }, 500);
+            }}
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-200 flex items-center justify-center z-50 group"
+            aria-label={t("uploads.upload_new", {
+              defaultValue: "Upload new file",
+            })}
+          >
+            <Plus className="h-6 w-6 group-hover:scale-110 transition-transform" />
+            <span className="absolute -top-10 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              {t("uploads.upload_new", { defaultValue: "Upload new file" })}
+            </span>
+          </button>
+        )}
     </section>
   );
 }
