@@ -16,7 +16,9 @@
     "password": "Пароль",
     "signin": "Войти",
     "forgot": "Забыли пароль?",
-    "failed": "Ошибка входа"
+    "failed": "Ошибка входа",
+    "show_password": "Показать пароль",
+    "hide_password": "Скрыть пароль"
   },
   "templates": {
     "heading": "Доступные шаблоны",
