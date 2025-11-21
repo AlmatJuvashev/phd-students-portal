@@ -1,31 +1,31 @@
-import * as React from "react"
-import { format } from "date-fns"
-import { enUS, ru, kk } from "date-fns/locale"
-import { Calendar as CalendarIcon } from "lucide-react"
-import { useTranslation } from "react-i18next"
+import * as React from "react";
+import { format } from "date-fns";
+import { enUS, ru, kk } from "date-fns/locale";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 interface DatePickerProps {
-  value?: string
-  onChange?: (value: string) => void
-  disabled?: boolean
-  placeholder?: string
-  className?: string
+  value?: string;
+  onChange?: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  className?: string;
 }
 
 const localeMap = {
   en: enUS,
   ru: ru,
   kz: kk,
-}
+};
 
 export function DatePicker({
   value,
@@ -34,31 +34,31 @@ export function DatePicker({
   placeholder = "Pick a date",
   className,
 }: DatePickerProps) {
-  const { i18n } = useTranslation()
+  const { i18n } = useTranslation();
   const [date, setDate] = React.useState<Date | undefined>(
     value ? new Date(value) : undefined
-  )
+  );
 
-  const locale = localeMap[i18n.language as keyof typeof localeMap] || enUS
+  const locale = localeMap[i18n.language as keyof typeof localeMap] || enUS;
 
   React.useEffect(() => {
     if (value) {
-      setDate(new Date(value))
+      setDate(new Date(value));
     } else {
-      setDate(undefined)
+      setDate(undefined);
     }
-  }, [value])
+  }, [value]);
 
   const handleSelect = (selectedDate: Date | undefined) => {
-    setDate(selectedDate)
+    setDate(selectedDate);
     if (selectedDate) {
       // Format as YYYY-MM-DD for compatibility with backend
-      const formatted = format(selectedDate, "yyyy-MM-dd")
-      onChange?.(formatted)
+      const formatted = format(selectedDate, "yyyy-MM-dd");
+      onChange?.(formatted);
     } else {
-      onChange?.("")
+      onChange?.("");
     }
-  }
+  };
 
   return (
     <Popover>
@@ -86,5 +86,5 @@ export function DatePicker({
         />
       </PopoverContent>
     </Popover>
-  )
+  );
 }

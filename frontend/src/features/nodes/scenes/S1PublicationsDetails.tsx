@@ -10,6 +10,9 @@ import {
   FormTaskContext,
 } from "@/features/nodes/details/variants/FormTaskDetails";
 import { generateApp7FromTemplate } from "@/features/docgen/app7-templated";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfileSnapshot } from "@/features/profile/useProfileSnapshot";
+import { buildTemplateData } from "@/features/docgen/student-template";
 
 const scrollToTemplates = () =>
   document
@@ -35,6 +38,8 @@ export function S1PublicationsDetails({
   const { t: T, i18n } = useTranslation("common");
   const assets = useMemo(() => assetsForNode(node), [node]);
   const lang = (i18n.language as "ru" | "kz" | "en") || "ru";
+  const { user } = useAuth();
+  const { data: profileData } = useProfileSnapshot(user?.role === "student");
 
   const fieldMap = useMemo(() => {
     const map = new Map<string, any>();
@@ -85,12 +90,17 @@ export function S1PublicationsDetails({
             </Button>
             <Button
               variant="secondary"
-              onClick={() =>
+              onClick={() => {
+                const templateData =
+                  user?.role === "student"
+                    ? buildTemplateData(user, profileData as any, lang)
+                    : undefined;
                 generateApp7FromTemplate(
                   ctx.values as any,
-                  (i18n.language as "ru" | "kz" | "en") || "ru"
-                ).catch((err) => console.error(err))
-              }
+                  lang,
+                  templateData
+                ).catch((err) => console.error(err));
+              }}
               disabled={ctx.disabled}
             >
               {T("forms.generate_app7")}

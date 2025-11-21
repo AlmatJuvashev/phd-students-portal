@@ -11,6 +11,7 @@ import { useProfileSnapshot } from "@/features/profile/useProfileSnapshot";
 import {
   generateStudentTemplateDoc,
   supportsStudentDocTemplate,
+  buildTemplateData,
   type StudentTemplateData,
 } from "@/features/docgen/student-template";
 import { Loader2 } from "lucide-react";
@@ -175,46 +176,11 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   );
 }
 
-function buildTemplateData(
-  user: { full_name?: string; first_name?: string; last_name?: string } | null,
-  profile: Record<string, any> | null | undefined,
-  locale: "ru" | "kz" | "en"
-): StudentTemplateData {
-  const data = (profile?.form?.data ?? profile) as Record<string, any> | undefined;
-  const advisorsValue = data?.advisors_full_names;
-  const advisors = Array.isArray(advisorsValue)
-    ? advisorsValue
-    : typeof advisorsValue === "string"
-      ? advisorsValue.split(/\r?\n/)
-      : [];
-  const fullName =
-    data?.full_name ||
-    user?.full_name ||
-    [user?.first_name, user?.last_name].filter(Boolean).join(" ");
-  const program = data?.program || "";
-  const specialty = data?.specialty || program;
-  const localeMap: Record<string, string> = {
-    ru: "ru-RU",
-    kz: "kk-KZ",
-    en: "en-US",
-  };
-  const formatter = new Intl.DateTimeFormat(localeMap[locale] || "ru-RU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const submissionDate = formatter.format(new Date());
-  return {
-    student_full_name: fullName || "",
-    student_program: program || "",
-    student_specialty: specialty || "",
-    student_supervisors: advisors
-      .map((a: string) => (a || "").trim())
-      .filter(Boolean)
-      .join("\n"),
-    submission_date: submissionDate,
-  };
+// ...existing code...
 }
+
+async function handleTemplatedDownload({
+// ...existing code...
 
 async function handleTemplatedDownload({
   asset,
