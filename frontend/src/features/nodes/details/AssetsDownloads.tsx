@@ -21,8 +21,9 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   const locale = (i18n.language as "ru" | "kz" | "en") || "ru";
   const { user } = useAuth();
   const assets: PublicAsset[] = useTemplatesForNode(node);
-  const { data: profileData, isLoading: profileLoading } =
-    useProfileSnapshot(user?.role === "student");
+  const { data: profileData, isLoading: profileLoading } = useProfileSnapshot(
+    user?.role === "student"
+  );
   const templateData = useMemo(() => {
     if (user?.role !== "student") {
       return null;
@@ -85,8 +86,7 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
               preferred.title?.[locale as any] ||
               t(preferred.title, preferred.id);
             const isTemplated =
-              user?.role === "student" &&
-              supportsStudentDocTemplate(preferred);
+              user?.role === "student" && supportsStudentDocTemplate(preferred);
             return (
               <div
                 key={g}
@@ -175,12 +175,6 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
     </div>
   );
 }
-
-// ...existing code...
-}
-
-async function handleTemplatedDownload({
-// ...existing code...
 
 async function handleTemplatedDownload({
   asset,
