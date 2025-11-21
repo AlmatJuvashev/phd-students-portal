@@ -96,9 +96,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	api.POST("/documents/:docId/presign", docs.PresignUpload)
 
 	cmts := NewCommentsHandler(db, cfg)
-	api.GET("/documents/:docId/comments", cmts.ListComments)
-	api.POST("/documents/:docId/comments", cmts.AddComment)
-	api.PATCH("/comments/:id", cmts.UpdateComment)
+	api.GET("/documents/:docId/comments", cmts.GetComments)
+	api.POST("/documents/:docId/comments", cmts.CreateComment)
 
 	// Advisor inbox (pending submissions)
 	api.GET("/advisor/inbox", check.AdvisorInbox)

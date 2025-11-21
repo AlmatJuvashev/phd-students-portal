@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -173,32 +174,42 @@ func (h *DocumentsHandler) DownloadVersion(c *gin.Context) {
 		Bucket      sql.NullString `db:"bucket"`
 		ObjectKey   sql.NullString `db:"object_key"`
 		MimeType    string         `db:"mime_type"`
+		SizeBytes   int64          `db:"size_bytes"`
 	}
-	err := h.db.QueryRowx(`SELECT storage_path, bucket, object_key, mime_type FROM document_versions WHERE id=$1`, ver).
-		Scan(&row.StoragePath, &row.Bucket, &row.ObjectKey, &row.MimeType)
+	err := h.db.QueryRowx(`SELECT storage_path, bucket, object_key, mime_type, size_bytes FROM document_versions WHERE id=$1`, ver).
+		Scan(&row.StoragePath, &row.Bucket, &row.ObjectKey, &row.MimeType, &row.SizeBytes)
 	if err != nil {
+		log.Printf("[DownloadVersion] version %s not found: %v", ver, err)
 		c.JSON(404, gin.H{"error": "not found"})
 		return
 	}
+	log.Printf("[DownloadVersion] version=%s storage_path=%s bucket=%v object_key=%v size=%d", 
+		ver, row.StoragePath, row.Bucket.String, row.ObjectKey.String, row.SizeBytes)
+	
 	if row.Bucket.Valid && row.ObjectKey.Valid {
 		s3c, err := services.NewS3FromEnv()
 		if err != nil {
+			log.Printf("[DownloadVersion] S3 init failed: %v", err)
 			c.JSON(500, gin.H{"error": "s3 init failed"})
 			return
 		}
 		if s3c == nil {
+			log.Printf("[DownloadVersion] S3 not configured")
 			c.JSON(500, gin.H{"error": "s3 not configured"})
 			return
 		}
 		expires := services.GetPresignExpires()
 		url, err := s3c.PresignGet(row.ObjectKey.String, expires)
 		if err != nil {
+			log.Printf("[DownloadVersion] presign failed for %s: %v", row.ObjectKey.String, err)
 			c.JSON(500, gin.H{"error": "presign failed"})
 			return
 		}
+		log.Printf("[DownloadVersion] redirecting to S3 presigned URL for %s", row.ObjectKey.String)
 		c.Redirect(http.StatusTemporaryRedirect, url)
 		return
 	}
+	log.Printf("[DownloadVersion] serving local file: %s", row.StoragePath)
 	c.File(row.StoragePath)
 }
 
