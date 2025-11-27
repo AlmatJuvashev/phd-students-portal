@@ -1438,6 +1438,22 @@
             "kz": "ОМиД-ке алдын ала сараптамаға өтініш дайындалып, жіберілгенін растаңыз.",
             "en": "Confirm the OMiD preliminary review application is prepared and submitted."
           },
+          "requirements": {
+            "uploads": [
+              {
+                "key": "omid_application",
+                "label": {
+                  "ru": "Заявление в ОМиД (подписанное PDF)",
+                  "kz": "ОМиД-ке өтініш (қол қойылған PDF)",
+                  "en": "OMiD Application (signed PDF)"
+                },
+                "required": true,
+                "mime": [
+                  "application/pdf"
+                ]
+              }
+            ]
+          },
           "screen": {
             "question": {
               "ru": "Заявление в ОМиД оформлено и отправлено?",
