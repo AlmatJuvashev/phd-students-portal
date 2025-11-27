@@ -172,7 +172,11 @@ export async function generateStudentTemplateDoc({
   if (!url || url === "#") {
     throw new Error("Template asset not found");
   }
-  const arrayBuffer = await fetch(url).then((res) => {
+  // Add cache-busting parameter to ensure fresh template
+  const cacheBustUrl = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
+  console.log("[template] fetching from:", cacheBustUrl);
+  
+  const arrayBuffer = await fetch(cacheBustUrl, { cache: 'no-store' }).then((res) => {
     if (!res.ok) throw new Error(`Failed to load template (${res.status})`);
     return res.arrayBuffer();
   });
@@ -210,44 +214,64 @@ export async function generateStudentTemplateDoc({
     return out;
   };
 
-  const currentXml = normalizeXml(docFile.asText());
-  const hasTokens = currentXml.includes("{{");
+  const rawXml = docFile.asText();
+  console.log("[template] RAW XML (before normalization) length:", rawXml.length);
+  console.log("[template] RAW XML first 500 chars:", rawXml.substring(0, 500));
   
-  // Debug: Find the context around student_full_name in the XML
-  const nameIndex = currentXml.indexOf("student_full_name");
-  const xmlSnippet = nameIndex !== -1 
-    ? currentXml.substring(Math.max(0, nameIndex - 100), Math.min(currentXml.length, nameIndex + 100))
-    : "Not found";
-
+  // Check for split tags in RAW XML (before normalization)
+  const rawSplitOpen = rawXml.match(/<w:t[^>]*>\s*\{\s*<\/w:t>/g);
+  const rawSplitClose = rawXml.match(/<w:t[^>]*>\s*\}\s*<\/w:t>/g);
+  console.log("[template] RAW split open braces:", rawSplitOpen?.length || 0);
+  console.log("[template] RAW split close braces:", rawSplitClose?.length || 0);
+  
+  if (rawSplitOpen && rawSplitOpen.length > 0) {
+    console.log("[template] RAW examples of split braces:", rawSplitOpen.slice(0, 2));
+  }
+  
+  const currentXml = normalizeXml(rawXml);
+  console.log("[template] raw XML length:", currentXml.length);
+  console.log("[template] raw XML first 500 chars:", currentXml.substring(0, 500));
+  
+  // Check for split tags in raw XML
+  const splitOpenBraces = currentXml.match(/<w:t[^>]*>\s*\{\s*<\/w:t>/g);
+  const splitCloseBraces = currentXml.match(/<w:t[^>]*>\s*\}\s*<\/w:t>/g);
+  console.log("[template] split open braces found:", splitOpenBraces?.length || 0);
+  console.log("[template] split close braces found:", splitCloseBraces?.length || 0);
+  
+  if (splitOpenBraces && splitOpenBraces.length > 0) {
+    console.log("[template] examples of split open braces:", splitOpenBraces.slice(0, 3));
+  }
+  
+  const hasTokens = currentXml.includes("{{");
+  const containsStudentName = currentXml.includes("student_full_name");
   console.log("[template] token detection", {
     hasTokens,
-    containsStudentName: currentXml.includes("student_full_name"),
-    xmlSnippet,
+    containsStudentName,
+    xmlSnippet: currentXml.substring(
+      Math.max(0, currentXml.indexOf("student") - 50),
+      currentXml.indexOf("student") + 50
+    ),
     dataKeys: Object.keys(data),
   });
 
   let blob: Blob;
   if (hasTokens) {
+    // Create a NEW zip with normalized XML to ensure docxtemplater reads clean XML
+    zip.file("word/document.xml", currentXml);
+    const normalizedZipBuffer = zip.generate({ type: "uint8array" });
+    const normalizedZip = new PizZip(normalizedZipBuffer);
+    console.log("[template] created new zip with normalized XML");
+    
     // Use docxtemplater to fill existing placeholders (handles split runs)
     try {
-      const doc = new Docxtemplater(zip, {
+      const doc = new Docxtemplater(normalizedZip, {
         paragraphLoop: true,
         linebreaks: true,
       });
       
-      // Update the zip with normalized XML before rendering
-      doc.loadZip(new PizZip(
-        zip.generate({ type: "nodebuffer" })
-      ));
-      zip.file("word/document.xml", currentXml);
-      
-      const docNormalized = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-      });
-      docNormalized.setData(data);
-      docNormalized.render();
-      blob = docNormalized.getZip().generate({ type: "blob" });
+      doc.setData(data);
+      doc.render();
+      blob = doc.getZip().generate({ type: "blob" });
       console.log("[template] docxtemplater render success");
     } catch (err) {
       console.error("[template] docxtemplater error, falling back", err);

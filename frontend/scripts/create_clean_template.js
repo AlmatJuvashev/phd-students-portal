@@ -35,7 +35,7 @@ const createCleanTemplate = () => {
     <w:tbl>
       <w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr>
       <w:tr>
-        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Дата</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>«____» __________ 20___ г.</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Дата</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>«{{day}}» {{month}} {{year}} г.</w:t></w:r></w:p></w:tc>
         <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Подпись докторанта: </w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>_____________________</w:t></w:r></w:p></w:tc>
       </w:tr>
     </w:tbl>
