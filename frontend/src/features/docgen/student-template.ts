@@ -273,7 +273,13 @@ export async function generateStudentTemplateDoc({
   }
 
   const safeTitle =
-    sanitizeFileName(fileLabel || asset.title?.[locale] || asset.id) + ".docx";
+    sanitizeFileName(
+      fileLabel || 
+      asset.title?.[locale] || 
+      asset.title?.ru || 
+      asset.title?.en || 
+      "Zayavlenie_v_OMiD"
+    ) + ".docx";
   saveAs(blob, safeTitle);
 }
 
