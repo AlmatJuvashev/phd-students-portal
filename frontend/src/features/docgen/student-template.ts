@@ -1,5 +1,5 @@
-import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
+import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 import type { PublicAsset } from "@/lib/assets";
 import { getAssetUrl } from "@/lib/assets";
@@ -16,6 +16,9 @@ export type StudentTemplateData = {
   student_phone: string;
   dissertation_topic: string;
   student_department: string;
+  day: string;
+  month: string;
+  year: string;
 };
 
 const LABELS: Record<
@@ -131,6 +134,26 @@ function sanitizeFileName(name: string) {
   return name.replace(/[<>:"/\\|?*]+/g, "_");
 }
 
+function encodeValue(value: string) {
+  const safe = escapeXml(value || "");
+  if (!safe.includes("\n")) return safe;
+  const parts = safe.split(/\r?\n/);
+  return parts.join("</w:t><w:br/><w:t>");
+}
+
+function replaceTokens(
+  xml: string,
+  data: Record<keyof StudentTemplateData, string>
+) {
+  let out = xml;
+  (Object.keys(data) as Array<keyof StudentTemplateData>).forEach((key) => {
+    const pattern = new RegExp(`{{${key}}}`, "g");
+    const encoded = encodeValue(data[key] || "");
+    out = out.replace(pattern, encoded);
+  });
+  return out;
+}
+
 export async function generateStudentTemplateDoc({
   asset,
   data,
@@ -153,20 +176,102 @@ export async function generateStudentTemplateDoc({
     if (!res.ok) throw new Error(`Failed to load template (${res.status})`);
     return res.arrayBuffer();
   });
+  console.log("[template] start", {
+    assetId: asset.id,
+    locale,
+    url,
+    hasData: !!data,
+    name: data?.student_full_name,
+    specialty: data?.student_specialty,
+  });
   const zip = new PizZip(arrayBuffer);
   const docFile = zip.file("word/document.xml");
   if (!docFile) {
     throw new Error("Invalid template structure");
   }
-  const currentXml = docFile.asText();
-  const withSnippet = injectSnippet(currentXml, locale);
-  zip.file("word/document.xml", withSnippet);
+  // Pre-process XML to fix common template errors (duplicate tags)
+  const normalizeXml = (xml: string) => {
+    let out = xml;
+    // Fix split open braces: { ... { -> {{
+    // Matches <w:t>{<w:t> ... <w:t>{<w:t> and merges them, allowing for whitespace between tags
+    out = out.replace(/(<w:t[^>]*>)\s*\{\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*\{\s*(<\/w:t>)/g, "$1{{$3");
+    // Fix split close braces: } ... } -> }}
+    out = out.replace(/(<w:t[^>]*>)\s*\}\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*\}\s*(<\/w:t>)/g, "$1}}$3");
+    
+    // Specific fix for student_full_name if the above generic one misses (e.g. due to complex nesting)
+    // Look for { ... { ... student_full_name
+    out = out.replace(/\{\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*\{\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*student_full_name/g, "{{$1$2student_full_name");
+    
+    // Fix duplicate open tags: {{...{{ -> {{
+    out = out.replace(/({{(?:<[^>]+>)*){{/g, "$1");
+    // Fix duplicate close tags: }}...}} -> }}
+    out = out.replace(/}}((?:<[^>]+>)*)}}/g, "$1}}");
+    
+    return out;
+  };
 
-  const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
-  doc.setData(data);
-  doc.render();
+  const currentXml = normalizeXml(docFile.asText());
+  const hasTokens = currentXml.includes("{{");
+  
+  // Debug: Find the context around student_full_name in the XML
+  const nameIndex = currentXml.indexOf("student_full_name");
+  const xmlSnippet = nameIndex !== -1 
+    ? currentXml.substring(Math.max(0, nameIndex - 100), Math.min(currentXml.length, nameIndex + 100))
+    : "Not found";
 
-  const blob = doc.getZip().generate({ type: "blob" });
+  console.log("[template] token detection", {
+    hasTokens,
+    containsStudentName: currentXml.includes("student_full_name"),
+    xmlSnippet,
+    dataKeys: Object.keys(data),
+  });
+
+  let blob: Blob;
+  if (hasTokens) {
+    // Use docxtemplater to fill existing placeholders (handles split runs)
+    try {
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+      
+      // Update the zip with normalized XML before rendering
+      doc.loadZip(new PizZip(
+        zip.generate({ type: "nodebuffer" })
+      ));
+      zip.file("word/document.xml", currentXml);
+      
+      const docNormalized = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+      docNormalized.setData(data);
+      docNormalized.render();
+      blob = docNormalized.getZip().generate({ type: "blob" });
+      console.log("[template] docxtemplater render success");
+    } catch (err) {
+      console.error("[template] docxtemplater error, falling back", err);
+      const fallbackZip = new PizZip(arrayBuffer);
+      // Improved fallback: try to handle simple split runs for known keys
+      let fallbackXml = currentXml;
+      // ... (existing fallback logic)
+      fallbackXml = replaceTokens(fallbackXml, data);
+      fallbackZip.file("word/document.xml", fallbackXml);
+      blob = fallbackZip.generate({ type: "blob" });
+    }
+  } else {
+    // No tokens: inject snippet once near top, then simple replacement
+    const withSnippet = injectSnippet(currentXml, locale);
+    const filledXml = replaceTokens(withSnippet, data);
+    console.log("[template] replacement", {
+      hasName: filledXml.includes(data.student_full_name),
+      hasProgram: filledXml.includes(data.student_program),
+      hasAdvisors: !!data.student_supervisors,
+    });
+    zip.file("word/document.xml", filledXml);
+    blob = zip.generate({ type: "blob" });
+  }
+
   const safeTitle =
     sanitizeFileName(fileLabel || asset.title?.[locale] || asset.id) + ".docx";
   saveAs(blob, safeTitle);
@@ -214,6 +319,18 @@ export function buildTemplateData(
   });
   const submissionDate = formatter.format(new Date());
 
+  // Get current date parts for separate placeholders
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0"); // Two digits: "27"
+  
+  // Get month name based on locale
+  const monthFormatter = new Intl.DateTimeFormat(localeMap[locale] || "ru-RU", {
+    month: "long",
+  });
+  const month = monthFormatter.format(now); // e.g., "ноября"
+  
+  const year = String(now.getFullYear()); // Four digits: "2025"
+
   const email = data?.email || user?.email || "";
   const phone = data?.phone || user?.phone || "";
   const topic = data?.dissertation_topic || data?.topic || "";
@@ -232,5 +349,8 @@ export function buildTemplateData(
     student_phone: phone,
     dissertation_topic: topic,
     student_department: department,
+    day,
+    month,
+    year,
   };
 }
