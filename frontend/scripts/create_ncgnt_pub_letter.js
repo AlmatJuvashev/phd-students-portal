@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Create NCGNT publication certificate letter template with TABLE PER PUBLICATION
-// SUPER SAFE XML: Re-typed tags, simplified structure
+// SUPER SAFE XML: Removed student_full_name tag to isolate error
 const createNCGNTPublicationLetterTemplate = () => {
   const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -25,7 +25,7 @@ const createNCGNTPublicationLetterTemplate = () => {
     
     <w:p><w:r><w:t>Прошу выдать справку о публикациях в индексируемых журналах для PhD докторанта:</w:t></w:r></w:p>
     
-    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_full_name}}</w:t></w:r></w:p>
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>[STUDENT_FULL_NAME]</w:t></w:r></w:p>
     
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
     <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Сведения о публикациях:</w:t></w:r></w:p>
@@ -89,12 +89,12 @@ const createNCGNTPublicationLetterTemplate = () => {
     <w:p><w:r><w:t>К письму прилагаю удостоверение личности в цифровом формате.</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
     <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Контактные данные:</w:t></w:r></w:p>
-    <w:p><w:r><w:t>Ф.И.О.: </w:t></w:r><w:r><w:t>{{student_full_name}}</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Ф.И.О.: </w:t></w:r><w:r><w:t>[STUDENT_FULL_NAME]</w:t></w:r></w:p>
     <w:p><w:r><w:t>Телефон: </w:t></w:r><w:r><w:t>{{student_phone}}</w:t></w:r></w:p>
     <w:p><w:r><w:t>Электронная почта: </w:t></w:r><w:r><w:t>{{student_email}}</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
     <w:p><w:r><w:t>С уважением,</w:t></w:r></w:p>
-    <w:p><w:r><w:t>{{student_full_name}}</w:t></w:r></w:p>
+    <w:p><w:r><w:t>[STUDENT_FULL_NAME]</w:t></w:r></w:p>
     <w:p><w:r><w:t>{{day}} {{month}} {{year}} г.</w:t></w:r></w:p>
   </w:body>
 </w:document>`;
@@ -114,7 +114,7 @@ const createNCGNTPublicationLetterTemplate = () => {
   
   const buffer = zip.generate({ type: "nodebuffer" });
   fs.writeFileSync(outputPath, buffer);
-  console.log("Created NCGNT publication certificate letter template with SUPER SAFE XML at:", outputPath);
+  console.log("Created NCGNT publication certificate letter template with REMOVED student_full_name tag at:", outputPath);
 };
 
 createNCGNTPublicationLetterTemplate();
