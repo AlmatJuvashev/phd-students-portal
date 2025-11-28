@@ -394,6 +394,8 @@ export function buildTemplateData(
   const publications: StudentTemplateData["publications"] = [];
   const sections = ["wos_scopus", "kokson", "conferences"] as const;
   
+  console.log("[buildTemplateData] Full profile structure:", JSON.stringify(profile, null, 2));
+  
   console.log("[buildTemplateData] Extracting publications from profile:", JSON.stringify({
     hasData: !!data,
     profileKeys: profile ? Object.keys(profile) : [],
