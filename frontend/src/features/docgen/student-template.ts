@@ -394,19 +394,21 @@ export function buildTemplateData(
   const publications: StudentTemplateData["publications"] = [];
   const sections = ["wos_scopus", "kokson", "conferences"] as const;
   
-  console.log("[buildTemplateData] Extracting publications from profile:", {
+  console.log("[buildTemplateData] Extracting publications from profile:", JSON.stringify({
     hasData: !!data,
     sections: sections.map(s => ({
       key: s,
       hasSection: !!data?.[s],
       count: Array.isArray(data?.[s]) ? data[s].length : 0
     }))
-  });
+  }));
   
   sections.forEach((sectionKey) => {
     const entries = data?.[sectionKey];
     if (Array.isArray(entries)) {
-      entries.forEach((entry: any) => {
+      console.log(`[buildTemplateData] Processing section ${sectionKey}, entries:`, entries.length);
+      entries.forEach((entry: any, index) => {
+        console.log(`[buildTemplateData] ${sectionKey}[${index}] raw:`, JSON.stringify(entry));
         if (entry?.title) {
           // Extract volume from volume_issue (e.g., "12(3)" -> "12")
           const volumeMatch = entry.volume_issue?.match(/^(\d+)/);
