@@ -16,14 +16,20 @@ const createNCGNTPublicationLetterTemplate = () => {
     <w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Пример письма в АО «НЦГНТЭ»</w:t></w:r></w:p>
     <w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>для получения справки о публикациях</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
-    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Email: astana@ncste.kz</w:t></w:r></w:p>
+    <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Email: astana@ncste.kz</w:t></w:r></w:p>
     <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Тема письма:</w:t></w:r></w:p>
     <w:p><w:r><w:t>Запрос на получение справки о публикациях в индексируемых журналах</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
     <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Текст письма:</w:t></w:r></w:p>
     <w:p><w:r><w:t>Уважаемые сотрудники АО «Национальный центр государственной научно-технической экспертизы»!</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
-    <w:p><w:r><w:t xml:space="preserve">Прошу выдать справку о публикациях в индексируемых журналах для PhD докторанта </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_full_name}}</w:t></w:r><w:r><w:t>.</w:t></w:r></w:p>
+    
+    <w:p>
+      <w:r><w:t xml:space="preserve">Прошу выдать справку о публикациях в индексируемых журналах для PhD докторанта </w:t></w:r>
+      <w:r><w:rPr><w:b/></w:rPr><w:t>{{student_full_name}}</w:t></w:r>
+      <w:r><w:t>.</w:t></w:r>
+    </w:p>
+    
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
     <w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Сведения о публикациях:</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="100"/></w:pPr></w:p>
