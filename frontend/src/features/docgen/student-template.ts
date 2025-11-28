@@ -410,7 +410,8 @@ export function buildTemplateData(
   }));
   
   sections.forEach((sectionKey) => {
-    const entries = data?.[sectionKey];
+    // Check top-level or inside 'sections' object
+    const entries = data?.[sectionKey] || data?.sections?.[sectionKey];
     if (Array.isArray(entries)) {
       console.log(`[buildTemplateData] Processing section ${sectionKey}, entries:`, entries.length);
       entries.forEach((entry: any, index) => {
