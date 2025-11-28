@@ -175,7 +175,16 @@ export async function generateStudentTemplateDoc({
   // Add cache-busting parameter to ensure fresh template
   const cacheBustUrl = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
   console.log("[template] fetching from:", cacheBustUrl);
-  
+
+  if (url.includes("normocontrol_letter")) {
+    console.log("[template] NCGNT letter detected", {
+      url,
+      dataKeys: Object.keys(data),
+      studentName: data.student_full_name,
+      dissertationTopic: data.dissertation_topic,
+    });
+  }
+
   const arrayBuffer = await fetch(cacheBustUrl, { cache: 'no-store' }).then((res) => {
     if (!res.ok) throw new Error(`Failed to load template (${res.status})`);
     return res.arrayBuffer();
