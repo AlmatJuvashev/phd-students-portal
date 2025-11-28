@@ -291,6 +291,7 @@ export async function generateStudentTemplateDoc({
       const doc = new Docxtemplater(normalizedZip, {
         paragraphLoop: true,
         linebreaks: true,
+        delimiters: { start: "[%", end: "%]" },
       });
       
       doc.setData(data);
