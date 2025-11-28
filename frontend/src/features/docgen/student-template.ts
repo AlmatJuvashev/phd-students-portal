@@ -266,7 +266,7 @@ export async function generateStudentTemplateDoc({
     console.log("[template] examples of split open braces:", splitOpenBraces.slice(0, 3));
   }
   
-  const hasTokens = currentXml.includes("{{");
+  const hasTokens = currentXml.includes("{{") || currentXml.includes("[%");
   const containsStudentName = currentXml.includes("student_full_name");
   console.log("[template] token detection", {
     hasTokens,
