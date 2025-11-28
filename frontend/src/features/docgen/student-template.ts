@@ -19,6 +19,18 @@ export type StudentTemplateData = {
   day: string;
   month: string;
   year: string;
+  publications?: Array<{
+    no: string;
+    title: string;
+    authors: string;
+    journal: string;
+    volume_issue: string;
+    vol: string;
+    year: string;
+    issn_print: string;
+    issn_online: string;
+    doi: string;
+  }>;
 };
 
 const LABELS: Record<
@@ -143,12 +155,15 @@ function encodeValue(value: string) {
 
 function replaceTokens(
   xml: string,
-  data: Record<keyof StudentTemplateData, string>
+  data: StudentTemplateData
 ) {
   let out = xml;
   (Object.keys(data) as Array<keyof StudentTemplateData>).forEach((key) => {
+    // Skip non-string values (e.g., publications array handled by docxtemplater)
+    if (typeof data[key] !== "string") return;
+    
     const pattern = new RegExp(`{{${key}}}`, "g");
-    const encoded = encodeValue(data[key] || "");
+    const encoded = encodeValue(data[key] as string);
     out = out.replace(pattern, encoded);
   });
   return out;
@@ -375,6 +390,63 @@ export function buildTemplateData(
   const topic = data?.dissertation_topic || data?.topic || "";
   const department = data?.department || "";
 
+  // Extract and format publications from S1 data
+  const publications: StudentTemplateData["publications"] = [];
+  const sections = ["wos_scopus", "kokson", "conferences"] as const;
+  
+  console.log("[buildTemplateData] Extracting publications from profile:", {
+    hasData: !!data,
+    sections: sections.map(s => ({
+      key: s,
+      hasSection: !!data?.[s],
+      count: Array.isArray(data?.[s]) ? data[s].length : 0
+    }))
+  });
+  
+  sections.forEach((sectionKey) => {
+    const entries = data?.[sectionKey];
+    if (Array.isArray(entries)) {
+      entries.forEach((entry: any) => {
+        if (entry?.title) {
+          // Extract volume from volume_issue (e.g., "12(3)" -> "12")
+          const volumeMatch = entry.volume_issue?.match(/^(\d+)/);
+          const vol = volumeMatch ? volumeMatch[1] : "";
+          
+          // Format authors: student + coauthors
+          const coauthorsList = Array.isArray(entry.coauthors)
+            ? entry.coauthors.filter((c: string) => c?.trim()).join(", ")
+            : "";
+          const authors = coauthorsList
+            ? `${fullName}, ${coauthorsList}`
+            : fullName;
+          
+          publications.push({
+            no: String(publications.length + 1),
+            title: entry.title || "",
+            authors,
+            journal: entry.journal || "",
+            volume_issue: entry.volume_issue || "",
+            vol,
+            year: entry.year || "",
+            issn_print: entry.issn_print || "",
+            issn_online: entry.issn_online || "",
+            doi: entry.doi || "",
+          });
+        }
+      });
+    }
+  });
+
+  console.log("[buildTemplateData] Publications extracted:", {
+    total: publications.length,
+    sample: publications.slice(0, 2).map(p => ({
+      no: p.no,
+      title: p.title.substring(0, 50),
+      hasAuthors: !!p.authors,
+      hasJournal: !!p.journal
+    }))
+  });
+
   return {
     student_full_name: fullName || "",
     student_program: program || "",
@@ -391,5 +463,6 @@ export function buildTemplateData(
     day,
     month,
     year,
+    publications: publications.length > 0 ? publications : undefined,
   };
 }
