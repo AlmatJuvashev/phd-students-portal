@@ -1,12 +1,21 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getAssetUrl } from "@/lib/assets";
+import { allAssets, getAssetUrl, type PublicAsset } from "@/lib/assets";
 import { t, safeText } from "@/lib/playbook";
 import type { NodeVM } from "@/lib/playbook";
 import i18n from "i18next";
 import type { NodeSubmissionDTO } from "@/api/journey";
 import { NodeAttachmentsSection } from "../NodeAttachmentsSection";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfileSnapshot } from "@/features/profile/useProfileSnapshot";
+import {
+  buildTemplateData,
+  generateStudentTemplateDoc,
+  supportsStudentDocTemplate,
+} from "@/features/docgen/student-template";
+import type { StudentTemplateData } from "@/features/docgen/student-template";
+import { Loader2 } from "lucide-react";
 
 type ConfirmTaskDetailsProps = {
   node: NodeVM | any;
@@ -48,6 +57,30 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
     : Array.isArray((instructionsRaw as any)?.[currentLang])
     ? (instructionsRaw as any)[currentLang]
     : [];
+  const { user } = useAuth();
+  const locale = (currentLang as "ru" | "kz" | "en") || "ru";
+  const { data: profileData, isLoading: profileLoading } = useProfileSnapshot(
+    true
+  );
+  const templateData = React.useMemo<StudentTemplateData | null>(() => {
+    return buildTemplateData(user, profileData as any, locale);
+  }, [user, profileData, locale]);
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
+  const profileRequiredMsg = React.useMemo(
+    () =>
+      i18n.t("templates.profile_required", {
+        defaultValue:
+          "Please fill your doctoral profile form to auto-fill templates.",
+      }) as string,
+    [currentLang]
+  );
+  const errorFallbackMsg = React.useMemo(
+    () =>
+      i18n.t("common.error", {
+        defaultValue: "Error",
+      }) as string,
+    [currentLang]
+  );
   const downloadSingle = (primaryBtn?.instructions?.download || undefined) as
     | { label?: any; asset_id?: string; asset_path?: string }
     | undefined;
@@ -103,6 +136,68 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
       asset_path?: string;
     }>;
   }, [downloadsRaw, downloadSingle, currentLang]);
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      console.log("[templated-download] init", {
+        source: "confirm-task",
+        userRole: user?.role,
+        locale,
+        downloadItems: downloadItems.map((d) => d.asset_id || d.asset_path),
+        templatable: downloadItems
+          .map((d) => d.asset_id)
+          .filter(Boolean)
+          .map((id) => allAssets().find((a) => a.id === id))
+          .filter((a): a is PublicAsset => !!a && supportsStudentDocTemplate(a))
+          .map((a) => a.id),
+      });
+    }
+  }, [downloadItems, locale, user?.role]);
+  const handleTemplatedDownload = React.useCallback(
+    async ({
+      asset,
+      href,
+      label,
+      key,
+    }: {
+      asset: PublicAsset;
+      href: string;
+      label: string;
+      key: string;
+    }) => {
+      if (typeof window !== "undefined") {
+        console.log("[templated-download] click", {
+          source: "confirm-task",
+          assetId: asset.id,
+          locale,
+          hasTemplateData: !!templateData,
+          href,
+        });
+      }
+      if (!href) return;
+      if (!templateData) {
+        console.log("[templated-download] missing template data");
+        window.alert(profileRequiredMsg);
+        window.open(href, "_blank", "noopener,noreferrer");
+        return;
+      }
+      try {
+        setDownloadingId(key);
+        await generateStudentTemplateDoc({
+          asset,
+          data: templateData,
+          locale,
+          // Don't pass fileLabel - let it use asset.title for more descriptive filename
+        });
+      } catch (err) {
+        console.error(err);
+        window.alert(err instanceof Error ? err.message : errorFallbackMsg);
+        window.open(href, "_blank", "noopener,noreferrer");
+      } finally {
+        setDownloadingId(null);
+      }
+    },
+    [templateData, locale, profileRequiredMsg, errorFallbackMsg]
+  );
   const accordionLabel = t(
     primaryBtn?.label as any,
     t(
@@ -170,8 +265,11 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
           {downloadItems.length > 0 && (
             <div className="mt-3 flex flex-col gap-2">
               {downloadItems.map((item, idx) => {
-                const resolved = item.asset_id
-                  ? getAssetUrl(item.asset_id)
+            const asset = item.asset_id
+              ? allAssets().find((a) => a.id === item.asset_id)
+              : undefined;
+            const resolved = item.asset_id
+              ? getAssetUrl(item.asset_id)
                   : undefined;
                 const href =
                   resolved && resolved !== "#" ? resolved : item.asset_path;
@@ -187,35 +285,70 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
                     "Скачать пример письма"
                   )
                 );
+                const key = item.asset_id || item.asset_path || `${idx}`;
+                const isTemplated =
+                  !!asset &&
+                  supportsStudentDocTemplate(asset) &&
+                  (!!templateData || user?.role === "student");
+                const isBusy = downloadingId === key;
+                const icon = isBusy ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                );
+
+                if (!isTemplated || !asset) {
+                  return (
+                    <Button
+                      key={key}
+                      asChild
+                      variant="secondary"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <a
+                        href={href}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {icon}
+                        {label}
+                      </a>
+                    </Button>
+                  );
+                }
+
                 return (
                   <Button
-                    key={`${item.asset_id || item.asset_path || idx}`}
-                    asChild
+                    key={key}
                     variant="secondary"
                     size="sm"
                     className="gap-2"
+                    disabled={isBusy || profileLoading}
+                    onClick={() =>
+                      handleTemplatedDownload({
+                        asset,
+                        href,
+                        label,
+                        key,
+                      })
+                    }
                   >
-                    <a
-                      href={href}
-                      download
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                      {label}
-                    </a>
+                    {icon}
+                    {label}
                   </Button>
                 );
               })}
