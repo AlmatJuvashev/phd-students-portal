@@ -2196,7 +2196,7 @@
                   ],
                   "download": {
                     "label": "Скачать пример письма",
-                    "asset_id": "normocontrol_letter.docx",
+                    "asset_id": "tpl_ncste_normocontrol_letter_ru_docx",
                     "asset_path": "/assets/templates/normocontrol_letter.docx"
                   }
                 }
