@@ -396,6 +396,9 @@ export function buildTemplateData(
   
   console.log("[buildTemplateData] Extracting publications from profile:", JSON.stringify({
     hasData: !!data,
+    profileKeys: profile ? Object.keys(profile) : [],
+    formKeys: profile?.form ? Object.keys(profile.form) : [],
+    dataKeys: data ? Object.keys(data) : [],
     sections: sections.map(s => ({
       key: s,
       hasSection: !!data?.[s],
