@@ -24,31 +24,23 @@ const createCleanNCGNTTemplate = () => {
   </w:body>
 </w:document>`;
 
-  const zip = new PizZip();
-  zip.file("word/document.xml", xml);
-  zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-</Types>`);
-  zip.file("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-  <Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="mailto:astana@ncste.kz" TargetMode="External"/>
-</Relationships>`);
-
-  const buffer = zip.generate({ type: "nodebuffer" });
   const outputPath = path.resolve(__dirname, "../public/templates/normocontrol_letter.docx");
   
-  const backupPath = path.resolve(__dirname, "../public/templates/normocontrol_letter.docx.backup");
-  if (fs.existsSync(outputPath)) {
-    fs.copyFileSync(outputPath, backupPath);
-    console.log("Backed up old template to:", backupPath);
+  // Load existing file to preserve styles/themes
+  if (!fs.existsSync(outputPath)) {
+    console.error("Error: Template file not found at", outputPath);
+    return;
   }
+
+  const content = fs.readFileSync(outputPath);
+  const zip = new PizZip(content);
   
+  // Update ONLY document.xml
+  zip.file("word/document.xml", xml);
+  
+  const buffer = zip.generate({ type: "nodebuffer" });
   fs.writeFileSync(outputPath, buffer);
-  console.log("Created clean NCGNT template at:", outputPath);
+  console.log("Updated NCGNT template (preserving styles) at:", outputPath);
 };
 
 createCleanNCGNTTemplate();
