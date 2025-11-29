@@ -75,17 +75,59 @@ func (h *NodeSubmissionHandler) GetProfile(c *gin.Context) {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
-	var form json.RawMessage
-	err := h.db.QueryRow(`SELECT form_data FROM profile_submissions WHERE user_id=$1`, uid).Scan(&form)
+	
+	// Fetch profile data (S1_profile)
+	var profileForm map[string]interface{}
+	var rawProfile json.RawMessage
+	err := h.db.QueryRow(`SELECT form_data FROM profile_submissions WHERE user_id=$1`, uid).Scan(&rawProfile)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(404, gin.H{"error": "not_found"})
+		if !errors.Is(err, sql.ErrNoRows) {
+			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
+		// If no profile, start with empty map
+		profileForm = make(map[string]interface{})
+	} else {
+		if err := json.Unmarshal(rawProfile, &profileForm); err != nil {
+			c.JSON(500, gin.H{"error": "failed to parse profile data"})
+			return
+		}
 	}
-	c.Data(200, "application/json", form)
+
+	// Fetch publications data (S1_publications_list)
+	// We need the latest revision of the form data for this node
+	var rawPubs json.RawMessage
+	err = h.db.QueryRow(`
+		SELECT r.form_data 
+		FROM node_instances i
+		JOIN node_instance_form_revisions r ON r.node_instance_id = i.id AND r.rev = i.current_rev
+		WHERE i.user_id=$1 AND i.node_id='S1_publications_list'
+	`, uid).Scan(&rawPubs)
+	
+	if err == nil {
+		// Parse publications data
+		var pubsData map[string]interface{}
+		if err := json.Unmarshal(rawPubs, &pubsData); err == nil {
+			// Merge publications into profile
+			// The structure of pubsData depends on how it's stored. 
+			// Based on buildSubmissionDTO, it might need normalization (buildApp7Form).
+			// But for raw storage, it's just the JSON.
+			// We'll merge top-level keys: wos_scopus, kokson, conferences
+			
+			// Check if we need to normalize (like in buildSubmissionDTO)
+			// For simplicity, we assume the raw stored data is what we want, 
+			// or we can try to use the same logic as buildSubmissionDTO if needed.
+			// Let's just merge the raw keys for now.
+			for k, v := range pubsData {
+				profileForm[k] = v
+			}
+		}
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		// Log error but don't fail the request
+		log.Printf("[GetProfile] Error fetching publications: %v", err)
+	}
+
+	c.JSON(200, profileForm)
 }
 
 type submissionReq struct {

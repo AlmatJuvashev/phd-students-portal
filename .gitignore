@@ -37,3 +37,5 @@ Thumbs.db
 **/.parcel-cache/
 **/.expo/
 **/.expo-shared/
+# Backups
+*.backup

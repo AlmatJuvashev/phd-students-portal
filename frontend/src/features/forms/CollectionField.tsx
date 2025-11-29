@@ -48,6 +48,7 @@ export type CollectionFieldProps = {
   canEdit?: boolean;
   disabled?: boolean;
   renderField: (props: FieldRendererProps) => JSX.Element;
+  itemErrors?: Record<number, string>;
 };
 
 export function CollectionField({
@@ -57,6 +58,7 @@ export function CollectionField({
   canEdit = true,
   disabled = false,
   renderField,
+  itemErrors,
 }: CollectionFieldProps) {
   const items = useMemo(() => (Array.isArray(value) ? value : EMPTY_ARRAY), [value]);
   const itemFields: FieldDef[] = useMemo(() => field.item_fields ?? [], [field.item_fields]);
@@ -117,44 +119,33 @@ export function CollectionField({
 
   const validateAndNormalize = useCallback(() => {
     const normalized: Record<string, any> = {};
-    const nextErrors: Record<string, string> = {};
     const fieldKeys = new Set(itemFields.map((f) => f.key));
 
     itemFields.forEach((f) => {
       const rawValue = draft[f.key];
-      const labelText = pbT(f.label, f.key) || f.key;
       if (f.type === "array" || f.key === "coauthors") {
         const list = splitCoauthors(rawValue);
-        if (f.required && list.length === 0) {
-          nextErrors[f.key] = `${labelText}: ${T("forms.required", "Обязательное поле")}`;
-        } else if (list.length > 0) {
-          normalized[f.key] = list;
-        }
+        normalized[f.key] = list;
       } else {
         let valueToStore = rawValue;
         if (typeof valueToStore === "string") {
           valueToStore = valueToStore.trim();
         }
-        if (f.required && (valueToStore === undefined || valueToStore === "")) {
-          nextErrors[f.key] = `${labelText}: ${T("forms.required", "Обязательное поле")}`;
-        }
-        if (valueToStore !== undefined && valueToStore !== "") {
+        if (valueToStore !== undefined) {
           normalized[f.key] = valueToStore;
         }
       }
       const otherKey = `${f.key}_other`;
       if (draft[otherKey] !== undefined) {
-        const otherValue = typeof draft[otherKey] === "string" ? draft[otherKey].trim() : draft[otherKey];
-        if (otherValue) {
+        const otherValue =
+          typeof draft[otherKey] === "string"
+            ? draft[otherKey].trim()
+            : draft[otherKey];
+        if (otherValue !== undefined) {
           normalized[otherKey] = otherValue;
         }
       }
     });
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return null;
-    }
 
     // Preserve any additional keys from draft (like IDs injected later)
     Object.keys(draft).forEach((key) => {
@@ -168,7 +159,7 @@ export function CollectionField({
     });
 
     return normalized;
-  }, [T, draft, itemFields]);
+  }, [draft, itemFields]);
 
   const handleSave = useCallback(() => {
     const normalized = validateAndNormalize();
@@ -215,9 +206,21 @@ export function CollectionField({
         </Card>
       ) : (
         <div className="space-y-4">
-          {items.map((item, index) => (
-            <div key={index} className="bg-card border rounded-lg p-4 md:p-6 space-y-4">
-              <div className="text-xs text-muted-foreground">#{index + 1}</div>
+          {items.map((item, index) => {
+            const error = itemErrors?.[index];
+            return (
+              <div
+                key={index}
+                className={`bg-card border rounded-lg p-4 md:p-6 space-y-4 ${
+                  error ? "border-destructive ring-1 ring-destructive" : ""
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="text-xs text-muted-foreground">#{index + 1}</div>
+                  {error && (
+                    <div className="text-xs text-destructive font-medium">{error}</div>
+                  )}
+                </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {previewFields.map((f) => {
                   const cell = item[f.key];
@@ -260,7 +263,8 @@ export function CollectionField({
                 </div>
               ) : null}
             </div>
-          ))}
+            );
+          })}
           <div className="text-xs text-muted-foreground">
             {T("forms.collection_total", "Всего записей")}: {total}
           </div>

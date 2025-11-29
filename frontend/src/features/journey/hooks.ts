@@ -87,6 +87,9 @@ export function useSubmission(nodeId?: string | null) {
         queryKey: ["journey", "node", nodeId, "submission"],
       });
       qc.invalidateQueries({ queryKey: ["journey", "state"] });
+      if (nodeId === "S1_profile") {
+        qc.invalidateQueries({ queryKey: ["journey", "profile", "snapshot"] });
+      }
     },
   });
   return {

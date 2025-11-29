@@ -36,6 +36,11 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               {T("nav.journey")}
             </Link>
           )}
+          {authed && (
+            <Link to="/chat" className={active("/chat")}>
+              {T("nav.chat", { defaultValue: "Messages" })}
+            </Link>
+          )}
           {authed &&
             (role === "advisor" ||
               role === "chair" ||

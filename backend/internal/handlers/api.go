@@ -76,6 +76,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	journey := NewJourneyHandler(db, cfg, playbookManager)
 	nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
 	adminHandler := NewAdminHandler(db, cfg, playbookManager)
+	chatHandler := NewChatHandler(db, cfg)
 	_ = NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL)) // TODO: use me handler for routes
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 
@@ -154,6 +155,21 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	nodes.POST("/:nodeId/uploads/presign", nodeSubmission.PresignUpload)
 	nodes.POST("/:nodeId/uploads/attach", nodeSubmission.AttachUpload)
 	nodes.PATCH("/:nodeId/state", nodeSubmission.PatchState)
+
+	// Chat module (placeholder)
+	chat := api.Group("/chat")
+	chat.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	chatAdmin := chat.Group("")
+	chatAdmin.Use(middleware.RequireRoles("admin", "superadmin"))
+	chatAdmin.POST("/rooms", chatHandler.CreateRoom)
+	chatAdmin.PATCH("/rooms/:roomId", chatHandler.UpdateRoom)
+	chatAdmin.GET("/rooms/:roomId/members", chatHandler.ListMembers)
+	chatAdmin.POST("/rooms/:roomId/members", chatHandler.AddMember)
+	chatAdmin.DELETE("/rooms/:roomId/members/:userId", chatHandler.RemoveMember)
+
+	chat.GET("/rooms", chatHandler.ListRooms)
+	chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
+	chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
 
 	// TODO: checklist, documents, comments handlers (skeletons for now)
 

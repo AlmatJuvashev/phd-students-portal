@@ -1568,28 +1568,118 @@
           "next": ["NK_package"]
         },
         {
-          "id": "NK_package",
+          "id": "S0_antiplagiat",
+          "module": "I",
           "title": {
-            "ru": "Пакет на НК",
-            "kz": "ҒК-ға пакет",
-            "en": "Package for SC"
+            "ru": "Справка на антиплагиат",
+            "kz": "Антиплагиат анықтамасы",
+            "en": "Anti-plagiarism certificate"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "prerequisites": ["S0_omid_application"],
+          "next": ["S1_publications_list"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "antiplagiat_cert",
+                "label": {
+                  "ru": "Справка об уникальности диссертации (с подписью и печатью)",
+                  "kz": "Диссертацияның бірегейлігі туралы анықтама (қолтаңбамен және мөрмен)",
+                  "en": "Dissertation uniqueness certificate (signed and stamped)"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ]
+          },
+          "screen": {
+            "question": {
+              "ru": "Вы загрузили справку об уникальности диссертации?",
+              "kz": "Диссертацияның бірегейлігі туралы анықтаманы жүктедіңіз бе?",
+              "en": "Have you uploaded the dissertation uniqueness certificate?"
+            },
+            "buttons": [
+              {
+                "id": "confirm_upload",
+                "label": {
+                  "ru": "Подтвердить загрузку",
+                  "kz": "Жүктеуді растау",
+                  "en": "Confirm upload"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Вы уверены, что загрузили корректную справку?",
+                  "kz": "Дұрыс анықтаманы жүктегеніңізге сенімдісіз бе?",
+                  "en": "Are you sure you uploaded the correct certificate?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Справка загружена.",
+                "kz": "Анықтама жүктелді.",
+              "en": "Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["confirm_upload"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_upload"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Справка загружена.",
+                "kz": "✅ Анықтама жүктелді.",
+                "en": "✅ Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-11-29",
+            "requires_upload": true,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "S1_publications_list",
+          "module": "I",
+          "title": {
+            "ru": "Список публикаций",
+            "kz": "Жарияланымдар тізімі",
+            "en": "Publications List"
           },
           "type": "form",
           "actionHints": ["form"],
           "description": {
-            "ru": "Пакет документов собран?",
-            "kz": "Құжаттар топтамасы жиналды ма?",
-            "en": "Is the document package complete?"
+            "ru": "Заполните данные о публикациях и загрузите подписанный список.",
+            "kz": "Жарияланымдар туралы деректерді толтырыңыз және қол қойылған тізімді жүктеңіз.",
+            "en": "Fill in publication data and upload the signed list."
           },
           "who_can_complete": ["student"],
-          "prerequisites": ["E1_apply_omid"],
+          "prerequisites": ["S0_antiplagiat"],
+          "next": ["S1_profile"],
           "requirements": {
-            "templates": [
-              "tpl_lcb_request_ru_docx",
-              "tpl_lcb_request_kz_docx",
-              "tpl_lcb_request_en_docx"
+            "templates": ["tpl_app7_ru", "tpl_app7_kz_docx", "tpl_app7_en_docx"],
+            "uploads": [
+              {
+                "key": "signed_pub_list",
+                "label": {
+                  "ru": "Список публикаций (с подписью и печатью)",
+                  "kz": "Жарияланымдар тізімі (қолтаңбамен және мөрмен)",
+                  "en": "Publications list (signed and stamped)"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
             ],
-            
             "fields": [
               {
                 "key": "chk_thesis_unbound",
@@ -1691,6 +1781,18 @@
               },
               "buttons_style": "yes_no"
             },
+            "uploads": [
+              {
+                "key": "sc_protocol_extract_nk",
+                "label": {
+                  "ru": "Выписка из протокола НК о положительном заключении",
+                  "kz": "ҒК хаттамасынан оң қорытынды туралы үзінді",
+                  "en": "SC protocol extract with positive conclusion"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
             "fields": [
               {
                 "key": "hearing_happened",
@@ -1886,9 +1988,9 @@
           },
           "type": "info",
           "description": {
-            "ru": "Если со дня выпуска прошло 3 года и более, допуск к защите возможен только после повторного утверждения Research Proposal на заседании Научного комитета.",
-            "kz": "Бітіру күнінен 3 жыл және одан көп өтсе, қорғауға жіберу тек Ғылыми комитет отырысында Research Proposal қайта бекітілгеннен кейін мүмкін.",
-            "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee."
+            "ru": "Если со дня выпуска прошло 3 года и более, допуск к защите возможен только после повторного утверждения Research Proposal на заседании Научного комитета. ВНИМАНИЕ: Документы должны быть поданы не менее чем за 1 месяц до заседания НК.",
+            "kz": "Бітіру күнінен 3 жыл және одан көп өтсе, қорғауға жіберу тек Ғылыми комитет отырысында Research Proposal қайта бекітілгеннен кейін мүмкін. НАЗАР АУДАРЫҢЫЗ: Құжаттар ҒК отырысына дейін кемінде 1 ай бұрын тапсырылуы тиіс.",
+            "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee. ATTENTION: Documents must be submitted at least 1 month before the SC meeting."
           },
           "who_can_complete": ["student"],
           "prerequisites": ["E3_hearing_nk"],
@@ -1941,9 +2043,9 @@
             "en": "SC hearing of the Research Proposal"
           },
           "description": {
-            "ru": "Подготовьтесь к заслушиванию: отметьте контрольные пункты и подтвердите получение выписки из протокола.",
-            "kz": "Тыңдауға дайындалыңыз: бақылану тармақтарын белгілеңіз және хаттамадан үзіндіні алғаныңызды растаңыз.",
-            "en": "Prepare for the hearing: check off the milestones and confirm the protocol extract."
+            "ru": "Подготовьтесь к заслушиванию и загрузите выписку из протокола.",
+            "kz": "Тыңдауға дайындалыңыз және хаттамадан үзіндіні жүктеңіз.",
+            "en": "Prepare for the hearing and upload the protocol extract."
           },
           "type": "form",
           "who_can_complete": ["student"],
@@ -1962,6 +2064,18 @@
           ],
           "requirements": {
             "templates": ["tpl_app7_ru"],
+            "uploads": [
+              {
+                "key": "sc_protocol_extract",
+                "label": {
+                  "ru": "Выписка из протокола НК о положительном заключении",
+                  "kz": "ҒК хаттамасынан оң қорытынды туралы үзінді",
+                  "en": "SC protocol extract with positive conclusion"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
             "fields": [
               {
                 "key": "chk_hearing_date_received",
@@ -2004,16 +2118,6 @@
                 }
               },
               {
-                "key": "chk_protocol_extract_received",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Получена выписка из протокола об актуальности темы",
-                  "kz": "Тақырыптың өзектілігі туралы хаттамадан үзінді алынды",
-                  "en": "Protocol extract on topic relevance received"
-                }
-              },
-              {
                 "key": "chk_predefense_recommended",
                 "type": "boolean",
                 "required": true,
@@ -2037,8 +2141,8 @@
           },
           "meta": {
             "created_by": "KazNMU PhD Portal",
-            "last_updated": "2025-10-09",
-            "requires_upload": false,
+            "last_updated": "2025-11-29",
+            "requires_upload": true,
             "reminder_required": false
           }
         },
