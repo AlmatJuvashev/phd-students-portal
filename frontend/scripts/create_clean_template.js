@@ -15,10 +15,10 @@ const createCleanTemplate = () => {
     <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Ректору КазНМУ им. С.Д. Асфендиярова</w:t></w:r></w:p>
     <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Шоранову Марату Едигеевичу</w:t></w:r></w:p>
     <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">от PhD докторанта:</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_full_name}}</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Специальность: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_specialty}}</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Тема диссертации: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>{{dissertation_topic}}</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Научный руководитель: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_supervisors}}</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>[%student_full_name%]</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Специальность: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>[%student_specialty%]</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Тема диссертации: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>[%dissertation_topic%]</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Научный руководитель: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>[%student_supervisors%]</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
     <w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>ЗАЯВЛЕНИЕ</w:t></w:r></w:p>
     <w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">на проведение предварительной экспертизы диссертации в ОМиД</w:t></w:r></w:p>
@@ -35,7 +35,7 @@ const createCleanTemplate = () => {
     <w:tbl>
       <w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr>
       <w:tr>
-        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Дата</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>«{{day}}» {{month}} {{year}} г.</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Дата</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>«[%day%]» [%month%] [%year%] г.</w:t></w:r></w:p></w:tc>
         <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Подпись докторанта: </w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>_____________________</w:t></w:r></w:p></w:tc>
       </w:tr>
     </w:tbl>

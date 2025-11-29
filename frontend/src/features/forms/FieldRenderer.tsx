@@ -17,6 +17,7 @@ export type FieldRendererProps = {
   canEdit?: boolean;
   setField?: (key: string, value: any) => void;
   otherValue?: any;
+  itemErrors?: Record<number, string>;
 };
 
 const SelectField = memo(
@@ -246,6 +247,7 @@ function renderField(
         canEdit={props.canEdit}
         disabled={props.disabled}
         renderField={(childProps) => renderField(childProps, T)}
+        itemErrors={props.itemErrors}
       />
     );
   }

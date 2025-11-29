@@ -17,6 +17,7 @@ import {
   UserCog,
   Monitor,
   Bell,
+  MessageCircle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -107,6 +108,18 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               {t("admin.sidebar.management", "Management")}
             </div>
           )}
+          <NavLink
+            to="/admin/chat-rooms"
+            className={cn(
+              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/chat-rooms") && "bg-muted font-medium",
+              collapsed && "justify-center px-2"
+            )}
+            title={t("admin.sidebar.chat_rooms", "Chat rooms")}
+          >
+            <MessageCircle className="h-4 w-4" />
+            {!collapsed && <span>{t("admin.sidebar.chat_rooms", "Chat rooms")}</span>}
+          </NavLink>
           <NavLink
             to="/admin/create-students"
             className={cn(

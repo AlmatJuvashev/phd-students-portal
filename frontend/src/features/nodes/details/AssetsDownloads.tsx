@@ -3,7 +3,7 @@ import { PublicAsset } from "@/lib/assets";
 import { NodeVM, t } from "@/lib/playbook";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTemplatesForNode } from "@/features/nodes/useTemplatesForNode";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,15 +21,12 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   const locale = (i18n.language as "ru" | "kz" | "en") || "ru";
   const { user } = useAuth();
   const assets: PublicAsset[] = useTemplatesForNode(node);
-  const { data: profileData, isLoading: profileLoading } = useProfileSnapshot(
-    user?.role === "student"
-  );
+  const { data: profileData, isLoading: profileLoading } =
+    useProfileSnapshot(true);
   const templateData = useMemo(() => {
-    if (user?.role !== "student") {
-      return null;
-    }
     return buildTemplateData(user, profileData as any, locale);
   }, [user, profileData, locale]);
+
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { order, groups } = useMemo(() => {
     const grouped: Record<string, PublicAsset[]> = {};
@@ -49,6 +46,23 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
       groups: grouped,
     };
   }, [assets]);
+
+  const log =
+    typeof window !== "undefined"
+      ? (...args: any[]) => console.log("[templated-download]", ...args)
+      : () => {};
+
+  useEffect(() => {
+    log("init", {
+      source: "assets-panel",
+      userRole: user?.role,
+      locale,
+      assetsCount: assets.length,
+      templatable: assets
+        .filter((a) => supportsStudentDocTemplate(a))
+        .map((a) => a.id),
+    });
+  }, [assets, locale, log, user?.role]);
 
   if (!order.length) return null;
   return (
@@ -85,8 +99,17 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
             const label =
               preferred.title?.[locale as any] ||
               t(preferred.title, preferred.id);
-            const isTemplated =
-              user?.role === "student" && supportsStudentDocTemplate(preferred);
+            console.log("tempated data", templateData, "role", user?.role);
+            const isTemplated = supportsStudentDocTemplate(preferred);
+            if (isTemplated) {
+              log("render", {
+                source: "assets-panel",
+                assetId: preferred.id,
+                locale,
+                hasProfile: !!profileData,
+                hasTemplateData: !!templateData,
+              });
+            }
             return (
               <div
                 key={g}
@@ -98,9 +121,8 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
                     variant="outline"
                     size="sm"
                     className="w-full justify-start gap-2 hover:bg-primary/5 hover:border-primary/40 hover:shadow-sm transition-all duration-200 group"
-                    disabled={
-                      !!downloadingId || profileLoading || !templateData
-                    }
+                    disabled={!!downloadingId}
+                    data-debug-templated="true"
                     onClick={() =>
                       handleTemplatedDownload({
                         asset: preferred,
@@ -109,7 +131,6 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
                         locale,
                         templateData: templateData || undefined,
                         setDownloadingId,
-                        profileAvailable: !!profileData,
                         showAlert: (msg) =>
                           window.alert(msg ?? "Unable to generate template"),
                         t: T,
@@ -148,6 +169,7 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
                       size="sm"
                       className="w-full justify-start gap-2 hover:bg-primary/5 hover:border-primary/40 hover:shadow-sm transition-all duration-200 group"
                     >
+                      Button
                       <svg
                         className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors"
                         fill="none"
@@ -183,7 +205,6 @@ async function handleTemplatedDownload({
   locale,
   templateData,
   setDownloadingId,
-  profileAvailable,
   showAlert,
   t,
 }: {
@@ -193,12 +214,23 @@ async function handleTemplatedDownload({
   locale: "ru" | "kz" | "en";
   templateData?: StudentTemplateData | null;
   setDownloadingId: (id: string | null) => void;
-  profileAvailable: boolean;
   showAlert: (msg?: string) => void;
   t: (key: string, options?: Record<string, any>) => string;
 }) {
+  if (typeof window !== "undefined") {
+    console.log("[templated-download] click", {
+      source: "assets-panel",
+      assetId: asset.id,
+      locale,
+      hasTemplateData: !!templateData,
+      profileLoaded: !!templateData,
+      href,
+    });
+  }
+  console.log("button clicked ");
   try {
-    if (!templateData || !profileAvailable) {
+    if (!templateData) {
+      console.warn("[templated-download] missing template data");
       showAlert(
         t("templates.profile_required", {
           defaultValue:

@@ -72,6 +72,14 @@ const ForgotPassword = lazy(() =>
 const ResetPassword = lazy(() =>
   import("@/pages/reset").then((m) => ({ default: m.ResetPassword }))
 );
+const ChatPage = lazy(() =>
+  import("@/pages/chat").then((m) => ({ default: m.ChatPage }))
+);
+const ChatRoomsAdminPage = lazy(() =>
+  import("@/features/chat-admin/ChatRoomsAdminPage").then((m) => ({
+    default: m.ChatRoomsAdminPage,
+  }))
+);
 
 const WithSuspense = (el: React.ReactNode) => (
   <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
@@ -99,6 +107,10 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>{WithSuspense(<DoctoralJourney />)}</ProtectedRoute>
         ),
+      },
+      {
+        path: "chat",
+        element: <ProtectedRoute>{WithSuspense(<ChatPage />)}</ProtectedRoute>,
       },
       { path: "contacts", element: WithSuspense(<ContactsPage />) },
       {
@@ -194,6 +206,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
             {WithSuspense(<AdminUsers />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "chat-rooms",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<ChatRoomsAdminPage />)}
           </ProtectedRoute>
         ),
       },

@@ -14,10 +14,10 @@ const createCleanLCBTemplate = () => {
     <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Председателю ЛКБ</w:t></w:r></w:p>
     <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">КазНМУ им. С.Д. Асфендиярова</w:t></w:r></w:p>
     <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">от PhD докторанта:</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_full_name}}</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Специальность: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_specialty}}</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Тема диссертации: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>{{dissertation_topic}}</w:t></w:r></w:p>
-    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Научный руководитель: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>{{student_supervisors}}</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>[%student_full_name%]</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Специальность: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>[%student_specialty%]</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Тема диссертации: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>[%dissertation_topic%]</w:t></w:r></w:p>
+    <w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t xml:space="preserve">Научный руководитель: </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>[%student_supervisors%]</w:t></w:r></w:p>
     <w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>
     <w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>ЗАЯВЛЕНИЕ</w:t></w:r></w:p>
     <w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">на защиту диссертации</w:t></w:r></w:p>
@@ -33,7 +33,7 @@ const createCleanLCBTemplate = () => {
     <w:tbl>
       <w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr>
       <w:tr>
-        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Дата</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>«{{day}}» {{month}} {{year}} г.</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>Дата</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>«[%day%]» [%month%] [%year%] г.</w:t></w:r></w:p></w:tc>
         <w:tc><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Подпись докторанта: </w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t>_____________________</w:t></w:r></w:p></w:tc>
       </w:tr>
     </w:tbl>
@@ -84,13 +84,13 @@ const createCleanLCBTemplateKZ = () => {
     <w:p><w:t>Диссертациялық жұмысым бойынша ЛБК-ның «қорғауға» қорытындысын берулеріңізді сұраймын.</w:t></w:p>
     <w:p></w:p>
     <w:p><w:t xml:space="preserve">Докторант туралы мәліметтер:</w:t></w:p>
-    <w:p><w:t>ТАӘ: {{student_full_name}}</w:t></w:p>
-    <w:p><w:t>Мамандығы (дайындық бағыты): {{student_specialty}}</w:t></w:p>
-    <w:p><w:t>Диссертация тақырыбы: {{dissertation_topic}}</w:t></w:p>
-    <w:p><w:t>Ғылыми жетекші: {{student_supervisors}}</w:t></w:p>
+    <w:p><w:t>ТАӘ: [%student_full_name%]</w:t></w:p>
+    <w:p><w:t>Мамандығы (дайындық бағыты): [%student_specialty%]</w:t></w:p>
+    <w:p><w:t>Диссертация тақырыбы: [%dissertation_topic%]</w:t></w:p>
+    <w:p><w:t>Ғылыми жетекші: [%student_supervisors%]</w:t></w:p>
     <w:p></w:p>
     <w:p><w:t>Бұрын берілген ЛБК (алғашқы) қорытындысы:</w:t></w:p>
-    <w:p><w:t>Хаттама нөмірі: ____________________   Күні: «{{day}}» {{month}} {{year}} ж.</w:t></w:p>
+    <w:p><w:t>Хаттама нөмірі: ____________________   Күні: «[%day%]» [%month%] [%year%] ж.</w:t></w:p>
     <w:p></w:p>
     <w:p><w:t>Материалдарды қарап, ЛБК-ның «қорғауға» қорытындысын берулеріңізді өтінемін.</w:t></w:p>
     <w:p></w:p>
@@ -98,9 +98,9 @@ const createCleanLCBTemplateKZ = () => {
     <w:p><w:pPr><w:ind w:left="720"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>1. ЛБК-ның алғашқы қорытындысы (көшірме)</w:t></w:r></w:p>
     <w:p><w:pPr><w:ind w:left="720"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>2. Диссертация (түптелмеген, 1 дана) / немесе файл сілтемесі</w:t></w:r></w:p>
     <w:p><w:pPr><w:ind w:left="720"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>3. ЛБК талабы бойынша өзге құжаттар</w:t></w:r></w:p>
-    <w:p><w:t>Кері байланыс үшін байланыс деректері: {{student_phone}} / {{student_email}}</w:t></w:p>
+    <w:p><w:t>Кері байланыс үшін байланыс деректері: [%student_phone%] / [%student_email%]</w:t></w:p>
     <w:p></w:p>
-    <w:p><w:t>Күні: «{{day}}» {{month}} {{year}} ж.</w:t></w:p>
+    <w:p><w:t>Күні: «[%day%]» [%month%] [%year%] ж.</w:t></w:p>
   </w:body>
 </w:document>`;
 
@@ -144,13 +144,13 @@ const createCleanLCBTemplateEN = () => {
     <w:p><w:t>I kindly request the issuance of the LBC conclusion “for defense” for my dissertation.</w:t></w:p>
     <w:p></w:p>
     <w:p><w:t>Doctoral student information:</w:t></w:p>
-    <w:p><w:t>Full name: {{student_full_name}}</w:t></w:p>
-    <w:p><w:t>Specialty (field of study): {{student_specialty}}</w:t></w:p>
-    <w:p><w:t>Dissertation title: {{dissertation_topic}}</w:t></w:p>
-    <w:p><w:t>Scientific advisor: {{student_supervisors}}</w:t></w:p>
+    <w:p><w:t>Full name: [%student_full_name%]</w:t></w:p>
+    <w:p><w:t>Specialty (field of study): [%student_specialty%]</w:t></w:p>
+    <w:p><w:t>Dissertation title: [%dissertation_topic%]</w:t></w:p>
+    <w:p><w:t>Scientific advisor: [%student_supervisors%]</w:t></w:p>
     <w:p></w:p>
     <w:p><w:t>Previously issued LBC (initial) conclusion:</w:t></w:p>
-    <w:p><w:t>Protocol number: ____________________   Date: “{{day}}” {{month}} {{year}}</w:t></w:p>
+    <w:p><w:t>Protocol number: ____________________   Date: “[%day%]” [%month%] [%year%]</w:t></w:p>
     <w:p></w:p>
     <w:p><w:t>Please review the materials and issue the LBC conclusion “for defense”.</w:t></w:p>
     <w:p></w:p>
@@ -158,9 +158,9 @@ const createCleanLCBTemplateEN = () => {
     <w:p><w:pPr><w:ind w:left="720"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>1. Initial LBC conclusion (copy)</w:t></w:r></w:p>
     <w:p><w:pPr><w:ind w:left="720"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>2. Dissertation (unbound, 1 copy) / or link to file</w:t></w:r></w:p>
     <w:p><w:pPr><w:ind w:left="720"/></w:pPr><w:r><w:rPr><w:i/></w:rPr><w:t>3. Other documents as required by LBC</w:t></w:r></w:p>
-    <w:p><w:t>Contact for feedback: {{student_phone}} / {{student_email}}</w:t></w:p>
+    <w:p><w:t>Contact for feedback: [%student_phone%] / [%student_email%]</w:t></w:p>
     <w:p></w:p>
-    <w:p><w:t>Date: “{{day}}” {{month}} {{year}}</w:t></w:p>
+    <w:p><w:t>Date: “[%day%]” [%month%] [%year%]</w:t></w:p>
   </w:body>
 </w:document>`;
 
