@@ -53,7 +53,6 @@ export type Filters = {
   cohort?: string;
   advisor_id?: string;
   rp_required?: boolean;
-  overdue?: boolean;
   due_from?: string;
   due_to?: string;
 };
@@ -213,25 +212,6 @@ export function FiltersBar({
             >
               {t("admin.monitor.filters.rp_only", {
                 defaultValue: "RP required only",
-              })}
-            </label>
-          </div>
-
-          {/* Overdue Toggle */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="overdue-only"
-              checked={!!local.overdue}
-              onCheckedChange={(checked) =>
-                setLocal({ ...local, overdue: !!checked })
-              }
-            />
-            <label
-              htmlFor="overdue-only"
-              className="text-sm text-muted-foreground cursor-pointer"
-            >
-              {t("admin.monitor.filters.overdue_only", {
-                defaultValue: "Overdue only",
               })}
             </label>
           </div>

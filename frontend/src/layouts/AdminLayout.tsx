@@ -18,6 +18,7 @@ import {
   Monitor,
   Bell,
   MessageCircle,
+  BookOpen,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -149,6 +150,22 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
             {!collapsed && (
               <span>
                 {t("admin.sidebar.create_advisors", "Manage Advisors")}
+              </span>
+            )}
+          </NavLink>
+          <NavLink
+            to="/admin/dictionaries"
+            className={cn(
+              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/dictionaries") && "bg-muted font-medium",
+              collapsed && "justify-center px-2"
+            )}
+            title={t("admin.sidebar.dictionaries", "Dictionaries")}
+          >
+            <BookOpen className="h-4 w-4" />
+            {!collapsed && (
+              <span>
+                {t("admin.sidebar.dictionaries", "Dictionaries")}
               </span>
             )}
           </NavLink>

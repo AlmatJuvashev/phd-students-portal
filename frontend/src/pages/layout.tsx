@@ -55,6 +55,11 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               {T("nav.admin")}
             </Link>
           )}
+          {authed && (
+            <Link to="/profile" className={active("/profile")}>
+              {T("nav.profile", { defaultValue: "Profile" })}
+            </Link>
+          )}
           {authed ? (
             <button
               className="text-muted-foreground hover:underline"

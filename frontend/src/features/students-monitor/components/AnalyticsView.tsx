@@ -120,18 +120,6 @@ export function AnalyticsView({ filters }: { filters: Record<string, any> }) {
       color: "text-teal-600",
       bgColor: "bg-teal-50",
     },
-    {
-      icon: AlertCircle,
-      title: t("admin.monitor.analytics.metrics.overdue.title", {
-        defaultValue: "Overdue Items",
-      }),
-      value: `${data?.overdue_count || 0}`,
-      description: t("admin.monitor.analytics.metrics.overdue.description", {
-        defaultValue: "Tasks past their due date",
-      }),
-      color: "text-red-600",
-      bgColor: "bg-red-50",
-    },
   ];
 
   return (

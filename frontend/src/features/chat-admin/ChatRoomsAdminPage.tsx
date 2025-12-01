@@ -29,7 +29,20 @@ import {
   searchUsers,
   updateRoom,
   UserSearchResult,
+  addRoomMembersBatch,
+  removeRoomMembersBatch,
 } from "./api";
+import {
+  listPrograms,
+  listDepartments,
+  listCohorts,
+  listSpecialties,
+  Program,
+  Department,
+  Cohort,
+  Specialty,
+} from "@/features/admin/dictionaries/api";
+import { useToast } from "@/components/ui/use-toast";
 import { Modal } from "@/components/ui/modal";
 
 type RoomForm = {
@@ -40,6 +53,7 @@ type RoomForm = {
 export function ChatRoomsAdminPage() {
   const { t } = useTranslation("common");
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [form, setForm] = useState<RoomForm>({ name: "", type: "cohort" });
 
   const {
@@ -67,15 +81,27 @@ export function ChatRoomsAdminPage() {
 
   const [manageRoomId, setManageRoomId] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState("");
+  const [filters, setFilters] = useState({
+    program: "",
+    department: "",
+    cohort: "",
+    specialty: "",
+  });
+
+  const { data: programs = [] } = useQuery({ queryKey: ["programs", "active"], queryFn: () => listPrograms(true) });
+  const { data: departments = [] } = useQuery({ queryKey: ["departments", "active"], queryFn: () => listDepartments(true) });
+  const { data: cohorts = [] } = useQuery({ queryKey: ["cohorts", "active"], queryFn: () => listCohorts(true) });
+  const { data: specialties = [] } = useQuery({ queryKey: ["specialties", "active"], queryFn: () => listSpecialties(true) });
+
   const membersQuery = useQuery({
     queryKey: ["chat", "admin", "members", manageRoomId],
     queryFn: () => listRoomMembers(manageRoomId || ""),
     enabled: !!manageRoomId,
   });
   const searchQuery = useQuery<UserSearchResult[]>({
-    queryKey: ["chat", "admin", "user-search", memberSearch],
-    queryFn: () => searchUsers(memberSearch),
-    enabled: memberSearch.trim().length >= 2,
+    queryKey: ["chat", "admin", "user-search", memberSearch, filters],
+    queryFn: () => searchUsers(memberSearch, filters),
+    enabled: memberSearch.trim().length >= 2 || Object.values(filters).some(Boolean),
   });
 
   const addMemberMutation = useMutation({
@@ -90,6 +116,22 @@ export function ChatRoomsAdminPage() {
   const removeMemberMutation = useMutation({
     mutationFn: (userId: string) => removeRoomMember(manageRoomId || "", userId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "admin", "members", manageRoomId] }),
+  });
+
+  const addBatchMutation = useMutation({
+    mutationFn: () => addRoomMembersBatch(manageRoomId || "", filters),
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["chat", "admin", "members", manageRoomId] });
+      toast({ title: "Added members", description: `Added ${data.added_count} members` });
+    },
+  });
+
+  const removeBatchMutation = useMutation({
+    mutationFn: () => removeRoomMembersBatch(manageRoomId || "", filters),
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["chat", "admin", "members", manageRoomId] });
+      toast({ title: "Removed members", description: `Removed ${data.removed_count} members` });
+    },
   });
 
   const hasRooms = rooms.length > 0;
@@ -258,16 +300,63 @@ export function ChatRoomsAdminPage() {
 
           <div className="space-y-2">
             <Label>{t("chat_admin.add_member", { defaultValue: "Add member" })}</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("chat_admin.search_user", { defaultValue: "Search by name or email" })}
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-                className="pl-9"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={filters.program} onValueChange={(v) => setFilters(prev => ({ ...prev, program: v === "all" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Program" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Programs</SelectItem>
+                  {programs.map((p: Program) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filters.department} onValueChange={(v) => setFilters(prev => ({ ...prev, department: v === "all" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Department" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map((d: Department) => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filters.cohort} onValueChange={(v) => setFilters(prev => ({ ...prev, cohort: v === "all" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Cohort" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cohorts</SelectItem>
+                  {cohorts.map((c: Cohort) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filters.specialty} onValueChange={(v) => setFilters(prev => ({ ...prev, specialty: v === "all" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Specialty" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Specialties</SelectItem>
+                  {specialties.map((s: Specialty) => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            {memberSearch.trim().length >= 2 && (
+
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("chat_admin.search_user", { defaultValue: "Search by name or email" })}
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button 
+                variant="secondary" 
+                onClick={() => addBatchMutation.mutate()}
+                disabled={addBatchMutation.isPending || !Object.values(filters).some(Boolean)}
+              >
+                {addBatchMutation.isPending ? "Adding..." : "Add All"}
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => removeBatchMutation.mutate()}
+                disabled={removeBatchMutation.isPending || !Object.values(filters).some(Boolean)}
+              >
+                {removeBatchMutation.isPending ? "Removing..." : "Remove All"}
+              </Button>
+            </div>
+            {(memberSearch.trim().length >= 2 || Object.values(filters).some(Boolean)) && (
               <div className="border rounded-md divide-y max-h-48 overflow-y-auto">
                 {searchQuery.isFetching ? (
                   <div className="p-3 text-sm text-muted-foreground">{t("common.loading", { defaultValue: "Loading…" })}</div>

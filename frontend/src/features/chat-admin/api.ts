@@ -57,7 +57,46 @@ export type UserSearchResult = {
   role: string;
 };
 
-export async function searchUsers(query: string) {
-  const res = await api(`/admin/users?q=${encodeURIComponent(query)}&limit=10`);
+export async function searchUsers(query: string, filters?: {
+  program?: string;
+  department?: string;
+  cohort?: string;
+  specialty?: string;
+}) {
+  const params = new URLSearchParams({ q: query, limit: "50" });
+  if (filters?.program) params.append("program", filters.program);
+  if (filters?.department) params.append("department", filters.department);
+  if (filters?.cohort) params.append("cohort", filters.cohort);
+  if (filters?.specialty) params.append("specialty", filters.specialty);
+
+  const res = await api(`/admin/users?${params.toString()}`);
   return (res.data as UserSearchResult[]) ?? [];
+}
+
+export async function addRoomMembersBatch(roomId: string, payload: {
+  user_ids?: string[];
+  program?: string;
+  department?: string;
+  cohort?: string;
+  specialty?: string;
+  role?: string;
+}) {
+  return api(`/chat/rooms/${roomId}/members/batch`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function removeRoomMembersBatch(roomId: string, payload: {
+  user_ids?: string[];
+  program?: string;
+  department?: string;
+  cohort?: string;
+  specialty?: string;
+  role?: string;
+}) {
+  return api(`/chat/rooms/${roomId}/members/batch`, {
+    method: "DELETE",
+    body: JSON.stringify(payload),
+  });
 }

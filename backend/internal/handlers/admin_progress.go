@@ -336,7 +336,6 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 			"current_stage":        stage,
 			"stage_done":           stageDone,
 			"stage_total":          stageTotal,
-			"overdue":              hasOverdue,
 		}
 		if dueNext != nil && *dueNext != "" {
 			m["due_next"] = *dueNext
@@ -599,10 +598,6 @@ func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
 		_ = h.db.QueryRowx(rebind(h.db, q), append([]any{uid, h.pb.VersionID}, vs...)...).Scan(&stageDone)
 	}
 
-	var dueNext *string
-	_ = h.db.QueryRowx(`SELECT to_char(MIN(due_at),'YYYY-MM-DD"T"HH24:MI:SSZ') FROM node_deadlines nd WHERE nd.user_id=$1 AND nd.due_at >= now() AND NOT EXISTS (SELECT 1 FROM node_instances ni WHERE ni.user_id=$1 AND ni.playbook_version_id=$2 AND ni.node_id=nd.node_id AND ni.state='done')`, uid, h.pb.VersionID).Scan(&dueNext)
-	var overdue bool
-	_ = h.db.QueryRowx(`SELECT EXISTS(SELECT 1 FROM node_deadlines nd WHERE nd.user_id=$1 AND nd.due_at < $2 AND NOT EXISTS (SELECT 1 FROM node_instances ni WHERE ni.user_id=$1 AND ni.playbook_version_id=$3 AND ni.node_id=nd.node_id AND ni.state='done'))`, uid, time.Now(), h.pb.VersionID).Scan(&overdue)
 	var lastUpdate sql.NullString
 	_ = h.db.QueryRowx(`SELECT to_char(MAX(updated_at),'YYYY-MM-DD"T"HH24:MI:SSZ') FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2`, uid, h.pb.VersionID).Scan(&lastUpdate)
 
@@ -620,11 +615,7 @@ func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
 		"current_stage":        stage,
 		"stage_done":           stageDone,
 		"stage_total":          stageTotal,
-		"overdue":              overdue,
 		"last_update":          lastUpdate.String,
-	}
-	if dueNext != nil && *dueNext != "" {
-		resp["due_next"] = *dueNext
 	}
 	c.JSON(200, resp)
 }
@@ -1155,50 +1146,6 @@ func nodeWorld(nodeID string, worlds map[string][]string) string {
 		}
 	}
 	return ""
-}
-
-// Deadlines endpoints
-func (h *AdminHandler) GetStudentDeadlines(c *gin.Context) {
-	uid := c.Param("id")
-	rows, err := h.db.Queryx(`SELECT node_id, to_char(due_at,'YYYY-MM-DD"T"HH24:MI:SSZ') FROM node_deadlines WHERE user_id=$1 ORDER BY due_at`, uid)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	defer rows.Close()
-	out := []gin.H{}
-	for rows.Next() {
-		var nid, due string
-		_ = rows.Scan(&nid, &due)
-		out = append(out, gin.H{"node_id": nid, "due_at": due})
-	}
-	c.JSON(200, out)
-}
-
-func (h *AdminHandler) PutStudentDeadline(c *gin.Context) {
-	uid := c.Param("id")
-	nodeID := c.Param("nodeId")
-	var body struct {
-		DueAt string `json:"due_at"`
-		Note  string `json:"note"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	caller := userIDFromClaims(c)
-	if caller == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
-		return
-	}
-	_, err := h.db.Exec(`INSERT INTO node_deadlines (user_id,node_id,due_at,note,created_by)
-        VALUES ($1,$2,$3,$4,$5)
-        ON CONFLICT (user_id,node_id) DO UPDATE SET due_at=$3, note=$4`, uid, nodeID, body.DueAt, body.Note, caller)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(200, gin.H{"ok": true})
 }
 
 // Reminders

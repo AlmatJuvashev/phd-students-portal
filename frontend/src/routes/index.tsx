@@ -80,6 +80,17 @@ const ChatRoomsAdminPage = lazy(() =>
     default: m.ChatRoomsAdminPage,
   }))
 );
+const DictionariesPage = lazy(() =>
+  import("@/features/admin/dictionaries/DictionariesPage").then((m) => ({
+    default: m.DictionariesPage,
+  }))
+);
+const ProfilePage = lazy(() =>
+  import("@/pages/profile").then((m) => ({ default: m.ProfilePage }))
+);
+const VerifyEmailPage = lazy(() =>
+  import("@/pages/verify-email").then((m) => ({ default: m.VerifyEmailPage }))
+);
 
 const WithSuspense = (el: React.ReactNode) => (
   <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
@@ -119,6 +130,7 @@ export const router = createBrowserRouter([
       },
       { path: "forgot-password", element: WithSuspense(<ForgotPassword />) },
       { path: "reset-password", element: WithSuspense(<ResetPassword />) },
+      { path: "verify-email", element: WithSuspense(<VerifyEmailPage />) },
       { path: "*", element: <NotFound /> },
       {
         path: "advisor/inbox",
@@ -131,6 +143,10 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <ProtectedRoute>{WithSuspense(<Dashboard />)}</ProtectedRoute>,
+      },
+      {
+        path: "profile",
+        element: <ProtectedRoute>{WithSuspense(<ProfilePage />)}</ProtectedRoute>,
       },
     ],
   },
@@ -214,6 +230,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
             {WithSuspense(<ChatRoomsAdminPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "chat-rooms",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<ChatRoomsAdminPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "dictionaries",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<DictionariesPage />)}
           </ProtectedRoute>
         ),
       },

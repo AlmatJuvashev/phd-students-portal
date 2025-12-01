@@ -15,8 +15,6 @@ export type MonitorStudent = {
   current_stage?: string;
   stage_done?: number;
   stage_total?: number;
-  due_next?: string;
-  overdue?: boolean;
 };
 
 export async function fetchMonitorStudents(params: Record<string, any> = {}) {

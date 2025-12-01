@@ -107,8 +107,6 @@ export function StudentDetailDrawer({
     cohort?: string;
     current_stage?: string;
     rp_required?: boolean;
-    overdue?: boolean;
-    due_next?: string;
     advisors?: { id: string; name: string }[];
   } | null;
 }) {
@@ -336,41 +334,7 @@ export function StudentDetailDrawer({
             </div>
           </div>
 
-          <Separator />
 
-          {/* Deadlines */}
-          <div>
-            <h3 className="text-sm font-medium mb-3">Deadlines & Reminders</h3>
-            <div className="space-y-2">
-              {student.due_next && (
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <div>
-                      <div className="text-sm font-medium">
-                        Next Due: {student.due_next}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Upcoming deadline
-                      </div>
-                    </div>
-                  </div>
-                  {student.overdue && (
-                    <Badge
-                      variant="outline"
-                      className="bg-red-50 text-red-700 border-red-200"
-                    >
-                      Overdue
-                    </Badge>
-                  )}
-                </div>
-              )}
-              <Button size="sm" variant="outline" className="w-full gap-2">
-                <Plus className="h-4 w-4" />
-                Add New Reminder
-              </Button>
-            </div>
-          </div>
         </div>
       </SheetContent>
     </Sheet>

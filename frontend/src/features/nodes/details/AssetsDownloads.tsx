@@ -14,7 +14,8 @@ import {
   buildTemplateData,
   type StudentTemplateData,
 } from "@/features/docgen/student-template";
-import { Loader2 } from "lucide-react";
+import { downloadAllTemplatesAsZIP } from "@/features/docgen/zip-templates";
+import { Loader2, FileArchive } from "lucide-react";
 
 export function AssetsDownloads({ node }: { node: NodeVM }) {
   const { i18n, t: T } = useTranslation("common");
@@ -28,6 +29,8 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
   }, [user, profileData, locale]);
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [isGeneratingZIP, setIsGeneratingZIP] = useState(false);
+  
   const { order, groups } = useMemo(() => {
     const grouped: Record<string, PublicAsset[]> = {};
     for (const asset of assets) {
@@ -88,6 +91,56 @@ export function AssetsDownloads({ node }: { node: NodeVM }) {
           </svg>
           {T("templates.heading")}
         </h3>
+        
+        {/* ZIP Download Button - show if 2+ templatable assets */}
+        {assets.filter(a => supportsStudentDocTemplate(a)).length > 1 && (
+          <Button
+            variant="default"
+            size="sm"
+            className="w-full gap-2"
+            disabled={isGeneratingZIP || !!downloadingId}
+            onClick={async () => {
+              if (!templateData) {
+                window.alert(
+                  T("templates.profile_required", {
+                    defaultValue: "Please fill your doctoral profile form to auto-fill templates.",
+                  })
+                );
+                return;
+              }
+              
+              setIsGeneratingZIP(true);
+              try {
+                const templatableAssets = assets.filter(a => supportsStudentDocTemplate(a));
+                await downloadAllTemplatesAsZIP(
+                  templatableAssets,
+                  templateData,
+                  locale,
+                  node.id
+                );
+              } catch (err) {
+                console.error("[ZIP download error]", err);
+                window.alert(
+                  err instanceof Error
+                    ? err.message
+                    : T("common.error", { defaultValue: "Error generating ZIP" })
+                );
+              } finally {
+                setIsGeneratingZIP(false);
+              }
+            }}
+          >
+            {isGeneratingZIP ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileArchive className="w-4 h-4" />
+            )}
+            <span className="text-xs sm:text-sm">
+              {T("templates.download_all_zip", { defaultValue: "Скачать все шаблоны (ZIP)" })}
+            </span>
+          </Button>
+        )}
+        
         <div className="space-y-2">
           {order.map((g, idx) => {
             const items = groups[g];

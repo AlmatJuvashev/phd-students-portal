@@ -125,7 +125,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Monitor endpoints (admin/advisor access) - extend admin group
 	admin.GET("/monitor/students", adminHandler.MonitorStudents)
-	admin.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
+	admin.GET("/students", adminHandler.StudentProgress)
 	admin.GET("/students/:id", adminHandler.GetStudentDetails)
 	admin.GET("/students/:id/journey", adminHandler.StudentJourney)
 	admin.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
@@ -134,12 +134,14 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	admin.POST("/attachments/:attachmentId/reviewed-document", adminHandler.UploadReviewedDocument)
 	admin.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
 	admin.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
-	admin.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
-	admin.PUT("/students/:id/nodes/:nodeId/deadline", adminHandler.PutStudentDeadline)
 	admin.POST("/reminders", adminHandler.PostReminders)
 
-	// Self-service password change
+	// Self-service password change and profile update
+	api.PATCH("/me", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.UpdateMe)
 	api.PATCH("/me/password", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.ChangeOwnPassword)
+	api.GET("/me/pending-email", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.GetPendingEmailVerification)
+	api.GET("/me/verify-email", users.VerifyEmailChange) // No auth required for better UX
+
 
 	// Journey state (per-user)
 	js := api.Group("/journey")
@@ -165,6 +167,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	chatAdmin.PATCH("/rooms/:roomId", chatHandler.UpdateRoom)
 	chatAdmin.GET("/rooms/:roomId/members", chatHandler.ListMembers)
 	chatAdmin.POST("/rooms/:roomId/members", chatHandler.AddMember)
+	chatAdmin.POST("/rooms/:roomId/members/batch", chatHandler.AddRoomMembersBatch)
+	chatAdmin.DELETE("/rooms/:roomId/members/batch", chatHandler.RemoveRoomMembersBatch)
 	chatAdmin.DELETE("/rooms/:roomId/members/:userId", chatHandler.RemoveMember)
 
 	chat.GET("/rooms", chatHandler.ListRooms)
@@ -172,6 +176,31 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
 
 	// TODO: checklist, documents, comments handlers (skeletons for now)
+
+	// Dictionary endpoints (admin only)
+	dictHandler := NewDictionaryHandler(db)
+	dictGroup := admin.Group("/dictionaries")
+	{
+		dictGroup.GET("/programs", dictHandler.ListPrograms)
+		dictGroup.POST("/programs", dictHandler.CreateProgram)
+		dictGroup.PUT("/programs/:id", dictHandler.UpdateProgram)
+		dictGroup.DELETE("/programs/:id", dictHandler.DeleteProgram)
+
+		dictGroup.GET("/specialties", dictHandler.ListSpecialties)
+		dictGroup.POST("/specialties", dictHandler.CreateSpecialty)
+		dictGroup.PUT("/specialties/:id", dictHandler.UpdateSpecialty)
+		dictGroup.DELETE("/specialties/:id", dictHandler.DeleteSpecialty)
+
+		dictGroup.GET("/cohorts", dictHandler.ListCohorts)
+		dictGroup.POST("/cohorts", dictHandler.CreateCohort)
+		dictGroup.PUT("/cohorts/:id", dictHandler.UpdateCohort)
+		dictGroup.DELETE("/cohorts/:id", dictHandler.DeleteCohort)
+
+		dictGroup.GET("/departments", dictHandler.ListDepartments)
+		dictGroup.POST("/departments", dictHandler.CreateDepartment)
+		dictGroup.PUT("/departments/:id", dictHandler.UpdateDepartment)
+		dictGroup.DELETE("/departments/:id", dictHandler.DeleteDepartment)
+	}
 
 	return r
 }
