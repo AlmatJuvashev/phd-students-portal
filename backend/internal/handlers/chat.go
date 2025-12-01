@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -50,6 +52,7 @@ func (h *ChatHandler) CreateRoom(c *gin.Context) {
 	}
 	room, err := h.store.CreateRoom(c.Request.Context(), req.Name, req.Type, uid, req.Meta)
 	if err != nil {
+		log.Printf("Failed to create room: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create room"})
 		return
 	}
@@ -134,6 +137,7 @@ func (h *ChatHandler) ListMembers(c *gin.Context) {
 	roomID := c.Param("roomId")
 	members, err := h.store.ListMembers(c.Request.Context(), roomID)
 	if err != nil {
+		log.Printf("Failed to list members: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list members"})
 		return
 	}
@@ -160,6 +164,7 @@ func (h *ChatHandler) AddMember(c *gin.Context) {
 		return
 	}
 	if err := h.store.AddMember(c.Request.Context(), roomID, req.UserID, role); err != nil {
+		log.Printf("Failed to add member: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add member"})
 		return
 	}
@@ -179,6 +184,135 @@ func (h *ChatHandler) RemoveMember(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+type batchMemberReq struct {
+	UserIDs    []string `json:"user_ids"`
+	Program    string   `json:"program"`
+	Department string   `json:"department"`
+	Cohort     string   `json:"cohort"`
+	Specialty  string   `json:"specialty"`
+	Role       string   `json:"role"`
+}
+
+// AddRoomMembersBatch (admin): add multiple members based on IDs or filters
+func (h *ChatHandler) AddRoomMembersBatch(c *gin.Context) {
+	roomID := c.Param("roomId")
+	var req batchMemberReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := c.Request.Context()
+	userIDs := req.UserIDs
+
+	// If filters are provided, fetch matching users
+	if len(userIDs) == 0 && (req.Program != "" || req.Department != "" || req.Cohort != "" || req.Specialty != "" || req.Role != "") {
+		query := `SELECT id FROM users WHERE is_active=true`
+		args := []any{}
+		if req.Program != "" {
+			query += fmt.Sprintf(" AND program=$%d", len(args)+1)
+			args = append(args, req.Program)
+		}
+		if req.Department != "" {
+			query += fmt.Sprintf(" AND department=$%d", len(args)+1)
+			args = append(args, req.Department)
+		}
+		if req.Cohort != "" {
+			query += fmt.Sprintf(" AND cohort=$%d", len(args)+1)
+			args = append(args, req.Cohort)
+		}
+		if req.Specialty != "" {
+			query += fmt.Sprintf(" AND specialty=$%d", len(args)+1)
+			args = append(args, req.Specialty)
+		}
+		if req.Role != "" {
+			query += fmt.Sprintf(" AND role=$%d", len(args)+1)
+			args = append(args, req.Role)
+		}
+
+		if err := h.db.SelectContext(ctx, &userIDs, query, args...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch users for batch add"})
+			return
+		}
+	}
+
+	if len(userIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "no users found to add"})
+		return
+	}
+
+	// Add users to room
+	count := 0
+	for _, uid := range userIDs {
+		if err := h.store.AddMember(ctx, roomID, uid, models.ChatRoomMemberRoleMember); err == nil {
+			count++
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"added_count": count})
+}
+
+// RemoveRoomMembersBatch (admin): remove multiple members based on IDs or filters
+func (h *ChatHandler) RemoveRoomMembersBatch(c *gin.Context) {
+	roomID := c.Param("roomId")
+	var req batchMemberReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := c.Request.Context()
+	userIDs := req.UserIDs
+
+	// If filters are provided, fetch matching users
+	if len(userIDs) == 0 && (req.Program != "" || req.Department != "" || req.Cohort != "" || req.Specialty != "" || req.Role != "") {
+		// Only select users who are actually members of the room AND match the filter
+		// But simpler to just find users matching filter and try to remove them
+		query := `SELECT id FROM users WHERE is_active=true`
+		args := []any{}
+		if req.Program != "" {
+			query += fmt.Sprintf(" AND program=$%d", len(args)+1)
+			args = append(args, req.Program)
+		}
+		if req.Department != "" {
+			query += fmt.Sprintf(" AND department=$%d", len(args)+1)
+			args = append(args, req.Department)
+		}
+		if req.Cohort != "" {
+			query += fmt.Sprintf(" AND cohort=$%d", len(args)+1)
+			args = append(args, req.Cohort)
+		}
+		if req.Specialty != "" {
+			query += fmt.Sprintf(" AND specialty=$%d", len(args)+1)
+			args = append(args, req.Specialty)
+		}
+		if req.Role != "" {
+			query += fmt.Sprintf(" AND role=$%d", len(args)+1)
+			args = append(args, req.Role)
+		}
+
+		if err := h.db.SelectContext(ctx, &userIDs, query, args...); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch users for batch remove"})
+			return
+		}
+	}
+
+	if len(userIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "no users found to remove"})
+		return
+	}
+
+	// Remove users from room
+	count := 0
+	for _, uid := range userIDs {
+		if err := h.store.RemoveMember(ctx, roomID, uid); err == nil {
+			count++
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"removed_count": count})
 }
 
 // ListMessages returns paginated messages for a room if the caller is a member.

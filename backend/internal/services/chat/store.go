@@ -20,13 +20,16 @@ func NewStore(db *sqlx.DB) *Store {
 
 // CreateRoom inserts a new room.
 func (s *Store) CreateRoom(ctx context.Context, name string, roomType models.ChatRoomType, createdBy string, meta json.RawMessage) (*models.ChatRoom, error) {
+	if len(meta) == 0 {
+		meta = json.RawMessage("{}")
+	}
 	var room models.ChatRoom
 	err := s.db.QueryRowxContext(ctx, `
 		WITH creator AS (
 			SELECT id, role FROM users WHERE id = $3
 		), new_room AS (
 			INSERT INTO chat_rooms (name, type, created_by, created_by_role, meta)
-			SELECT $1, $2, c.id, c.role, COALESCE(NULLIF($4, ''::jsonb), '{}'::jsonb) FROM creator c
+			SELECT $1, $2, c.id, c.role, $4 FROM creator c
 			RETURNING id, name, type, created_by, created_by_role, is_archived, meta, created_at
 		), add_creator AS (
 			INSERT INTO chat_room_members (room_id, user_id, role_in_room)

@@ -31,8 +31,7 @@ function getStageHistory(
     if (idx < currentStageIndex) {
       status = "completed";
     } else if (idx === currentStageIndex) {
-      // Current stage - check if at risk
-      status = student.overdue ? "at-risk" : "in-progress";
+      status = "in-progress";
     }
 
     return { stage, status };
@@ -57,7 +56,6 @@ export function StudentsTableView({
 
   const getRowClass = (student: MonitorStudent, index: number) => {
     const baseClass = index % 2 === 0 ? "bg-white" : "bg-muted/5";
-    if (student.overdue) return `${baseClass} hover:bg-red-50/50`;
     return `${baseClass} hover:bg-muted/30`;
   };
 
@@ -105,9 +103,6 @@ export function StudentsTableView({
                   {t("admin.monitor.table.columns.cohort", {
                     defaultValue: "Cohort",
                   })}
-                </th>
-                <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  {t("admin.monitor.table.columns.due", { defaultValue: "Due" })}
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("admin.monitor.table.columns.last_activity", {
@@ -217,23 +212,6 @@ export function StudentsTableView({
                       {student.cohort || "—"}
                     </div>
                   </td>
-                  <td className="py-2.5 px-4 text-center">
-                    <div
-                      className={`text-sm font-medium ${
-                        student.overdue ? "text-red-600" : "text-foreground"
-                      }`}
-                    >
-                      {student.due_next || "—"}
-                    </div>
-                    {student.overdue && (
-                      <div className="text-xs text-red-600 flex items-center justify-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        {t("admin.monitor.table.overdue_badge", {
-                          defaultValue: "Overdue",
-                        })}
-                      </div>
-                    )}
-                  </td>
                   <td className="py-2.5 px-4">
                     {student.last_update ? (
                       <div className="text-sm text-foreground">
@@ -269,7 +247,7 @@ export function StudentsTableView({
               {rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={7}
                     className="p-8 text-center text-muted-foreground"
                   >
                     {t("admin.monitor.empty", {

@@ -1,10 +1,12 @@
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api/client";
+import { listPrograms, listSpecialties, listCohorts, listDepartments, Program, Specialty, Cohort, Department } from "@/features/admin/dictionaries/api";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,7 +48,8 @@ const Schema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   program: z.string().min(1, "Required"),
-  department: z.string().min(1, "Required"),
+  specialty: z.string().min(1, "Required"), // Renamed from department
+  department: z.string().min(1, "Required"), // New department field
   cohort: z.string().min(1, "Required"),
   advisor_ids: z.array(z.string()).optional(),
 });
@@ -116,6 +119,18 @@ export function CreateStudents() {
   const [filterDepartment, setFilterDepartment] = React.useState<string>("");
   const [filterCohort, setFilterCohort] = React.useState<string>("");
 
+  // Fetch Programs and Specialties
+  const { data: programsList = [] } = useQuery<Program[]>({
+    queryKey: ["programs", "active"],
+    queryFn: () => listPrograms(true),
+  });
+
+  const { data: specialtiesList = [] } = useQuery<Specialty[]>({
+    queryKey: ["specialties", "active"],
+    queryFn: () => listSpecialties(true),
+  });
+
+
   const { data: advisorResponse } = useQuery<PaginatedResponse>({
     queryKey: ["admin", "advisors", advisorSearch],
     queryFn: () =>
@@ -126,6 +141,16 @@ export function CreateStudents() {
     () => advisorResponse?.data || [],
     [advisorResponse]
   );
+
+  const { data: cohortsList = [] } = useQuery({
+    queryKey: ["cohorts", "active"],
+    queryFn: () => listCohorts(true),
+  });
+
+  const { data: departmentsList = [] } = useQuery({
+    queryKey: ["departments", "active"],
+    queryFn: () => listDepartments(true),
+  });
 
   const {
     data: usersResponse,
@@ -181,6 +206,8 @@ export function CreateStudents() {
     handleSubmit,
     setValue,
     reset,
+    control,
+    watch,
     formState: { errors },
   } = useForm<Form>({
     resolver: zodResolver(Schema),
@@ -189,6 +216,7 @@ export function CreateStudents() {
       advisor_ids: [],
       phone: "",
       program: "",
+      specialty: "",
       department: "",
       cohort: "",
     },
@@ -1051,11 +1079,34 @@ export function CreateStudents() {
                 </div>
 
                 <div>
-                  <Input
-                    placeholder={t("admin.forms.program", {
-                      defaultValue: "Program",
-                    })}
-                    {...register("program")}
+                  <Controller
+                    control={control}
+                    name="program"
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          // Reset department when program changes
+                          setValue("department", "");
+                        }}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t("admin.forms.program", {
+                              defaultValue: "Program",
+                            })}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {programsList.map((p: Program) => (
+                            <SelectItem key={p.id} value={p.name}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
                   {errors.program && (
                     <p className="mt-1 text-xs text-red-600">
@@ -1064,11 +1115,69 @@ export function CreateStudents() {
                   )}
                 </div>
                 <div>
-                  <Input
-                    placeholder={t("admin.forms.department", {
-                      defaultValue: "Department",
-                    })}
-                    {...register("department")}
+                  <Controller
+                    control={control}
+                    name="specialty"
+                    render={({ field }) => {
+                      // Filter specialties based on selected program
+                      const selectedProgramName = watch("program");
+                      const selectedProgram = programsList.find(
+                        (p) => p.name === selectedProgramName
+                      );
+                      const filteredSpecialties = specialtiesList.filter(
+                        (s: Specialty) =>
+                          !s.program_ids || s.program_ids.length === 0 ||
+                          (selectedProgram && s.program_ids.includes(selectedProgram.id))
+                      );
+
+                      return (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedProgramName}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Specialty" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredSpecialties.map((s: Specialty) => (
+                              <SelectItem key={s.id} value={s.name}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      );
+                    }}
+                  />
+                  {errors.specialty && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.specialty.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Controller
+                    control={control}
+                    name="department"
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departmentsList.map((d: Department) => (
+                            <SelectItem key={d.id} value={d.name}>
+                              {d.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
                   {errors.department && (
                     <p className="mt-1 text-xs text-red-600">
@@ -1078,11 +1187,30 @@ export function CreateStudents() {
                 </div>
 
                 <div>
-                  <Input
-                    placeholder={t("admin.forms.cohort", {
-                      defaultValue: "Cohort",
-                    })}
-                    {...register("cohort")}
+                  <Controller
+                    control={control}
+                    name="cohort"
+                    render={({ field }) => {
+                      const selectedDepartment = watch("department");
+                      return (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedDepartment}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Cohort" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cohortsList.map((c: Cohort) => (
+                              <SelectItem key={c.id} value={c.name}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      );
+                    }}
                   />
                   {errors.cohort && (
                     <p className="mt-1 text-xs text-red-600">
@@ -1268,6 +1396,8 @@ export function CreateStudents() {
                   student={editModal.student}
                   onSubmit={(payload) => updateStudentMutation.mutate(payload)}
                   busy={updateStudentMutation.isPending}
+                  programs={programsList}
+                  specialties={specialtiesList}
                 />
               </CardContent>
             </Card>
@@ -1290,6 +1420,8 @@ function EditStudentForm({
   student,
   onSubmit,
   busy,
+  programs,
+  specialties,
 }: {
   student: any;
   onSubmit: (p: {
@@ -1302,6 +1434,8 @@ function EditStudentForm({
     cohort?: string;
   }) => void;
   busy?: boolean;
+  programs: Program[];
+  specialties: Specialty[];
 }) {
   const { t } = useTranslation("common");
   const { first, last } = splitName(student.name);
@@ -1333,35 +1467,81 @@ function EditStudentForm({
           defaultValue: "First name",
         })}
         value={firstName}
-        onChange={(e) => setFirst(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFirst(e.target.value)}
       />
       <Input
         placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })}
         value={lastName}
-        onChange={(e) => setLast(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLast(e.target.value)}
       />
       <Input
         type="email"
         placeholder={t("admin.forms.email_optional", { defaultValue: "Email" })}
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
       />
-      <Input
-        placeholder={t("admin.forms.program", { defaultValue: "Program" })}
-        value={program}
-        onChange={(e) => setProgram(e.target.value)}
-      />
-      <Input
-        placeholder={t("admin.forms.department", {
-          defaultValue: "Department",
-        })}
-        value={department}
-        onChange={(e) => setDepartment(e.target.value)}
-      />
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t("admin.forms.program", { defaultValue: "Program" })}
+        </label>
+        <Select
+          value={program}
+          onValueChange={(val) => {
+            setProgram(val);
+            setDepartment(""); // Reset department
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue
+              placeholder={t("admin.forms.program", {
+                defaultValue: "Program",
+              })}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {programs.map((p: Program) => (
+              <SelectItem key={p.id} value={p.name}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t("admin.forms.department", { defaultValue: "Specialty" })}
+        </label>
+        <Select
+          value={department}
+          onValueChange={setDepartment}
+          disabled={!program}
+        >
+          <SelectTrigger>
+            <SelectValue
+              placeholder={t("admin.forms.department", {
+                defaultValue: "Specialty",
+              })}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {specialties
+              .filter((s: Specialty) => {
+                const prog = programs.find((p) => p.name === program);
+                return !s.program_ids || s.program_ids.length === 0 || (prog && s.program_ids.includes(prog.id));
+              })
+              .map((s: Specialty) => (
+                <SelectItem key={s.id} value={s.name}>
+                  {s.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
       <Input
         placeholder={t("admin.forms.cohort", { defaultValue: "Cohort" })}
         value={cohort}
-        onChange={(e) => setCohort(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCohort(e.target.value)}
       />
       <div className="md:col-span-2 flex gap-2 pt-2">
         <Button type="submit" disabled={busy} className="w-full">

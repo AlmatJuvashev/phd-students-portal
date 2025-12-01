@@ -691,19 +691,11 @@ export function StudentDetailPage() {
                   </div>
                   <Badge
                     variant="outline"
-                    className={`text-xs ${
-                      student.overdue
-                        ? "bg-red-50 text-red-700 border-red-200"
-                        : "bg-muted/20"
-                    }`}
+                    className="bg-blue-100 text-blue-800 font-medium"
                   >
-                    {student.overdue
-                      ? t("admin.monitor.detail.status_overdue", {
-                          defaultValue: "OVERDUE",
-                        })
-                      : t("admin.monitor.detail.status_normal", {
-                          defaultValue: "NORMAL",
-                        })}
+                    {t("admin.monitor.detail.status_in_progress", {
+                      defaultValue: "In Progress",
+                    })}
                   </Badge>
                 </div>
               </div>
@@ -1405,97 +1397,6 @@ export function StudentDetailPage() {
                   })}
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Deadlines & Reminders */}
-          <Card className="border shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-6">
-                {t("admin.monitor.detail.deadlines.title", {
-                  defaultValue: "Deadlines & Reminders",
-                })}
-              </h3>
-              <div className="space-y-3">
-                {student.due_next && (
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      <div>
-                        <div className="text-sm font-medium text-foreground">
-                          {t("admin.monitor.detail.deadlines.next_due", {
-                            defaultValue: "Next due:",
-                          })}{" "}
-                          {new Date(student.due_next).toLocaleDateString(
-                            language
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {t("admin.monitor.detail.deadlines.stage_progress", {
-                            defaultValue:
-                              "{{done}}/{{total}} nodes completed in current stage",
-                            done: student.stage_done ?? 0,
-                            total: student.stage_total ?? 0,
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                    {student.overdue && (
-                      <Badge
-                        variant="outline"
-                        className="bg-red-50 text-red-700 border-red-200"
-                      >
-                        {t("admin.monitor.detail.deadlines.overdue_badge", {
-                          defaultValue: "Overdue",
-                        })}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                {deadlinesList && deadlinesList.length > 0 && (
-                  <div className="space-y-2 mt-4">
-                    <div className="text-sm font-medium text-foreground mb-2">
-                      {t("admin.monitor.detail.deadlines.upcoming", {
-                        defaultValue: "Upcoming Deadlines",
-                      })}
-                    </div>
-                    {deadlinesList.slice(0, 5).map((deadline) => (
-                      <div
-                        key={deadline.node_id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-muted/10"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <div className="text-sm font-medium text-foreground">
-                              {allNodeTitles[deadline.node_id] ||
-                                deadline.node_id}
-                            </div>
-                            <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
-                              {deadline.node_id}
-                            </code>
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(deadline.due_at).toLocaleString(language)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full gap-2 mt-4"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t("admin.monitor.detail.deadlines.add", {
-                    defaultValue: "Add New Reminder",
-                  })}
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>

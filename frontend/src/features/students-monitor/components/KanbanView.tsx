@@ -29,14 +29,13 @@ export function KanbanView({ rows }: { rows: MonitorStudent[] }) {
   const showW3 = rows.some((r) => r.rp_required);
   const visibleStages = showW3 ? STAGES : STAGES.filter((s) => s !== "W3");
 
-  const getStatusVariant = (
-    student: MonitorStudent
-  ): "default" | "secondary" | "destructive" => {
-    if (student.overdue) return "destructive";
-    const pct = student.overall_progress_pct || 0;
-    if (pct < 30) return "secondary";
-    return "default";
-  };
+  const getBadgeVariant = (
+  student: MonitorStudent
+): "default" | "secondary" | "outline" | "destructive" => {
+  if (student.overall_progress_pct >= 80) return "default";
+  if (student.overall_progress_pct >= 50) return "secondary";
+  return "outline";
+};
 
   return (
     <div className="overflow-x-auto pb-4">
@@ -117,32 +116,6 @@ export function KanbanView({ rows }: { rows: MonitorStudent[] }) {
                               className="h-1.5"
                             />
                           </div>
-
-                          {student.due_next && (
-                            <div
-                              className={`flex items-center gap-1.5 mt-3 text-xs ${
-                                student.overdue
-                                  ? "text-destructive"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {student.overdue ? (
-                                <AlertCircle className="h-3.5 w-3.5" />
-                              ) : (
-                                <Clock className="h-3.5 w-3.5" />
-                              )}
-                              <span>
-                                {student.overdue
-                                  ? t("admin.monitor.kanban.overdue_label", {
-                                      defaultValue: "Overdue:",
-                                    })
-                                  : t("admin.monitor.kanban.due_label", {
-                                      defaultValue: "Due:",
-                                    })}{" "}
-                                {student.due_next}
-                              </span>
-                            </div>
-                          )}
 
                           {student.rp_required && (
                             <Badge variant="outline" className="mt-2 text-xs">

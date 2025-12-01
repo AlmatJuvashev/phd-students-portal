@@ -287,7 +287,7 @@ export async function generateStudentTemplateDoc({
     console.log("[template] created new zip with normalized XML");
     
     // Use docxtemplater to fill existing placeholders (handles split runs)
-    try {
+   try {
       const doc = new Docxtemplater(normalizedZip, {
         paragraphLoop: true,
         linebreaks: true,
@@ -330,6 +330,84 @@ export async function generateStudentTemplateDoc({
       "Zayavlenie_v_OMiD"
     ) + ".docx";
   saveAs(blob, safeTitle);
+}
+
+/**
+ * Generate template blob without auto-downloading
+ * Used for ZIP packaging multiple templates
+ */
+export async function generateStudentTemplateDocBlob({
+  asset,
+  data,
+  locale,
+}: {
+  asset: PublicAsset;
+  data: StudentTemplateData;
+  locale: Locale;
+}): Promise<Blob> {
+  if (!isTemplatableDoc(asset)) {
+    throw new Error("Asset is not a templatable DOCX");
+  }
+  const url = getAssetUrl(asset.id);
+  if (!url || url === "#") {
+    throw new Error("Template asset not found");
+  }
+  
+  const cacheBustUrl = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
+  const arrayBuffer = await fetch(cacheBustUrl, { cache: 'no-store' }).then((res) => {
+    if (!res.ok) throw new Error(`Failed to load template (${res.status})`);
+    return res.arrayBuffer();
+  });
+  
+  const zip = new PizZip(arrayBuffer);
+  const docFile = zip.file("word/document.xml");
+  if (!docFile) {
+    throw new Error("Invalid template structure");
+  }
+  
+  const normalizeXml = (xml: string) => {
+    let out = xml;
+    out = out.replace(/(<w:t[^>]*>)\s*\{\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*\{\s*(<\/w:t>)/g, "$1{{$3");
+    out = out.replace(/(<w:t[^>]*>)\s*\}\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*\}\s*(<\/w:t>)/g, "$1}}$3");
+    out = out.replace(/\{\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*\{\s*(<\/w:t>(?:<[^>]+>|\s+)*<w:t[^>]*>)\s*student_full_name/g, "{{$1$2student_full_name");
+    out = out.replace(/({{(?:<[^>]+>)*){{/g, "$1");
+    out = out.replace(/}}((?:<[^>]+>)*)}}/g, "$1}}");
+    return out;
+  };
+  
+  const rawXml = docFile.asText();
+  const currentXml = normalizeXml(rawXml);
+  const hasTokens = currentXml.includes("{{") || currentXml.includes("[%");
+  
+  let blob: Blob;
+  if (hasTokens) {
+    zip.file("word/document.xml", currentXml);
+    const normalizedZipBuffer = zip.generate({ type: "uint8array" });
+    const normalizedZip = new PizZip(normalizedZipBuffer);
+    
+    try {
+      const doc = new Docxtemplater(normalizedZip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: "[%", end: "%]" },
+      });
+      doc.setData(data);
+      doc.render();
+      blob = doc.getZip().generate({ type: "blob" });
+    } catch (err) {
+      const fallbackZip = new PizZip(arrayBuffer);
+      let fallbackXml = replaceTokens(currentXml, data);
+      fallbackZip.file("word/document.xml", fallbackXml);
+      blob = fallbackZip.generate({ type: "blob" });
+    }
+  } else {
+    const withSnippet = injectSnippet(currentXml, locale);
+    const filledXml = replaceTokens(withSnippet, data);
+    zip.file("word/document.xml", filledXml);
+    blob = zip.generate({ type: "blob" });
+  }
+  
+  return blob;
 }
 
 export function supportsStudentDocTemplate(asset: PublicAsset) {

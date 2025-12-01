@@ -1,0 +1,188 @@
+        {
+          "id": "S0_antiplagiat",
+          "module": "I",
+          "title": {
+            "ru": "Справка на антиплагиат",
+            "kz": "Антиплагиат анықтамасы",
+            "en": "Anti-plagiarism certificate"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_text_ready"],
+          "next": ["S1_publications_list"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "antiplagiat_cert",
+                "label": {
+                  "ru": "Справка об уникальности диссертации (с подписью и печатью)",
+                  "kz": "Диссертацияның бірегейлігі туралы анықтама (қолтаңбамен және мөрмен)",
+                  "en": "Dissertation uniqueness certificate (signed and stamped)"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ]
+          },
+          "screen": {
+            "question": {
+              "ru": "Вы загрузили справку об уникальности диссертации?",
+              "kz": "Диссертацияның бірегейлігі туралы анықтаманы жүктедіңіз бе?",
+              "en": "Have you uploaded the dissertation uniqueness certificate?"
+            },
+            "buttons": [
+              {
+                "id": "confirm_upload",
+                "label": {
+                  "ru": "Подтвердить загрузку",
+                  "kz": "Жүктеуді растау",
+                  "en": "Confirm upload"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Вы уверены, что загрузили корректную справку?",
+                  "kz": "Дұрыс анықтаманы жүктегеніңізге сенімдісіз бе?",
+                  "en": "Are you sure you uploaded the correct certificate?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Справка загружена.",
+                "kz": "Анықтама жүктелді.",
+                "en": "Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["confirm_upload"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_upload"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Справка загружена.",
+                "kz": "✅ Анықтама жүктелді.",
+                "en": "✅ Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-11-29",
+            "requires_upload": true,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "S1_publications_list",
+          "module": "I",
+          "title": {
+            "ru": "Список публикаций",
+            "kz": "Жарияланымдар тізімі",
+            "en": "Publications List"
+          },
+          "type": "form",
+          "actionHints": ["form"],
+          "description": {
+            "ru": "Заполните данные о публикациях и загрузите подписанный список.",
+            "kz": "Жарияланымдар туралы деректерді толтырыңыз және қол қойылған тізімді жүктеңіз.",
+            "en": "Fill in publication data and upload the signed list."
+          },
+          "who_can_complete": ["student"],
+          "prerequisites": ["S0_antiplagiat"],
+          "next": ["E1_apply_omid"],
+          "requirements": {
+            "templates": ["tpl_app7_ru", "tpl_app7_kz_docx", "tpl_app7_en_docx"],
+            "uploads": [
+              {
+                "key": "signed_pub_list",
+                "label": {
+                  "ru": "Список публикаций (с подписью и печатью)",
+                  "kz": "Жарияланымдар тізімі (қолтаңбамен және мөрмен)",
+                  "en": "Publications list (signed and stamped)"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
+            "fields": [
+              {
+                "key": "chk_thesis_unbound",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Несброшюрованная диссертация (1 экз.)",
+                  "kz": "Түптелмеген диссертация (1 дана)",
+                  "en": "Unbound thesis (1 copy)"
+                }
+              },
+              {
+                "key": "chk_advisor_reviews",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Отзывы консультантов (+ нотариальный перевод при иностранном языке)",
+                  "kz": "Кеңесшілер пікірлері (+ шетел тіліндегі болса нотариалды аударма)",
+                  "en": "Advisor reviews (+ notarized translation if foreign language)"
+                }
+              },
+              {
+                "key": "chk_pubs_app7",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Список и копии публикаций (по Прил. 7)",
+                  "kz": "Жарияланымдар тізімі мен көшірмелері (Қос. 7 бойынша)",
+                  "en": "List and copies of publications (per App. 7)"
+                }
+              },
+              {
+                "key": "chk_sc_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Выписка Ученого совета о теме и консультантах",
+                  "kz": "Ғылыми кеңес шешімінен үзінді (тақырып/кеңесшілер)",
+                  "en": "Academic Council extract on topic and advisors"
+                }
+              },
+              {
+                "key": "chk_primary_docs",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "Первичные документы (по запросу)",
+                  "kz": "Бастапқы құжаттар (сұрау бойынша)",
+                  "en": "Primary documents (on request)"
+                }
+              },
+              {
+                "key": "chk_lcb_defense",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заключение ЛКБ «на защиту» (запрос на lcb@kaznmu.kz с приложением первоначального заключения)",
+                  "kz": "ЛБК-ның «қорғауға» қорытындысы (алғашқы қорытындыны қоса lcb@kaznmu.kz поштасына сұрау)",
+                  "en": "LBC conclusion “for defense” (email request to lcb@kaznmu.kz with initial conclusion attached)"
+                }
+              }
+            ]
+          },
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Пакет сдан",
+                "kz": "Топтама тапсырылды",
+                "en": "Package submitted"
+              },
+              "next": ["E1_apply_omid"]
+            }
+          ]
+        },

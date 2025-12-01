@@ -30,7 +30,6 @@ export function StudentsMonitorPage() {
         department: filters.department,
         cohort: filters.cohort,
         rp_required: filters.rp_required ? 1 : undefined,
-        overdue: filters.overdue ? 1 : undefined,
         due_from: filters.due_from,
         due_to: filters.due_to,
       }),
@@ -61,8 +60,6 @@ export function StudentsMonitorPage() {
         "stage_done",
         "stage_total",
         "overall_progress_pct",
-        "due_next",
-        "overdue",
         "last_update",
       ];
       const lines = [head.join(",")].concat(
@@ -79,8 +76,6 @@ export function StudentsMonitorPage() {
             String(r.stage_done || ""),
             String(r.stage_total || ""),
             String(Math.round(r.overall_progress_pct || 0)),
-            r.due_next || "",
-            String(!!r.overdue),
             r.last_update || "",
           ]
             .map((v) => `"${String(v).replace(/"/g, '""')}"`)
