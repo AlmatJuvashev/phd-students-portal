@@ -4,8 +4,10 @@ import { BackButton } from "@/components/ui/back-button";
 import { useTranslation } from "react-i18next";
 import { Copy, Mail, Phone, Check, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import contacts from "@/playbooks/supervisors_contacts.json";
+import fallbackContacts from "@/playbooks/supervisors_contacts.json";
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchContacts, Contact } from "@/api/contacts";
 
 type Localized = { ru?: string; kz?: string; en?: string } | string;
 function textOf(x: Localized, lang: "ru" | "kz" | "en"): string {
@@ -17,7 +19,16 @@ function textOf(x: Localized, lang: "ru" | "kz" | "en"): string {
 export function ContactsPage() {
   const { t: T, i18n } = useTranslation("common");
   const lang = (i18n.language as "ru" | "kz" | "en") || "ru";
-  const list = Array.isArray(contacts) ? (contacts as any[]) : [];
+  const { data, isLoading, error } = useQuery<Contact[]>({
+    queryKey: ["contacts"],
+    queryFn: fetchContacts,
+  });
+  const list = (data && Array.isArray(data) ? data : []) as any[];
+  const fallbackList = Array.isArray(fallbackContacts)
+    ? (fallbackContacts as any[])
+    : [];
+  const resolvedList =
+    list.length > 0 ? list : error ? fallbackList : ([] as any[]);
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
   const clearTimer = React.useRef<number | null>(null);
 
@@ -50,7 +61,13 @@ export function ContactsPage() {
         </div>
         <BackButton to="/" showLabelOnMobile className="w-full sm:w-auto" />
       </div>
-      {list.length === 0 ? (
+      {isLoading ? (
+        <Card className="p-8">
+          <div className="text-center text-muted-foreground">
+            {T("common.loading", { defaultValue: "Loading..." })}
+          </div>
+        </Card>
+      ) : resolvedList.length === 0 ? (
         <Card className="p-8">
           <div className="text-center space-y-2">
             <Users className="w-12 h-12 text-muted-foreground mx-auto" />
@@ -58,12 +75,18 @@ export function ContactsPage() {
               {T("home.no_contacts", {
                 defaultValue: "No contacts available.",
               })}
+              {error && (
+                <div className="mt-2 text-xs text-red-500">
+                  {T("common.error", { defaultValue: "Error" })}:{" "}
+                  {String((error as any)?.message || "Unable to load contacts")}
+                </div>
+              )}
             </div>
           </div>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {list.map((c, idx) => (
+          {resolvedList.map((c, idx) => (
             <Card
               key={idx}
               className="bg-gradient-to-br from-card to-card/50 border-2 hover:border-primary/30 transition-all duration-300 hover:shadow-lg"

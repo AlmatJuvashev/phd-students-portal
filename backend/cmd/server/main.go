@@ -67,6 +67,9 @@ func main() {
 	} else if gen != "" {
 		log.Printf("Superadmin '%s' created with password: %s", cfg.AdminEmail, gen)
 	}
+	if err := seed.EnsureContacts(conn); err != nil {
+		log.Printf("contact seed failed: %v", err)
+	}
 
 	r := gin.Default()
 	// Do not trust any proxy headers by default; see Gin docs.
@@ -79,7 +82,7 @@ func main() {
 	if err != nil {
 		log.Printf("S3 initialization error: %v", err)
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

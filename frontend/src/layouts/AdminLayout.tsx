@@ -19,11 +19,14 @@ import {
   Bell,
   MessageCircle,
   BookOpen,
+  BarChart3,
+  PhoneCall,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 function SidebarNav({ collapsed }: { collapsed?: boolean }) {
   const { t } = useTranslation("common");
@@ -59,6 +62,30 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
       >
         <LayoutDashboard className="h-4 w-4" />
         {!collapsed && <span>{t("admin.sidebar.dashboard", "Dashboard")}</span>}
+      </NavLink>
+      <NavLink
+        to="/admin/calendar"
+        className={cn(
+          "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+          isActive("/admin/calendar") && "bg-muted font-medium",
+          collapsed && "justify-center px-2"
+        )}
+        title={t("admin.sidebar.calendar", "Calendar")}
+      >
+        <LayoutDashboard className="h-4 w-4" />
+        {!collapsed && <span>{t("admin.sidebar.calendar", "Calendar")}</span>}
+      </NavLink>
+      <NavLink
+        to="/admin/analytics"
+        className={cn(
+          "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+          isActive("/admin/analytics") && "bg-muted font-medium",
+          collapsed && "justify-center px-2"
+        )}
+        title={t("admin.sidebar.analytics", "Analytics")}
+      >
+        <BarChart3 className="h-4 w-4" />
+        {!collapsed && <span>{t("admin.sidebar.analytics", "Analytics")}</span>}
       </NavLink>
       <NavLink
         to="/admin/students-monitor"
@@ -167,6 +194,20 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               <span>
                 {t("admin.sidebar.dictionaries", "Dictionaries")}
               </span>
+            )}
+          </NavLink>
+          <NavLink
+            to="/admin/contacts"
+            className={cn(
+              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/contacts") && "bg-muted font-medium",
+              collapsed && "justify-center px-2"
+            )}
+            title={t("admin.sidebar.contacts", "Contacts")}
+          >
+            <PhoneCall className="h-4 w-4" />
+            {!collapsed && (
+              <span>{t("admin.sidebar.contacts", "Contacts")}</span>
             )}
           </NavLink>
         </>
@@ -299,7 +340,7 @@ export function AdminLayout() {
                   <Button
                     key={lang.code}
                     variant={active ? "default" : "ghost"}
-                    size="xs"
+                    size="sm"
                     className={cn(
                       "px-2 text-xs",
                       !active && "text-muted-foreground hover:text-foreground"
@@ -311,6 +352,7 @@ export function AdminLayout() {
                 );
               })}
             </div>
+            <NotificationCenter />
             <span className="text-xs px-2 py-1 rounded bg-muted">
               {user?.role}
             </span>
