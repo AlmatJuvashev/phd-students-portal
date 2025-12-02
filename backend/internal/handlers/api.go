@@ -68,6 +68,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		c.JSON(401, gin.H{"error": "unauthenticated"})
 	})
 
+	// Services
+	emailService := services.NewEmailService()
+
 	// Auth routes (login only - password reset done by admin)
 	auth := NewAuthHandler(db, cfg)
 	api.POST("/auth/login", auth.Login)
@@ -76,9 +79,11 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	journey := NewJourneyHandler(db, cfg, playbookManager)
 	nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
 	adminHandler := NewAdminHandler(db, cfg, playbookManager)
-	chatHandler := NewChatHandler(db, cfg)
+	chatHandler := NewChatHandler(db, cfg, emailService)
+	contactsHandler := NewContactsHandler(db)
 	_ = NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL)) // TODO: use me handler for routes
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
+	api.GET("/contacts", contactsHandler.PublicList)
 
 	// Checklist + Documents + Comments
 	check := NewChecklistHandler(db, cfg)
@@ -105,7 +110,31 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	api.POST("/reviews/:id/steps/:stepId/approve", check.ApproveStep)
 	api.POST("/reviews/:id/steps/:stepId/return", check.ReturnStep)
 
-	// Admin-only routes
+	// Monitor endpoints (admin/advisor access)
+	monitor := api.Group("/admin") // Keep URL prefix /admin for compatibility but change middleware
+	monitor.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	monitor.Use(middleware.RequireRoles("admin", "superadmin", "advisor"))
+	
+	// Notifications (admin/advisor view of student events)
+	notifications := NewNotificationsHandler(db)
+	monitor.GET("/notifications", notifications.ListNotifications)
+	monitor.GET("/notifications/unread-count", notifications.GetUnreadCount)
+	monitor.PATCH("/notifications/:id/read", notifications.MarkAsRead)
+	monitor.POST("/notifications/read-all", notifications.MarkAllAsRead)
+
+	monitor.GET("/monitor/students", adminHandler.MonitorStudents)
+	monitor.GET("/students", adminHandler.StudentProgress)
+	monitor.GET("/students/:id", adminHandler.GetStudentDetails)
+	monitor.GET("/students/:id/journey", adminHandler.StudentJourney)
+	monitor.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
+	monitor.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
+	monitor.PATCH("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
+	monitor.POST("/attachments/:attachmentId/reviewed-document", adminHandler.UploadReviewedDocument)
+	monitor.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
+	monitor.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
+	monitor.POST("/reminders", adminHandler.PostReminders)
+
+	// Admin-only routes (strict)
 	admin := api.Group("/admin")
 	admin.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
 	admin.Use(middleware.RequireRoles("admin", "superadmin"))
@@ -114,27 +143,11 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	admin.PUT("/users/:id", users.UpdateUser)
 	admin.POST("/users/:id/reset-password", users.ResetPasswordForUser)
 	admin.PATCH("/users/:id/active", users.SetActive)
-	admin.GET("/student-progress", adminHandler.StudentProgress)
-
-	// Notifications endpoints
-	notifications := NewNotificationsHandler(db)
-	admin.GET("/notifications", notifications.ListNotifications)
-	admin.GET("/notifications/unread-count", notifications.GetUnreadCount)
-	admin.PATCH("/notifications/:id/read", notifications.MarkAsRead)
-	admin.POST("/notifications/read-all", notifications.MarkAllAsRead)
-
-	// Monitor endpoints (admin/advisor access) - extend admin group
-	admin.GET("/monitor/students", adminHandler.MonitorStudents)
-	admin.GET("/students", adminHandler.StudentProgress)
-	admin.GET("/students/:id", adminHandler.GetStudentDetails)
-	admin.GET("/students/:id/journey", adminHandler.StudentJourney)
-	admin.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
-	admin.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
-	admin.PATCH("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
-	admin.POST("/attachments/:attachmentId/reviewed-document", adminHandler.UploadReviewedDocument)
-	admin.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
-	admin.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
-	admin.POST("/reminders", adminHandler.PostReminders)
+	admin.GET("/student-progress", adminHandler.StudentProgress) // Duplicate? Keep for now if used elsewhere
+	admin.GET("/contacts", contactsHandler.AdminList)
+	admin.POST("/contacts", contactsHandler.Create)
+	admin.PUT("/contacts/:id", contactsHandler.Update)
+	admin.DELETE("/contacts/:id", contactsHandler.Delete)
 
 	// Self-service password change and profile update
 	api.PATCH("/me", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.UpdateMe)
@@ -174,6 +187,40 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	chat.GET("/rooms", chatHandler.ListRooms)
 	chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
 	chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
+	chat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
+	chat.PATCH("/messages/:messageId", chatHandler.UpdateMessage)
+	chat.DELETE("/messages/:messageId", chatHandler.DeleteMessage)
+
+	// Calendar routes
+	calendarService := services.NewCalendarService(db)
+	calendarHandler := NewCalendarHandler(calendarService)
+	
+	events := api.Group("/events")
+	events.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	events.GET("", calendarHandler.GetEvents)
+	events.POST("", calendarHandler.CreateEvent)
+	events.PUT("/:id", calendarHandler.UpdateEvent)
+	events.DELETE("/:id", calendarHandler.DeleteEvent)
+
+	// Notification routes (generic)
+	notifService := services.NewNotificationService(db)
+	notifHandler := NewNotificationHandler(notifService)
+	
+	notifs := api.Group("/notifications")
+	notifs.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	notifs.GET("", notifHandler.GetUnread)
+	notifs.PATCH("/:id/read", notifHandler.MarkAsRead)
+	notifs.POST("/read-all", notifHandler.MarkAllAsRead)
+
+	// Analytics routes (admin only)
+	analyticsService := services.NewAnalyticsService(db)
+	analyticsHandler := NewAnalyticsHandler(analyticsService)
+	
+	analytics := api.Group("/analytics")
+	analytics.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	analytics.Use(middleware.RequireRoles("admin", "superadmin", "chair"))
+	analytics.GET("/stages", analyticsHandler.GetStageStats)
+	analytics.GET("/overdue", analyticsHandler.GetOverdueStats)
 
 	// TODO: checklist, documents, comments handlers (skeletons for now)
 

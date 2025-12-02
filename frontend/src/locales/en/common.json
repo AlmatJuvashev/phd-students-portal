@@ -55,7 +55,11 @@
     "add": "Add",
     "current_members": "Current members",
     "no_members": "No members yet",
-    "remove": "Remove"
+    "remove": "Remove",
+    "add_all": "Add all",
+    "remove_all": "Remove all",
+    "adding_all": "Adding...",
+    "removing_all": "Removing..."
   },
   "auth": {
     "login_title": "Login",
@@ -177,7 +181,9 @@
       "chat_rooms": "Chat rooms",
       "create_students": "Manage Students",
       "create_advisors": "Manage Advisors",
-      "create_admins": "Manage Admins"
+      "create_admins": "Manage Admins",
+      "dictionaries": "Dictionaries",
+      "contacts": "Contacts"
     },
     "topbar": {
       "admin_panel": "Admin Panel",
@@ -405,6 +411,149 @@
         "distribution_placeholder": "Chart visualization coming soon..."
       }
     },
+    "users": {
+      "title": "User Management",
+      "subtitle": "Manage users and their access permissions",
+      "create": "Create User",
+      "create_title": "Create New User",
+      "table_title": "Users",
+      "search": "Search users...",
+      "loading": "Loading users...",
+      "empty_search": "No users found matching \"{{query}}\"",
+      "empty": "No users found",
+      "role": "Role",
+      "pagination": "Showing {{from}} to {{to}} of {{total}} users",
+      "edit_title": "Edit User",
+      "updating": "Updating...",
+      "update_action": "Update User",
+      "reset_success": "Password reset successfully",
+      "new_password": "New password",
+      "copy_reset_message": "Copy reset message",
+      "dismiss": "Dismiss",
+      "reset_notice": "The user must use this new password to login. Make sure they receive these credentials securely!",
+      "created_success": "User created successfully",
+      "password": "Password",
+      "copy_login_message": "Copy login message",
+      "copy_credentials": "Copy credentials",
+      "credentials_notice": "Make sure to save these credentials - they won't be shown again!",
+      "confirm_reset": "Are you sure you want to reset this user's password? They will need to use the new temporary password to login.",
+      "toast": {
+        "created": "User created",
+        "credentials_ready": "Credentials generated successfully",
+        "updated": "User updated",
+        "reset": "Password reset",
+        "credentials_copied": "Credentials copied"
+      }
+    },
+    "dictionaries": {
+      "title": "Dictionaries",
+      "tabs": {
+        "programs": "Programs",
+        "specialties": "Specialties",
+        "cohorts": "Cohorts",
+        "departments": "Departments"
+      },
+      "fields": {
+        "name": "Name",
+        "code": "Code",
+        "code_optional": "Code (optional)",
+        "programs": "Programs",
+        "start_date": "Start Date",
+        "end_date": "End Date"
+      },
+      "actions": {
+        "create": "Create",
+        "creating": "Creating...",
+        "saving": "Saving...",
+        "save_changes": "Save Changes",
+        "status_error": "Failed to update status"
+      },
+      "shared": {
+        "none": "None"
+      },
+      "programs": {
+        "title": "Programs",
+        "add": "Add Program",
+        "add_title": "Add New Program",
+        "name_placeholder": "Program name",
+        "created": "Program created",
+        "create_error": "Failed to create program",
+        "updated": "Program updated",
+        "update_error": "Failed to update program",
+        "deleted": "Program deleted",
+        "delete_confirm": "Are you sure you want to delete this program?",
+        "empty": "No programs found.",
+        "edit_title": "Edit Program"
+      },
+      "specialties": {
+        "title": "Specialties",
+        "add": "Add Specialty",
+        "add_title": "Add New Specialty",
+        "name_placeholder": "Specialty name",
+        "created": "Specialty created",
+        "create_error": "Failed to create specialty",
+        "updated": "Specialty updated",
+        "update_error": "Failed to update specialty",
+        "deleted": "Specialty deleted",
+        "status_updated": "Specialty status updated",
+        "no_programs": "No active programs available",
+        "empty": "No specialties found.",
+        "edit_title": "Edit Specialty",
+        "all": "All specialties"
+      },
+      "cohorts": {
+        "title": "Cohorts",
+        "add": "Add Cohort",
+        "add_title": "Add New Cohort",
+        "name_placeholder": "e.g. 2024-2025",
+        "created": "Cohort created",
+        "create_error": "Failed to create cohort",
+        "updated": "Cohort updated",
+        "update_error": "Failed to update cohort",
+        "deleted": "Cohort deleted",
+        "status_updated": "Cohort status updated",
+        "empty": "No cohorts found.",
+        "edit_title": "Edit Cohort"
+      },
+      "departments": {
+        "title": "Departments",
+        "add": "Add Department",
+        "add_title": "Add New Department",
+        "name_placeholder": "e.g. Department of Surgery",
+        "code_placeholder": "e.g. SURG",
+        "created": "Department created",
+        "create_error": "Failed to create department",
+        "updated": "Department updated",
+        "update_error": "Failed to update department",
+        "deleted": "Department deleted",
+        "status_updated": "Department status updated",
+        "empty": "No departments found.",
+        "edit_title": "Edit Department"
+      }
+    },
+    "contacts": {
+      "title": "Contacts",
+      "subtitle": "Manage visible contacts for students",
+      "add": "Add contact",
+      "edit_title": "Edit contact",
+      "table_title": "Contacts",
+      "empty": "No contacts yet.",
+      "show_inactive": "Show inactive",
+      "name_ru": "Name (RU)",
+      "name_kz": "Name (KZ)",
+      "name_en": "Name (EN)",
+      "title_ru": "Title (RU)",
+      "title_kz": "Title (KZ)",
+      "title_en": "Title (EN)",
+      "phone": "Phone",
+      "email": "Email",
+      "sort": "Sort order",
+      "status": "Status",
+      "title_col": "Title",
+      "errors": {
+        "name_required": "Name is required"
+      }
+    },
     "forms": {
       "create_students_title": "Manage Students",
       "create_students_subtitle": "Invite new students, assign advisors, and manage existing accounts.",
@@ -439,6 +588,7 @@
       "email_optional": "Email (optional)",
       "program": "Program",
       "department": "Department",
+      "specialty": "Specialty",
       "cohort": "Cohort",
       "advisors": "Advisors",
       "search_advisors": "Search advisors…",
@@ -446,6 +596,10 @@
       "username": "Username",
       "temp_password": "Temp password",
       "errors": {
+        "create_user": "Failed to create user",
+        "update_user": "Failed to update user",
+        "create_student": "Failed to create student",
+        "update_student": "Failed to update student",
         "create_advisor": "Failed to create advisor",
         "create_admin": "Failed to create admin",
         "reset_password": "Failed to reset password",
@@ -475,7 +629,13 @@
         "success": "Admin Created"
       },
       "edit_advisor": "Edit Advisor",
-      "edit_admin": "Edit Admin"
+      "edit_admin": "Edit Admin",
+      "roles": {
+        "student": "Student",
+        "advisor": "Advisor",
+        "chair": "Department Chair",
+        "admin": "Administrator"
+      }
     }
   },
   "table": {

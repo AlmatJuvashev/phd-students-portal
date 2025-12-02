@@ -32,6 +32,11 @@ const CreateAdmins = lazy(() =>
     default: m.CreateAdmins,
   }))
 );
+const ContactsAdminPage = lazy(() =>
+  import("@/pages/admin/ContactsAdminPage").then((m) => ({
+    default: m.ContactsAdminPage,
+  }))
+);
 const CreateUsers = lazy(() =>
   import("@/pages/admin/CreateUsers").then((m) => ({ default: m.CreateUsers }))
 );
@@ -91,6 +96,12 @@ const ProfilePage = lazy(() =>
 const VerifyEmailPage = lazy(() =>
   import("@/pages/verify-email").then((m) => ({ default: m.VerifyEmailPage }))
 );
+const CalendarView = lazy(() =>
+  import("@/features/calendar").then((m) => ({ default: m.CalendarView }))
+);
+const AnalyticsDashboard = lazy(() =>
+  import("@/features/analytics/AnalyticsDashboard").then((m) => ({ default: m.AnalyticsDashboard }))
+);
 
 const WithSuspense = (el: React.ReactNode) => (
   <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
@@ -148,6 +159,10 @@ export const router = createBrowserRouter([
         path: "profile",
         element: <ProtectedRoute>{WithSuspense(<ProfilePage />)}</ProtectedRoute>,
       },
+      {
+        path: "calendar",
+        element: <ProtectedRoute>{WithSuspense(<CalendarView />)}</ProtectedRoute>,
+      },
     ],
   },
   // Admin routes (full-width layout)
@@ -190,6 +205,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
             {WithSuspense(<CreateUsers />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "contacts",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+            {WithSuspense(<ContactsAdminPage />)}
           </ProtectedRoute>
         ),
       },
@@ -246,6 +269,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
             {WithSuspense(<DictionariesPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "calendar",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
+            {WithSuspense(<CalendarView />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "analytics",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "chair"]}>
+            {WithSuspense(<AnalyticsDashboard />)}
           </ProtectedRoute>
         ),
       },
