@@ -110,8 +110,8 @@ func (h *ContactsHandler) Create(c *gin.Context) {
 		 VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
 		toJSON(req.Name),
 		toJSON(req.Title),
-		nullablePtr(req.Email),
-		nullablePtr(req.Phone),
+		contactNullablePtr(req.Email),
+		contactNullablePtr(req.Phone),
 		sortOrder,
 		isActive,
 	).Scan(&id)
@@ -147,11 +147,11 @@ func (h *ContactsHandler) Update(c *gin.Context) {
 	}
 	if req.Email != nil {
 		setParts = append(setParts, "email = $"+strconv.Itoa(len(args)+1))
-		args = append(args, nullablePtr(req.Email))
+		args = append(args, contactNullablePtr(req.Email))
 	}
 	if req.Phone != nil {
 		setParts = append(setParts, "phone = $"+strconv.Itoa(len(args)+1))
-		args = append(args, nullablePtr(req.Phone))
+		args = append(args, contactNullablePtr(req.Phone))
 	}
 	if req.SortOrder != nil {
 		setParts = append(setParts, "sort_order = $"+strconv.Itoa(len(args)+1))
@@ -186,18 +186,18 @@ func (h *ContactsHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-func nullableString(v string) interface{} {
+func contactNullableString(v string) interface{} {
 	if strings.TrimSpace(v) == "" {
 		return nil
 	}
 	return v
 }
 
-func nullablePtr(v *string) interface{} {
+func contactNullablePtr(v *string) interface{} {
 	if v == nil {
 		return nil
 	}
-	return nullableString(*v)
+	return contactNullableString(*v)
 }
 
 func toJSON(m map[string]string) interface{} {
