@@ -1,11 +1,14 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8280/api'
 
-export async function api(path: string, opts: RequestInit = {}) {
+export async function api<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token')
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(opts.headers || {}),
+  const headers: Record<string, string> = {
+    ...(opts.headers as Record<string, string> || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+  
+  if (!headers['Content-Type'] && !(opts.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json'
   }
   const res = await fetch(`${API_URL}${path}`, { ...opts, headers })
   if (!res.ok) {
@@ -13,7 +16,7 @@ export async function api(path: string, opts: RequestInit = {}) {
     throw new Error(t || res.statusText)
   }
   const type = res.headers.get('content-type') || ''
-  return type.includes('application/json') ? res.json() : res.text()
+  return (type.includes('application/json') ? res.json() : res.text()) as Promise<T>
 }
 
 // HTTP method helpers

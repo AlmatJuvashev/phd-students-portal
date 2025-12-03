@@ -90,6 +90,26 @@ PhD Student Portal Team`, userName)
 	return e.sendEmail(to, subject, body)
 }
 
+func (e *EmailService) SendAddedToRoomNotification(to, userName, roomName string) error {
+	if !e.enabled {
+		log.Printf("[EMAIL] Skipping room notification email to %s (SMTP not configured)", to)
+		return nil
+	}
+
+	subject := fmt.Sprintf("You have been added to chat room: %s", roomName)
+	body := fmt.Sprintf(`Hello %s,
+
+You have been added to the chat room "%s" in the PhD Student Portal.
+
+You can access the chat room here:
+%s/chat
+
+Best regards,
+PhD Student Portal Team`, userName, roomName, e.frontend)
+
+	return e.sendEmail(to, subject, body)
+}
+
 func (e *EmailService) sendEmail(to, subject, body string) error {
 	from := e.from
 	if from == "" {

@@ -13,11 +13,21 @@ export interface User {
   role: Role
   progress?: Record<string, any>
   completedNodes?: string[]
+  phone?: string
+  bio?: string
+  address?: string
+  date_of_birth?: string
+  avatar_url?: string
+  program?: string
+  specialty?: string
+  department?: string
+  cohort?: string
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
+  token: string | null
   login: (credentials: { username?: string; email?: string; password: string }) => Promise<void>
   logout: () => void
 }
@@ -33,9 +43,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     retry: 0,
   })
 
+  const token = localStorage.getItem('token');
+
   const value = useMemo<AuthContextType>(() => ({
     user: (data as User) ?? null,
     isLoading,
+    token,
     login: async (credentials) => {
       const res = await api('/auth/login', {
         method: 'POST',
@@ -54,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Soft reload to reset app state
       window.location.href = '/login'
     },
-  }), [data, isLoading, qc])
+  }), [data, isLoading, qc, token])
 
   return (
     <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

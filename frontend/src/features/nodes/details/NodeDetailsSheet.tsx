@@ -8,6 +8,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Pencil, X } from "lucide-react";
 import { NodeDetailSwitch } from "./NodeDetailSwitch";
 import { NodeAttachmentsSection } from "./NodeAttachmentsSection";
 import { useEffect, useRef, useState } from "react";
@@ -147,12 +149,14 @@ export function NodeDetailsSheet({
 
                 {/* Badges and actions - separate row for better spacing */}
                 <div className="flex items-center gap-2 flex-wrap pr-10">
-                  <Badge
-                    variant="secondary"
-                    className="capitalize shadow-sm hover:shadow transition-shadow text-xs"
-                  >
-                    {node.type}
-                  </Badge>
+                  {!import.meta.env.PROD && (
+                    <Badge
+                      variant="secondary"
+                      className="capitalize shadow-sm hover:shadow transition-shadow text-xs"
+                    >
+                      {node.type}
+                    </Badge>
+                  )}
                   <Badge className="capitalize shadow-sm hover:shadow transition-shadow text-xs">
                     {stateLabel(node)}
                   </Badge>
@@ -161,19 +165,25 @@ export function NodeDetailsSheet({
                       (submission as any)?.state as any
                     ) &&
                     (!editing ? (
-                      <button
-                        className="text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2 transition-colors touch-manipulation min-h-[32px] px-2"
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
                         onClick={() => setEditing(true)}
+                        title={T("common.edit", { defaultValue: "Edit" })}
                       >
-                        {T("common.edit", { defaultValue: "Edit" })}
-                      </button>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     ) : (
-                      <button
-                        className="text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors touch-manipulation min-h-[32px] px-2"
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
                         onClick={() => setEditing(false)}
+                        title={T("common.cancel_edit", { defaultValue: "Cancel" })}
                       >
-                        {T("common.cancel_edit", { defaultValue: "Cancel" })}
-                      </button>
+                        <X className="h-4 w-4" />
+                      </Button>
                     ))}
                 </div>
               </div>

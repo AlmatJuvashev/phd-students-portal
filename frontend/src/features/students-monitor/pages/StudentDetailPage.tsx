@@ -527,7 +527,7 @@ export function StudentDetailPage() {
     <div className="min-h-screen bg-background">
       {/* Header with Back Button */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
-        <div className="px-8 py-5">
+        <div className="px-4 md:px-8 py-5">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -557,12 +557,12 @@ export function StudentDetailPage() {
       </header>
 
       {/* Main Content */}
-      <main className="px-8 py-8 max-w-6xl mx-auto">
+      <main className="px-4 md:px-8 py-8 max-w-6xl mx-auto">
         <div className="space-y-8">
           {/* Student Profile Header */}
           <Card className="border shadow-sm">
-            <CardContent className="p-8">
-              <div className="flex items-start gap-6 mb-6">
+            <CardContent className="p-6 md:p-8">
+              <div className="flex flex-col md:flex-row items-start gap-6 mb-6">
                 <Avatar className="h-24 w-24 border-2">
                   <AvatarFallback className="bg-primary/10 text-primary text-2xl">
                     {student.name
@@ -572,7 +572,7 @@ export function StudentDetailPage() {
                       .slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
+                <div className="flex-1 w-full">
                   <h2 className="text-3xl font-semibold mb-2">
                     {student.name}
                   </h2>
@@ -603,7 +603,7 @@ export function StudentDetailPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     {student.email && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Mail className="h-4 w-4" />
@@ -624,11 +624,11 @@ export function StudentDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 w-full md:w-auto">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-2"
+                    className="gap-2 w-full md:w-auto"
                     disabled
                   >
                     <Copy className="h-4 w-4" />
@@ -641,7 +641,7 @@ export function StudentDetailPage() {
 
               <Separator className="mb-6" />
 
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">
                     {t("admin.monitor.detail.advisors", {

@@ -42,15 +42,15 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-const Schema = z.object({
-  first_name: z.string().min(1, "Required"),
-  last_name: z.string().min(1, "Required"),
+const EMPTY_SCHEMA = z.object({
+  first_name: z.string(),
+  last_name: z.string(),
   phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  program: z.string().min(1, "Required"),
-  specialty: z.string().min(1, "Required"), // Renamed from department
-  department: z.string().min(1, "Required"), // New department field
-  cohort: z.string().min(1, "Required"),
+  email: z.string().optional(),
+  program: z.string(),
+  specialty: z.string(),
+  department: z.string(),
+  cohort: z.string(),
   advisor_ids: z.array(z.string()).optional(),
 });
 
@@ -80,6 +80,37 @@ const CLIENT_PAGE_SIZE = 10;
 export function CreateStudents() {
   const { t } = useTranslation("common");
   const queryClient = useQueryClient();
+  const Schema = React.useMemo(
+    () =>
+      EMPTY_SCHEMA.extend({
+        first_name: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        last_name: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        phone: z.string().optional(),
+        email: z
+          .string()
+          .email(t("validation.invalid_email", { defaultValue: "Invalid email" }))
+          .optional()
+          .or(z.literal("")),
+        program: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        specialty: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        department: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        cohort: z
+          .string()
+          .min(1, t("validation.required", { defaultValue: "Required" })),
+        advisor_ids: z.array(z.string()).optional(),
+      }),
+    [t]
+  );
 
   const [advisorSearch, setAdvisorSearch] = React.useState("");
   const [selectedAdvisors, setSelectedAdvisors] = React.useState<UserLite[]>(
@@ -250,7 +281,12 @@ export function CreateStudents() {
     },
     onError: (err: any) => {
       console.error("[CreateStudents] Error creating student:", err);
-      alert(err?.message || "Failed to create student");
+      alert(
+        err?.message ||
+          t("admin.forms.errors.create_student", {
+            defaultValue: "Failed to create student",
+          })
+      );
     },
   });
 
@@ -261,7 +297,13 @@ export function CreateStudents() {
       setResetInfo(result);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
-    onError: (err: any) => alert(err?.message || "Failed to reset password"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.reset_password", {
+            defaultValue: "Failed to reset password",
+          })
+      ),
   });
 
   const updateStudentMutation = useMutation({
@@ -291,7 +333,13 @@ export function CreateStudents() {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       refetchStudents();
     },
-    onError: (err: any) => alert(err?.message || "Failed to update student"),
+    onError: (err: any) =>
+      alert(
+        err?.message ||
+          t("admin.forms.errors.update_student", {
+            defaultValue: "Failed to update student",
+          })
+      ),
   });
 
   const setActiveMutation = useMutation({
@@ -305,7 +353,12 @@ export function CreateStudents() {
       refetchStudents();
     },
     onError: (err: any) =>
-      alert(err?.message || "Failed to update active status"),
+      alert(
+        err?.message ||
+          t("admin.forms.errors.status_update", {
+            defaultValue: "Failed to update active status",
+          })
+      ),
   });
 
   const [pendingResetId, setPendingResetId] = React.useState<string | null>(
@@ -727,7 +780,7 @@ export function CreateStudents() {
                     onClick={() => handleSort("username")}
                   >
                     <div className="flex items-center">
-                      Username
+                      {t("admin.forms.username", { defaultValue: "Username" })}
                       {renderSortIcon("username")}
                     </div>
                   </th>
@@ -1137,7 +1190,11 @@ export function CreateStudents() {
                           disabled={!selectedProgramName}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Specialty" />
+                            <SelectValue
+                              placeholder={t("admin.forms.specialty", {
+                                defaultValue: "Specialty",
+                              })}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {filteredSpecialties.map((s: Specialty) => (
@@ -1167,7 +1224,11 @@ export function CreateStudents() {
                         value={field.value}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Department" />
+                          <SelectValue
+                            placeholder={t("admin.forms.department", {
+                              defaultValue: "Department",
+                            })}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {departmentsList.map((d: Department) => (
@@ -1199,7 +1260,11 @@ export function CreateStudents() {
                           disabled={!selectedDepartment}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Cohort" />
+                            <SelectValue
+                              placeholder={t("admin.forms.cohort", {
+                                defaultValue: "Cohort",
+                              })}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {cohortsList.map((c: Cohort) => (
@@ -1510,7 +1575,7 @@ function EditStudentForm({
 
       <div className="space-y-2">
         <label className="text-sm font-medium">
-          {t("admin.forms.department", { defaultValue: "Specialty" })}
+          {t("admin.forms.specialty", { defaultValue: "Specialty" })}
         </label>
         <Select
           value={department}
@@ -1519,7 +1584,7 @@ function EditStudentForm({
         >
           <SelectTrigger>
             <SelectValue
-              placeholder={t("admin.forms.department", {
+              placeholder={t("admin.forms.specialty", {
                 defaultValue: "Specialty",
               })}
             />

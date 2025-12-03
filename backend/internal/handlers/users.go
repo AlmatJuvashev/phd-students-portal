@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -19,10 +20,12 @@ import (
 type UsersHandler struct {
 	db  *sqlx.DB
 	cfg config.AppConfig
+	s3  *services.S3Client
 }
 
 func NewUsersHandler(db *sqlx.DB, cfg config.AppConfig) *UsersHandler {
-	return &UsersHandler{db: db, cfg: cfg}
+	s3Client, _ := services.NewS3FromEnv()
+	return &UsersHandler{db: db, cfg: cfg, s3: s3Client}
 }
 
 type createUserReq struct {
@@ -407,9 +410,13 @@ func (h *UsersHandler) generateUsername(firstName, lastName string) (string, err
 }
 
 type updateMeReq struct {
-	Email           string `json:"email" binding:"required,email"`
-	Phone           string `json:"phone"`
-	CurrentPassword string `json:"current_password" binding:"required"`
+	Email           string     `json:"email" binding:"required,email"`
+	Phone           string     `json:"phone"`
+	Bio             string     `json:"bio"`
+	Address         string     `json:"address"`
+	DateOfBirth     *time.Time `json:"date_of_birth"`
+	AvatarURL       string     `json:"avatar_url"`
+	CurrentPassword string     `json:"current_password" binding:"required"`
 }
 
 // UpdateMe allows users to update their own profile (email, phone) with security enhancements
@@ -478,9 +485,36 @@ func (h *UsersHandler) UpdateMe(c *gin.Context) {
 
 	emailChanged := req.Email != user.Email
 	phoneChanged := req.Phone != user.Phone
+	// Actually we should fetch all fields to compare, or just update blindly if we trust the input.
+	// But the logic below separates email change (verification) from others.
+	// Let's update other fields directly.
+	
+	// Update profile fields (Bio, Address, DOB, Avatar, Phone)
+	// We do this regardless of email change, but email change is special.
+	
+	// Construct update query dynamically or just update all non-email fields
+	_, err = h.db.Exec(`UPDATE users SET 
+		phone=$1, 
+		bio=$2, 
+		address=$3, 
+		date_of_birth=$4, 
+		avatar_url=COALESCE(NULLIF($5, ''), avatar_url),
+		updated_at=now() 
+		WHERE id=$6`,
+		nullable(req.Phone), 
+		req.Bio, 
+		req.Address, 
+		req.DateOfBirth, 
+		req.AvatarURL,
+		uid)
+	
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to update profile fields"})
+		return
+	}
 
-	if !emailChanged && !phoneChanged {
-		c.JSON(200, gin.H{"message": "no changes detected"})
+	if !emailChanged {
+		c.JSON(200, gin.H{"message": "profile updated successfully"})
 		return
 	}
 
@@ -544,23 +578,71 @@ func (h *UsersHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	// Handle phone-only change (immediate)
+	// Handle phone-only change (immediate) - ALREADY HANDLED ABOVE
+	// if phoneChanged { ... } 
+	// We removed the specific phoneChanged block because we updated it above.
+	// But we need to handle the audit log for phone if it changed.
 	if phoneChanged {
-		_, err = h.db.Exec(`UPDATE users SET phone=$1, updated_at=now() WHERE id=$2`,
-			nullable(req.Phone), uid)
-		if err != nil {
-			c.JSON(500, gin.H{"error": "failed to update phone"})
-			return
-		}
-
-		// Audit log
 		_, _ = h.db.Exec(`
 			INSERT INTO profile_audit_log (user_id, field_name, old_value, new_value, changed_by)
 			VALUES ($1, 'phone', $2, $3, $1)
 		`, uid, user.Phone, req.Phone)
-
-		c.JSON(200, gin.H{"message": "phone updated successfully"})
 	}
+}
+
+type presignAvatarReq struct {
+	Filename    string `json:"filename" binding:"required"`
+	ContentType string `json:"content_type" binding:"required"`
+	SizeBytes   int64  `json:"size_bytes" binding:"required"`
+}
+
+// PresignAvatarUpload generates a presigned URL for avatar upload
+func (h *UsersHandler) PresignAvatarUpload(c *gin.Context) {
+	uid, exists := c.Get("userID")
+	if !exists {
+		// Try claims
+		claims, _ := c.Get("claims")
+		if mapClaims, ok := claims.(jwt.MapClaims); ok {
+			uid = mapClaims["sub"]
+		}
+	}
+	if uid == nil {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var req presignAvatarReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate file size (e.g., max 5MB for avatar)
+	if req.SizeBytes > 5*1024*1024 {
+		c.JSON(400, gin.H{"error": "avatar size must be less than 5MB"})
+		return
+	}
+
+	// Validate content type
+	if !strings.HasPrefix(req.ContentType, "image/") {
+		c.JSON(400, gin.H{"error": "only image files are allowed"})
+		return
+	}
+
+	// Generate object key: avatars/{user_id}/{timestamp}_{filename}
+	key := fmt.Sprintf("avatars/%s/%d_%s", uid, time.Now().Unix(), req.Filename)
+
+	url, err := h.s3.PresignPut(key, req.ContentType, 15*time.Minute)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to generate presigned url"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"upload_url": url,
+		"object_key": key,
+		"public_url": fmt.Sprintf("%s/%s/%s", h.cfg.S3Endpoint, h.cfg.S3Bucket, key), // Approximate public URL if public read is enabled, or use cloudfront
+	})
 }
 
 // VerifyEmailChange handles email verification via token
