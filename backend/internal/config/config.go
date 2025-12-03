@@ -26,6 +26,8 @@ type AppConfig struct {
 	AdminEmail      string
 	AdminPassword   string
 	PlaybookPath    string
+	S3Endpoint      string
+	S3Bucket        string
 }
 
 // MustLoad loads configuration from environment variables.
@@ -48,6 +50,8 @@ func MustLoad() AppConfig {
 		AdminEmail:      get("ADMIN_EMAIL", ""),
 		AdminPassword:   get("ADMIN_PASSWORD", ""),
 		PlaybookPath:    get("PLAYBOOK_PATH", "../frontend/src/playbooks/playbook.json"),
+		S3Endpoint:      get("S3_ENDPOINT", ""),
+		S3Bucket:        get("S3_BUCKET", ""),
 	}
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")

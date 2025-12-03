@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"strconv"
 	"time"
@@ -55,6 +56,20 @@ func (s *Store) UpdateRoom(ctx context.Context, roomID string, name *string, arc
 		WHERE id = $1
 		RETURNING id, name, type, created_by, created_by_role, is_archived, meta, created_at
 	`, roomID, name, archived).StructScan(&room)
+	if err != nil {
+		return nil, err
+	}
+	return &room, nil
+}
+
+// GetRoom fetches a chat room by ID.
+func (s *Store) GetRoom(ctx context.Context, roomID string) (*models.ChatRoom, error) {
+	var room models.ChatRoom
+	err := s.db.GetContext(ctx, &room, `
+		SELECT id, name, type, created_by, created_by_role, is_archived, meta, created_at
+		FROM chat_rooms
+		WHERE id = $1
+	`, roomID)
 	if err != nil {
 		return nil, err
 	}
@@ -127,21 +142,24 @@ func (s *Store) ListMembers(ctx context.Context, roomID string) ([]MemberWithUse
 }
 
 // CreateMessage inserts a message and returns the stored record.
-func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string) (*models.ChatMessage, error) {
+func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments) (*models.ChatMessage, error) {
+	if attachments == nil {
+		attachments = models.ChatAttachments{}
+	}
 	var msg models.ChatMessage
 	err := s.db.QueryRowxContext(ctx, `
 		WITH ins AS (
-			INSERT INTO chat_messages (room_id, sender_id, body)
-			VALUES ($1, $2, $3)
-			RETURNING id, room_id, sender_id, body, created_at, edited_at, deleted_at
+			INSERT INTO chat_messages (room_id, sender_id, body, attachments)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id, room_id, sender_id, body, attachments, created_at, edited_at, deleted_at
 		)
 		SELECT 
-			i.id, i.room_id, i.sender_id, i.body, i.created_at, i.edited_at, i.deleted_at,
+			i.id, i.room_id, i.sender_id, i.body, i.attachments, i.created_at, i.edited_at, i.deleted_at,
 			COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.email, u.username) AS sender_name,
 			u.role AS sender_role
 		FROM ins i
 		INNER JOIN users u ON u.id = i.sender_id
-	`, roomID, senderID, body).StructScan(&msg)
+	`, roomID, senderID, body, attachments).StructScan(&msg)
 	if err != nil {
 		return nil, err
 	}
@@ -160,6 +178,7 @@ func (s *Store) ListMessages(ctx context.Context, roomID string, limit int, befo
 			m.room_id,
 			m.sender_id,
 			m.body,
+			m.attachments,
 			m.created_at,
 			m.edited_at,
 			m.deleted_at,
@@ -189,6 +208,41 @@ func (s *Store) ListMessages(ctx context.Context, roomID string, limit int, befo
 	var messages []models.ChatMessage
 	err := s.db.SelectContext(ctx, &messages, query, args...)
 	return messages, err
+}
+
+// UpdateMessage updates the body of a message and sets edited_at.
+func (s *Store) UpdateMessage(ctx context.Context, msgID, userID, newBody string) (*models.ChatMessage, error) {
+	var msg models.ChatMessage
+	err := s.db.QueryRowxContext(ctx, `
+		UPDATE chat_messages
+		SET body = $1, edited_at = NOW()
+		WHERE id = $2 AND sender_id = $3 AND deleted_at IS NULL
+		RETURNING id, room_id, sender_id, body, attachments, created_at, edited_at, deleted_at
+	`, newBody, msgID, userID).StructScan(&msg)
+	if err != nil {
+		return nil, err
+	}
+	return &msg, nil
+}
+
+// DeleteMessage soft-deletes a message.
+func (s *Store) DeleteMessage(ctx context.Context, msgID, userID string) error {
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE chat_messages
+		SET deleted_at = NOW()
+		WHERE id = $1 AND sender_id = $2 AND deleted_at IS NULL
+	`, msgID, userID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func itoa(i int) string {

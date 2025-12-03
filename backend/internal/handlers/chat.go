@@ -1,15 +1,20 @@
 package handlers
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/chat"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -17,16 +22,18 @@ import (
 
 // ChatHandler will host chat room/message endpoints once implemented.
 type ChatHandler struct {
-	db    *sqlx.DB
-	cfg   config.AppConfig
-	store *chat.Store
+	db           *sqlx.DB
+	cfg          config.AppConfig
+	store        *chat.Store
+	emailService *services.EmailService
 }
 
-func NewChatHandler(db *sqlx.DB, cfg config.AppConfig) *ChatHandler {
+func NewChatHandler(db *sqlx.DB, cfg config.AppConfig, emailService *services.EmailService) *ChatHandler {
 	return &ChatHandler{
-		db:    db,
-		cfg:   cfg,
-		store: chat.NewStore(db),
+		db:           db,
+		cfg:          cfg,
+		store:        chat.NewStore(db),
+		emailService: emailService,
 	}
 }
 
@@ -118,13 +125,14 @@ func (h *ChatHandler) CreateMessage(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Body string `json:"body" binding:"required"`
+		Body        string                 `json:"body" binding:"required"`
+		Attachments models.ChatAttachments `json:"attachments"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	msg, err := h.store.CreateMessage(c.Request.Context(), roomID, uid, req.Body)
+	msg, err := h.store.CreateMessage(c.Request.Context(), roomID, uid, req.Body, req.Attachments)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create message"})
 		return
@@ -245,10 +253,48 @@ func (h *ChatHandler) AddRoomMembersBatch(c *gin.Context) {
 
 	// Add users to room
 	count := 0
+	var addedUserIDs []string
 	for _, uid := range userIDs {
 		if err := h.store.AddMember(ctx, roomID, uid, models.ChatRoomMemberRoleMember); err == nil {
 			count++
+			addedUserIDs = append(addedUserIDs, uid)
 		}
+	}
+
+	// Send notifications (async)
+	if len(addedUserIDs) > 0 {
+		go func(uids []string, rID string) {
+			// Fetch room name
+			room, err := h.store.GetRoom(context.Background(), rID)
+			if err != nil {
+				log.Printf("Failed to fetch room for batch notification: %v", err)
+				return
+			}
+
+			// Fetch users
+			query, args, err := sqlx.In("SELECT email, first_name, last_name FROM users WHERE id IN (?)", uids)
+			if err != nil {
+				log.Printf("Failed to build query for batch notification: %v", err)
+				return
+			}
+			query = h.db.Rebind(query)
+			var users []struct {
+				Email     string `db:"email"`
+				FirstName string `db:"first_name"`
+				LastName  string `db:"last_name"`
+			}
+			if err := h.db.Select(&users, query, args...); err != nil {
+				log.Printf("Failed to fetch users for batch notification: %v", err)
+				return
+			}
+
+			for _, u := range users {
+				userName := fmt.Sprintf("%s %s", u.FirstName, u.LastName)
+				if err := h.emailService.SendAddedToRoomNotification(u.Email, userName, room.Name); err != nil {
+					log.Printf("Failed to send batch room notification to %s: %v", u.Email, err)
+				}
+			}
+		}(addedUserIDs, roomID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"added_count": count})
@@ -313,6 +359,98 @@ func (h *ChatHandler) RemoveRoomMembersBatch(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"removed_count": count})
+}
+
+// UploadFile handles multipart file upload for chat
+func (h *ChatHandler) UploadFile(c *gin.Context) {
+	roomID := c.Param("roomId")
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file required"})
+		return
+	}
+
+	// Basic validation
+	if file.Size > 10*1024*1024 { // 10MB limit
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file too large (max 10MB)"})
+		return
+	}
+
+	// Create upload directory
+	uploadDir := filepath.Join(h.cfg.UploadDir, "chat", roomID)
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create upload dir"})
+		return
+	}
+
+	// Save file
+	filename := filepath.Base(file.Filename)
+	// Add timestamp to prevent collisions
+	filename = fmt.Sprintf("%d_%s", time.Now().Unix(), filename)
+	destPath := filepath.Join(uploadDir, filename)
+	
+	if err := c.SaveUploadedFile(file, destPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+		return
+	}
+
+	// Construct URL (assuming static file serving is set up for uploads)
+	// We'll return a relative path that the frontend can prepend with the base URL
+	// or a full URL if we knew the domain. For now, relative path.
+	// NOTE: You need to ensure h.cfg.UploadDir is served via HTTP.
+	// If UploadDir is "./uploads", and we serve "/uploads", then:
+	fileURL := fmt.Sprintf("/uploads/chat/%s/%s", roomID, filename)
+
+	c.JSON(http.StatusOK, gin.H{
+		"url":  fileURL,
+		"name": file.Filename,
+		"type": file.Header.Get("Content-Type"),
+		"size": file.Size,
+	})
+}
+
+// UpdateMessage handles editing a message
+func (h *ChatHandler) UpdateMessage(c *gin.Context) {
+	msgID := c.Param("messageId")
+	uid := c.GetString("userID")
+
+	var req struct {
+		Body string `json:"body" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	msg, err := h.store.UpdateMessage(c.Request.Context(), msgID, uid, req.Body)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "message not found or not authorized"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update message"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": msg})
+}
+
+// DeleteMessage handles deleting a message
+func (h *ChatHandler) DeleteMessage(c *gin.Context) {
+	msgID := c.Param("messageId")
+	uid := c.GetString("userID")
+
+	err := h.store.DeleteMessage(c.Request.Context(), msgID, uid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "message not found or not authorized"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete message"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 // ListMessages returns paginated messages for a room if the caller is a member.

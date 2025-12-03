@@ -328,7 +328,7 @@ export function CreateAdvisors() {
                   </th>
                   <th className="py-2.5 pr-4 cursor-pointer select-none" onClick={() => handleSort('username')}>
                     <div className="flex items-center">
-                      Username
+                      {t('admin.forms.username','Username')}
                       {sortField === 'username' ? (sortDirection === 'asc' ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />) : null}
                     </div>
                   </th>

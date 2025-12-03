@@ -23,8 +23,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 export const CohortsList = () => {
+  const { t } = useTranslation("common");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
@@ -40,10 +42,22 @@ export const CohortsList = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       setIsCreateOpen(false);
-      toast({ title: "Cohort created" });
+      toast({
+        title: t("admin.dictionaries.cohorts.created", {
+          defaultValue: "Cohort created",
+        }),
+      });
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.response?.data?.error || "Failed to create cohort", variant: "destructive" });
+      toast({
+        title: t("common.error", { defaultValue: "Error" }),
+        description:
+          err.response?.data?.error ||
+          t("admin.dictionaries.cohorts.create_error", {
+            defaultValue: "Failed to create cohort",
+          }),
+        variant: "destructive",
+      });
     },
   });
 
@@ -52,10 +66,22 @@ export const CohortsList = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       setEditingCohort(null);
-      toast({ title: "Cohort updated" });
+      toast({
+        title: t("admin.dictionaries.cohorts.updated", {
+          defaultValue: "Cohort updated",
+        }),
+      });
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.response?.data?.error || "Failed to update cohort", variant: "destructive" });
+      toast({
+        title: t("common.error", { defaultValue: "Error" }),
+        description:
+          err.response?.data?.error ||
+          t("admin.dictionaries.cohorts.update_error", {
+            defaultValue: "Failed to update cohort",
+          }),
+        variant: "destructive",
+      });
     },
   });
 
@@ -63,7 +89,11 @@ export const CohortsList = () => {
     mutationFn: deleteCohort,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      toast({ title: "Cohort deleted (soft)" });
+      toast({
+        title: t("admin.dictionaries.cohorts.deleted", {
+          defaultValue: "Cohort deleted",
+        }),
+      });
     },
   });
 
@@ -72,12 +102,20 @@ export const CohortsList = () => {
       updateCohort(id, { is_active: isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      toast({ title: "Cohort status updated" });
+      toast({
+        title: t("admin.dictionaries.cohorts.status_updated", {
+          defaultValue: "Cohort status updated",
+        }),
+      });
     },
     onError: (err: any) => {
       toast({
-        title: "Error",
-        description: err.response?.data?.error || "Failed to update status",
+        title: t("common.error", { defaultValue: "Error" }),
+        description:
+          err.response?.data?.error ||
+          t("admin.dictionaries.actions.status_error", {
+            defaultValue: "Failed to update status",
+          }),
         variant: "destructive",
       });
     },
@@ -108,42 +146,69 @@ export const CohortsList = () => {
     });
   };
 
-  if (isLoading) return <Loader2 className="h-8 w-8 animate-spin mx-auto" />;
+  if (isLoading)
+    return (
+      <div className="flex justify-center py-6">
+        <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
+      </div>
+    );
 
   const filteredCohorts = cohorts || [];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Cohorts</h2>
+        <h2 className="text-xl font-semibold">
+          {t("admin.dictionaries.cohorts.title", { defaultValue: "Cohorts" })}
+        </h2>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Add Cohort
+              <Plus className="h-4 w-4" />{" "}
+              {t("admin.dictionaries.cohorts.add", { defaultValue: "Add Cohort" })}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Cohort</DialogTitle>
+              <DialogTitle>
+                {t("admin.dictionaries.cohorts.add_title", {
+                  defaultValue: "Add New Cohort",
+                })}
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmitCreate} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" placeholder="e.g. 2024-2025" required />
+                <Label htmlFor="name">
+                  {t("admin.dictionaries.fields.name", { defaultValue: "Name" })}
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder={t("admin.dictionaries.cohorts.name_placeholder", {
+                    defaultValue: "e.g. 2024-2025",
+                  })}
+                  required
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date</Label>
+                  <Label htmlFor="start_date">
+                    {t("admin.dictionaries.fields.start_date", { defaultValue: "Start Date" })}
+                  </Label>
                   <Input id="start_date" name="start_date" type="date" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">End Date</Label>
+                  <Label htmlFor="end_date">
+                    {t("admin.dictionaries.fields.end_date", { defaultValue: "End Date" })}
+                  </Label>
                   <Input id="end_date" name="end_date" type="date" />
                 </div>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Creating..." : "Create"}
+                  {createMutation.isPending
+                    ? t("admin.dictionaries.actions.creating", { defaultValue: "Creating..." })
+                    : t("admin.dictionaries.actions.create", { defaultValue: "Create" })}
                 </Button>
               </DialogFooter>
             </form>
@@ -155,11 +220,19 @@ export const CohortsList = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("table.name", { defaultValue: "Name" })}</TableHead>
+              <TableHead>
+                {t("admin.dictionaries.fields.start_date", { defaultValue: "Start Date" })}
+              </TableHead>
+              <TableHead>
+                {t("admin.dictionaries.fields.end_date", { defaultValue: "End Date" })}
+              </TableHead>
+              <TableHead>
+                {t("admin.forms.active_state", { defaultValue: "Status" })}
+              </TableHead>
+              <TableHead className="text-right">
+                {t("table.actions", { defaultValue: "Actions" })}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -183,6 +256,7 @@ export const CohortsList = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => setEditingCohort(cohort)}
+                      aria-label={t("common.edit", { defaultValue: "Edit" })}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -191,6 +265,7 @@ export const CohortsList = () => {
                       size="icon"
                       onClick={() => deleteMutation.mutate(cohort.id)}
                       disabled={deleteMutation.isPending}
+                      aria-label={t("common.remove", { defaultValue: "Remove" })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -201,7 +276,9 @@ export const CohortsList = () => {
             {filteredCohorts.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No cohorts found.
+                  {t("admin.dictionaries.cohorts.empty", {
+                    defaultValue: "No cohorts found.",
+                  })}
                 </TableCell>
               </TableRow>
             )}
@@ -212,31 +289,55 @@ export const CohortsList = () => {
       <Dialog open={!!editingCohort} onOpenChange={(open) => !open && setEditingCohort(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Cohort</DialogTitle>
+            <DialogTitle>
+              {t("admin.dictionaries.cohorts.edit_title", { defaultValue: "Edit Cohort" })}
+            </DialogTitle>
           </DialogHeader>
           {editingCohort && (
             <form onSubmit={handleSubmitUpdate} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Name</Label>
+                <Label htmlFor="edit-name">
+                  {t("admin.dictionaries.fields.name", { defaultValue: "Name" })}
+                </Label>
                 <Input id="edit-name" name="name" defaultValue={editingCohort.name} required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-start_date">Start Date</Label>
-                  <Input id="edit-start_date" name="start_date" type="date" defaultValue={editingCohort.start_date} />
+                  <Label htmlFor="edit-start_date">
+                    {t("admin.dictionaries.fields.start_date", { defaultValue: "Start Date" })}
+                  </Label>
+                  <Input
+                    id="edit-start_date"
+                    name="start_date"
+                    type="date"
+                    defaultValue={editingCohort.start_date}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-end_date">End Date</Label>
-                  <Input id="edit-end_date" name="end_date" type="date" defaultValue={editingCohort.end_date} />
+                  <Label htmlFor="edit-end_date">
+                    {t("admin.dictionaries.fields.end_date", { defaultValue: "End Date" })}
+                  </Label>
+                  <Input
+                    id="edit-end_date"
+                    name="end_date"
+                    type="date"
+                    defaultValue={editingCohort.end_date}
+                  />
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Switch id="edit-active" name="is_active" defaultChecked={editingCohort.is_active} />
-                <Label htmlFor="edit-active">Active</Label>
+                <Label htmlFor="edit-active">
+                  {t("admin.forms.status_active", { defaultValue: "Active" })}
+                </Label>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateMutation.isPending
+                    ? t("admin.dictionaries.actions.saving", { defaultValue: "Saving..." })
+                    : t("admin.dictionaries.actions.save_changes", {
+                        defaultValue: "Save Changes",
+                      })}
                 </Button>
               </DialogFooter>
             </form>

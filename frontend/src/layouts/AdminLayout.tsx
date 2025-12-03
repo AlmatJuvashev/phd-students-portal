@@ -136,6 +136,64 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               {t("admin.sidebar.management", "Management")}
             </div>
           )}
+          
+          {/* User Management Group */}
+          <div className="space-y-1">
+             {!collapsed && (
+              <div className="px-3 py-1 text-sm font-medium text-muted-foreground">
+                User Management
+              </div>
+            )}
+            <NavLink
+              to="/admin/create-students"
+              className={cn(
+                "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted ml-2",
+                isActive("/admin/create-students") && "bg-muted font-medium",
+                collapsed && "justify-center px-2 ml-0"
+              )}
+              title={t("admin.sidebar.create_students", "Manage Students")}
+            >
+              <Users className="h-4 w-4" />
+              {!collapsed && (
+                <span>
+                  {t("admin.sidebar.create_students", "Students")}
+                </span>
+              )}
+            </NavLink>
+            <NavLink
+              to="/admin/create-advisors"
+              className={cn(
+                "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted ml-2",
+                isActive("/admin/create-advisors") && "bg-muted font-medium",
+                collapsed && "justify-center px-2 ml-0"
+              )}
+              title={t("admin.sidebar.create_advisors", "Manage Advisors")}
+            >
+              <UserPlus className="h-4 w-4" />
+              {!collapsed && (
+                <span>
+                  {t("admin.sidebar.create_advisors", "Advisors")}
+                </span>
+              )}
+            </NavLink>
+             {canSeeAdmins && (
+              <NavLink
+                to="/admin/create-admins"
+                className={cn(
+                  "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted ml-2",
+                  isActive("/admin/create-admins") && "bg-muted font-medium",
+                  collapsed && "justify-center px-2 ml-0"
+                )}
+                title={t("admin.sidebar.create_admins", "Manage Admins")}
+              >
+                <UserCog className="h-4 w-4" />
+                {!collapsed && (
+                  <span>{t("admin.sidebar.create_admins", "Admins")}</span>
+                )}
+              </NavLink>
+            )}
+          </div>
+
           <NavLink
             to="/admin/chat-rooms"
             className={cn(
@@ -147,38 +205,6 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
           >
             <MessageCircle className="h-4 w-4" />
             {!collapsed && <span>{t("admin.sidebar.chat_rooms", "Chat rooms")}</span>}
-          </NavLink>
-          <NavLink
-            to="/admin/create-students"
-            className={cn(
-              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
-              isActive("/admin/create-students") && "bg-muted font-medium",
-              collapsed && "justify-center px-2"
-            )}
-            title={t("admin.sidebar.create_students", "Manage Students")}
-          >
-            <Users className="h-4 w-4" />
-            {!collapsed && (
-              <span>
-                {t("admin.sidebar.create_students", "Manage Students")}
-              </span>
-            )}
-          </NavLink>
-          <NavLink
-            to="/admin/create-advisors"
-            className={cn(
-              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
-              isActive("/admin/create-advisors") && "bg-muted font-medium",
-              collapsed && "justify-center px-2"
-            )}
-            title={t("admin.sidebar.create_advisors", "Manage Advisors")}
-          >
-            <UserPlus className="h-4 w-4" />
-            {!collapsed && (
-              <span>
-                {t("admin.sidebar.create_advisors", "Manage Advisors")}
-              </span>
-            )}
           </NavLink>
           <NavLink
             to="/admin/dictionaries"
@@ -211,22 +237,6 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
             )}
           </NavLink>
         </>
-      )}
-      {canSeeAdmins && (
-        <NavLink
-          to="/admin/create-admins"
-          className={cn(
-            "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
-            isActive("/admin/create-admins") && "bg-muted font-medium",
-            collapsed && "justify-center px-2"
-          )}
-          title={t("admin.sidebar.create_admins", "Manage Admins")}
-        >
-          <UserCog className="h-4 w-4" />
-          {!collapsed && (
-            <span>{t("admin.sidebar.create_admins", "Manage Admins")}</span>
-          )}
-        </NavLink>
       )}
     </nav>
   );

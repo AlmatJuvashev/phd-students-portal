@@ -623,6 +623,18 @@ func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
 // StudentJourney returns node states and basic attachments count for a student.
 func (h *AdminHandler) StudentJourney(c *gin.Context) {
 	uid := c.Param("id")
+	
+	// RBAC: If advisor, check assignment
+	role := roleFromContext(c)
+	callerID := userIDFromClaims(c)
+	if role == "advisor" && callerID != "" {
+		var exists bool
+		_ = h.db.Get(&exists, `SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1 AND advisor_id=$2)`, uid, callerID)
+		if !exists {
+			c.JSON(403, gin.H{"error": "forbidden"})
+			return
+		}
+	}
 	// Get latest instance for each node_id regardless of playbook version (matching ListStudentNodeFiles behavior)
 	rows, err := h.db.Queryx(`
 		SELECT DISTINCT ON (node_id) id, node_id, state, updated_at 
@@ -680,6 +692,18 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 	studentID := c.Param("id")
 	nodeID := c.Param("nodeId")
 	log.Printf("[ListStudentNodeFiles] studentID=%s nodeID=%s", studentID, nodeID)
+
+	// RBAC: If advisor, check assignment
+	role := roleFromContext(c)
+	callerID := userIDFromClaims(c)
+	if role == "advisor" && callerID != "" {
+		var exists bool
+		_ = h.db.Get(&exists, `SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1 AND advisor_id=$2)`, studentID, callerID)
+		if !exists {
+			c.JSON(403, gin.H{"error": "forbidden"})
+			return
+		}
+	}
 	
 	// Pick the latest node_instance for this user/node (any playbook version) to surface uploads
 	var instanceID string

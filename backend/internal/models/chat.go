@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"time"
 )
@@ -45,8 +46,34 @@ type ChatMessage struct {
 	SenderID   string     `db:"sender_id" json:"sender_id"`
 	SenderName string     `db:"sender_name" json:"sender_name,omitempty"`
 	SenderRole Role       `db:"sender_role" json:"sender_role,omitempty"`
-	Body       string     `db:"body" json:"body"`
-	CreatedAt  time.Time  `db:"created_at" json:"created_at"`
-	EditedAt   *time.Time `db:"edited_at" json:"edited_at,omitempty"`
-	DeletedAt  *time.Time `db:"deleted_at" json:"deleted_at,omitempty"`
+	Body        string          `db:"body" json:"body"`
+	Attachments ChatAttachments `db:"attachments" json:"attachments,omitempty"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+	EditedAt    *time.Time        `db:"edited_at" json:"edited_at,omitempty"`
+	DeletedAt   *time.Time        `db:"deleted_at" json:"deleted_at,omitempty"`
+}
+
+type ChatAttachment struct {
+	URL  string `json:"url"`
+	Type string `json:"type"` // "image", "document", etc.
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+}
+
+// Make ChatAttachment implement sql.Scanner/driver.Valuer for JSONB if needed,
+// but sqlx usually handles basic JSONB with `json.RawMessage` or if we use a wrapper.
+// For simplicity, we'll handle serialization in the Store.
+
+type ChatAttachments []ChatAttachment
+
+func (a ChatAttachments) Value() (driver.Value, error) {
+	return json.Marshal(a)
+}
+
+func (a *ChatAttachments) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return nil // or error
+	}
+	return json.Unmarshal(b, &a)
 }

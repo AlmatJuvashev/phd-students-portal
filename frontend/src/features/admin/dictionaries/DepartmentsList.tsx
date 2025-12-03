@@ -23,8 +23,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 export const DepartmentsList = () => {
+  const { t } = useTranslation("common");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
@@ -40,22 +42,47 @@ export const DepartmentsList = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
       setIsCreateOpen(false);
-      toast({ title: "Department created" });
+      toast({
+        title: t("admin.dictionaries.departments.created", {
+          defaultValue: "Department created",
+        }),
+      });
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.response?.data?.error || "Failed to create department", variant: "destructive" });
+      toast({
+        title: t("common.error", { defaultValue: "Error" }),
+        description:
+          err.response?.data?.error ||
+          t("admin.dictionaries.departments.create_error", {
+            defaultValue: "Failed to create department",
+          }),
+        variant: "destructive",
+      });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Department> }) => updateDepartment(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Department> }) =>
+      updateDepartment(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
       setEditingDepartment(null);
-      toast({ title: "Department updated" });
+      toast({
+        title: t("admin.dictionaries.departments.updated", {
+          defaultValue: "Department updated",
+        }),
+      });
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.response?.data?.error || "Failed to update department", variant: "destructive" });
+      toast({
+        title: t("common.error", { defaultValue: "Error" }),
+        description:
+          err.response?.data?.error ||
+          t("admin.dictionaries.departments.update_error", {
+            defaultValue: "Failed to update department",
+          }),
+        variant: "destructive",
+      });
     },
   });
 
@@ -63,7 +90,11 @@ export const DepartmentsList = () => {
     mutationFn: deleteDepartment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast({ title: "Department deleted (soft)" });
+      toast({
+        title: t("admin.dictionaries.departments.deleted", {
+          defaultValue: "Department deleted",
+        }),
+      });
     },
   });
 
@@ -72,12 +103,20 @@ export const DepartmentsList = () => {
       updateDepartment(id, { is_active: isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast({ title: "Department status updated" });
+      toast({
+        title: t("admin.dictionaries.departments.status_updated", {
+          defaultValue: "Department status updated",
+        }),
+      });
     },
     onError: (err: any) => {
       toast({
-        title: "Error",
-        description: err.response?.data?.error || "Failed to update status",
+        title: t("common.error", { defaultValue: "Error" }),
+        description:
+          err.response?.data?.error ||
+          t("admin.dictionaries.actions.status_error", {
+            defaultValue: "Failed to update status",
+          }),
         variant: "destructive",
       });
     },
@@ -106,36 +145,67 @@ export const DepartmentsList = () => {
     });
   };
 
-  if (isLoading) return <Loader2 className="h-8 w-8 animate-spin mx-auto" />;
+  if (isLoading)
+    return (
+      <div className="flex justify-center py-6">
+        <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
+      </div>
+    );
 
   const filteredDepartments = departments || [];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Departments</h2>
+        <h2 className="text-xl font-semibold">
+          {t("admin.dictionaries.departments.title", { defaultValue: "Departments" })}
+        </h2>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Add Department
+              <Plus className="h-4 w-4" />{" "}
+              {t("admin.dictionaries.departments.add", { defaultValue: "Add Department" })}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Department</DialogTitle>
+              <DialogTitle>
+                {t("admin.dictionaries.departments.add_title", {
+                  defaultValue: "Add New Department",
+                })}
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmitCreate} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" placeholder="e.g. Department of Surgery" required />
+                <Label htmlFor="name">
+                  {t("admin.dictionaries.fields.name", { defaultValue: "Name" })}
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder={t("admin.dictionaries.departments.name_placeholder", {
+                    defaultValue: "e.g. Department of Surgery",
+                  })}
+                  required
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Code</Label>
-                <Input id="code" name="code" placeholder="e.g. SURG" />
+                <Label htmlFor="code">
+                  {t("admin.dictionaries.fields.code", { defaultValue: "Code" })}
+                </Label>
+                <Input
+                  id="code"
+                  name="code"
+                  placeholder={t("admin.dictionaries.departments.code_placeholder", {
+                    defaultValue: "e.g. SURG",
+                  })}
+                />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Creating..." : "Create"}
+                  {createMutation.isPending
+                    ? t("admin.dictionaries.actions.creating", { defaultValue: "Creating..." })
+                    : t("admin.dictionaries.actions.create", { defaultValue: "Create" })}
                 </Button>
               </DialogFooter>
             </form>
@@ -147,10 +217,16 @@ export const DepartmentsList = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("table.name", { defaultValue: "Name" })}</TableHead>
+              <TableHead>
+                {t("admin.dictionaries.fields.code", { defaultValue: "Code" })}
+              </TableHead>
+              <TableHead>
+                {t("admin.forms.active_state", { defaultValue: "Status" })}
+              </TableHead>
+              <TableHead className="text-right">
+                {t("table.actions", { defaultValue: "Actions" })}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -173,6 +249,7 @@ export const DepartmentsList = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => setEditingDepartment(dept)}
+                      aria-label={t("common.edit", { defaultValue: "Edit" })}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -181,6 +258,7 @@ export const DepartmentsList = () => {
                       size="icon"
                       onClick={() => deleteMutation.mutate(dept.id)}
                       disabled={deleteMutation.isPending}
+                      aria-label={t("common.remove", { defaultValue: "Remove" })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -191,7 +269,9 @@ export const DepartmentsList = () => {
             {filteredDepartments.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  No departments found.
+                  {t("admin.dictionaries.departments.empty", {
+                    defaultValue: "No departments found.",
+                  })}
                 </TableCell>
               </TableRow>
             )}
@@ -202,25 +282,37 @@ export const DepartmentsList = () => {
       <Dialog open={!!editingDepartment} onOpenChange={(open) => !open && setEditingDepartment(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Department</DialogTitle>
+            <DialogTitle>
+              {t("admin.dictionaries.departments.edit_title", { defaultValue: "Edit Department" })}
+            </DialogTitle>
           </DialogHeader>
           {editingDepartment && (
             <form onSubmit={handleSubmitUpdate} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Name</Label>
+                <Label htmlFor="edit-name">
+                  {t("admin.dictionaries.fields.name", { defaultValue: "Name" })}
+                </Label>
                 <Input id="edit-name" name="name" defaultValue={editingDepartment.name} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-code">Code</Label>
+                <Label htmlFor="edit-code">
+                  {t("admin.dictionaries.fields.code", { defaultValue: "Code" })}
+                </Label>
                 <Input id="edit-code" name="code" defaultValue={editingDepartment.code} />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch id="edit-active" name="is_active" defaultChecked={editingDepartment.is_active} />
-                <Label htmlFor="edit-active">Active</Label>
+                <Label htmlFor="edit-active">
+                  {t("admin.forms.status_active", { defaultValue: "Active" })}
+                </Label>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateMutation.isPending
+                    ? t("admin.dictionaries.actions.saving", { defaultValue: "Saving..." })
+                    : t("admin.dictionaries.actions.save_changes", {
+                        defaultValue: "Save Changes",
+                      })}
                 </Button>
               </DialogFooter>
             </form>

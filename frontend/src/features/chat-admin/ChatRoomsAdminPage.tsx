@@ -302,30 +302,58 @@ export function ChatRoomsAdminPage() {
             <Label>{t("chat_admin.add_member", { defaultValue: "Add member" })}</Label>
             <div className="grid grid-cols-2 gap-2">
               <Select value={filters.program} onValueChange={(v) => setFilters(prev => ({ ...prev, program: v === "all" ? "" : v }))}>
-                <SelectTrigger><SelectValue placeholder="Program" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("admin.forms.program", { defaultValue: "Program" })}
+                  />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Programs</SelectItem>
+                  <SelectItem value="all">
+                    {t("admin.forms.all_programs", { defaultValue: "All programs" })}
+                  </SelectItem>
                   {programs.map((p: Program) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filters.department} onValueChange={(v) => setFilters(prev => ({ ...prev, department: v === "all" ? "" : v }))}>
-                <SelectTrigger><SelectValue placeholder="Department" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("admin.forms.department", { defaultValue: "Department" })}
+                  />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
+                  <SelectItem value="all">
+                    {t("admin.forms.all_departments", { defaultValue: "All departments" })}
+                  </SelectItem>
                   {departments.map((d: Department) => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filters.cohort} onValueChange={(v) => setFilters(prev => ({ ...prev, cohort: v === "all" ? "" : v }))}>
-                <SelectTrigger><SelectValue placeholder="Cohort" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("admin.forms.cohort", { defaultValue: "Cohort" })}
+                  />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Cohorts</SelectItem>
+                  <SelectItem value="all">
+                    {t("admin.forms.all_cohorts", { defaultValue: "All cohorts" })}
+                  </SelectItem>
                   {cohorts.map((c: Cohort) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filters.specialty} onValueChange={(v) => setFilters(prev => ({ ...prev, specialty: v === "all" ? "" : v }))}>
-                <SelectTrigger><SelectValue placeholder="Specialty" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("admin.dictionaries.tabs.specialties", {
+                      defaultValue: "Specialties",
+                    })}
+                  />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Specialties</SelectItem>
+                  <SelectItem value="all">
+                    {t("admin.dictionaries.specialties.all", {
+                      defaultValue: "All specialties",
+                    })}
+                  </SelectItem>
                   {specialties.map((s: Specialty) => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -346,14 +374,18 @@ export function ChatRoomsAdminPage() {
                 onClick={() => addBatchMutation.mutate()}
                 disabled={addBatchMutation.isPending || !Object.values(filters).some(Boolean)}
               >
-                {addBatchMutation.isPending ? "Adding..." : "Add All"}
+                {addBatchMutation.isPending
+                  ? t("chat_admin.adding_all", { defaultValue: "Adding..." })
+                  : t("chat_admin.add_all", { defaultValue: "Add all" })}
               </Button>
               <Button 
                 variant="destructive" 
                 onClick={() => removeBatchMutation.mutate()}
                 disabled={removeBatchMutation.isPending || !Object.values(filters).some(Boolean)}
               >
-                {removeBatchMutation.isPending ? "Removing..." : "Remove All"}
+                {removeBatchMutation.isPending
+                  ? t("chat_admin.removing_all", { defaultValue: "Removing..." })
+                  : t("chat_admin.remove_all", { defaultValue: "Remove all" })}
               </Button>
             </div>
             {(memberSearch.trim().length >= 2 || Object.values(filters).some(Boolean)) && (

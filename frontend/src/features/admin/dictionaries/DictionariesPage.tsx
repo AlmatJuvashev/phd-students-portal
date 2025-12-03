@@ -7,17 +7,27 @@ import { DepartmentsList } from "./DepartmentsList";
 import { useTranslation } from "react-i18next";
 
 export const DictionariesPage = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Dictionaries</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        {t("admin.dictionaries.title", { defaultValue: "Dictionaries" })}
+      </h1>
       <Tabs defaultValue="programs" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="programs">Programs</TabsTrigger>
-          <TabsTrigger value="specialties">Specialties</TabsTrigger>
-          <TabsTrigger value="cohorts">Cohorts</TabsTrigger>
-          <TabsTrigger value="departments">Departments</TabsTrigger>
+          <TabsTrigger value="programs">
+            {t("admin.dictionaries.tabs.programs", { defaultValue: "Programs" })}
+          </TabsTrigger>
+          <TabsTrigger value="specialties">
+            {t("admin.dictionaries.tabs.specialties", { defaultValue: "Specialties" })}
+          </TabsTrigger>
+          <TabsTrigger value="cohorts">
+            {t("admin.dictionaries.tabs.cohorts", { defaultValue: "Cohorts" })}
+          </TabsTrigger>
+          <TabsTrigger value="departments">
+            {t("admin.dictionaries.tabs.departments", { defaultValue: "Departments" })}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="programs">
           <ProgramsList />

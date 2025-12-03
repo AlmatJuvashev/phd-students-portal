@@ -149,8 +149,13 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	admin.PUT("/contacts/:id", contactsHandler.Update)
 	admin.DELETE("/contacts/:id", contactsHandler.Delete)
 
+	// Global Search
+	searchHandler := NewSearchHandler(db, cfg)
+	api.GET("/search", middleware.AuthRequired([]byte(cfg.JWTSecret)), searchHandler.GlobalSearch)
+
 	// Self-service password change and profile update
 	api.PATCH("/me", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.UpdateMe)
+	api.POST("/me/avatar/presign", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.PresignAvatarUpload)
 	api.PATCH("/me/password", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.ChangeOwnPassword)
 	api.GET("/me/pending-email", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.GetPendingEmailVerification)
 	api.GET("/me/verify-email", users.VerifyEmailChange) // No auth required for better UX
