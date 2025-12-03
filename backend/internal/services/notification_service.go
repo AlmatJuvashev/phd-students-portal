@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/jmoiron/sqlx"
@@ -20,7 +21,7 @@ func (s *NotificationService) CreateNotification(ctx context.Context, notif *mod
 		INSERT INTO notifications (recipient_id, actor_id, title, message, link, type)
 		VALUES (:recipient_id, :actor_id, :title, :message, :link, :type)
 		RETURNING id, created_at, updated_at`
-	
+
 	rows, err := s.db.NamedQueryContext(ctx, query, notif)
 	if err != nil {
 		return err
@@ -37,7 +38,7 @@ func (s *NotificationService) GetUnreadNotifications(ctx context.Context, userID
 		SELECT * FROM notifications 
 		WHERE recipient_id = $1 AND is_read = FALSE 
 		ORDER BY created_at DESC`
-	
+
 	var notifs []models.Notification
 	err := s.db.SelectContext(ctx, &notifs, query, userID)
 	if err != nil {
@@ -48,8 +49,15 @@ func (s *NotificationService) GetUnreadNotifications(ctx context.Context, userID
 
 func (s *NotificationService) MarkAsRead(ctx context.Context, notificationID, userID string) error {
 	query := `UPDATE notifications SET is_read = TRUE WHERE id = $1 AND recipient_id = $2`
-	_, err := s.db.ExecContext(ctx, query, notificationID, userID)
-	return err
+	res, err := s.db.ExecContext(ctx, query, notificationID, userID)
+	if err != nil {
+		return err
+	}
+	affected, _ := res.RowsAffected()
+	if affected == 0 {
+		return fmt.Errorf("notification not found or not owned by user")
+	}
+	return nil
 }
 
 func (s *NotificationService) MarkAllAsRead(ctx context.Context, userID string) error {
