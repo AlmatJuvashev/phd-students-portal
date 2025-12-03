@@ -105,3 +105,10 @@ export async function deleteMessage(messageId: string) {
     method: "DELETE",
   });
 }
+
+export async function addMember(roomId: string, userId: string, role: string = "member") {
+  return api(`/chat/rooms/${roomId}/members`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, role_in_room: role }),
+  });
+}

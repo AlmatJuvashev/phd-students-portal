@@ -16,7 +16,10 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  UserPlus,
 } from "lucide-react";
+import { AddMemberDialog } from "@/features/chat/AddMemberDialog";
+import { api } from "@/api/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +83,13 @@ export function ChatPage() {
   );
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [search, setSearch] = useState("");
+  const [showAddMember, setShowAddMember] = useState(false);
+
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: () => api("/me"),
+  });
+  const isAdmin = me?.role === "admin" || me?.role === "superadmin";
 
   // ... (existing queries)
 
@@ -409,7 +419,25 @@ export function ChatPage() {
                 {t("chat.archived")}
               </Badge>
             )}
+            {activeRoom && isAdmin && !activeRoom.is_archived && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAddMember(true)}
+                title={t("chat.add_member", { defaultValue: "Add Member" })}
+              >
+                <UserPlus className="h-5 w-5 text-muted-foreground hover:text-primary" />
+              </Button>
+            )}
           </div>
+
+          {activeRoomId && (
+            <AddMemberDialog
+              open={showAddMember}
+              onOpenChange={setShowAddMember}
+              roomId={activeRoomId}
+            />
+          )}
 
           <div className="flex-1 flex flex-col bg-muted/10">
             {messagesLoading ? (
