@@ -58,11 +58,13 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
 
-      {authed && (
-        <NavLink to="/journey" mobile={mobile}>
-          {T("nav.journey")}
-        </NavLink>
-      )}
+      {authed &&
+        (!["admin", "superadmin"].includes(role || "") ||
+          !import.meta.env.PROD) && (
+          <NavLink to="/journey" mobile={mobile}>
+            {T("nav.journey")}
+          </NavLink>
+        )}
       {authed && (
         <NavLink to="/chat" mobile={mobile}>
           {T("nav.chat", { defaultValue: "Messages" })}
