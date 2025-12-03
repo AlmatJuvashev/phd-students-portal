@@ -44,6 +44,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	}))
 	api := r.Group("/api")
 
+	// Shared Redis (for auth hydration)
+	rds := services.NewRedis(cfg.RedisURL)
+
 	// Debug endpoint to check CORS config (remove in production)
 	api.GET("/debug/cors", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -59,7 +62,6 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			return
 		}
 		// Hydrate from DB/Redis
-		rds := services.NewRedis(cfg.RedisURL)
 		middleware.HydrateUserFromClaims(c, db, rds)
 		if val, ok := c.Get("current_user"); ok {
 			c.JSON(200, val)
@@ -114,7 +116,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	monitor := api.Group("/admin") // Keep URL prefix /admin for compatibility but change middleware
 	monitor.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
 	monitor.Use(middleware.RequireRoles("admin", "superadmin", "advisor"))
-	
+
 	// Notifications (admin/advisor view of student events)
 	notifications := NewNotificationsHandler(db)
 	monitor.GET("/notifications", notifications.ListNotifications)
@@ -160,7 +162,6 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	api.GET("/me/pending-email", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.GetPendingEmailVerification)
 	api.GET("/me/verify-email", users.VerifyEmailChange) // No auth required for better UX
 
-
 	// Journey state (per-user)
 	js := api.Group("/journey")
 	js.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
@@ -199,7 +200,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Calendar routes
 	calendarService := services.NewCalendarService(db)
 	calendarHandler := NewCalendarHandler(calendarService)
-	
+
 	events := api.Group("/events")
 	events.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
 	events.GET("", calendarHandler.GetEvents)
@@ -210,9 +211,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Notification routes (generic)
 	notifService := services.NewNotificationService(db)
 	notifHandler := NewNotificationHandler(notifService)
-	
+
 	notifs := api.Group("/notifications")
-	notifs.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	notifs.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	notifs.GET("", notifHandler.GetUnread)
 	notifs.PATCH("/:id/read", notifHandler.MarkAsRead)
 	notifs.POST("/read-all", notifHandler.MarkAllAsRead)
@@ -220,7 +221,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Analytics routes (admin only)
 	analyticsService := services.NewAnalyticsService(db)
 	analyticsHandler := NewAnalyticsHandler(analyticsService)
-	
+
 	analytics := api.Group("/analytics")
 	analytics.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
 	analytics.Use(middleware.RequireRoles("admin", "superadmin", "chair"))
