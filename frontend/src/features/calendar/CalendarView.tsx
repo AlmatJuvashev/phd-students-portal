@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
-import { enUS } from 'date-fns/locale/en-US';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { EventModal } from './EventModal';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay } from "date-fns";
+import { enUS } from "date-fns/locale/en-US";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { EventModal } from "./EventModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const locales = {
   'en-US': enUS,
@@ -45,6 +46,7 @@ export const CalendarView = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation("common");
 
   const fetchEvents = async () => {
     const start = new Date(new Date().getFullYear(), 0, 1).toISOString();
@@ -52,7 +54,7 @@ export const CalendarView = () => {
     const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/events?start=${start}&end=${end}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) throw new Error('Failed to fetch events');
+    if (!res.ok) throw new Error(t("calendar.errors.fetch", { defaultValue: "Failed to fetch events" }));
     return res.json();
   };
 
@@ -84,10 +86,12 @@ export const CalendarView = () => {
   return (
     <div className="h-screen p-4 flex flex-col gap-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Calendar</h1>
+        <h1 className="text-2xl font-bold">
+          {t("calendar.title", { defaultValue: "Calendar" })}
+        </h1>
         <Button onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />
-          New Event
+          {t("calendar.new_event", { defaultValue: "New Event" })}
         </Button>
       </div>
       <div className="flex-1 bg-white p-4 rounded-lg shadow">

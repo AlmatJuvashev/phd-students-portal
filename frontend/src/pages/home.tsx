@@ -80,7 +80,9 @@ export function HomePage() {
                 {T("nav.chat", { defaultValue: "Messages" })}
               </div>
               <p className="text-sm text-muted-foreground">
-                Chat with your advisors and colleagues.
+                {T("home.chat_hint", {
+                  defaultValue: "Chat with your advisors and colleagues.",
+                })}
               </p>
             </div>
             <Link to="/chat" className="w-full">
@@ -88,7 +90,7 @@ export function HomePage() {
                 variant="outline"
                 className="w-full group-hover:shadow-lg transition-shadow"
               >
-                Open Chat
+                {T("home.open_chat", { defaultValue: "Open Chat" })}
               </Button>
             </Link>
           </CardContent>
@@ -104,7 +106,9 @@ export function HomePage() {
                 {T("nav.calendar", { defaultValue: "Calendar" })}
               </div>
               <p className="text-sm text-muted-foreground">
-                View upcoming events and deadlines.
+                {T("home.calendar_hint", {
+                  defaultValue: "View upcoming events and deadlines.",
+                })}
               </p>
             </div>
             <Link to="/calendar" className="w-full">
@@ -112,7 +116,7 @@ export function HomePage() {
                 variant="outline"
                 className="w-full group-hover:shadow-lg transition-shadow"
               >
-                View Calendar
+                {T("home.open_calendar", { defaultValue: "View Calendar" })}
               </Button>
             </Link>
           </CardContent>
