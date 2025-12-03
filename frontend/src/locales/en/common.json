@@ -59,7 +59,11 @@
     "add_all": "Add all",
     "remove_all": "Remove all",
     "adding_all": "Adding...",
-    "removing_all": "Removing..."
+    "removing_all": "Removing...",
+    "added_members": "Added members",
+    "added_members_count": "Added {{count}} members",
+    "removed_members": "Removed members",
+    "removed_members_count": "Removed {{count}} members"
   },
   "auth": {
     "login_title": "Login",
@@ -74,6 +78,42 @@
   "templates": {
     "heading": "Available Templates",
     "profile_required": "Please complete your doctoral profile form to auto-fill templates."
+  },
+  "calendar": {
+    "title": "Calendar",
+    "new_event": "New Event",
+    "create_event": "Create Event",
+    "edit_event": "Edit Event",
+    "fields": {
+      "title": "Title",
+      "start": "Start",
+      "end": "End",
+      "type": "Type",
+      "type_placeholder": "Select type",
+      "location": "Location",
+      "description": "Description"
+    },
+    "types": {
+      "meeting": "Meeting",
+      "deadline": "Deadline",
+      "academic": "Academic"
+    },
+    "actions": {
+      "delete": "Delete",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "errors": {
+      "fetch": "Failed to fetch events",
+      "save": "Failed to save event",
+      "delete": "Failed to delete event"
+    },
+    "confirm_delete": "Are you sure you want to delete this event?",
+    "validation": {
+      "title": "Title is required",
+      "start": "Start time is required",
+      "end": "End time is required"
+    }
   },
   "forms": {
     "validations_title": "Validations",
@@ -151,7 +191,11 @@
     "open_contacts": "Contacts",
     "no_contacts": "No contacts available.",
     "hero_title": "PhD Student Portal",
-    "hero_subtitle": "Navigate your doctoral journey with clarity and confidence"
+    "hero_subtitle": "Navigate your doctoral journey with clarity and confidence",
+    "chat_hint": "Chat with your advisors and colleagues.",
+    "open_chat": "Open Chat",
+    "calendar_hint": "View upcoming events and deadlines.",
+    "open_calendar": "View Calendar"
   },
   "map": {
     "title": "My Dissertation Map",

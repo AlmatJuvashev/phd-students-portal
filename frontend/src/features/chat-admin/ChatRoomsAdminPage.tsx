@@ -122,7 +122,13 @@ export function ChatRoomsAdminPage() {
     mutationFn: () => addRoomMembersBatch(manageRoomId || "", filters),
     onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["chat", "admin", "members", manageRoomId] });
-      toast({ title: "Added members", description: `Added ${data.added_count} members` });
+      toast({
+        title: t("chat_admin.added_members", { defaultValue: "Added members" }),
+        description: t("chat_admin.added_members_count", {
+          defaultValue: "Added {{count}} members",
+          count: data?.added_count ?? 0,
+        }),
+      });
     },
   });
 
@@ -130,7 +136,13 @@ export function ChatRoomsAdminPage() {
     mutationFn: () => removeRoomMembersBatch(manageRoomId || "", filters),
     onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["chat", "admin", "members", manageRoomId] });
-      toast({ title: "Removed members", description: `Removed ${data.removed_count} members` });
+      toast({
+        title: t("chat_admin.removed_members", { defaultValue: "Removed members" }),
+        description: t("chat_admin.removed_members_count", {
+          defaultValue: "Removed {{count}} members",
+          count: data?.removed_count ?? 0,
+        }),
+      });
     },
   });
 
