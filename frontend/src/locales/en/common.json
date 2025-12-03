@@ -108,6 +108,7 @@
       "save": "Failed to save event",
       "delete": "Failed to delete event"
     },
+    "untitled": "Untitled",
     "confirm_delete": "Are you sure you want to delete this event?",
     "validation": {
       "title": "Title is required",
