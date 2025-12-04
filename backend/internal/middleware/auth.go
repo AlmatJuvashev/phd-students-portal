@@ -109,6 +109,11 @@ func AuthMiddleware(secret []byte, dbx *sqlx.DB, rds *redis.Client) gin.HandlerF
 			return
 		}
 		HydrateUserFromClaims(c, dbx, rds)
+		userID := c.GetString("userID")
+		if userID == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+			return
+		}
 		if _, exists := c.Get("current_user"); !exists {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 			return
