@@ -192,6 +192,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
 	chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
 	chat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
+	chat.POST("/rooms/:roomId/read", chatHandler.MarkAsRead)
 	chat.PATCH("/messages/:messageId", chatHandler.UpdateMessage)
 	chat.DELETE("/messages/:messageId", chatHandler.DeleteMessage)
 

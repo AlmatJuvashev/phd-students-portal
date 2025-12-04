@@ -12,6 +12,8 @@ export type ChatRoom = {
   is_archived: boolean;
   meta?: unknown;
   created_at: string;
+  unread_count?: number;
+  last_message_at?: string;
 };
 
 export type ChatAttachment = {
@@ -29,14 +31,28 @@ export type ChatMessage = {
   sender_role?: ChatRole;
   body: string;
   attachments?: ChatAttachment[];
+  importance?: "alert" | "warning" | null;
   created_at: string;
   edited_at?: string | null;
   deleted_at?: string | null;
 };
 
+export type ChatMember = {
+  user_id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  role_in_room: string;
+};
+
 export async function listRooms(): Promise<ChatRoom[]> {
   const res = await api("/chat/rooms");
   return res.rooms ?? [];
+}
+
+export async function listRoomMembers(roomId: string): Promise<ChatMember[]> {
+  const res = await api(`/chat/rooms/${roomId}/members`);
+  return res.members ?? [];
 }
 
 export async function listMessages(params: {
@@ -56,40 +72,41 @@ export async function listMessages(params: {
   return res.messages ?? [];
 }
 
-export async function sendMessage(roomId: string, body: string, attachments?: ChatAttachment[]) {
+export async function sendMessage(roomId: string, body: string, attachments?: ChatAttachment[], importance?: "alert" | "warning" | null) {
   const res = await api(`/chat/rooms/${roomId}/messages`, {
     method: "POST",
-    body: JSON.stringify({ body, attachments }),
+    body: JSON.stringify({ body, attachments, importance }),
   });
   return res.message as ChatMessage;
 }
 
-export async function uploadFile(roomId: string, file: File) {
+export async function uploadFile(roomId: string, file: File): Promise<ChatAttachment> {
+  console.log("[uploadFile] Starting upload:", {
+    roomId,
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+  });
+  
   const formData = new FormData();
   formData.append("file", file);
   
-  // We need to use fetch directly or a wrapper that handles FormData correctly if api client doesn't
-  // Assuming api client handles FormData if body is FormData, or we need to handle headers.
-  // The current api client wrapper might set Content-Type to json by default.
-  // Let's check api client implementation.
-  // For now, I'll assume I can pass FormData and let the browser set Content-Type (multipart/form-data with boundary).
-  // But wait, the `api` helper usually sets Content-Type: application/json.
-  // I should check `frontend/src/api/client.ts`.
+  console.log("[uploadFile] FormData created, entries:");
+  for (const [key, value] of formData.entries()) {
+    console.log(`  ${key}:`, value);
+  }
   
-  // If I can't check it right now, I'll use a standard fetch or assume the api client is smart enough.
-  // Actually, I'll just use the `api` client but I might need to override headers.
-  // Let's assume for now I can pass a custom config.
-  
-  // Re-reading api client usage in other files...
-  // `frontend/src/features/docgen/api.ts` or similar might have upload examples.
-  // I recall `UploadVersion` in `documents.go`.
-  
-  // Let's just implement it and if it fails I'll fix the client.
-  // Actually, better to check client.ts first.
-  return api(`/chat/rooms/${roomId}/upload`, {
-    method: "POST",
-    body: formData,
-  }) as Promise<ChatAttachment>;
+  try {
+    const res = await api(`/chat/rooms/${roomId}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    console.log("[uploadFile] Upload response:", res);
+    return res as ChatAttachment;
+  } catch (error) {
+    console.error("[uploadFile] Upload failed:", error);
+    throw error;
+  }
 }
 
 export async function updateMessage(messageId: string, body: string) {
@@ -112,3 +129,10 @@ export async function addMember(roomId: string, userId: string, role: string = "
     body: JSON.stringify({ user_id: userId, role_in_room: role }),
   });
 }
+
+export async function markAsRead(roomId: string) {
+  return api(`/chat/rooms/${roomId}/read`, {
+    method: "POST",
+  });
+}
+

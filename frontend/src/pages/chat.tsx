@@ -37,12 +37,15 @@ import {
   ChatAttachment,
   ChatMessage,
   ChatRoom,
+  ChatMember,
   listMessages,
   listRooms,
+  listRoomMembers,
   sendMessage,
   uploadFile,
   updateMessage,
   deleteMessage,
+  markAsRead,
 } from "@/features/chat/api";
 
 function formatTime(iso?: string) {
@@ -186,6 +189,28 @@ export function ChatPage() {
     enabled: !!activeRoomId,
   });
 
+  // Room members query
+  const { data: roomMembers = [] } = useQuery<ChatMember[]>({
+    queryKey: ["chat", "members", activeRoomId],
+    queryFn: () => listRoomMembers(activeRoomId),
+    enabled: !!activeRoomId,
+  });
+
+  // Format members for display in header
+  const membersDisplay = useMemo(() => {
+    if (!roomMembers || roomMembers.length === 0) return "";
+    const names = roomMembers
+      .slice(0, 3)
+      .map((m) => {
+        const name = [m.first_name, m.last_name].filter(Boolean).join(" ");
+        return name || m.email || "User";
+      });
+    if (roomMembers.length > 3) {
+      return `${names.join(", ")} +${roomMembers.length - 3}`;
+    }
+    return names.join(", ");
+  }, [roomMembers]);
+
   // Sort messages by created_at
   const sortedMessages = useMemo(() => {
     if (!messages) return [];
@@ -201,15 +226,27 @@ export function ChatPage() {
   // Handle file selection for upload
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !activeRoomId) return;
+    console.log("[handleFileSelect] Files selected:", files);
+    console.log("[handleFileSelect] Active room:", activeRoomId);
+    
+    if (!files || files.length === 0 || !activeRoomId) {
+      console.log("[handleFileSelect] Early return:", { files: !!files, length: files?.length, activeRoomId });
+      return;
+    }
 
     setIsUploading(true);
     try {
       const file = files[0];
+      console.log("[handleFileSelect] Uploading file:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
       const uploaded = await uploadFile(activeRoomId, file);
+      console.log("[handleFileSelect] Upload successful:", uploaded);
       setAttachments((prev) => [...prev, uploaded]);
     } catch (err) {
-      console.error("File upload failed:", err);
+      console.error("[handleFileSelect] File upload failed:", err);
     } finally {
       setIsUploading(false);
       e.target.value = ""; // Reset input
@@ -240,6 +277,18 @@ export function ChatPage() {
       setSidebarOpen(true); // Always show sidebar on desktop
     }
   }, [activeRoomId, isMobile]);
+
+  // Mark room as read when entering and refresh rooms to update unread counts
+  useEffect(() => {
+    if (activeRoomId) {
+      markAsRead(activeRoomId)
+        .then(() => {
+          // Refresh room list to update unread counts
+          qc.invalidateQueries({ queryKey: ["chat", "rooms"] });
+        })
+        .catch((err) => console.error("Failed to mark room as read:", err));
+    }
+  }, [activeRoomId, qc]);
 
   const handleBackToRooms = () => {
     setSidebarOpen(true);
@@ -333,9 +382,17 @@ export function ChatPage() {
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <div>
-                              <div className="font-semibold leading-tight">
-                                {room.name}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold leading-tight truncate">
+                                  {room.name}
+                                </span>
+                                {/* Unread badge */}
+                                {room.unread_count && room.unread_count > 0 && (
+                                  <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 text-[10px] font-bold rounded-full bg-primary text-primary-foreground shrink-0">
+                                    {room.unread_count > 99 ? "99+" : room.unread_count}
+                                  </span>
+                                )}
                               </div>
                               <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground mt-1">
                                 <Badge
@@ -354,9 +411,9 @@ export function ChatPage() {
                                 )}
                               </div>
                             </div>
-                            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <span className="text-[11px] text-muted-foreground flex items-center gap-1 shrink-0">
                               <Clock4 className="h-3 w-3" />
-                              {formatTime(room.created_at)}
+                              {formatTime(room.last_message_at || room.created_at)}
                             </span>
                           </div>
                         </button>
@@ -469,7 +526,13 @@ export function ChatPage() {
                     {activeRoom ? (
                       <>
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500/50 animate-pulse" />
-                        {t(`chat.types.${activeRoom.type}`)}
+                        {membersDisplay ? (
+                          <span title={roomMembers.map(m => [m.first_name, m.last_name].filter(Boolean).join(" ") || m.email).join(", ")}>
+                            {membersDisplay}
+                          </span>
+                        ) : (
+                          t(`chat.types.${activeRoom.type}`)
+                        )}
                       </>
                     ) : (
                       t("chat.empty_state")
@@ -537,6 +600,14 @@ export function ChatPage() {
                     prev.sender_id !== msg.sender_id ||
                     thisDate.getTime() - new Date(prev.created_at).getTime() >
                       5 * 60 * 1000;
+                  
+                  // WhatsApp-style: check if this is the current user's message
+                  const isOwnMessage = msg.sender_id === me?.id;
+                  
+                  // Role-based styling for admin/advisor messages
+                  const isAdminMessage = msg.sender_role === "admin" || msg.sender_role === "superadmin";
+                  const isAdvisorMessage = msg.sender_role === "advisor" || msg.sender_role === "chair";
+                  
                   return (
                     <div
                       key={msg.id}
@@ -552,25 +623,56 @@ export function ChatPage() {
                           </span>
                         </div>
                       )}
-                      <div className="flex items-start gap-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                      <div className={cn(
+                        "flex items-start gap-2",
+                        isOwnMessage && "flex-row-reverse"
+                      )}>
+                        {/* Avatar - hide for own messages or show on right side */}
+                        <div className={cn(
+                          "h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                          isOwnMessage 
+                            ? "bg-primary text-primary-foreground" 
+                            : isAdminMessage 
+                              ? "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+                              : isAdvisorMessage
+                                ? "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                                : "bg-primary/10 text-primary"
+                        )}>
                           {initials(msg.sender_name || msg.sender_id)}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          {showSender && (
+                        <div className={cn(
+                          "flex-1 min-w-0 max-w-[75%]",
+                          isOwnMessage && "flex flex-col items-end"
+                        )}>
+                          {showSender && !isOwnMessage && (
                             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                              <span className="font-medium text-foreground">
+                              <span className={cn(
+                                "font-medium",
+                                isAdminMessage && "text-purple-600 dark:text-purple-400",
+                                isAdvisorMessage && "text-blue-600 dark:text-blue-400",
+                                !isAdminMessage && !isAdvisorMessage && "text-foreground"
+                              )}>
                                 {msg.sender_name || msg.sender_id}
                               </span>
                               {msg.sender_role && (
                                 <Badge
                                   variant="outline"
-                                  className="text-[10px]"
+                                  className={cn(
+                                    "text-[10px]",
+                                    isAdminMessage && "border-purple-500/50 text-purple-600 dark:text-purple-400",
+                                    isAdvisorMessage && "border-blue-500/50 text-blue-600 dark:text-blue-400"
+                                  )}
                                 >
                                   {msg.sender_role}
                                 </Badge>
                               )}
                               <span>{formatTime(msg.created_at)}</span>
+                            </div>
+                          )}
+                          {/* Show time for own messages */}
+                          {showSender && isOwnMessage && (
+                            <div className="text-[11px] text-muted-foreground mb-1">
+                              {formatTime(msg.created_at)}
                             </div>
                           )}
 
@@ -583,7 +685,16 @@ export function ChatPage() {
                             </div>
                           ) : (
                             <div className="group/msg relative mt-1">
-                              <div className="rounded-2xl bg-background border px-3 py-2 shadow-sm pr-8">
+                              <div className={cn(
+                                "rounded-2xl px-3 py-2 shadow-sm",
+                                isOwnMessage 
+                                  ? "bg-primary text-primary-foreground rounded-tr-sm" 
+                                  : cn(
+                                      "bg-background border rounded-tl-sm",
+                                      isAdminMessage && "border-purple-500/30 bg-purple-50/50 dark:bg-purple-950/20",
+                                      isAdvisorMessage && "border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20"
+                                    )
+                              )}>
                                 {msg.attachments &&
                                   msg.attachments.length > 0 && (
                                     <div className="mb-2 space-y-2">
@@ -607,14 +718,25 @@ export function ChatPage() {
                                               href={att.url}
                                               target="_blank"
                                               rel="noopener noreferrer"
-                                              className="flex items-center gap-2 p-2 rounded-md bg-muted/50 hover:bg-muted transition border"
+                                              className={cn(
+                                                "flex items-center gap-2 p-2 rounded-md transition border",
+                                                isOwnMessage 
+                                                  ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 border-primary-foreground/20" 
+                                                  : "bg-muted/50 hover:bg-muted"
+                                              )}
                                             >
-                                              <FileIcon className="h-4 w-4 text-primary" />
+                                              <FileIcon className={cn(
+                                                "h-4 w-4",
+                                                isOwnMessage ? "text-primary-foreground" : "text-primary"
+                                              )} />
                                               <div className="flex-1 min-w-0">
                                                 <div className="text-sm font-medium truncate">
                                                   {att.name}
                                                 </div>
-                                                <div className="text-xs text-muted-foreground">
+                                                <div className={cn(
+                                                  "text-xs",
+                                                  isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                )}>
                                                   {(att.size / 1024).toFixed(1)}{" "}
                                                   KB
                                                 </div>
@@ -629,7 +751,10 @@ export function ChatPage() {
                                   {msg.body}
                                 </p>
                                 {msg.edited_at && (
-                                  <span className="text-[10px] text-muted-foreground italic ml-1">
+                                  <span className={cn(
+                                    "text-[10px] italic ml-1",
+                                    isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground"
+                                  )}>
                                     (
                                     {t("chat.edited", {
                                       defaultValue: "edited",
@@ -639,40 +764,46 @@ export function ChatPage() {
                                 )}
                               </div>
 
-                              <div className="absolute top-1 right-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6 rounded-full bg-background/80 hover:bg-muted shadow-sm"
-                                    >
-                                      <MoreVertical className="h-3 w-3" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => startEditing(msg)}
-                                    >
-                                      <Pencil className="mr-2 h-3 w-3" />
-                                      {t("common.edit", {
-                                        defaultValue: "Edit",
-                                      })}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-destructive focus:text-destructive"
-                                      onClick={() =>
-                                        deleteMutation.mutate(msg.id)
-                                      }
-                                    >
-                                      <Trash2 className="mr-2 h-3 w-3" />
-                                      {t("common.delete", {
-                                        defaultValue: "Delete",
-                                      })}
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
+                              {/* Only show edit/delete menu for own messages */}
+                              {isOwnMessage && (
+                                <div className={cn(
+                                  "absolute top-1 opacity-0 group-hover/msg:opacity-100 transition-opacity",
+                                  isOwnMessage ? "left-1" : "right-1"
+                                )}>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 rounded-full bg-background/80 hover:bg-muted shadow-sm"
+                                      >
+                                        <MoreVertical className="h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align={isOwnMessage ? "start" : "end"}>
+                                      <DropdownMenuItem
+                                        onClick={() => startEditing(msg)}
+                                      >
+                                        <Pencil className="mr-2 h-3 w-3" />
+                                        {t("common.edit", {
+                                          defaultValue: "Edit",
+                                        })}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={() =>
+                                          deleteMutation.mutate(msg.id)
+                                        }
+                                      >
+                                        <Trash2 className="mr-2 h-3 w-3" />
+                                        {t("common.delete", {
+                                          defaultValue: "Delete",
+                                        })}
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
