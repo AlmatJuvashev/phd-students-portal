@@ -314,7 +314,7 @@ export function WorldMap({
   }, [visibleWorlds]);
 
   return (
-    <div className="p-4 space-y-6" {...swipeHandlers}>
+    <div className="p-4 space-y-6 max-w-4xl mx-auto" {...swipeHandlers}>
       <header className="sticky top-0 z-20 bg-gradient-to-b from-background via-background to-background/80 backdrop-blur-md shadow-lg -mx-4 -mt-4 px-4 py-4 rounded-b-xl">
         <div className="flex items-center justify-between mb-3 gap-2">
           <BackButton to="/" />
