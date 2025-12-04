@@ -459,7 +459,7 @@ export function CreateAdmins() {
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>{t("admin.forms.edit_student", { defaultValue: "Edit" })}</TooltipContent>
+                            <TooltipContent>{t("admin.forms.edit_admin", { defaultValue: "Edit Admin" })}</TooltipContent>
                           </Tooltip>
                           {admin.is_active !== false ? (
                             <Tooltip>
@@ -478,7 +478,7 @@ export function CreateAdmins() {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {t("admin.forms.delete_student", { defaultValue: "Deactivate" })}
+                                {t("admin.forms.delete_admin", { defaultValue: "Deactivate Admin" })}
                               </TooltipContent>
                             </Tooltip>
                           ) : (

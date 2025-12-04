@@ -27,7 +27,7 @@ export function AdminUsersPage() {
           <TabsTrigger value="advisors">
             {t("admin.users.advisors", { defaultValue: "Advisors" })}
           </TabsTrigger>
-          {isSuperAdmin && (
+          {user?.role === "superadmin" && (
             <TabsTrigger value="admins">
               {t("admin.users.admins", { defaultValue: "Admins" })}
             </TabsTrigger>

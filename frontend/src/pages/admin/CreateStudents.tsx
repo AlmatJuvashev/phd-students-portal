@@ -5,7 +5,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api/client";
-import { listPrograms, listSpecialties, listCohorts, listDepartments, Program, Specialty, Cohort, Department } from "@/features/admin/dictionaries/api";
+import {
+  listPrograms,
+  listSpecialties,
+  listCohorts,
+  listDepartments,
+  Program,
+  Specialty,
+  Cohort,
+  Department,
+} from "@/features/admin/dictionaries/api";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,7 +55,7 @@ const EMPTY_SCHEMA = z.object({
   first_name: z.string(),
   last_name: z.string(),
   phone: z.string().optional(),
-  email: z.string().optional(),
+  email: z.string(),
   program: z.string(),
   specialty: z.string(),
   department: z.string(),
@@ -92,9 +101,10 @@ export function CreateStudents() {
         phone: z.string().optional(),
         email: z
           .string()
-          .email(t("validation.invalid_email", { defaultValue: "Invalid email" }))
-          .optional()
-          .or(z.literal("")),
+          .min(1, t("validation.required", { defaultValue: "Required" }))
+          .email(
+            t("validation.invalid_email", { defaultValue: "Invalid email" })
+          ),
         program: z
           .string()
           .min(1, t("validation.required", { defaultValue: "Required" })),
@@ -154,13 +164,14 @@ export function CreateStudents() {
   const { data: programsList = [] } = useQuery<Program[]>({
     queryKey: ["programs", "active"],
     queryFn: () => listPrograms(true),
+    staleTime: 0, // Always fetch latest data
   });
 
   const { data: specialtiesList = [] } = useQuery<Specialty[]>({
     queryKey: ["specialties", "active"],
     queryFn: () => listSpecialties(true),
+    staleTime: 0, // Always fetch latest data
   });
-
 
   const { data: advisorResponse } = useQuery<PaginatedResponse>({
     queryKey: ["admin", "advisors", advisorSearch],
@@ -176,11 +187,13 @@ export function CreateStudents() {
   const { data: cohortsList = [] } = useQuery({
     queryKey: ["cohorts", "active"],
     queryFn: () => listCohorts(true),
+    staleTime: 0, // Always fetch latest data
   });
 
   const { data: departmentsList = [] } = useQuery({
     queryKey: ["departments", "active"],
     queryFn: () => listDepartments(true),
+    staleTime: 0, // Always fetch latest data
   });
 
   const {
@@ -313,6 +326,7 @@ export function CreateStudents() {
       last_name: string;
       email: string;
       program?: string;
+      specialty?: string;
       department?: string;
       cohort?: string;
     }) =>
@@ -324,6 +338,7 @@ export function CreateStudents() {
           email: payload.email,
           role: "student",
           program: payload.program || "",
+          specialty: payload.specialty || "",
           department: payload.department || "",
           cohort: payload.cohort || "",
         }),
@@ -377,7 +392,9 @@ export function CreateStudents() {
   };
 
   const copyCredentials = (creds: Creds) => {
-    const message = `Username: ${creds.username}\nPassword: ${creds.temp_password}`;
+    const usernameLabel = t("admin.forms.username", { defaultValue: "Username" });
+    const passwordLabel = t("admin.forms.password", { defaultValue: "Password" });
+    const message = `${usernameLabel}: ${creds.username}\n${passwordLabel}: ${creds.temp_password}`;
     navigator.clipboard.writeText(message);
   };
 
@@ -541,8 +558,8 @@ export function CreateStudents() {
                 <span className="font-mono">{created.username}</span>
               </div>
               <div className="text-sm">
-                {t("admin.forms.temp_password", {
-                  defaultValue: "Temp password",
+                {t("admin.forms.password", {
+                  defaultValue: "Пароль",
                 })}
                 :&nbsp;
                 <span className="font-mono">{created.temp_password}</span>
@@ -580,8 +597,8 @@ export function CreateStudents() {
                 <span className="font-mono">{resetInfo.username}</span>
               </div>
               <div className="text-sm">
-                {t("admin.forms.temp_password", {
-                  defaultValue: "Temp password",
+                {t("admin.forms.password", {
+                  defaultValue: "Пароль",
                 })}
                 :&nbsp;
                 <span className="font-mono">{resetInfo.temp_password}</span>
@@ -885,133 +902,140 @@ export function CreateStudents() {
                         key={student.id}
                         className={`border-t border-border/60 text-foreground transition-colors hover:bg-muted/30 ${rowClass}`}
                       >
-                      <td className="py-3 pr-4 align-top text-muted-foreground">
-                        {(currentPage - 1) * CLIENT_PAGE_SIZE + idx + 1}
-                      </td>
-                      <td className="py-3 pr-4 align-top">
-                        <div className="font-medium">{student.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {student.email}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 align-top font-mono">
-                        {student.username || "—"}
-                      </td>
-                      <td className="py-3 pr-4 align-top">
-                        {student.program || "—"}
-                      </td>
-                      <td className="py-3 pr-4 align-top">
-                        {student.department || "—"}
-                      </td>
-                      <td className="py-3 pr-4 align-top">
-                        {student.cohort || "—"}
-                      </td>
-                      <td className="py-3 pr-4 align-top">
-                        {formatDate(student.created_at)}
-                      </td>
-                      <td className="py-3 text-right align-top">
-                        <div className="flex justify-end gap-1">
-                        <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleResetPassword(student)}
-                                aria-label={t("admin.review.reset_password", {
-                                  defaultValue: "Reset password",
-                                })}
-                              >
-                                {pendingResetId === student.id &&
-                                resetPasswordMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <RefreshCw className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("admin.review.reset_password", {
-                                defaultValue: "Reset password",
-                              })}
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEdit(student)}
-                                aria-label={t("admin.forms.edit_student", {
-                                  defaultValue: "Edit",
-                                })}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("admin.forms.edit_student", {
-                                defaultValue: "Edit",
-                              })}
-                            </TooltipContent>
-                          </Tooltip>
-                          {student.is_active ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive/80"
-                                  onClick={() => handleDeactivate(student)}
-                                  aria-label={t("admin.forms.delete_student", {
-                                    defaultValue: "Deactivate",
+                        <td className="py-3 pr-4 align-top text-muted-foreground">
+                          {(currentPage - 1) * CLIENT_PAGE_SIZE + idx + 1}
+                        </td>
+                        <td className="py-3 pr-4 align-top">
+                          <div className="font-medium">{student.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {student.email}
+                          </div>
+                        </td>
+                        <td className="py-3 pr-4 align-top font-mono">
+                          {student.username || "—"}
+                        </td>
+                        <td className="py-3 pr-4 align-top">
+                          {student.program || "—"}
+                        </td>
+                        <td className="py-3 pr-4 align-top">
+                          {student.department || "—"}
+                        </td>
+                        <td className="py-3 pr-4 align-top">
+                          {student.cohort || "—"}
+                        </td>
+                        <td className="py-3 pr-4 align-top">
+                          {formatDate(student.created_at)}
+                        </td>
+                        <td className="py-3 text-right align-top">
+                          <div className="flex justify-end gap-1">
+                            <TooltipProvider delayDuration={100}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleResetPassword(student)}
+                                    aria-label={t(
+                                      "admin.review.reset_password",
+                                      {
+                                        defaultValue: "Reset password",
+                                      }
+                                    )}
+                                  >
+                                    {pendingResetId === student.id &&
+                                    resetPasswordMutation.isPending ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <RefreshCw className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {t("admin.review.reset_password", {
+                                    defaultValue: "Reset password",
                                   })}
-                                >
-                                  {pendingDeleteId === student.id &&
-                                  setActiveMutation.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {t("admin.forms.delete_student", {
-                                  defaultValue: "Deactivate",
-                                })}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleActivate(student)}
-                                  aria-label={t("admin.forms.mark_active", {
-                                    defaultValue: "Mark Active",
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => openEdit(student)}
+                                    aria-label={t("admin.forms.edit_student", {
+                                      defaultValue: "Edit",
+                                    })}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {t("admin.forms.edit_student", {
+                                    defaultValue: "Edit",
                                   })}
-                                >
-                                  {pendingActiveId === student.id &&
-                                  setActiveMutation.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {t("admin.forms.mark_active", {
-                                  defaultValue: "Mark Active",
-                                })}
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        </TooltipProvider>
-                        </div>
-                      </td>
-                    </tr>
-                  );})}
+                                </TooltipContent>
+                              </Tooltip>
+                              {student.is_active ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive/80"
+                                      onClick={() => handleDeactivate(student)}
+                                      aria-label={t(
+                                        "admin.forms.delete_student",
+                                        {
+                                          defaultValue: "Deactivate",
+                                        }
+                                      )}
+                                    >
+                                      {pendingDeleteId === student.id &&
+                                      setActiveMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {t("admin.forms.delete_student", {
+                                      defaultValue: "Deactivate",
+                                    })}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleActivate(student)}
+                                      aria-label={t("admin.forms.mark_active", {
+                                        defaultValue: "Mark Active",
+                                      })}
+                                    >
+                                      {pendingActiveId === student.id &&
+                                      setActiveMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {t("admin.forms.mark_active", {
+                                      defaultValue: "Mark Active",
+                                    })}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </TooltipProvider>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
@@ -1119,8 +1143,8 @@ export function CreateStudents() {
                 <div>
                   <Input
                     type="email"
-                    placeholder={t("admin.forms.email_optional", {
-                      defaultValue: "Email (optional)",
+                    placeholder={t("admin.forms.email", {
+                      defaultValue: "Email *",
                     })}
                     {...register("email")}
                   />
@@ -1179,8 +1203,10 @@ export function CreateStudents() {
                       );
                       const filteredSpecialties = specialtiesList.filter(
                         (s: Specialty) =>
-                          !s.program_ids || s.program_ids.length === 0 ||
-                          (selectedProgram && s.program_ids.includes(selectedProgram.id))
+                          !s.program_ids ||
+                          s.program_ids.length === 0 ||
+                          (selectedProgram &&
+                            s.program_ids.includes(selectedProgram.id))
                       );
 
                       return (
@@ -1463,6 +1489,8 @@ export function CreateStudents() {
                   busy={updateStudentMutation.isPending}
                   programs={programsList}
                   specialties={specialtiesList}
+                  departments={departmentsList}
+                  cohorts={cohortsList}
                 />
               </CardContent>
             </Card>
@@ -1487,6 +1515,8 @@ function EditStudentForm({
   busy,
   programs,
   specialties,
+  departments,
+  cohorts,
 }: {
   student: any;
   onSubmit: (p: {
@@ -1495,12 +1525,15 @@ function EditStudentForm({
     last_name: string;
     email: string;
     program?: string;
+    specialty?: string;
     department?: string;
     cohort?: string;
   }) => void;
   busy?: boolean;
   programs: Program[];
   specialties: Specialty[];
+  departments: Department[];
+  cohorts: Cohort[];
 }) {
   const { t } = useTranslation("common");
   const { first, last } = splitName(student.name);
@@ -1508,43 +1541,90 @@ function EditStudentForm({
   const [lastName, setLast] = React.useState(last);
   const [email, setEmail] = React.useState(student.email || "");
   const [program, setProgram] = React.useState(student.program || "");
+  const [specialty, setSpecialty] = React.useState(student.specialty || "");
   const [department, setDepartment] = React.useState(student.department || "");
   const [cohort, setCohort] = React.useState(student.cohort || "");
+  const [emailError, setEmailError] = React.useState("");
+
+  const validateEmail = (value: string) => {
+    if (!value.trim()) {
+      setEmailError(t("validation.required", { defaultValue: "Required" }));
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setEmailError(
+        t("validation.invalid_email", { defaultValue: "Invalid email" })
+      );
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
 
   return (
     <form
       className="grid grid-cols-1 gap-4 md:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
+        if (!validateEmail(email)) return;
         onSubmit({
           id: student.id,
           first_name: firstName,
           last_name: lastName,
           email,
           program,
+          specialty,
           department,
           cohort,
         });
       }}
     >
-      <Input
-        placeholder={t("admin.forms.first_name", {
-          defaultValue: "First name",
-        })}
-        value={firstName}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFirst(e.target.value)}
-      />
-      <Input
-        placeholder={t("admin.forms.last_name", { defaultValue: "Last name" })}
-        value={lastName}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLast(e.target.value)}
-      />
-      <Input
-        type="email"
-        placeholder={t("admin.forms.email_optional", { defaultValue: "Email" })}
-        value={email}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-      />
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t("admin.forms.first_name", { defaultValue: "First name" })} *
+        </label>
+        <Input
+          placeholder={t("admin.forms.first_name", {
+            defaultValue: "First name",
+          })}
+          value={firstName}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setFirst(e.target.value)
+          }
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t("admin.forms.last_name", { defaultValue: "Last name" })} *
+        </label>
+        <Input
+          placeholder={t("admin.forms.last_name", {
+            defaultValue: "Last name",
+          })}
+          value={lastName}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setLast(e.target.value)
+          }
+          required
+        />
+      </div>
+      <div className="space-y-2 md:col-span-2">
+        <label className="text-sm font-medium">
+          {t("admin.forms.email", { defaultValue: "Email" })} *
+        </label>
+        <Input
+          type="email"
+          placeholder={t("admin.forms.email", { defaultValue: "Email" })}
+          value={email}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            setEmail(e.target.value);
+            if (emailError) validateEmail(e.target.value);
+          }}
+          required
+        />
+        {emailError && <p className="text-xs text-red-600">{emailError}</p>}
+      </div>
       <div className="space-y-2">
         <label className="text-sm font-medium">
           {t("admin.forms.program", { defaultValue: "Program" })}
@@ -1553,7 +1633,7 @@ function EditStudentForm({
           value={program}
           onValueChange={(val) => {
             setProgram(val);
-            setDepartment(""); // Reset department
+            setSpecialty(""); // Reset specialty when program changes
           }}
         >
           <SelectTrigger>
@@ -1577,11 +1657,7 @@ function EditStudentForm({
         <label className="text-sm font-medium">
           {t("admin.forms.specialty", { defaultValue: "Specialty" })}
         </label>
-        <Select
-          value={department}
-          onValueChange={setDepartment}
-          disabled={!program}
-        >
+        <Select value={specialty} onValueChange={setSpecialty}>
           <SelectTrigger>
             <SelectValue
               placeholder={t("admin.forms.specialty", {
@@ -1592,8 +1668,13 @@ function EditStudentForm({
           <SelectContent>
             {specialties
               .filter((s: Specialty) => {
+                if (!program) return true;
                 const prog = programs.find((p) => p.name === program);
-                return !s.program_ids || s.program_ids.length === 0 || (prog && s.program_ids.includes(prog.id));
+                return (
+                  !s.program_ids ||
+                  s.program_ids.length === 0 ||
+                  (prog && s.program_ids.includes(prog.id))
+                );
               })
               .map((s: Specialty) => (
                 <SelectItem key={s.id} value={s.name}>
@@ -1603,11 +1684,51 @@ function EditStudentForm({
           </SelectContent>
         </Select>
       </div>
-      <Input
-        placeholder={t("admin.forms.cohort", { defaultValue: "Cohort" })}
-        value={cohort}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCohort(e.target.value)}
-      />
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t("admin.forms.department", { defaultValue: "Department" })}
+        </label>
+        <Select value={department} onValueChange={setDepartment}>
+          <SelectTrigger>
+            <SelectValue
+              placeholder={t("admin.forms.department", {
+                defaultValue: "Department",
+              })}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {departments.map((d: Department) => (
+              <SelectItem key={d.id} value={d.name}>
+                {d.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t("admin.forms.cohort", { defaultValue: "Cohort" })}
+        </label>
+        <Select value={cohort} onValueChange={setCohort}>
+          <SelectTrigger>
+            <SelectValue
+              placeholder={t("admin.forms.cohort", {
+                defaultValue: "Cohort",
+              })}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {cohorts.map((c: Cohort) => (
+              <SelectItem key={c.id} value={c.name}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="md:col-span-2 flex gap-2 pt-2">
         <Button type="submit" disabled={busy} className="w-full">
           {busy ? (

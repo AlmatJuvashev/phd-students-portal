@@ -141,11 +141,7 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
           
           {/* User Management Group */}
           <div className="space-y-1">
-             {!collapsed && (
-              <div className="px-3 py-1 text-sm font-medium text-muted-foreground">
-                User Management
-              </div>
-            )}
+
             <NavLink
               to="/admin/users"
               className={cn(
