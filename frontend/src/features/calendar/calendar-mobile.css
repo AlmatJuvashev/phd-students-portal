@@ -6,65 +6,98 @@
     padding: 0.5rem 0;
     flex-wrap: wrap;
     gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
 
   .rbc-toolbar-label {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.125rem;
+    font-weight: 700;
     flex: 1 1 100%;
     text-align: center;
     order: -1;
+    padding: 0.25rem 0;
   }
 
   .rbc-btn-group {
     font-size: 0.875rem;
+    flex: 1;
+    display: flex;
+    justify-content: center;
   }
 
   .rbc-btn-group button {
-    padding: 0.375rem 0.75rem;
+    padding: 0.5rem 1rem;
     font-size: 0.875rem;
-  }
-
-  /* Agenda view optimizations */
-  .rbc-agenda-view {
-    font-size: 0.875rem;
-  }
-
-  .rbc-agenda-view table {
-    font-size: 0.875rem;
-  }
-
-  .rbc-agenda-date-cell,
-  .rbc-agenda-time-cell {
-    white-space: normal;
-    padding: 0.5rem 0.25rem;
-  }
-
-  .rbc-agenda-event-cell {
-    padding: 0.5rem 0.25rem;
+    flex: 1;
   }
 
   /* Day view optimizations */
   .rbc-time-header-content {
-    min-height: 40px;
+    min-height: 50px;
+    border-left: none !important;
+  }
+  
+  .rbc-time-header-cell-single-day {
+      display: none; /* Hide the "Day of week" header in Day view to save space if redundant, or style it */
   }
 
   .rbc-time-content {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
+    border-top: none !important;
   }
 
   .rbc-time-slot {
-    min-height: 30px;
+    min-height: 60px; /* Taller slots for better readability */
+  }
+  
+  .rbc-timeslot-group {
+      min-height: 120px; /* 2 slots per group usually */
+  }
+
+  .rbc-label {
+      padding: 0 4px;
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      font-weight: 500;
   }
 
   /* Event styling */
   .rbc-event {
-    padding: 2px 4px;
-    font-size: 0.75rem;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    border: none;
+    border-left: 4px solid rgba(0,0,0,0.2); /* Accent strip */
+    line-height: 1.3;
   }
 
   .rbc-event-label {
     font-size: 0.7rem;
+    opacity: 0.9;
+    margin-bottom: 2px;
+    display: block;
+  }
+  
+  .rbc-event-content {
+      font-weight: 600;
+  }
+  
+  /* Current time indicator */
+  .rbc-current-time-indicator {
+      height: 2px;
+      background-color: hsl(var(--primary));
+  }
+  
+  .rbc-current-time-indicator::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: -3px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: hsl(var(--primary));
   }
 }
 
@@ -99,22 +132,19 @@
 /* Event colors */
 .rbc-event {
   background-color: hsl(var(--primary));
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   border: none;
 }
 
 .rbc-event.rbc-selected {
   background-color: hsl(var(--primary));
   opacity: 0.9;
-}
-
-.rbc-event-label {
-  display: none; /* Hide time label for cleaner look */
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary));
 }
 
 /* Today highlighting */
 .rbc-today {
-  background-color: hsl(var(--accent));
+  background-color: hsl(var(--accent) / 0.1);
 }
 
 /* Month view */
@@ -136,33 +166,12 @@
   background-color: hsl(var(--muted) / 0.3);
 }
 
-/* Agenda view */
-.rbc-agenda-view {
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.rbc-agenda-view table {
-  border-color: hsl(var(--border));
-}
-
-.rbc-agenda-view table tbody > tr > td + td {
-  border-color: hsl(var(--border));
-}
-
-.rbc-agenda-view table thead > tr > th {
-  background-color: hsl(var(--muted));
-  border-color: hsl(var(--border));
-  padding: 0.75rem 0.5rem;
-  font-weight: 600;
-}
-
 /* Time grid */
 .rbc-time-view {
   border: 1px solid hsl(var(--border));
   border-radius: 0.5rem;
   overflow: hidden;
+  background-color: hsl(var(--background));
 }
 
 .rbc-time-header {
@@ -181,6 +190,6 @@
   border-color: hsl(var(--border) / 0.3);
 }
 
-.rbc-current-time-indicator {
-  background-color: hsl(var(--destructive));
+.rbc-day-slot .rbc-time-slot {
+    border-top-color: hsl(var(--border) / 0.3);
 }

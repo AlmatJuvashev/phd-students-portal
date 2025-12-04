@@ -2,12 +2,24 @@ import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -28,20 +40,42 @@ interface EventModalProps {
   onSuccess: () => void;
 }
 
-export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, onSuccess }) => {
+export const EventModal: React.FC<EventModalProps> = ({
+  isOpen,
+  onClose,
+  event,
+  onSuccess,
+}) => {
   const { token } = useAuth();
   const { t } = useTranslation("common");
   const eventSchema = React.useMemo(
     () =>
       z.object({
-        title: z.string().min(1, t("calendar.validation.title", { defaultValue: "Title is required" })),
+        title: z
+          .string()
+          .min(
+            1,
+            t("calendar.validation.title", {
+              defaultValue: "Title is required",
+            })
+          ),
         description: z.string().optional(),
         start_time: z
           .string()
-          .min(1, t("calendar.validation.start", { defaultValue: "Start time is required" })),
+          .min(
+            1,
+            t("calendar.validation.start", {
+              defaultValue: "Start time is required",
+            })
+          ),
         end_time: z
           .string()
-          .min(1, t("calendar.validation.end", { defaultValue: "End time is required" })),
+          .min(
+            1,
+            t("calendar.validation.end", {
+              defaultValue: "End time is required",
+            })
+          ),
         event_type: z.enum(["meeting", "deadline", "academic"]),
         location: z.string().optional(),
       }),
@@ -62,26 +96,29 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
 
   useEffect(() => {
     if (event) {
-      setValue('title', event.title);
-      setValue('description', event.description || '');
-      setValue('start_time', new Date(event.start_time).toISOString().slice(0, 16));
-      setValue('end_time', new Date(event.end_time).toISOString().slice(0, 16));
-      setValue('event_type', event.event_type);
-      setValue('location', event.location || '');
+      setValue("title", event.title);
+      setValue("description", event.description || "");
+      setValue(
+        "start_time",
+        new Date(event.start_time).toISOString().slice(0, 16)
+      );
+      setValue("end_time", new Date(event.end_time).toISOString().slice(0, 16));
+      setValue("event_type", event.event_type);
+      setValue("location", event.location || "");
     } else {
       reset({
-        event_type: 'meeting',
+        event_type: "meeting",
         start_time: new Date().toISOString().slice(0, 16),
-        end_time: new Date(new Date().getTime() + 3600000).toISOString().slice(0, 16),
+        end_time: new Date(new Date().getTime() + 3600000)
+          .toISOString()
+          .slice(0, 16),
       });
     }
   }, [event, isOpen, reset, setValue]);
 
   const mutation = useMutation({
     mutationFn: async (data: EventFormValues) => {
-      const url = event
-        ? `${API_URL}/events/${event.id}`
-        : `${API_URL}/events`;
+      const url = event ? `${API_URL}/events/${event.id}` : `${API_URL}/events`;
 
       const method = event ? "PUT" : "POST";
 
@@ -98,7 +135,10 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
         }),
       });
 
-      if (!res.ok) throw new Error(t("calendar.errors.save", { defaultValue: "Failed to save event" }));
+      if (!res.ok)
+        throw new Error(
+          t("calendar.errors.save", { defaultValue: "Failed to save event" })
+        );
       return res.json();
     },
     onSuccess: () => {
@@ -112,15 +152,27 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
   };
 
   const handleDelete = async () => {
-    if (!event || !confirm(t("calendar.confirm_delete", { defaultValue: "Are you sure you want to delete this event?" })))
+    if (
+      !event ||
+      !confirm(
+        t("calendar.confirm_delete", {
+          defaultValue: "Are you sure you want to delete this event?",
+        })
+      )
+    )
       return;
-    
+
     try {
       const res = await fetch(`${API_URL}/events/${event.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(t("calendar.errors.delete", { defaultValue: "Failed to delete event" }));
+      if (!res.ok)
+        throw new Error(
+          t("calendar.errors.delete", {
+            defaultValue: "Failed to delete event",
+          })
+        );
       onSuccess();
       onClose();
     } catch (error) {
@@ -143,24 +195,44 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
             <Label htmlFor="title">
               {t("calendar.fields.title", { defaultValue: "Title" })}
             </Label>
-            <Input id="title" {...register('title')} />
-            {errors.title && <span className="text-red-500 text-sm">{errors.title.message}</span>}
+            <Input id="title" {...register("title")} />
+            {errors.title && (
+              <span className="text-red-500 text-sm">
+                {errors.title.message}
+              </span>
+            )}
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start_time">
                 {t("calendar.fields.start", { defaultValue: "Start" })}
               </Label>
-              <Input id="start_time" type="datetime-local" {...register('start_time')} />
-              {errors.start_time && <span className="text-red-500 text-sm">{errors.start_time.message}</span>}
+              <Input
+                id="start_time"
+                type="datetime-local"
+                {...register("start_time")}
+              />
+              {errors.start_time && (
+                <span className="text-red-500 text-sm">
+                  {errors.start_time.message}
+                </span>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="end_time">
                 {t("calendar.fields.end", { defaultValue: "End" })}
               </Label>
-              <Input id="end_time" type="datetime-local" {...register('end_time')} />
-              {errors.end_time && <span className="text-red-500 text-sm">{errors.end_time.message}</span>}
+              <Input
+                id="end_time"
+                type="datetime-local"
+                {...register("end_time")}
+              />
+              {errors.end_time && (
+                <span className="text-red-500 text-sm">
+                  {errors.end_time.message}
+                </span>
+              )}
             </div>
           </div>
 
@@ -168,14 +240,27 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
             <Label htmlFor="event_type">
               {t("calendar.fields.type", { defaultValue: "Type" })}
             </Label>
-            <Select onValueChange={(val) => setValue('event_type', val as any)} defaultValue={event?.event_type || 'meeting'}>
+            <Select
+              onValueChange={(val) => setValue("event_type", val as any)}
+              defaultValue={event?.event_type || "meeting"}
+            >
               <SelectTrigger>
-                <SelectValue placeholder={t("calendar.fields.type_placeholder", { defaultValue: "Select type" })} />
+                <SelectValue
+                  placeholder={t("calendar.fields.type_placeholder", {
+                    defaultValue: "Select type",
+                  })}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="meeting">{t("calendar.types.meeting", { defaultValue: "Meeting" })}</SelectItem>
-                <SelectItem value="deadline">{t("calendar.types.deadline", { defaultValue: "Deadline" })}</SelectItem>
-                <SelectItem value="academic">{t("calendar.types.academic", { defaultValue: "Academic" })}</SelectItem>
+                <SelectItem value="meeting">
+                  {t("calendar.types.meeting", { defaultValue: "Meeting" })}
+                </SelectItem>
+                <SelectItem value="deadline">
+                  {t("calendar.types.deadline", { defaultValue: "Deadline" })}
+                </SelectItem>
+                <SelectItem value="academic">
+                  {t("calendar.types.academic", { defaultValue: "Academic" })}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -184,19 +269,25 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
             <Label htmlFor="location">
               {t("calendar.fields.location", { defaultValue: "Location" })}
             </Label>
-            <Input id="location" {...register('location')} />
+            <Input id="location" {...register("location")} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">
-              {t("calendar.fields.description", { defaultValue: "Description" })}
+              {t("calendar.fields.description", {
+                defaultValue: "Description",
+              })}
             </Label>
-            <Textarea id="description" {...register('description')} />
+            <Textarea id="description" {...register("description")} />
           </div>
 
           <DialogFooter className="flex justify-between sm:justify-between">
             {event && (
-              <Button type="button" variant="destructive" onClick={handleDelete}>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+              >
                 {t("calendar.actions.delete", { defaultValue: "Delete" })}
               </Button>
             )}

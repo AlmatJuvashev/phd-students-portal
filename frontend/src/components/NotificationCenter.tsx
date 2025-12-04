@@ -38,7 +38,7 @@ export const NotificationCenter = () => {
     refetchInterval: 30000,
     enabled: !!token && !!user && !authLoading, // Only fetch if token exists, user is loaded, and auth is not loading
   });
-  
+
   // Ensure notifications is always an array
   const notifications = notificationsData ?? [];
 

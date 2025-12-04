@@ -54,7 +54,6 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
 
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
-
       {authed &&
         (!["admin", "superadmin"].includes(role || "") ||
           !import.meta.env.PROD) && (
