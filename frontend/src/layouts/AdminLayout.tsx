@@ -27,6 +27,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 function SidebarNav({ collapsed }: { collapsed?: boolean }) {
   const { t } = useTranslation("common");
@@ -145,53 +147,21 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
               </div>
             )}
             <NavLink
-              to="/admin/create-students"
+              to="/admin/users"
               className={cn(
                 "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted ml-2",
-                isActive("/admin/create-students") && "bg-muted font-medium",
+                isActive("/admin/users") && "bg-muted font-medium",
                 collapsed && "justify-center px-2 ml-0"
               )}
-              title={t("admin.sidebar.create_students", "Manage Students")}
+              title={t("admin.sidebar.users", "Users")}
             >
               <Users className="h-4 w-4" />
               {!collapsed && (
                 <span>
-                  {t("admin.sidebar.create_students", "Students")}
+                  {t("admin.sidebar.users", "Users")}
                 </span>
               )}
             </NavLink>
-            <NavLink
-              to="/admin/create-advisors"
-              className={cn(
-                "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted ml-2",
-                isActive("/admin/create-advisors") && "bg-muted font-medium",
-                collapsed && "justify-center px-2 ml-0"
-              )}
-              title={t("admin.sidebar.create_advisors", "Manage Advisors")}
-            >
-              <UserPlus className="h-4 w-4" />
-              {!collapsed && (
-                <span>
-                  {t("admin.sidebar.create_advisors", "Advisors")}
-                </span>
-              )}
-            </NavLink>
-             {canSeeAdmins && (
-              <NavLink
-                to="/admin/create-admins"
-                className={cn(
-                  "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted ml-2",
-                  isActive("/admin/create-admins") && "bg-muted font-medium",
-                  collapsed && "justify-center px-2 ml-0"
-                )}
-                title={t("admin.sidebar.create_admins", "Manage Admins")}
-              >
-                <UserCog className="h-4 w-4" />
-                {!collapsed && (
-                  <span>{t("admin.sidebar.create_admins", "Admins")}</span>
-                )}
-              </NavLink>
-            )}
           </div>
 
           <NavLink
@@ -337,31 +307,13 @@ export function AdminLayout() {
       {/* Main content */}
       <section className="flex-1">
         {/* Desktop top bar */}
-        <div className="hidden md:flex h-14 items-center justify-between border-b px-6 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="hidden md:flex h-14 items-center justify-between border-b px-6 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
           <div className="text-sm text-muted-foreground">
             {t("admin.topbar.signed_in_as", "Signed in as")}{" "}
             <span className="font-medium">{user?.email}</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 rounded-md border border-border/60 px-1 py-0.5 bg-muted/40">
-              {languages.map((lang) => {
-                const active = i18n.language?.startsWith(lang.code);
-                return (
-                  <Button
-                    key={lang.code}
-                    variant={active ? "default" : "ghost"}
-                    size="sm"
-                    className={cn(
-                      "px-2 text-xs",
-                      !active && "text-muted-foreground hover:text-foreground"
-                    )}
-                    onClick={() => i18n.changeLanguage(lang.code)}
-                  >
-                    {lang.label}
-                  </Button>
-                );
-              })}
-            </div>
+            <LanguageSwitcher />
             <NotificationCenter />
             <span className="text-xs px-2 py-1 rounded bg-muted">
               {user?.role}
@@ -370,13 +322,11 @@ export function AdminLayout() {
               to="/"
               aria-label={t("admin.topbar.back_to_main", "Back to main page")}
             >
-              <Button variant="outline" size="sm">
-                {t("admin.topbar.back_to_main_button", "Back to main")}
+              <Button variant="ghost" size="sm">
+                {t("admin.topbar.main", "Main")}
               </Button>
             </Link>
-            <Button variant="outline" size="sm" onClick={logout}>
-              {t("nav.logout", "Logout")}
-            </Button>
+            <UserMenu />
           </div>
         </div>
         <div className="p-4 md:p-6 pt-16 md:pt-4">
