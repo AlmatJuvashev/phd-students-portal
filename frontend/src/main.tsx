@@ -6,6 +6,9 @@ import "./index.css";
 import { router } from "./routes";
 import "./i18n";
 import { AuthProvider } from '@/contexts/AuthContext'
+import { registerSW } from "virtual:pwa-register";
+
+registerSW({ immediate: true });
 
 const qc = new QueryClient({
   defaultOptions: {
