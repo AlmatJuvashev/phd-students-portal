@@ -57,12 +57,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	api.GET("/me", func(c *gin.Context) {
 		// require auth, then return current user
-		middleware.AuthRequired([]byte(cfg.JWTSecret))(c)
+		middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds)(c)
 		if c.IsAborted() {
 			return
 		}
-		// Hydrate from DB/Redis
-		middleware.HydrateUserFromClaims(c, db, rds)
 		if val, ok := c.Get("current_user"); ok {
 			c.JSON(200, val)
 			return
@@ -114,7 +112,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Monitor endpoints (admin/advisor access)
 	monitor := api.Group("/admin") // Keep URL prefix /admin for compatibility but change middleware
-	monitor.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	monitor.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	monitor.Use(middleware.RequireRoles("admin", "superadmin", "advisor"))
 
 	// Notifications (admin/advisor view of student events)
@@ -138,7 +136,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Admin-only routes (strict)
 	admin := api.Group("/admin")
-	admin.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	admin.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	admin.Use(middleware.RequireRoles("admin", "superadmin"))
 	admin.GET("/users", users.ListUsers)
 	admin.POST("/users", users.CreateUser)
@@ -153,18 +151,18 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Global Search
 	searchHandler := NewSearchHandler(db, cfg)
-	api.GET("/search", middleware.AuthRequired([]byte(cfg.JWTSecret)), searchHandler.GlobalSearch)
+	api.GET("/search", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), searchHandler.GlobalSearch)
 
 	// Self-service password change and profile update
-	api.PATCH("/me", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.UpdateMe)
-	api.POST("/me/avatar/presign", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.PresignAvatarUpload)
-	api.PATCH("/me/password", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.ChangeOwnPassword)
-	api.GET("/me/pending-email", middleware.AuthRequired([]byte(cfg.JWTSecret)), users.GetPendingEmailVerification)
+	api.PATCH("/me", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.UpdateMe)
+	api.POST("/me/avatar/presign", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.PresignAvatarUpload)
+	api.PATCH("/me/password", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.ChangeOwnPassword)
+	api.GET("/me/pending-email", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.GetPendingEmailVerification)
 	api.GET("/me/verify-email", users.VerifyEmailChange) // No auth required for better UX
 
 	// Journey state (per-user)
 	js := api.Group("/journey")
-	js.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	js.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	js.GET("/state", journey.GetState)
 	js.PUT("/state", journey.SetState)
 	js.POST("/reset", journey.Reset)
@@ -179,7 +177,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Chat module (placeholder)
 	chat := api.Group("/chat")
-	chat.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	chat.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	chatAdmin := chat.Group("")
 	chatAdmin.Use(middleware.RequireRoles("admin", "superadmin"))
 	chatAdmin.POST("/rooms", chatHandler.CreateRoom)
@@ -202,7 +200,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	calendarHandler := NewCalendarHandler(calendarService)
 
 	events := api.Group("/events")
-	events.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	events.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	events.GET("", calendarHandler.GetEvents)
 	events.POST("", calendarHandler.CreateEvent)
 	events.PUT("/:id", calendarHandler.UpdateEvent)
@@ -223,7 +221,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	analyticsHandler := NewAnalyticsHandler(analyticsService)
 
 	analytics := api.Group("/analytics")
-	analytics.Use(middleware.AuthRequired([]byte(cfg.JWTSecret)))
+	analytics.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	analytics.Use(middleware.RequireRoles("admin", "superadmin", "chair"))
 	analytics.GET("/stages", analyticsHandler.GetStageStats)
 	analytics.GET("/overdue", analyticsHandler.GetOverdueStats)
