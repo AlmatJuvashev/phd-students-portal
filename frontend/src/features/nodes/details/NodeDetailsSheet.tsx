@@ -168,7 +168,7 @@ export function NodeDetailsSheet({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className={`h-8 w-8 ${isMobile ? 'hidden' : ''}`}
                         onClick={() => setEditing(true)}
                         title={T("common.edit", { defaultValue: "Edit" })}
                       >
@@ -178,7 +178,7 @@ export function NodeDetailsSheet({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className={`h-8 w-8 ${isMobile ? 'hidden' : ''}`}
                         onClick={() => setEditing(false)}
                         title={T("common.cancel_edit", { defaultValue: "Cancel" })}
                       >
@@ -270,6 +270,41 @@ export function NodeDetailsSheet({
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {/* FAB for mobile edit button */}
+            {isMobile && node.type === "form" &&
+              ["submitted", "done"].includes(
+                (submission as any)?.state as any
+              ) && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                className="fixed bottom-6 right-6 z-50"
+              >
+                {!editing ? (
+                  <Button
+                    size="lg"
+                    className="h-14 w-14 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
+                    onClick={() => setEditing(true)}
+                    title={T("common.edit", { defaultValue: "Edit" })}
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </Button>
+                ) : (
+                  <Button
+                    size="lg"
+                    variant="destructive"
+                    className="h-14 w-14 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
+                    onClick={() => setEditing(false)}
+                    title={T("common.cancel_edit", { defaultValue: "Cancel" })}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                )}
+              </motion.div>
+            )}
           </>
         )}
       </SheetContent>

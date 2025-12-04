@@ -12,11 +12,11 @@ export function ActionsBar({
 }) {
   const { t: T } = useTranslation("common");
   return (
-    <div className="flex gap-2">
-      <Button onClick={onSubmit} disabled={disabled} aria-busy={disabled}>
+    <div className="flex flex-col-reverse sm:flex-row gap-2">
+      <Button onClick={onSubmit} disabled={disabled} aria-busy={disabled} className="w-full sm:w-auto">
         {T("forms.save_submit")}
       </Button>
-      <Button variant="secondary" onClick={onDraft} disabled={disabled} aria-busy={disabled}>
+      <Button variant="secondary" onClick={onDraft} disabled={disabled} aria-busy={disabled} className="w-full sm:w-auto">
         {T("forms.save_draft")}
       </Button>
     </div>
