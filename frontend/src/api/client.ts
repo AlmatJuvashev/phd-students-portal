@@ -16,6 +16,15 @@ export async function api<T = any>(
     });
   }
 
+  // Debug logging for FormData uploads
+  if (opts.body instanceof FormData) {
+    console.log("[API Debug] FormData request:", {
+      path,
+      method: opts.method || "GET",
+      hasToken: !!token,
+    });
+  }
+
   const headers: Record<string, string> = {
     ...((opts.headers as Record<string, string>) || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -24,7 +33,22 @@ export async function api<T = any>(
   if (!headers["Content-Type"] && !(opts.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
+  
+  console.log("[API Debug] Request details:", {
+    url: `${API_URL}${path}`,
+    method: opts.method || "GET",
+    headers,
+    isFormData: opts.body instanceof FormData,
+  });
+  
   const res = await fetch(`${API_URL}${path}`, { ...opts, headers });
+  
+  console.log("[API Debug] Response:", {
+    status: res.status,
+    statusText: res.statusText,
+    contentType: res.headers.get("content-type"),
+  });
+  
   if (!res.ok) {
     const t = await res.text();
     // Enhanced error logging
@@ -35,6 +59,11 @@ export async function api<T = any>(
         response: t,
       });
     }
+    console.error("[API Error]", {
+      path,
+      status: res.status,
+      response: t,
+    });
     throw new Error(t || res.statusText);
   }
   const type = res.headers.get("content-type") || "";

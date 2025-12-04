@@ -76,15 +76,33 @@ func (s *Store) GetRoom(ctx context.Context, roomID string) (*models.ChatRoom, e
 	return &room, nil
 }
 
-// ListRoomsForUser returns rooms where the user is a member.
+// ListRoomsForUser returns rooms where the user is a member, including unread count and last message time.
 func (s *Store) ListRoomsForUser(ctx context.Context, userID string) ([]models.ChatRoom, error) {
 	var rooms []models.ChatRoom
 	err := s.db.SelectContext(ctx, &rooms, `
-		SELECT r.id, r.name, r.type, r.created_by, r.created_by_role, r.is_archived, r.meta, r.created_at
+		SELECT 
+			r.id, r.name, r.type, r.created_by, r.created_by_role, r.is_archived, r.meta, r.created_at,
+			COALESCE(unread.count, 0) AS unread_count,
+			last_msg.last_message_at
 		FROM chat_rooms r
 		INNER JOIN chat_room_members m ON m.room_id = r.id
+		LEFT JOIN LATERAL (
+			SELECT MAX(cm.created_at) AS last_message_at
+			FROM chat_messages cm
+			WHERE cm.room_id = r.id AND cm.deleted_at IS NULL
+		) last_msg ON true
+		LEFT JOIN LATERAL (
+			SELECT COUNT(*) AS count
+			FROM chat_messages cm
+			WHERE cm.room_id = r.id 
+				AND cm.deleted_at IS NULL
+				AND cm.created_at > COALESCE(
+					(SELECT last_read_at FROM chat_room_read_status WHERE room_id = r.id AND user_id = $1),
+					'1970-01-01'::timestamptz
+				)
+		) unread ON true
 		WHERE m.user_id = $1
-		ORDER BY r.created_at DESC
+		ORDER BY COALESCE(last_msg.last_message_at, r.created_at) DESC
 	`, userID)
 	return rooms, err
 }
@@ -142,24 +160,24 @@ func (s *Store) ListMembers(ctx context.Context, roomID string) ([]MemberWithUse
 }
 
 // CreateMessage inserts a message and returns the stored record.
-func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments) (*models.ChatMessage, error) {
+func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string) (*models.ChatMessage, error) {
 	if attachments == nil {
 		attachments = models.ChatAttachments{}
 	}
 	var msg models.ChatMessage
 	err := s.db.QueryRowxContext(ctx, `
 		WITH ins AS (
-			INSERT INTO chat_messages (room_id, sender_id, body, attachments)
-			VALUES ($1, $2, $3, $4)
-			RETURNING id, room_id, sender_id, body, attachments, created_at, edited_at, deleted_at
+			INSERT INTO chat_messages (room_id, sender_id, body, attachments, importance)
+			VALUES ($1, $2, $3, $4, $5)
+			RETURNING id, room_id, sender_id, body, attachments, importance, created_at, edited_at, deleted_at
 		)
 		SELECT 
-			i.id, i.room_id, i.sender_id, i.body, i.attachments, i.created_at, i.edited_at, i.deleted_at,
+			i.id, i.room_id, i.sender_id, i.body, i.attachments, i.importance, i.created_at, i.edited_at, i.deleted_at,
 			COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.email, u.username) AS sender_name,
 			u.role AS sender_role
 		FROM ins i
 		INNER JOIN users u ON u.id = i.sender_id
-	`, roomID, senderID, body, attachments).StructScan(&msg)
+	`, roomID, senderID, body, attachments, importance).StructScan(&msg)
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +197,7 @@ func (s *Store) ListMessages(ctx context.Context, roomID string, limit int, befo
 			m.sender_id,
 			m.body,
 			m.attachments,
+			m.importance,
 			m.created_at,
 			m.edited_at,
 			m.deleted_at,
@@ -243,6 +262,17 @@ func (s *Store) DeleteMessage(ctx context.Context, msgID, userID string) error {
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+// MarkRoomAsRead updates the last_read_at timestamp for a user in a room.
+func (s *Store) MarkRoomAsRead(ctx context.Context, roomID, userID string) error {
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO chat_room_read_status (room_id, user_id, last_read_at)
+		VALUES ($1, $2, NOW())
+		ON CONFLICT (room_id, user_id)
+		DO UPDATE SET last_read_at = NOW()
+	`, roomID, userID)
+	return err
 }
 
 func itoa(i int) string {

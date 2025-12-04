@@ -125,14 +125,34 @@ func (h *ChatHandler) CreateMessage(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Body        string                 `json:"body" binding:"required"`
+		Body        string                 `json:"body"`
 		Attachments models.ChatAttachments `json:"attachments"`
+		Importance  *string                `json:"importance"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	msg, err := h.store.CreateMessage(c.Request.Context(), roomID, uid, req.Body, req.Attachments)
+	
+	// Require either body or attachments
+	if req.Body == "" && len(req.Attachments) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "message must have body or attachments"})
+		return
+	}
+	
+	// Only allow admins to set importance
+	var importance *string
+	if req.Importance != nil {
+		role := c.GetString("role")
+		if role == "admin" || role == "superadmin" {
+			// Validate importance value
+			if *req.Importance == "alert" || *req.Importance == "warning" {
+				importance = req.Importance
+			}
+		}
+	}
+	
+	msg, err := h.store.CreateMessage(c.Request.Context(), roomID, uid, req.Body, req.Attachments, importance)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create message"})
 		return
@@ -364,34 +384,56 @@ func (h *ChatHandler) RemoveRoomMembersBatch(c *gin.Context) {
 // UploadFile handles multipart file upload for chat
 func (h *ChatHandler) UploadFile(c *gin.Context) {
 	roomID := c.Param("roomId")
+	log.Printf("[UploadFile] Starting upload for room: %s", roomID)
+	log.Printf("[UploadFile] Content-Type header: %s", c.ContentType())
+	log.Printf("[UploadFile] Request headers: %v", c.Request.Header)
+	
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file required"})
+		log.Printf("[UploadFile] ERROR: Failed to get form file: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("file required: %v", err)})
 		return
 	}
+	
+	log.Printf("[UploadFile] Received file: name=%s, size=%d, content-type=%s", 
+		file.Filename, file.Size, file.Header.Get("Content-Type"))
 
 	// Basic validation
 	if file.Size > 10*1024*1024 { // 10MB limit
+		log.Printf("[UploadFile] ERROR: File too large: %d bytes", file.Size)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file too large (max 10MB)"})
 		return
 	}
 
 	// Create upload directory
 	uploadDir := filepath.Join(h.cfg.UploadDir, "chat", roomID)
+	log.Printf("[UploadFile] Upload directory: %s (base: %s)", uploadDir, h.cfg.UploadDir)
+	
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create upload dir"})
+		log.Printf("[UploadFile] ERROR: Failed to create upload dir: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create upload dir: %v", err)})
 		return
 	}
+	log.Printf("[UploadFile] Upload directory created/verified: %s", uploadDir)
 
 	// Save file
 	filename := filepath.Base(file.Filename)
 	// Add timestamp to prevent collisions
 	filename = fmt.Sprintf("%d_%s", time.Now().Unix(), filename)
 	destPath := filepath.Join(uploadDir, filename)
+	log.Printf("[UploadFile] Saving file to: %s", destPath)
 	
 	if err := c.SaveUploadedFile(file, destPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+		log.Printf("[UploadFile] ERROR: Failed to save file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to save file: %v", err)})
 		return
+	}
+	
+	// Verify file was saved
+	if info, err := os.Stat(destPath); err != nil {
+		log.Printf("[UploadFile] WARNING: Could not stat saved file: %v", err)
+	} else {
+		log.Printf("[UploadFile] File saved successfully: size=%d bytes", info.Size())
 	}
 
 	// Construct URL (assuming static file serving is set up for uploads)
@@ -400,6 +442,7 @@ func (h *ChatHandler) UploadFile(c *gin.Context) {
 	// NOTE: You need to ensure h.cfg.UploadDir is served via HTTP.
 	// If UploadDir is "./uploads", and we serve "/uploads", then:
 	fileURL := fmt.Sprintf("/uploads/chat/%s/%s", roomID, filename)
+	log.Printf("[UploadFile] SUCCESS: Returning URL: %s", fileURL)
 
 	c.JSON(http.StatusOK, gin.H{
 		"url":  fileURL,
@@ -489,6 +532,33 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"messages": msgs})
+}
+
+// MarkAsRead updates the last_read_at timestamp for a user in a room.
+func (h *ChatHandler) MarkAsRead(c *gin.Context) {
+	uid := userIDFromClaims(c)
+	if uid == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	roomID := c.Param("roomId")
+	
+	// Verify user is a member
+	isMember, err := h.store.IsMember(c.Request.Context(), roomID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "membership check failed"})
+		return
+	}
+	if !isMember {
+		c.JSON(http.StatusForbidden, gin.H{"error": "not a member of this room"})
+		return
+	}
+	
+	if err := h.store.MarkRoomAsRead(c.Request.Context(), roomID, uid); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to mark as read"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 func parseLimit(v string, def int) int {

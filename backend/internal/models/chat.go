@@ -23,6 +23,8 @@ type ChatRoom struct {
 	IsArchived    bool            `db:"is_archived" json:"is_archived"`
 	Meta          json.RawMessage `db:"meta" json:"meta,omitempty"`
 	CreatedAt     time.Time       `db:"created_at" json:"created_at"`
+	UnreadCount   int             `db:"unread_count" json:"unread_count"`
+	LastMessageAt *time.Time      `db:"last_message_at" json:"last_message_at,omitempty"`
 }
 
 type ChatRoomMemberRole string
@@ -41,16 +43,17 @@ type ChatRoomMember struct {
 }
 
 type ChatMessage struct {
-	ID         string     `db:"id" json:"id"`
-	RoomID     string     `db:"room_id" json:"room_id"`
-	SenderID   string     `db:"sender_id" json:"sender_id"`
-	SenderName string     `db:"sender_name" json:"sender_name,omitempty"`
-	SenderRole Role       `db:"sender_role" json:"sender_role,omitempty"`
+	ID          string          `db:"id" json:"id"`
+	RoomID      string          `db:"room_id" json:"room_id"`
+	SenderID    string          `db:"sender_id" json:"sender_id"`
+	SenderName  string          `db:"sender_name" json:"sender_name,omitempty"`
+	SenderRole  Role            `db:"sender_role" json:"sender_role,omitempty"`
 	Body        string          `db:"body" json:"body"`
 	Attachments ChatAttachments `db:"attachments" json:"attachments,omitempty"`
+	Importance  *string         `db:"importance" json:"importance,omitempty"`
 	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
-	EditedAt    *time.Time        `db:"edited_at" json:"edited_at,omitempty"`
-	DeletedAt   *time.Time        `db:"deleted_at" json:"deleted_at,omitempty"`
+	EditedAt    *time.Time      `db:"edited_at" json:"edited_at,omitempty"`
+	DeletedAt   *time.Time      `db:"deleted_at" json:"deleted_at,omitempty"`
 }
 
 type ChatAttachment struct {
