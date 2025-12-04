@@ -1,11 +1,8 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
 import { APP_NAME } from "../config";
 import { useTranslation } from "react-i18next";
-import { Globe, Menu, LogOut, User, Settings } from "lucide-react";
-import { DropdownMenu, DropdownItem } from "@/components/ui/dropdown-menu";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,15 +14,15 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { UserMenu } from "@/components/layout/UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const { t: T, i18n } = useTranslation("common");
-  const { data: me } = useQuery({
-    queryKey: ["me"],
-    queryFn: () => api("/me"),
-  });
-  const authed = !!me;
-  const role = me?.role;
+  const { user, isLoading } = useAuth();
+  const authed = !!user && !isLoading;
+  const role = user?.role;
   const { pathname } = useLocation();
   const active = (p: string) =>
     pathname === p
@@ -110,107 +107,11 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
 
             {/* Common Items (Notification & Language) */}
             {authed && <NotificationCenter />}
-            <DropdownMenu
-              trigger={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2 h-9 px-2 text-muted-foreground hover:text-foreground"
-                >
-                  <Globe className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {i18n.language.toUpperCase()}
-                  </span>
-                </Button>
-              }
-            >
-              <DropdownItem onClick={() => i18n.changeLanguage("ru")}>
-                <div
-                  className={`flex items-center gap-3 ${
-                    i18n.language === "ru" ? "font-semibold text-primary" : ""
-                  }`}
-                >
-                  <span className="text-lg">🇷🇺</span>
-                  <span>Русский</span>
-                </div>
-              </DropdownItem>
-              <DropdownItem onClick={() => i18n.changeLanguage("kz")}>
-                <div
-                  className={`flex items-center gap-3 ${
-                    i18n.language === "kz" ? "font-semibold text-primary" : ""
-                  }`}
-                >
-                  <span className="text-lg">🇰🇿</span>
-                  <span>Қазақша</span>
-                </div>
-              </DropdownItem>
-              <DropdownItem onClick={() => i18n.changeLanguage("en")}>
-                <div
-                  className={`flex items-center gap-3 ${
-                    i18n.language === "en" ? "font-semibold text-primary" : ""
-                  }`}
-                >
-                  <span className="text-lg">🇬🇧</span>
-                  <span>English</span>
-                </div>
-              </DropdownItem>
-            </DropdownMenu>
+
+            <LanguageSwitcher />
 
             {/* User Menu */}
-            {authed && (
-              <DropdownMenu
-                trigger={
-                  <Button
-                    variant="ghost"
-                    className="relative h-9 w-9 rounded-full ml-2"
-                  >
-                    <Avatar className="h-9 w-9 border border-border">
-                      <AvatarImage src={me?.avatar_url} />
-                      <AvatarFallback>
-                        {me?.first_name?.[0]}
-                        {me?.last_name?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                }
-              >
-                <div className="px-3 py-2 border-b border-border/50 mb-1">
-                  <p className="text-sm font-medium leading-none">
-                    {me?.first_name} {me?.last_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 truncate max-w-[180px]">
-                    {me?.email}
-                  </p>
-                </div>
-                <Link to="/profile">
-                  <DropdownItem>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>{T("nav.profile", { defaultValue: "Profile" })}</span>
-                    </div>
-                  </DropdownItem>
-                </Link>
-                <Link to="/profile">
-                  <DropdownItem>
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>Settings</span>
-                    </div>
-                  </DropdownItem>
-                </Link>
-                <DropdownItem
-                  onClick={() => {
-                    localStorage.removeItem("token");
-                    location.href = "/login";
-                  }}
-                >
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                    <LogOut className="h-4 w-4" />
-                    <span>{T("nav.logout")}</span>
-                  </div>
-                </DropdownItem>
-              </DropdownMenu>
-            )}
+            {authed && <UserMenu />}
 
             {/* Mobile Navigation Trigger */}
             <div className="md:hidden ml-2">
