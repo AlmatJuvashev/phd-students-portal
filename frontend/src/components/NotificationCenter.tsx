@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu-radix";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Notification {
   id: string;
@@ -26,12 +27,20 @@ interface Notification {
 export const NotificationCenter = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
 
-  const { data: notifications = [] } = useQuery<Notification[]>({
+  // Check if token exists in localStorage
+  const token = localStorage.getItem("token");
+
+  const { data: notificationsData } = useQuery<Notification[] | null>({
     queryKey: ["notifications"],
     queryFn: () => api("/notifications"),
     refetchInterval: 30000,
+    enabled: !!token && !!user && !authLoading, // Only fetch if token exists, user is loaded, and auth is not loading
   });
+  
+  // Ensure notifications is always an array
+  const notifications = notificationsData ?? [];
 
   const markAsRead = useMutation({
     mutationFn: (id: string) =>

@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import React, { useState, useEffect, useMemo } from "react";
+import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
-import { enUS } from "date-fns/locale/en-US";
-import { ru } from "date-fns/locale/ru";
-import { kk } from "date-fns/locale/kk";
+import enUS from "date-fns/locale/en-US";
+import ru from "date-fns/locale/ru";
+import kk from "date-fns/locale/kk";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar-mobile.css";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { API_URL } from "@/api/client";
 import { Plus } from "lucide-react";
 import { EventModal } from "./EventModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { BackButton } from "@/components/ui/back-button";
+
+type View = 'month' | 'week' | 'work_week' | 'day' | 'agenda';
 
 const locales = {
   'en': enUS,
@@ -55,15 +58,20 @@ export const CalendarView = () => {
   const queryClient = useQueryClient();
   const { t, i18n } = useTranslation("common");
 
+  // Ensure culture is supported
+  const culture = useMemo(() => {
+    return locales[i18n.language as keyof typeof locales] ? i18n.language : 'en-US';
+  }, [i18n.language]);
+
   // Detect mobile and set default view
   const [isMobile, setIsMobile] = useState(false);
-  const [defaultView, setDefaultView] = useState<'month' | 'week' | 'day' | 'agenda'>('month');
+  const [defaultView, setDefaultView] = useState<View>('month');
 
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768; // md breakpoint
       setIsMobile(mobile);
-      setDefaultView(mobile ? 'agenda' : 'month');
+      setDefaultView(mobile ? 'day' : 'month'); // Use day view for mobile instead of agenda
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -73,7 +81,7 @@ export const CalendarView = () => {
   const fetchEvents = async () => {
     const start = new Date(new Date().getFullYear(), 0, 1).toISOString();
     const end = new Date(new Date().getFullYear() + 1, 0, 1).toISOString();
-    const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/events?start=${start}&end=${end}`, {
+    const res = await fetch(`${API_URL}/events?start=${start}&end=${end}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error(t("calendar.errors.fetch", { defaultValue: "Failed to fetch events" }));
@@ -87,22 +95,22 @@ export const CalendarView = () => {
     retry: 1,
   });
 
-  const calendarEvents: CalendarEvent[] = (events || [])
-    .filter(
-      (e) =>
-        e &&
-        e.start_time &&
-        e.end_time &&
-        e.title !== undefined &&
-        e.title !== null
-    )
-    .map((e) => ({
-      id: e.id || crypto.randomUUID(),
-      title: e.title || t("calendar.untitled", { defaultValue: "Untitled" }),
-      start: new Date(e.start_time),
-      end: new Date(e.end_time),
-      resource: e,
-    }));
+  const calendarEvents: CalendarEvent[] = useMemo(() => {
+    return (events || [])
+      .filter((e) => {
+        if (!e || !e.start_time || !e.end_time) return false;
+        const start = new Date(e.start_time);
+        const end = new Date(e.end_time);
+        return !isNaN(start.getTime()) && !isNaN(end.getTime());
+      })
+      .map((e) => ({
+        id: e.id || crypto.randomUUID(),
+        title: e.title || t("calendar.untitled", { defaultValue: "Untitled" }),
+        start: new Date(e.start_time),
+        end: new Date(e.end_time),
+        resource: e,
+      }));
+  }, [events, t]);
 
   const handleSelectEvent = (event: CalendarEvent) => {
     setSelectedEvent(event.resource || null);
@@ -170,9 +178,9 @@ export const CalendarView = () => {
               onSelectEvent={handleSelectEvent}
               onSelectSlot={handleSelectSlot}
               selectable
-              culture={i18n.language}
+              culture={culture}
               defaultView={defaultView}
-              views={isMobile ? ['agenda', 'day'] : ['month', 'week', 'work_week', 'day', 'agenda']}
+              views={['month', 'week', 'day']} // Agenda view is broken, so we exclude it
               messages={{
                 // Navigation
                 today: t("calendar.today", { defaultValue: "Today" }),
@@ -182,7 +190,6 @@ export const CalendarView = () => {
                 // View names (toolbar buttons)
                 month: t("calendar.month", { defaultValue: "Month" }),
                 week: t("calendar.week", { defaultValue: "Week" }),
-                work_week: t("calendar.work_week", { defaultValue: "Work Week" }),
                 day: t("calendar.day", { defaultValue: "Day" }),
                 agenda: t("calendar.agenda", { defaultValue: "Agenda" }),
                 
