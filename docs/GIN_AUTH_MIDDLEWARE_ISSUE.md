@@ -25,13 +25,13 @@ func AuthRequired(db *gorm.DB, redis *redis.Client) gin.HandlerFunc {
             c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
             return
         }
-        
+
         // 2. Set claims in context
         c.Set("claims", claims)
-        
+
         // 3. Call another middleware to hydrate user
         HydrateUserFromClaims(db, redis)(c)  // ⚠️ This middleware has c.Next()!
-        
+
         // 4. Continue to handler
         c.Next()  // ⚠️ This is called AFTER handler already executed!
     }
@@ -43,7 +43,7 @@ func HydrateUserFromClaims(db *gorm.DB, redis *redis.Client) gin.HandlerFunc {
         // ... fetch user from DB/cache ...
         c.Set("userID", user.ID)
         c.Set("current_user", &user)
-        
+
         c.Next()  // ⚠️ BUG: This passes control to the HANDLER, not back to AuthRequired!
     }
 }
@@ -62,7 +62,7 @@ In Gin, `c.Next()` doesn't return control to the calling function. Instead, it i
 
 ```
 ❌ BROKEN FLOW:
-AuthRequired() 
+AuthRequired()
   → validates JWT ✓
   → calls HydrateUserFromClaims()
       → starts fetching user...
@@ -85,25 +85,25 @@ func validateJWT(c *gin.Context, jwtSecret string) (jwt.MapClaims, error) {
     if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
         return nil, errors.New("missing or invalid authorization header")
     }
-    
+
     tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-    
+
     token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
         if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
             return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
         }
         return []byte(jwtSecret), nil
     })
-    
+
     if err != nil || !token.Valid {
         return nil, errors.New("invalid token")
     }
-    
+
     claims, ok := token.Claims.(jwt.MapClaims)
     if !ok {
         return nil, errors.New("invalid claims")
     }
-    
+
     return claims, nil
 }
 
@@ -116,10 +116,10 @@ func AuthMiddleware(db *gorm.DB, redis *redis.Client, jwtSecret string) gin.Hand
             c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
             return
         }
-        
+
         // 2. Set claims
         c.Set("claims", claims)
-        
+
         // 3. Hydrate user (inline, no c.Next())
         sub, _ := claims["sub"].(string)
         var user User
@@ -127,17 +127,17 @@ func AuthMiddleware(db *gorm.DB, redis *redis.Client, jwtSecret string) gin.Hand
             c.AbortWithStatusJSON(401, gin.H{"error": "user not found"})
             return
         }
-        
+
         // 4. Set user context
         c.Set("userID", user.ID)
         c.Set("current_user", &user)
-        
+
         // 5. Verify everything is set
         if _, exists := c.Get("userID"); !exists {
             c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
             return
         }
-        
+
         // 6. NOW call Next() - after all context is set
         c.Next()
     }
@@ -158,10 +158,10 @@ func AuthMiddleware(db *gorm.DB, redis *redis.Client) gin.HandlerFunc {
             return
         }
         c.Set("claims", claims)
-        
+
         // Inline hydration (don't call another middleware!)
         sub := claims["sub"].(string)
-        
+
         // Try cache first
         var user User
         cached, err := redis.Get(c, "user:"+sub).Result()
@@ -173,10 +173,10 @@ func AuthMiddleware(db *gorm.DB, redis *redis.Client) gin.HandlerFunc {
             data, _ := json.Marshal(user)
             redis.Set(c, "user:"+sub, data, 5*time.Minute)
         }
-        
+
         c.Set("userID", user.ID)
         c.Set("current_user", &user)
-        
+
         c.Next()  // Only ONE c.Next() at the very end
     }
 }
@@ -263,7 +263,7 @@ func HydrateUserFromClaims(...) gin.HandlerFunc {
 ### After (Fixed)
 
 ```go
-// api.go  
+// api.go
 api := r.Group("/api")
 api.Use(AuthMiddleware(db, redis, cfg.JWTSecret))
 
@@ -283,13 +283,13 @@ func AuthMiddleware(...) gin.HandlerFunc {
     return func(c *gin.Context) {
         claims, err := validateJWT(c, secret)  // ✅ No c.Next()
         if err != nil { c.AbortWithStatusJSON(401, ...); return }
-        
+
         c.Set("claims", claims)
-        
+
         if err := hydrateUser(c, db, redis, claims["sub"].(string)); err != nil {
             c.AbortWithStatusJSON(401, ...); return
         }
-        
+
         c.Next()  // ✅ Only one c.Next(), at the very end
     }
 }

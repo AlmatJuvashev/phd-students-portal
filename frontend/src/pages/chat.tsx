@@ -153,67 +153,102 @@ export function ChatPage() {
     queryFn: listRooms,
   });
 
-  useEffect(() => {
-    if (!rooms.length) return;
-    const exists = rooms.find((r) => r.id === activeRoomId);
-    if (!activeRoomId || !exists) {
-      setActiveRoomId(rooms[0].id);
-      setSidebarOpen(false);
-    }
-  }, [rooms, activeRoomId]);
+  const roomsCount = rooms?.length ?? 0;
+
+  // Filter rooms by search and archive status
+  const filteredRooms = useMemo(() => {
+    if (!rooms) return [];
+    const searchLower = search.toLowerCase();
+    return rooms.filter((r) => r.name.toLowerCase().includes(searchLower));
+  }, [rooms, search]);
+
+  const activeRooms = useMemo(
+    () => filteredRooms.filter((r) => !r.is_archived),
+    [filteredRooms]
+  );
+
+  const archivedRooms = useMemo(
+    () => filteredRooms.filter((r) => r.is_archived),
+    [filteredRooms]
+  );
 
   const activeRoom = useMemo(
-    () => rooms.find((room) => room.id === activeRoomId),
+    () => rooms?.find((r) => r.id === activeRoomId) ?? null,
     [rooms, activeRoomId]
   );
 
-  const {
-    data: messages = [],
-    isLoading: messagesLoading,
-    isFetching: messagesFetching,
-  } = useQuery<ChatMessage[]>({
+  // Messages query
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<
+    ChatMessage[]
+  >({
     queryKey: ["chat", "messages", activeRoomId],
-    queryFn: () => listMessages({ roomId: activeRoomId, limit: 50 }),
+    queryFn: () => listMessages(activeRoomId),
     enabled: !!activeRoomId,
   });
 
-  const sortedMessages = useMemo(
-    () =>
-      [...messages].sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      ),
-    [messages]
-  );
+  // Sort messages by created_at
+  const sortedMessages = useMemo(() => {
+    if (!messages) return [];
+    return [...messages].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }, [messages]);
 
+  // Disable input if no active room or room is archived
+  const disableInput = !activeRoomId || activeRoom?.is_archived;
+
+  // Handle file selection for upload
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files.length || !activeRoomId) return;
-    const file = e.target.files[0];
+    const files = e.target.files;
+    if (!files || files.length === 0 || !activeRoomId) return;
+
     setIsUploading(true);
     try {
-      const attachment = await uploadFile(activeRoomId, file);
-      setAttachments((prev) => [...prev, attachment]);
+      const file = files[0];
+      const uploaded = await uploadFile(activeRoomId, file);
+      setAttachments((prev) => [...prev, uploaded]);
     } catch (err) {
-      console.error("Upload failed", err);
-      // TODO: Show toast
+      console.error("File upload failed:", err);
     } finally {
       setIsUploading(false);
-      // Reset input
-      e.target.value = "";
+      e.target.value = ""; // Reset input
     }
   };
 
-  const roomsCount = rooms.length;
-  const disableInput = !activeRoom || activeRoom.is_archived;
-  const filteredRooms = rooms.filter((r) =>
-    r.name.toLowerCase().includes(search.toLowerCase())
-  );
-  const activeRooms = filteredRooms.filter((r) => !r.is_archived);
-  const archivedRooms = filteredRooms.filter((r) => r.is_archived);
+  // Mobile-specific logic
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // On mobile, if we select a room, we want to show the chat (hide sidebar)
+  // If we don't have a room, we show sidebar.
+  // We reuse sidebarOpen to mean "Show Room List" on mobile.
+  useEffect(() => {
+    if (isMobile) {
+      if (activeRoomId) {
+        setSidebarOpen(false); // Show chat
+      } else {
+        setSidebarOpen(true); // Show list
+      }
+    } else {
+      setSidebarOpen(true); // Always show sidebar on desktop
+    }
+  }, [activeRoomId, isMobile]);
+
+  const handleBackToRooms = () => {
+    setSidebarOpen(true);
+    setActiveRoomId(""); // Clear active room to ensure we go back to "no selection" state conceptually, though UI just shows list
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
+    <div className="space-y-4 h-[calc(100vh-100px)] flex flex-col">
+      <div className="space-y-1 shrink-0">
         <div className="flex items-center gap-2">
           <MessageCircle className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold tracking-tight">
@@ -224,21 +259,21 @@ export function ChatPage() {
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">{t("chat.subtitle")}</p>
-        <div className="inline-flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-          <ShieldCheck className="h-4 w-4 text-primary" />
-          <span>{t("chat.demo_notice")}</span>
-        </div>
       </div>
 
-      <div className="flex min-h-[60vh] rounded-xl border shadow-sm overflow-hidden bg-background">
+      <div className="flex-1 flex min-h-0 rounded-xl border shadow-sm overflow-hidden bg-background relative">
         {/* Sidebar */}
         <div
           className={cn(
-            "w-full max-w-sm border-r bg-muted/30 transition-transform duration-300 md:translate-x-0",
-            sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            "w-full md:w-80 lg:w-96 border-r bg-muted/30 flex flex-col absolute inset-0 z-20 md:relative md:z-0 bg-background md:bg-muted/30 transition-transform duration-300",
+            isMobile
+              ? sidebarOpen
+                ? "translate-x-0"
+                : "-translate-x-full"
+              : "translate-x-0"
           )}
         >
-          <div className="p-4 border-b bg-gradient-to-b from-primary/5 to-transparent space-y-3">
+          <div className="p-4 border-b bg-gradient-to-b from-primary/5 to-transparent space-y-3 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-primary/10">
@@ -266,7 +301,7 @@ export function ChatPage() {
             </div>
           </div>
 
-          <div className="p-3 space-y-4 overflow-y-auto max-h-[70vh]">
+          <div className="p-3 space-y-4 overflow-y-auto flex-1">
             {roomsLoading ? (
               <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
                 {t("chat.loading_rooms")}
@@ -289,7 +324,7 @@ export function ChatPage() {
                           key={room.id}
                           onClick={() => {
                             setActiveRoomId(room.id);
-                            setSidebarOpen(false);
+                            // Sidebar closing handled by effect
                           }}
                           className={cn(
                             "w-full rounded-lg border px-3 py-2 text-left hover:border-primary/60 hover:bg-primary/5 transition",
@@ -345,7 +380,7 @@ export function ChatPage() {
                           key={room.id}
                           onClick={() => {
                             setActiveRoomId(room.id);
-                            setSidebarOpen(false);
+                            // Sidebar closing handled by effect
                           }}
                           className={cn(
                             "w-full rounded-lg border px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 transition",
@@ -389,46 +424,81 @@ export function ChatPage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setSidebarOpen((v) => !v)}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-sm">
-                    {activeRoom ? activeRoom.name : t("chat.messages_heading")}
-                  </span>
+        <div className="flex-1 flex flex-col min-w-0 w-full h-full absolute inset-0 md:static bg-background z-10 md:z-0">
+          {/* Enhanced Header */}
+          <div className="relative shrink-0 z-20">
+            {/* Glassmorphism background with gradient */}
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-md border-b z-0">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-50" />
+            </div>
+
+            <div className="relative z-10 flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden -ml-2 h-9 w-9 rounded-full hover:bg-primary/10"
+                  onClick={handleBackToRooms}
+                >
+                  <ArrowLeft className="h-5 w-5 text-primary" />
+                </Button>
+                
+                {/* Room Avatar/Icon */}
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10 shadow-sm">
+                  {activeRoom ? (
+                     <span className="text-sm font-bold text-primary">
+                       {activeRoom.name.substring(0, 2).toUpperCase()}
+                     </span>
+                  ) : (
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {activeRoom
-                    ? t(`chat.types.${activeRoom.type}`)
-                    : t("chat.empty_state")}
-                </p>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-base tracking-tight truncate">
+                      {activeRoom ? activeRoom.name : t("chat.messages_heading")}
+                    </span>
+                    {activeRoom?.is_archived && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
+                        {t("chat.archived")}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                    {activeRoom ? (
+                      <>
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500/50 animate-pulse" />
+                        {t(`chat.types.${activeRoom.type}`)}
+                      </>
+                    ) : (
+                      t("chat.empty_state")
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {activeRoom && isAdmin && !activeRoom.is_archived && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setShowAddMember(true)}
+                    title={t("chat.add_member", { defaultValue: "Add Member" })}
+                  >
+                    <UserPlus className="h-5 w-5" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
               </div>
             </div>
-            {activeRoom?.is_archived && (
-              <Badge variant="outline" className="text-[10px]">
-                {t("chat.archived")}
-              </Badge>
-            )}
-            {activeRoom && isAdmin && !activeRoom.is_archived && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowAddMember(true)}
-                title={t("chat.add_member", { defaultValue: "Add Member" })}
-              >
-                <UserPlus className="h-5 w-5 text-muted-foreground hover:text-primary" />
-              </Button>
-            )}
           </div>
 
           {activeRoomId && (
@@ -439,7 +509,7 @@ export function ChatPage() {
             />
           )}
 
-          <div className="flex-1 flex flex-col bg-muted/10">
+          <div className="flex-1 flex flex-col bg-muted/10 min-h-0">
             {messagesLoading ? (
               <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
                 {t("chat.loading_messages")}
@@ -483,7 +553,7 @@ export function ChatPage() {
                         </div>
                       )}
                       <div className="flex items-start gap-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
                           {initials(msg.sender_name || msg.sender_id)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -555,7 +625,7 @@ export function ChatPage() {
                                       ))}
                                     </div>
                                   )}
-                                <p className="text-sm whitespace-pre-line leading-relaxed">
+                                <p className="text-sm whitespace-pre-line leading-relaxed break-words">
                                   {msg.body}
                                 </p>
                                 {msg.edited_at && (
@@ -569,18 +639,6 @@ export function ChatPage() {
                                 )}
                               </div>
 
-                              {/* Actions Menu - Only show for own messages (assuming we can check sender_id against current user, but we don't have current user ID in context here easily. 
-                                  For now, we'll show it for everyone but backend will reject if not owner. 
-                                  Ideally we pass current user ID to ChatPage or get it from auth context. 
-                                  Let's assume we can edit/delete if we are the sender. 
-                                  We need current user ID. `useAuth` hook? 
-                                  I'll assume for now we show it and let backend enforce, or just show it. 
-                                  Wait, `msg.sender_id` is available. I need `me.id`. 
-                                  I'll skip the check for now or try to get it. 
-                                  Actually, I can just render it and if it's not mine, backend fails. 
-                                  Better: check if I can get user info. 
-                                  `useAuth` is likely available. 
-                              */}
                               <div className="absolute top-1 right-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -626,7 +684,7 @@ export function ChatPage() {
             )}
           </div>
 
-          <div className="border-t p-3 bg-background space-y-3">
+          <div className="border-t p-3 bg-background space-y-3 shrink-0">
             {editingMessage && (
               <div className="flex items-center justify-between bg-muted/50 p-2 rounded-md border-l-4 border-primary text-sm">
                 <div className="flex flex-col">
