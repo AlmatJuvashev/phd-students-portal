@@ -80,8 +80,8 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
   const mutation = useMutation({
     mutationFn: async (data: EventFormValues) => {
       const url = event
-        ? `${import.meta.env.VITE_API_BASE}/api/events/${event.id}`
-        : `${import.meta.env.VITE_API_BASE}/api/events`;
+        ? `${API_URL}/events/${event.id}`
+        : `${API_URL}/events`;
 
       const method = event ? "PUT" : "POST";
 
@@ -116,7 +116,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, event, 
       return;
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/events/${event.id}`, {
+      const res = await fetch(`${API_URL}/events/${event.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

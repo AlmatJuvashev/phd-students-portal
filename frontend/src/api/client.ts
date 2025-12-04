@@ -2,6 +2,16 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8280/ap
 
 export async function api<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token')
+  
+  // Debug logging for auth issues
+  if (path === '/notifications' || path.includes('/notifications')) {
+    console.log('[API Debug] Notifications request:', {
+      path,
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : 'null',
+    })
+  }
+  
   const headers: Record<string, string> = {
     ...(opts.headers as Record<string, string> || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -13,6 +23,14 @@ export async function api<T = any>(path: string, opts: RequestInit = {}): Promis
   const res = await fetch(`${API_URL}${path}`, { ...opts, headers })
   if (!res.ok) {
     const t = await res.text()
+    // Enhanced error logging
+    if (res.status === 401) {
+      console.error('[API 401 Error]', {
+        path,
+        hasToken: !!token,
+        response: t,
+      })
+    }
     throw new Error(t || res.statusText)
   }
   const type = res.headers.get('content-type') || ''
