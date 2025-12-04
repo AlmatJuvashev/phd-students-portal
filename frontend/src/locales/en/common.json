@@ -114,7 +114,23 @@
       "title": "Title is required",
       "start": "Start time is required",
       "end": "End time is required"
-    }
+    },
+    "new": "New",
+    "today": "Today",
+    "previous": "Back",
+    "next": "Next",
+    "month": "Month",
+    "week": "Week",
+    "day": "Day",
+    "agenda": "Agenda",
+    "date": "Date",
+    "time": "Time",
+    "event": "Event",
+    "all_day": "All Day",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "no_events": "No events in this range",
+    "show_more": "+{{count}} more"
   },
   "forms": {
     "validations_title": "Validations",
@@ -227,6 +243,7 @@
       "create_students": "Manage Students",
       "create_advisors": "Manage Advisors",
       "create_admins": "Manage Admins",
+      "calendar": "Calendar",
       "dictionaries": "Dictionaries",
       "contacts": "Contacts"
     },
@@ -458,6 +475,9 @@
     },
     "users": {
       "title": "User Management",
+      "students": "Students",
+      "advisors": "Advisors",
+      "admins": "Admins",
       "subtitle": "Manage users and their access permissions",
       "create": "Create User",
       "create_title": "Create New User",
@@ -680,7 +700,18 @@
         "advisor": "Advisor",
         "chair": "Department Chair",
         "admin": "Administrator"
-      }
+      },
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "edit_student": "Edit Student",
+      "delete_student": "Deactivate Student",
+      "delete_advisor": "Deactivate Advisor",
+      "delete_admin": "Deactivate Admin",
+      "mark_active": "Activate",
+      "confirm_deactivate_named": "Deactivate this user?",
+      "confirm_activate_named": "Activate this user?"
     }
   },
   "table": {

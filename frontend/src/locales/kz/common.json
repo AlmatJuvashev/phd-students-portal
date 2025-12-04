@@ -114,7 +114,23 @@
       "title": "Атауы міндетті",
       "start": "Басталу уақытын көрсетіңіз",
       "end": "Аяқталу уақытын көрсетіңіз"
-    }
+    },
+    "new": "Жаңа",
+    "today": "Бүгін",
+    "previous": "Артқа",
+    "next": "Алға",
+    "month": "Ай",
+    "week": "Апта",
+    "day": "Күн",
+    "agenda": "Күн тәртібі",
+    "date": "Күні",
+    "time": "Уақыты",
+    "event": "Оқиға",
+    "all_day": "Күні бойы",
+    "yesterday": "Кеше",
+    "tomorrow": "Ертең",
+    "no_events": "Бұл аралықта оқиғалар жоқ",
+    "show_more": "тағы +{{count}}"
   },
   "forms": {
     "validations_title": "Тексерулер",
@@ -227,17 +243,19 @@
       "create_students": "Студенттерді басқару",
       "create_advisors": "Кеңесшілерді басқару",
       "create_admins": "Админдерді басқару",
+      "calendar": "Күнтізбе",
       "dictionaries": "Анықтамалықтар",
       "contacts": "Контактілер"
     },
     "topbar": {
       "admin_panel": "Админ панелі",
       "menu": "Мәзір",
-      "admin": "Админ",
+      "admin": "Администратор",
       "signed_in_as": "Кіру:",
       "back_to_main": "Басты бетке оралу",
       "back_to_main_button": "Басты бет"
     },
+
     "student_progress": {
       "title": "Студент прогресі",
       "subtitle": "Студенттердің диссертациялық картаны орындауының көрінісі.",
@@ -458,6 +476,9 @@
     },
     "users": {
       "title": "Пайдаланушыларды басқару",
+      "students": "Студенттер",
+      "advisors": "Кеңесшілер",
+      "admins": "Админдер",
       "subtitle": "Пайдаланушылар мен рұқсаттарды басқарыңыз",
       "create": "Пайдаланушы қосу",
       "create_title": "Жаңа пайдаланушы құру",
@@ -600,6 +621,17 @@
       }
     },
     "forms": {
+      "first_name": "Аты",
+      "last_name": "Тегі",
+      "email": "Email",
+      "password": "Құпия сөз",
+      "edit_student": "Студентті өңдеу",
+      "delete_student": "Студентті бұғаттау",
+      "delete_advisor": "Эдвайзерді бұғаттау",
+      "delete_admin": "Админді бұғаттау",
+      "mark_active": "Белсендіру",
+      "confirm_deactivate_named": "Бұл пайдаланушыны бұғаттау керек пе?",
+      "confirm_activate_named": "Бұл пайдаланушыны белсендіру керек пе?",
       "create_students_title": "Студенттерді қосу",
       "create_students_subtitle": "Жаңа студенттерді шақырып, кеңесшілер тағайындаңыз және аккаунттарды басқарыңыз.",
       "students_table": "Студенттер",
@@ -691,10 +723,7 @@
       "rejected": "Түзетуді қажет етеді"
     }
   },
-  "validation": {
-    "required": "Міндетті",
-    "invalid_email": "Жарамсыз email"
-  },
+
   "admin.forms": {
     "first_name": "Аты",
     "last_name": "Тегі",

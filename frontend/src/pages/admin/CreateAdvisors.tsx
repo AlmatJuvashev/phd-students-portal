@@ -43,6 +43,7 @@ type UserRow = {
   username?: string;
   created_at?: string;
   role?: string;
+  is_active?: boolean;
 };
 type PaginatedResponse = {
   data: UserRow[];
@@ -410,7 +411,7 @@ export function CreateAdvisors() {
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>{t("admin.forms.edit_student", { defaultValue: "Edit" })}</TooltipContent>
+                            <TooltipContent>{t("admin.forms.edit_advisor", { defaultValue: "Edit Advisor" })}</TooltipContent>
                           </Tooltip>
                           {advisor.is_active !== false ? (
                             <Tooltip>
@@ -423,7 +424,7 @@ export function CreateAdvisors() {
                                   )}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>{t("admin.forms.delete_student", { defaultValue: "Deactivate" })}</TooltipContent>
+                              <TooltipContent>{t("admin.forms.delete_advisor", { defaultValue: "Deactivate Advisor" })}</TooltipContent>
                             </Tooltip>
                           ) : (
                             <Tooltip>

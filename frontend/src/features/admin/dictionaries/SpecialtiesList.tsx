@@ -45,7 +45,8 @@ export const SpecialtiesList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-  const [editingSpecialty, setEditingSpecialty] = React.useState<Specialty | null>(null);
+  const [editingSpecialty, setEditingSpecialty] =
+    React.useState<Specialty | null>(null);
   const [selectedPrograms, setSelectedPrograms] = React.useState<string[]>([]);
 
   const { data: specialties, isLoading } = useQuery({
@@ -53,10 +54,18 @@ export const SpecialtiesList = () => {
     queryFn: () => listSpecialties(false),
   });
 
-  const { data: programs } = useQuery({
+  const { data: programs, refetch: refetchPrograms } = useQuery({
     queryKey: ["programs", "all"],
     queryFn: () => listPrograms(false), // Fetch all programs, not just active
+    staleTime: 0, // Always refetch to get latest programs
   });
+
+  // Refetch programs when dialogs open
+  React.useEffect(() => {
+    if (isCreateOpen || editingSpecialty) {
+      refetchPrograms();
+    }
+  }, [isCreateOpen, editingSpecialty, refetchPrograms]);
 
   const createMutation = useMutation({
     mutationFn: createSpecialty,
@@ -173,7 +182,9 @@ export const SpecialtiesList = () => {
   const getProgramNames = (ids: string[]) => {
     if (!ids || ids.length === 0)
       return t("admin.dictionaries.shared.none", { defaultValue: "None" });
-    return ids.map((id) => programs?.find((p) => p.id === id)?.name || id).join(", ");
+    return ids
+      .map((id) => programs?.find((p) => p.id === id)?.name || id)
+      .join(", ");
   };
 
   // Filter specialties (currently showing all, can add filters later)
@@ -190,13 +201,17 @@ export const SpecialtiesList = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">
-          {t("admin.dictionaries.specialties.title", { defaultValue: "Specialties" })}
+          {t("admin.dictionaries.specialties.title", {
+            defaultValue: "Specialties",
+          })}
         </h2>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />{" "}
-              {t("admin.dictionaries.specialties.add", { defaultValue: "Add Specialty" })}
+              {t("admin.dictionaries.specialties.add", {
+                defaultValue: "Add Specialty",
+              })}
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -215,15 +230,20 @@ export const SpecialtiesList = () => {
             <form onSubmit={handleSubmitCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">
-                  {t("admin.dictionaries.fields.name", { defaultValue: "Name" })}
+                  {t("admin.dictionaries.fields.name", {
+                    defaultValue: "Name",
+                  })}
                 </Label>
                 <Input
                   id="name"
                   name="name"
                   required
-                  placeholder={t("admin.dictionaries.specialties.name_placeholder", {
-                    defaultValue: "Specialty name",
-                  })}
+                  placeholder={t(
+                    "admin.dictionaries.specialties.name_placeholder",
+                    {
+                      defaultValue: "Specialty name",
+                    }
+                  )}
                 />
               </div>
               <div className="space-y-2">
@@ -236,28 +256,41 @@ export const SpecialtiesList = () => {
               </div>
               <div className="space-y-2">
                 <Label>
-                  {t("admin.dictionaries.fields.programs", { defaultValue: "Programs" })}
+                  {t("admin.dictionaries.fields.programs", {
+                    defaultValue: "Programs",
+                  })}
                 </Label>
                 <div className="border rounded p-3 space-y-2 max-h-40 overflow-auto">
                   {programs && programs.length > 0 ? (
                     programs.map((program) => (
-                      <div key={program.id} className="flex items-center space-x-2">
+                      <div
+                        key={program.id}
+                        className="flex items-center space-x-2"
+                      >
                         <input
                           type="checkbox"
                           id={`create-prog-${program.id}`}
                           checked={selectedPrograms.includes(program.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedPrograms([...selectedPrograms, program.id]);
+                              setSelectedPrograms([
+                                ...selectedPrograms,
+                                program.id,
+                              ]);
                             } else {
                               setSelectedPrograms(
-                                selectedPrograms.filter((id) => id !== program.id)
+                                selectedPrograms.filter(
+                                  (id) => id !== program.id
+                                )
                               );
                             }
                           }}
                           className="h-4 w-4"
                         />
-                        <label htmlFor={`create-prog-${program.id}`} className="text-sm cursor-pointer">
+                        <label
+                          htmlFor={`create-prog-${program.id}`}
+                          className="text-sm cursor-pointer"
+                        >
                           {program.name}
                         </label>
                       </div>
@@ -274,8 +307,12 @@ export const SpecialtiesList = () => {
               <DialogFooter>
                 <Button type="submit" disabled={createMutation.isPending}>
                   {createMutation.isPending
-                    ? t("admin.dictionaries.actions.creating", { defaultValue: "Creating..." })
-                    : t("admin.dictionaries.actions.create", { defaultValue: "Create" })}
+                    ? t("admin.dictionaries.actions.creating", {
+                        defaultValue: "Creating...",
+                      })
+                    : t("admin.dictionaries.actions.create", {
+                        defaultValue: "Create",
+                      })}
                 </Button>
               </DialogFooter>
             </form>
@@ -304,7 +341,10 @@ export const SpecialtiesList = () => {
           </TableHeader>
           <TableBody>
             {filteredSpecialties.map((specialty: Specialty) => (
-              <TableRow key={specialty.id} className={!specialty.is_active ? "opacity-50" : ""}>
+              <TableRow
+                key={specialty.id}
+                className={!specialty.is_active ? "opacity-50" : ""}
+              >
                 <TableCell className="font-medium">{specialty.name}</TableCell>
                 <TableCell>{specialty.code || "—"}</TableCell>
                 <TableCell>{getProgramNames(specialty.program_ids)}</TableCell>
@@ -312,7 +352,10 @@ export const SpecialtiesList = () => {
                   <Switch
                     checked={specialty.is_active}
                     onCheckedChange={(checked) =>
-                      toggleActiveMutation.mutate({ id: specialty.id, isActive: checked })
+                      toggleActiveMutation.mutate({
+                        id: specialty.id,
+                        isActive: checked,
+                      })
                     }
                     disabled={toggleActiveMutation.isPending}
                   />
@@ -335,7 +378,9 @@ export const SpecialtiesList = () => {
                       size="icon"
                       onClick={() => deleteMutation.mutate(specialty.id)}
                       disabled={deleteMutation.isPending}
-                      aria-label={t("common.remove", { defaultValue: "Remove" })}
+                      aria-label={t("common.remove", {
+                        defaultValue: "Remove",
+                      })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -345,7 +390,10 @@ export const SpecialtiesList = () => {
             ))}
             {specialties?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   {t("admin.dictionaries.specialties.empty", {
                     defaultValue: "No specialties found.",
                   })}
@@ -379,40 +427,66 @@ export const SpecialtiesList = () => {
             <form onSubmit={handleSubmitUpdate} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-name">
-                  {t("admin.dictionaries.fields.name", { defaultValue: "Name" })}
+                  {t("admin.dictionaries.fields.name", {
+                    defaultValue: "Name",
+                  })}
                 </Label>
-                <Input id="edit-name" name="name" defaultValue={editingSpecialty.name} required />
+                <Input
+                  id="edit-name"
+                  name="name"
+                  defaultValue={editingSpecialty.name}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-code">
-                  {t("admin.dictionaries.fields.code", { defaultValue: "Code" })}
+                  {t("admin.dictionaries.fields.code", {
+                    defaultValue: "Code",
+                  })}
                 </Label>
-                <Input id="edit-code" name="code" defaultValue={editingSpecialty.code} />
+                <Input
+                  id="edit-code"
+                  name="code"
+                  defaultValue={editingSpecialty.code}
+                />
               </div>
               <div className="space-y-2">
                 <Label>
-                  {t("admin.dictionaries.fields.programs", { defaultValue: "Programs" })}
+                  {t("admin.dictionaries.fields.programs", {
+                    defaultValue: "Programs",
+                  })}
                 </Label>
                 <div className="border rounded p-3 space-y-2 max-h-40 overflow-auto">
                   {programs && programs.length > 0 ? (
                     programs.map((program) => (
-                      <div key={program.id} className="flex items-center space-x-2">
+                      <div
+                        key={program.id}
+                        className="flex items-center space-x-2"
+                      >
                         <input
                           type="checkbox"
                           id={`edit-prog-${program.id}`}
                           checked={selectedPrograms.includes(program.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedPrograms([...selectedPrograms, program.id]);
+                              setSelectedPrograms([
+                                ...selectedPrograms,
+                                program.id,
+                              ]);
                             } else {
                               setSelectedPrograms(
-                                selectedPrograms.filter((id) => id !== program.id)
+                                selectedPrograms.filter(
+                                  (id) => id !== program.id
+                                )
                               );
                             }
                           }}
                           className="h-4 w-4"
                         />
-                        <label htmlFor={`edit-prog-${program.id}`} className="text-sm cursor-pointer">
+                        <label
+                          htmlFor={`edit-prog-${program.id}`}
+                          className="text-sm cursor-pointer"
+                        >
                           {program.name}
                         </label>
                       </div>
@@ -427,7 +501,11 @@ export const SpecialtiesList = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Switch id="edit-active" name="is_active" defaultChecked={editingSpecialty.is_active} />
+                <Switch
+                  id="edit-active"
+                  name="is_active"
+                  defaultChecked={editingSpecialty.is_active}
+                />
                 <Label htmlFor="edit-active">
                   {t("admin.forms.status_active", { defaultValue: "Active" })}
                 </Label>
@@ -435,7 +513,9 @@ export const SpecialtiesList = () => {
               <DialogFooter>
                 <Button type="submit" disabled={updateMutation.isPending}>
                   {updateMutation.isPending
-                    ? t("admin.dictionaries.actions.saving", { defaultValue: "Saving..." })
+                    ? t("admin.dictionaries.actions.saving", {
+                        defaultValue: "Saving...",
+                      })
                     : t("admin.dictionaries.actions.save_changes", {
                         defaultValue: "Save Changes",
                       })}

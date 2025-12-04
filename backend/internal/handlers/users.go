@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -67,7 +68,8 @@ func (h *UsersHandler) CreateUser(c *gin.Context) {
         VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8,$9,$10,$11)`,
 		username, nullable(req.Email), req.FirstName, req.LastName, req.Role, hash,
 		nullable(req.Phone), nullable(req.Program), nullable(req.Specialty), nullable(req.Department), nullable(req.Cohort)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "insert failed"})
+		log.Printf("[CreateUser] insert failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "insert failed", "details": err.Error()})
 		return
 	}
 	// Link advisors for students
