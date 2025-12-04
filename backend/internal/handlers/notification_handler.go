@@ -1,9 +1,12 @@
 package handlers
 
 import (
-	"net/http"
+	"fmt"
 	"log"
+	"net/http"
+	"time"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -17,18 +20,38 @@ func NewNotificationHandler(service *services.NotificationService) *Notification
 }
 
 func (h *NotificationHandler) GetUnread(c *gin.Context) {
+	reqID := c.GetHeader("X-Request-ID")
+	if reqID == "" {
+		reqID = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	log.Printf("[GetUnread reqID=%s] Handler called", reqID)
+	
 	userID := c.GetString("userID")
+	log.Printf("[GetUnread reqID=%s] userID from context: '%s'", reqID, userID)
+	
 	if userID == "" {
-		log.Printf("notifications: missing userID in context")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		// Debug: check what's in context
+		claims, claimsOk := c.Get("claims")
+		currentUser, userOk := c.Get("current_user")
+		log.Printf("[GetUnread reqID=%s] missing userID. claims_exists=%v, current_user_exists=%v, claims=%+v, current_user=%+v", 
+			reqID, claimsOk, userOk, claims, currentUser)
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+			"details": "userID not set in context - middleware may have failed",
+		})
 		return
 	}
 	notifs, err := h.service.GetUnreadNotifications(c.Request.Context(), userID)
 	if err != nil {
-		log.Printf("notifications: fetch failed for user %s: %v", userID, err)
+		log.Printf("[GetUnread reqID=%s] fetch failed for user %s: %v", reqID, userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// Ensure we return an empty array instead of null
+	if notifs == nil {
+		notifs = []models.Notification{}
+	}
+	log.Printf("[GetUnread reqID=%s] returning %d notifications", reqID, len(notifs))
 	c.JSON(http.StatusOK, notifs)
 }
 

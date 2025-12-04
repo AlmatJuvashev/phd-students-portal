@@ -67,6 +67,11 @@ func (h *CalendarHandler) CreateEvent(c *gin.Context) {
 
 func (h *CalendarHandler) GetEvents(c *gin.Context) {
 	userID := c.GetString("userID")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	
 	startStr := c.Query("start")
 	endStr := c.Query("end")
 
@@ -90,6 +95,11 @@ func (h *CalendarHandler) GetEvents(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Ensure we return an empty array instead of null
+	if events == nil {
+		events = []models.Event{}
 	}
 
 	c.JSON(http.StatusOK, events)
