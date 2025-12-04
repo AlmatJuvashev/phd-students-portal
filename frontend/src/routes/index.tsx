@@ -24,6 +24,9 @@ const ContactsPage = lazy(() =>
 const AdminUsers = lazy(() =>
   import("@/pages/admin.users").then((m) => ({ default: m.AdminUsers }))
 );
+const AdminUsersPage = lazy(() =>
+  import("@/pages/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage }))
+);
 const AdminDashboard = lazy(() =>
   import("@/pages/dashboard").then((m) => ({ default: m.Dashboard }))
 );
@@ -244,7 +247,7 @@ export const router = createBrowserRouter([
         path: "users",
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
-            {WithSuspense(<AdminUsers />)}
+            {WithSuspense(<AdminUsersPage />)}
           </ProtectedRoute>
         ),
       },
