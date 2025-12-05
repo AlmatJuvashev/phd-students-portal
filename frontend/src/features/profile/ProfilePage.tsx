@@ -10,10 +10,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getPendingEmailVerification } from "@/api/user";
+import { useTranslation } from "react-i18next";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -33,8 +35,8 @@ export default function ProfilePage() {
 
     if (file.size > 5 * 1024 * 1024) {
       toast({
-        title: "File too large",
-        description: "Max 5MB",
+        title: t("profile.file_too_large"),
+        description: t("profile.max_size"),
         variant: "destructive",
       });
       return;
@@ -63,26 +65,26 @@ export default function ProfilePage() {
 
       // 4. Refresh
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      toast({ title: "Avatar updated" });
+      toast({ title: t("profile.avatar_updated") });
     } catch (err) {
       console.error(err);
-      toast({ title: "Failed to upload avatar", variant: "destructive" });
+      toast({ title: t("profile.failed_upload"), variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="container max-w-4xl py-8 space-y-8">
+    <div className="container max-w-3xl mx-auto py-8 space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gradient">Profile</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gradient">{t("profile.title")}</h1>
           <p className="text-muted-foreground">
-            Manage your personal information
+            {t("profile.subtitle")}
           </p>
         </div>
         <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? "Cancel Editing" : "Edit Profile"}
+          {isEditing ? t("profile.cancel_edit") : t("profile.edit_button")}
         </Button>
       </div>
 
@@ -90,11 +92,10 @@ export default function ProfilePage() {
         <div className="p-3 rounded-md bg-blue-100 text-blue-800 text-sm flex items-start gap-2">
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <div>
-            <strong>Email verification pending</strong>
-            <p className="text-xs mt-1">
-              Please check <strong>{pendingEmail.new_email}</strong> for the
-              verification link.
-            </p>
+            <strong>{t("profile.email_verification_pending")}</strong>
+            <p className="text-xs mt-1" dangerouslySetInnerHTML={{
+              __html: t("profile.check_email", { email: pendingEmail.new_email })
+            }} />
           </div>
         </div>
       )}
@@ -141,7 +142,7 @@ export default function ProfilePage() {
           {isEditing ? (
             <Card>
               <CardHeader>
-                <CardTitle>Edit Profile</CardTitle>
+                <CardTitle>{t("profile.edit_profile")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <EditProfileForm
@@ -156,25 +157,25 @@ export default function ProfilePage() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
+                <CardTitle>{t("profile.personal_info")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Email
+                      {t("profile.email")}
                     </label>
                     <p>{user.email}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Phone
+                      {t("profile.phone")}
                     </label>
                     <p>{user.phone || "-"}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Date of Birth
+                      {t("profile.date_of_birth")}
                     </label>
                     <p>
                       {user.date_of_birth
@@ -184,14 +185,14 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">
-                      Address
+                      {t("profile.address")}
                     </label>
                     <p>{user.address || "-"}</p>
                   </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
-                    Bio
+                    {t("profile.bio")}
                   </label>
                   <p className="whitespace-pre-wrap">{user.bio || "-"}</p>
                 </div>

@@ -10,7 +10,34 @@
     "admin": "Admin",
     "login": "Login",
     "logout": "Logout",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your personal information",
+    "edit_button": "Edit Profile",
+    "cancel_edit": "Cancel Editing",
+    "personal_info": "Personal Information",
+    "edit_profile": "Edit Profile",
+    "email": "Email",
+    "phone": "Phone",
+    "date_of_birth": "Date of Birth",
+    "address": "Address",
+    "bio": "Bio",
+    "email_verification_pending": "Email verification pending",
+    "check_email": "Please check <strong>{email}</strong> for the verification link.",
+    "file_too_large": "File too large",
+    "max_size": "Max 5MB",
+    "upload_failed": "Upload failed",
+    "avatar_updated": "Avatar updated",
+    "failed_upload": "Failed to upload avatar"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Mark all read",
+    "no_notifications": "No notifications"
   },
   "chat": {
     "title": "Messages",
@@ -354,7 +381,8 @@
       "admin": "Admin",
       "signed_in_as": "Signed in as",
       "back_to_main": "Back to main page",
-      "back_to_main_button": "Back to main"
+      "back_to_main_button": "Back to main",
+      "main": "Main"
     },
     "student_progress": {
       "title": "Student Progress",
