@@ -9,7 +9,8 @@
     "inbox": "Inbox",
     "admin": "Admin",
     "login": "Login",
-    "logout": "Logout"
+    "logout": "Logout",
+    "calendar": "Calendar"
   },
   "chat": {
     "title": "Messages",
@@ -343,7 +344,9 @@
       "create_admins": "Manage Admins",
       "calendar": "Calendar",
       "dictionaries": "Dictionaries",
-      "contacts": "Contacts"
+      "contacts": "Contacts",
+      "analytics": "Analytics",
+      "users": "Users"
     },
     "topbar": {
       "admin_panel": "Admin Panel",

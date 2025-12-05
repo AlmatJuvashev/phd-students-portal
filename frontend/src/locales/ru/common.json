@@ -9,7 +9,8 @@
     "inbox": "Входящие",
     "admin": "Админ",
     "login": "Войти",
-    "logout": "Выйти"
+    "logout": "Выйти",
+    "calendar": "Календарь"
   },
   "chat": {
     "title": "Чат",
@@ -252,7 +253,9 @@
       "create_admins": "Управление администраторами",
       "calendar": "Календарь",
       "dictionaries": "Справочники",
-      "contacts": "Контакты"
+      "contacts": "Контакты",
+      "analytics": "Аналитика",
+      "users": "Пользователи"
     },
     "topbar": {
       "admin_panel": "Админ-панель",
