@@ -26,8 +26,8 @@ func (s *CalendarService) CreateEvent(ctx context.Context, event *models.Event, 
 
 	// Insert event
 	query := `
-		INSERT INTO events (title, description, start_time, end_time, event_type, location, creator_id)
-		VALUES (:title, :description, :start_time, :end_time, :event_type, :location, :creator_id)
+		INSERT INTO events (title, description, start_time, end_time, event_type, location, meeting_type, meeting_url, physical_address, color, creator_id)
+		VALUES (:title, :description, :start_time, :end_time, :event_type, :location, :meeting_type, :meeting_url, :physical_address, :color, :creator_id)
 		RETURNING id, created_at, updated_at`
 	
 	rows, err := tx.NamedQuery(query, event)
@@ -86,7 +86,8 @@ func (s *CalendarService) UpdateEvent(ctx context.Context, event *models.Event) 
 	query := `
 		UPDATE events 
 		SET title=:title, description=:description, start_time=:start_time, end_time=:end_time, 
-			event_type=:event_type, location=:location, updated_at=NOW()
+			event_type=:event_type, location=:location, meeting_type=:meeting_type, meeting_url=:meeting_url,
+			physical_address=:physical_address, color=:color, updated_at=NOW()
 		WHERE id=:id AND creator_id=:creator_id`
 	
 	result, err := s.db.NamedExecContext(ctx, query, event)

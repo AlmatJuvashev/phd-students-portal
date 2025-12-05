@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -450,6 +451,72 @@ func (h *ChatHandler) UploadFile(c *gin.Context) {
 		"type": file.Header.Get("Content-Type"),
 		"size": file.Size,
 	})
+}
+
+// DownloadFile handles file download with original filename
+func (h *ChatHandler) DownloadFile(c *gin.Context) {
+	roomID := c.Param("roomId")
+	filename := c.Param("filename")
+	uid := c.GetString("userID")
+
+	log.Printf("[DownloadFile] Request received - roomID: %s, filename: %s, userID: %s", roomID, filename, uid)
+	log.Printf("[DownloadFile] UploadDir config: %s", h.cfg.UploadDir)
+
+	// Check membership
+	isMember, err := h.store.IsMember(c.Request.Context(), roomID, uid)
+	if err != nil {
+		log.Printf("[DownloadFile] ERROR checking membership: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check membership"})
+		return
+	}
+	if !isMember {
+		log.Printf("[DownloadFile] User %s is not a member of room %s", uid, roomID)
+		c.JSON(http.StatusForbidden, gin.H{"error": "not a member of this room"})
+		return
+	}
+	log.Printf("[DownloadFile] User %s is a member of room %s", uid, roomID)
+
+	// Construct file path
+	filePath := filepath.Join(h.cfg.UploadDir, "chat", roomID, filename)
+	log.Printf("[DownloadFile] Constructed file path: %s", filePath)
+	
+	// Verify file exists
+	fileInfo, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		log.Printf("[DownloadFile] ERROR: File not found at path: %s", filePath)
+		// List files in directory to help debug
+		dirPath := filepath.Join(h.cfg.UploadDir, "chat", roomID)
+		if files, err := os.ReadDir(dirPath); err == nil {
+			log.Printf("[DownloadFile] Files in directory %s:", dirPath)
+			for _, f := range files {
+				log.Printf("[DownloadFile]   - %s", f.Name())
+			}
+		} else {
+			log.Printf("[DownloadFile] ERROR reading directory %s: %v", dirPath, err)
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+		return
+	}
+	if err != nil {
+		log.Printf("[DownloadFile] ERROR stating file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to access file"})
+		return
+	}
+	log.Printf("[DownloadFile] File found - size: %d bytes", fileInfo.Size())
+
+	// Extract original filename (remove timestamp prefix)
+	// Format is: timestamp_originalName
+	parts := strings.SplitN(filename, "_", 2)
+	originalName := filename
+	if len(parts) == 2 {
+		originalName = parts[1]
+	}
+	log.Printf("[DownloadFile] Original filename: %s", originalName)
+
+	// Serve file with Content-Disposition attachment
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, originalName))
+	c.File(filePath)
+	log.Printf("[DownloadFile] File served successfully")
 }
 
 // UpdateMessage handles editing a message

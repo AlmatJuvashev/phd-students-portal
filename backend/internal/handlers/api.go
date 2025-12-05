@@ -43,6 +43,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		MaxAge:           12 * time.Hour,
 	}))
 	api := r.Group("/api")
+	
+	// Serve static files from uploads directory
+	// This maps /uploads/... to the configured upload directory on disk
+	r.Static("/uploads", cfg.UploadDir)
 
 	// Shared Redis (for auth hydration)
 	rds := services.NewRedis(cfg.RedisURL)
@@ -192,6 +196,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
 	chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
 	chat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
+	chat.GET("/rooms/:roomId/attachments/:filename", chatHandler.DownloadFile)
 	chat.POST("/rooms/:roomId/read", chatHandler.MarkAsRead)
 	chat.PATCH("/messages/:messageId", chatHandler.UpdateMessage)
 	chat.DELETE("/messages/:messageId", chatHandler.DeleteMessage)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
@@ -64,22 +65,33 @@ func (h *UsersHandler) CreateUser(c *gin.Context) {
 	}
 	temp := auth.GeneratePass()
 	hash, _ := auth.HashPassword(temp)
-	if _, err = h.db.Exec(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active, phone, program, specialty, department, cohort)
-        VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8,$9,$10,$11)`,
+	
+	// Insert user and get the new user ID
+	var userID string
+	err = h.db.QueryRow(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active, phone, program, specialty, department, cohort)
+        VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8,$9,$10,$11) RETURNING id`,
 		username, nullable(req.Email), req.FirstName, req.LastName, req.Role, hash,
-		nullable(req.Phone), nullable(req.Program), nullable(req.Specialty), nullable(req.Department), nullable(req.Cohort)); err != nil {
+		nullable(req.Phone), nullable(req.Program), nullable(req.Specialty), nullable(req.Department), nullable(req.Cohort)).Scan(&userID)
+	if err != nil {
 		log.Printf("[CreateUser] insert failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "insert failed", "details": err.Error()})
 		return
 	}
+	
 	// Link advisors for students
 	if req.Role == "student" && len(req.AdvisorIDs) > 0 {
 		for _, aid := range req.AdvisorIDs {
 			_, _ = h.db.Exec(`INSERT INTO student_advisors (student_id, advisor_id)
-                VALUES ((SELECT id FROM users WHERE username=$1), $2)
-                ON CONFLICT DO NOTHING`, username, aid)
+                VALUES ($1, $2)
+                ON CONFLICT DO NOTHING`, userID, aid)
 		}
 	}
+	
+	// Sync to profile_submissions for students (pre-fill S1_profile node)
+	if req.Role == "student" {
+		h.syncUserToProfileSubmissions(userID, req.Specialty, req.Department, req.Program, req.Cohort)
+	}
+	
 	c.JSON(http.StatusOK, gin.H{"username": username, "temp_password": temp})
 }
 
@@ -136,6 +148,12 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "update failed"})
 		return
 	}
+	
+	// Sync to profile_submissions for students (keep S1_profile in sync)
+	if req.Role == "student" {
+		h.syncUserToProfileSubmissions(id, req.Specialty, req.Department, req.Program, req.Cohort)
+	}
+	
 	c.JSON(200, gin.H{"ok": true})
 }
 
@@ -748,5 +766,45 @@ func generateToken() (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%x", b), nil
+}
+
+// syncUserToProfileSubmissions syncs admin-entered student fields to profile_submissions
+// This allows the S1_profile node to be pre-filled with data from student creation
+func (h *UsersHandler) syncUserToProfileSubmissions(userID, specialty, department, program, cohort string) {
+	// Build form_data JSON with non-empty fields
+	formData := make(map[string]string)
+	if specialty != "" {
+		formData["specialty"] = specialty
+	}
+	if department != "" {
+		formData["department"] = department
+	}
+	if program != "" {
+		formData["program"] = program
+	}
+	if cohort != "" {
+		formData["cohort"] = cohort
+	}
+	
+	if len(formData) == 0 {
+		return // Nothing to sync
+	}
+	
+	// Convert to JSON
+	jsonBytes, err := json.Marshal(formData)
+	if err != nil {
+		log.Printf("[syncUserToProfileSubmissions] JSON marshal failed: %v", err)
+		return
+	}
+	
+	// Upsert into profile_submissions
+	_, err = h.db.Exec(`INSERT INTO profile_submissions (user_id, form_data)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id)
+        DO UPDATE SET form_data = profile_submissions.form_data || $2::jsonb, updated_at = NOW()`, 
+		userID, jsonBytes)
+	if err != nil {
+		log.Printf("[syncUserToProfileSubmissions] upsert failed: %v", err)
+	}
 }
 

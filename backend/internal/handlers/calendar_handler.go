@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -20,13 +22,17 @@ func NewCalendarHandler(service *services.CalendarService) *CalendarHandler {
 
 func (h *CalendarHandler) CreateEvent(c *gin.Context) {
 	var req struct {
-		Title       string   `json:"title" binding:"required"`
-		Description string   `json:"description"`
-		StartTime   string   `json:"start_time" binding:"required"`
-		EndTime     string   `json:"end_time" binding:"required"`
-		EventType   string   `json:"event_type" binding:"required"`
-		Location    string   `json:"location"`
-		Attendees   []string `json:"attendees"`
+		Title           string   `json:"title" binding:"required"`
+		Description     string   `json:"description"`
+		StartTime       string   `json:"start_time" binding:"required"`
+		EndTime         string   `json:"end_time" binding:"required"`
+		EventType       string   `json:"event_type" binding:"required"`
+		Location        string   `json:"location"`
+		MeetingType     string   `json:"meeting_type"`     // "online" or "offline"
+		MeetingURL      string   `json:"meeting_url"`      // For online meetings
+		PhysicalAddress string   `json:"physical_address"` // For offline meetings
+		Color           string   `json:"color"`            // Event color
+		Attendees       []string `json:"attendees"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,14 +53,32 @@ func (h *CalendarHandler) CreateEvent(c *gin.Context) {
 		return
 	}
 
+	// Default meeting type to "offline" if not specified
+	meetingType := req.MeetingType
+	if meetingType == "" {
+		meetingType = "offline"
+	}
+
+	// Helper for converting string to *string
+	strPtr := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+
 	event := &models.Event{
-		CreatorID:   userID,
-		Title:       req.Title,
-		Description: req.Description,
-		StartTime:   startTime,
-		EndTime:     endTime,
-		EventType:   models.EventType(req.EventType),
-		Location:    req.Location,
+		CreatorID:       userID,
+		Title:           req.Title,
+		Description:     req.Description,
+		StartTime:       startTime,
+		EndTime:         endTime,
+		EventType:       models.EventType(req.EventType),
+		Location:        req.Location,
+		MeetingType:     strPtr(meetingType),
+		MeetingURL:      strPtr(req.MeetingURL),
+		PhysicalAddress: strPtr(req.PhysicalAddress),
+		Color:           strPtr(req.Color),
 	}
 
 	if err := h.service.CreateEvent(c.Request.Context(), event, req.Attendees); err != nil {
@@ -109,62 +133,98 @@ func (h *CalendarHandler) UpdateEvent(c *gin.Context) {
 	eventID := c.Param("id")
 	userID := c.GetString("userID")
 
+	log.Printf("[UpdateEvent] Updating event %s for user %s", eventID, userID)
+
 	var req struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		StartTime   string `json:"start_time"`
-		EndTime     string `json:"end_time"`
-		EventType   string `json:"event_type"`
-		Location    string `json:"location"`
+		Title           string `json:"title"`
+		Description     string `json:"description"`
+		StartTime       string `json:"start_time"`
+		EndTime         string `json:"end_time"`
+		EventType       string `json:"event_type"`
+		Location        string `json:"location"`
+		MeetingType     string `json:"meeting_type"`
+		MeetingURL      string `json:"meeting_url"`
+		PhysicalAddress string `json:"physical_address"`
+		Color           string `json:"color"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[UpdateEvent] ERROR binding JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	log.Printf("[UpdateEvent] Request data: title=%s, start=%s, end=%s, type=%s", req.Title, req.StartTime, req.EndTime, req.EventType)
+
 	// Fetch existing event
 	existingEvent, err := h.service.GetEvent(c.Request.Context(), eventID)
 	if err != nil {
+		log.Printf("[UpdateEvent] ERROR fetching event: %v", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "event not found"})
 		return
 	}
 
-	// Check permissions
-	currentUser := c.MustGet("current_user").(models.User)
-	if !permissions.Can(currentUser, permissions.ActionUpdate, permissions.ResourceEvent, *existingEvent) {
+	// Check permissions - use userRole from context instead of casting
+	userRole := c.GetString("userRole")
+	// For now, allow event update if user is the creator or is admin/superadmin
+	if existingEvent.CreatorID != userID && userRole != "admin" && userRole != "superadmin" {
+		log.Printf("[UpdateEvent] Permission denied for user %s (role=%s) to update event %s (creator=%s)", userID, userRole, eventID, existingEvent.CreatorID)
 		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
 		return
 	}
 
-	// Fetch existing event first? Or just update fields if provided.
-	// For simplicity, assuming full update or handled by frontend.
-	// But here I'll just construct the event object.
-	// Ideally we should fetch, update fields, then save.
-	// But service UpdateEvent expects a full object or at least fields to update.
-	// Let's assume the frontend sends all fields for now or we handle partial updates in service.
-	// My service implementation does a full update.
+	// Parsing times with error handling
+	startTime, err := time.Parse(time.RFC3339, req.StartTime)
+	if err != nil {
+		log.Printf("[UpdateEvent] ERROR parsing start_time '%s': %v", req.StartTime, err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid start_time format: %v", err)})
+		return
+	}
 	
-	// Parsing times
-	startTime, _ := time.Parse(time.RFC3339, req.StartTime)
-	endTime, _ := time.Parse(time.RFC3339, req.EndTime)
+	endTime, err := time.Parse(time.RFC3339, req.EndTime)
+	if err != nil {
+		log.Printf("[UpdateEvent] ERROR parsing end_time '%s': %v", req.EndTime, err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid end_time format: %v", err)})
+		return
+	}
+
+	// Validate end time is after start time
+	if endTime.Before(startTime) {
+		log.Printf("[UpdateEvent] ERROR: end_time is before start_time")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "end time must be after start time"})
+		return
+	}
+
+	// Helper for converting string to *string
+	strPtr := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
 
 	event := &models.Event{
-		ID:          eventID,
-		CreatorID:   userID,
-		Title:       req.Title,
-		Description: req.Description,
-		StartTime:   startTime,
-		EndTime:     endTime,
-		EventType:   models.EventType(req.EventType),
-		Location:    req.Location,
+		ID:              eventID,
+		CreatorID:       existingEvent.CreatorID, // Keep original creator
+		Title:           req.Title,
+		Description:     req.Description,
+		StartTime:       startTime,
+		EndTime:         endTime,
+		EventType:       models.EventType(req.EventType),
+		Location:        req.Location,
+		MeetingType:     strPtr(req.MeetingType),
+		MeetingURL:      strPtr(req.MeetingURL),
+		PhysicalAddress: strPtr(req.PhysicalAddress),
+		Color:           strPtr(req.Color),
 	}
 
 	if err := h.service.UpdateEvent(c.Request.Context(), event); err != nil {
+		log.Printf("[UpdateEvent] ERROR updating event: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	log.Printf("[UpdateEvent] Event %s updated successfully", eventID)
 	c.JSON(http.StatusOK, gin.H{"message": "event updated"})
 }
 
