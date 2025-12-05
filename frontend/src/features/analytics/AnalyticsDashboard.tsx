@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -7,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export const AnalyticsDashboard = () => {
+  const { t } = useTranslation("common");
   const { data: stageStats } = useQuery({
     queryKey: ['analytics', 'stages'],
     queryFn: () => api('/analytics/stages'),
@@ -19,14 +21,14 @@ export const AnalyticsDashboard = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gradient">Analytics Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gradient">{t("analytics.title", "Analytics Dashboard")}</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="card-enhanced">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              Students by Stage
+              {t("analytics.students_by_stage", "Students by Stage")}
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
@@ -52,7 +54,7 @@ export const AnalyticsDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-              Overdue Tasks by Node
+              {t("analytics.overdue_tasks", "Overdue Tasks by Node")}
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">

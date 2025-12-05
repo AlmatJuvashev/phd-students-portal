@@ -332,7 +332,7 @@
         "status": "Статус",
         "status_overdue": "МЕРЗІМІ ӨТТІ",
         "status_normal": "ҚАЛЫПТЫ",
-        "journey_card": "Диссертация картасы",
+        "journey_card": "Диссертациялық жол картасы",
         "current_stage": "Ағымдағы кезең: {{stage}}",
         "stage_nodes_badge": "{{count}} түйін",
         "stage_empty": "Бұл кезеңде түйіндер жоқ",
@@ -627,17 +627,6 @@
       }
     },
     "forms": {
-      "first_name": "Аты",
-      "last_name": "Тегі",
-      "email": "Email",
-      "password": "Құпия сөз",
-      "edit_student": "Студентті өңдеу",
-      "delete_student": "Студентті бұғаттау",
-      "delete_advisor": "Эдвайзерді бұғаттау",
-      "delete_admin": "Админді бұғаттау",
-      "mark_active": "Белсендіру",
-      "confirm_deactivate_named": "Бұл пайдаланушыны бұғаттау керек пе?",
-      "confirm_activate_named": "Бұл пайдаланушыны белсендіру керек пе?",
       "create_students_title": "Студенттерді қосу",
       "create_students_subtitle": "Жаңа студенттерді шақырып, кеңесшілер тағайындаңыз және аккаунттарды басқарыңыз.",
       "students_table": "Студенттер",
@@ -660,6 +649,13 @@
       "search_advisors_input": "Кеңесшілерді іздеу…",
       "registration_date": "Тіркелген күні",
       "copy_credentials": "Деректерді көшіру",
+      "active_state": "Күйі",
+      "status_all": "Барлығы",
+      "status_active": "Белсенді",
+      "status_inactive": "Белсенді емес",
+      "all_programs": "Барлық бағдарламалар",
+      "all_departments": "Барлық кафедралар",
+      "all_cohorts": "Барлық ағымдар",
       "phone_optional": "Телефон (міндетті емес)",
       "email_optional": "Email (міндетті емес)",
       "program": "Бағдарлама",
@@ -671,6 +667,20 @@
       "creating": "Жасалуда…",
       "username": "Логин",
       "temp_password": "Уақытша құпиясөз",
+      "first_name": "Аты",
+      "last_name": "Тегі",
+      "email": "Email",
+      "password": "Құпия сөз",
+      "edit_student": "Студентті өңдеу",
+      "delete_student": "Студентті бұғаттау",
+      "delete_advisor": "Эдвайзерді бұғаттау",
+      "delete_admin": "Админді бұғаттау",
+      "mark_active": "Белсендіру",
+      "confirm_deactivate_named": "Бұл пайдаланушыны бұғаттау керек пе?",
+      "confirm_activate_named": "Бұл пайдаланушыны белсендіру керек пе?",
+      "edit_advisor": "Кеңесшіні өңдеу",
+      "edit_admin": "Админді өңдеу",
+      "share_credentials": "Бұл деректерді қауіпсіз түрде жеткізіңіз.",
       "errors": {
         "create_user": "Пайдаланушыны қосу мүмкін болмады",
         "update_user": "Пайдаланушыны жаңарту мүмкін болмады",
@@ -689,8 +699,33 @@
         "heading": "Студент деректері",
         "submit": "Студент қосу",
         "success": "Студент жасалды"
+      },
+      "create_advisor": {
+        "title": "Кеңесшілерді басқару",
+        "subtitle": "Жаңа кеңесшілерді қосып, барларын жаңартыңыз.",
+        "heading": "Кеңесші деректері",
+        "submit": "Кеңесші қосу",
+        "success": "Кеңесші жасалды"
+      },
+      "create_admins": {
+        "title": "Админдерді басқару",
+        "subtitle": "Тек супер-админдер басқа админдерді басқара алады.",
+        "heading": "Жаңа админ",
+        "submit": "Админ қосу",
+        "success": "Админ жасалды"
+      },
+      "roles": {
+        "student": "Студент",
+        "advisor": "Кеңесші",
+        "chair": "Кафедра меңгерушісі",
+        "admin": "Админ"
       }
     }
+  },
+  "analytics": {
+    "title": "Аналитикалық панель",
+    "students_by_stage": "Кезеңдер бойынша студенттер",
+    "overdue_tasks": "Түйіндер бойынша мерзімі өткен тапсырмалар"
   },
   "table": {
     "name": "Аты-жөні",
@@ -728,78 +763,5 @@
       "approved": "Қабылданды",
       "rejected": "Түзетуді қажет етеді"
     }
-  },
-
-  "admin.forms": {
-    "first_name": "Аты",
-    "last_name": "Тегі",
-    "email": "Email",
-    "phone_optional": "Телефон (міндетті емес)",
-    "email_optional": "Email (міндетті емес)",
-    "program": "Бағдарлама",
-    "department": "Кафедра",
-    "specialty": "Мамандық",
-    "cohort": "Ағын",
-    "advisors": "Кеңесшілер",
-    "search_advisors": "Кеңесшілерді іздеу…",
-    "creating": "Жасалуда…",
-    "username": "Логин",
-    "temp_password": "Уақытша құпиясөз",
-    "errors": {
-      "create_user": "Пайдаланушыны қосу мүмкін болмады",
-      "update_user": "Пайдаланушыны жаңарту мүмкін болмады",
-      "create_student": "Студентті қосу мүмкін болмады",
-      "update_student": "Студентті жаңарту мүмкін болмады",
-      "create_advisor": "Кеңесшіні қосу мүмкін болмады",
-      "create_admin": "Админді қосу мүмкін болмады",
-      "reset_password": "Құпиясөзді қалпына келтіру мүмкін болмады",
-      "status_update": "Күйді жаңарту мүмкін болмады",
-      "update_advisor": "Кеңесшіні жаңарту мүмкін болмады",
-      "update_admin": "Админді жаңарту мүмкін болмады"
-    },
-    "share_credentials": "Бұл деректерді қауіпсіз түрде жеткізіңіз.",
-    "active_state": "Күйі",
-    "status_all": "Барлығы",
-    "status_active": "Белсенді",
-    "status_inactive": "Белсенді емес",
-    "all_programs": "Барлық бағдарламалар",
-    "all_departments": "Барлық кафедралар",
-    "all_cohorts": "Барлық ағымдар",
-    "roles": {
-      "student": "Студент",
-      "advisor": "Кеңесші",
-      "chair": "Кафедра меңгерушісі",
-      "admin": "Админ"
-    },
-    "create_admins": {
-      "title": "Админдерді басқару",
-      "subtitle": "Тек супер-админдер басқа админдерді басқара алады.",
-      "heading": "Жаңа админ",
-      "submit": "Админ қосу",
-      "success": "Админ жасалды"
-    },
-    "create_users": {
-      "title": "Пайдаланушы қосу",
-      "subtitle": "Студенттерді, кеңесшілерді және кафедра меңгерушілерін қосу.",
-      "heading": "Жаңа пайдаланушы",
-      "submit": "Пайдаланушы қосу",
-      "success": "Пайдаланушы жасалды"
-    },
-    "create_student": {
-      "title": "Студент қосу",
-      "subtitle": "Бағдарлама деректерімен және кеңесшілермен студент қосыңыз.",
-      "heading": "Студент деректері",
-      "submit": "Студент қосу",
-      "success": "Студент жасалды"
-    },
-    "create_advisor": {
-      "title": "Кеңесшілерді басқару",
-      "subtitle": "Жаңа кеңесшілерді қосып, барларын жаңартыңыз.",
-      "heading": "Кеңесші деректері",
-      "submit": "Кеңесші қосу",
-      "success": "Кеңесші жасалды"
-    },
-    "edit_advisor": "Кеңесшіні өңдеу",
-    "edit_admin": "Админді өңдеу"
   }
 }

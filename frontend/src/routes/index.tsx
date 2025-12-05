@@ -18,6 +18,9 @@ const DoctoralJourney = lazy(() =>
 const HomePage = lazy(() =>
   import("@/pages/home").then((m) => ({ default: m.HomePage }))
 );
+const LandingPage = lazy(() =>
+  import("@/pages/Landing").then((m) => ({ default: m.Landing }))
+);
 const ContactsPage = lazy(() =>
   import("@/pages/contacts").then((m) => ({ default: m.ContactsPage }))
 );
@@ -126,7 +129,7 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     errorElement: <RouteErrorBoundary />,
     children: [
-      { index: true, element: WithSuspense(<HomePage />) },
+      { index: true, element: WithSuspense(<LandingPage />) },
       {
         path: "journey",
         element: (
