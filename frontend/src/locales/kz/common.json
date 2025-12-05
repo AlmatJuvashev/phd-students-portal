@@ -10,7 +10,34 @@
     "admin": "Админ",
     "login": "Кіру",
     "logout": "Шығу",
-    "calendar": "Күнтізбе"
+    "calendar": "Күнтізбе",
+    "profile": "Профиль",
+    "settings": "Баптаулар"
+  },
+  "profile": {
+    "title": "Профиль",
+    "subtitle": "Жеке ақпаратты басқару",
+    "edit_button": "Профильді өңдеу",
+    "cancel_edit": "Өңдеуді болдырмау",
+    "personal_info": "Жеке ақпарат",
+    "edit_profile": "Профильді өңдеу",
+    "email": "Email",
+    "phone": "Телефон",
+    "date_of_birth": "Туған күні",
+    "address": "Мекенжай",
+    "bio": "Өзі туралы",
+    "email_verification_pending": "Email растау күтілуде",
+    "check_email": "Растау сілтемесі үшін <strong>{email}</strong> тексеріңіз.",
+    "file_too_large": "Файл тым үлкен",
+    "max_size": "Макс 5МБ",
+    "upload_failed": "Жүктеу қатесі",
+    "avatar_updated": "Аватар жаңартылды",
+    "failed_upload": "Аватарды жүктеу мүмкін болмады"
+  },
+  "notifications": {
+    "title": "Хабарламалар",
+    "mark_all_read": "Барлығын оқылған деп белгілеу",
+    "no_notifications": "Хабарламалар жоқ"
   },
   "chat": {
     "title": "Чат",
@@ -262,7 +289,8 @@
       "admin": "Администратор",
       "signed_in_as": "Кіру:",
       "back_to_main": "Басты бетке оралу",
-      "back_to_main_button": "Басты бет"
+      "back_to_main_button": "Басты бет",
+      "main": "Басты"
     },
 
     "student_progress": {

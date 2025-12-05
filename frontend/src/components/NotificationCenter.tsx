@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 interface Notification {
   id: string;
@@ -28,6 +29,7 @@ export const NotificationCenter = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation("common");
 
   // Check if token exists in localStorage
   const token = localStorage.getItem("token");
@@ -80,7 +82,7 @@ export const NotificationCenter = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex justify-between items-center">
-          <span>Notifications</span>
+          <span>{t("notifications.title")}</span>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -88,14 +90,14 @@ export const NotificationCenter = () => {
               className="text-xs h-auto py-1"
               onClick={() => markAllAsRead.mutate()}
             >
-              Mark all read
+              {t("notifications.mark_all_read")}
             </Button>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {notifications.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
-            No notifications
+            {t("notifications.no_notifications")}
           </div>
         ) : (
           <div className="max-h-[300px] overflow-y-auto">

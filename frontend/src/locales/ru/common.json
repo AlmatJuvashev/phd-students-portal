@@ -10,7 +10,34 @@
     "admin": "Админ",
     "login": "Войти",
     "logout": "Выйти",
-    "calendar": "Календарь"
+    "calendar": "Календарь",
+    "profile": "Профиль",
+    "settings": "Настройки"
+  },
+  "profile": {
+    "title": "Профиль",
+    "subtitle": "Управление личной информацией",
+    "edit_button": "Редактировать профиль",
+    "cancel_edit": "Отменить редактирование",
+    "personal_info": "Личная информация",
+    "edit_profile": "Редактировать профиль",
+    "email": "Email",
+    "phone": "Телефон",
+    "date_of_birth": "Дата рождения",
+    "address": "Адрес",
+    "bio": "О себе",
+    "email_verification_pending": "Ожидается подтверждение email",
+    "check_email": "Пожалуйста, проверьте <strong>{email}</strong> для ссылки подтверждения.",
+    "file_too_large": "Файл слишком большой",
+    "max_size": "Макс 5МБ",
+    "upload_failed": "Ошибка загрузки",
+    "avatar_updated": "Аватар обновлен",
+    "failed_upload": "Не удалось загрузить аватар"
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "mark_all_read": "Отметить все прочитанными",
+    "no_notifications": "Нет уведомлений"
   },
   "chat": {
     "title": "Чат",
@@ -263,7 +290,8 @@
       "admin": "Админ",
       "signed_in_as": "Вы вошли как",
       "back_to_main": "Назад на главную",
-      "back_to_main_button": "Назад"
+      "back_to_main_button": "Назад",
+      "main": "Главная"
     },
     "student_progress": {
       "title": "Прогресс студентов",
