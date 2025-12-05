@@ -14,9 +14,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "react-i18next";
 
 export function Dashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation("common");
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-8">
@@ -24,11 +26,10 @@ export function Dashboard() {
       <div className="grid gap-6 md:grid-cols-[1fr_300px]">
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl p-6 sm:p-8 border-l-4 border-primary flex flex-col justify-center">
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
-            Welcome back, {user?.first_name}!
+            {t("dashboard.welcome_back", { name: user?.first_name })}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Track your doctoral journey progress and manage your research
-            milestones
+            {t("dashboard.subtitle")}
           </p>
         </div>
 
@@ -52,7 +53,7 @@ export function Dashboard() {
               <Link to="/profile" className="mt-2 inline-block">
                 <Button variant="outline" size="sm" className="h-7 text-xs">
                   <Settings className="w-3 h-3 mr-1.5" />
-                  Settings
+                  {t("dashboard.settings")}
                 </Button>
               </Link>
             </div>
@@ -73,7 +74,7 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              In Progress
+              {t("dashboard.in_progress")}
             </div>
           </CardContent>
         </Card>
@@ -89,7 +90,7 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-green-700 dark:text-green-300">
-              Completed
+              {t("dashboard.completed")}
             </div>
           </CardContent>
         </Card>
@@ -105,7 +106,7 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-purple-700 dark:text-purple-300">
-              Progress
+              {t("dashboard.progress")}
             </div>
           </CardContent>
         </Card>
@@ -121,7 +122,7 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
-              Total Tasks
+              {t("dashboard.total_tasks")}
             </div>
           </CardContent>
         </Card>
@@ -129,7 +130,7 @@ export function Dashboard() {
 
       {/* Quick Actions Grid */}
       <div>
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold mb-4">{t("dashboard.quick_actions")}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link to="/journey">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
@@ -138,9 +139,9 @@ export function Dashboard() {
                   <Map className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Journey Map</h3>
+                  <h3 className="font-medium">{t("dashboard.journey_map")}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Track your progress
+                    {t("dashboard.track_progress")}
                   </p>
                 </div>
               </CardContent>
@@ -154,9 +155,9 @@ export function Dashboard() {
                   <MessageCircle className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Messages</h3>
+                  <h3 className="font-medium">{t("dashboard.messages")}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Chat with advisor
+                    {t("dashboard.chat_advisor")}
                   </p>
                 </div>
               </CardContent>
@@ -170,9 +171,9 @@ export function Dashboard() {
                   <Calendar className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Calendar</h3>
+                  <h3 className="font-medium">{t("dashboard.calendar")}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    View upcoming events
+                    {t("dashboard.view_events")}
                   </p>
                 </div>
               </CardContent>
@@ -186,9 +187,9 @@ export function Dashboard() {
                   <User className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium">My Profile</h3>
+                  <h3 className="font-medium">{t("dashboard.my_profile")}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Manage account
+                    {t("dashboard.manage_account")}
                   </p>
                 </div>
               </CardContent>
@@ -201,11 +202,10 @@ export function Dashboard() {
       <Card className="border-l-4 border-primary bg-muted/20">
         <CardContent className="p-6">
           <h3 className="font-semibold mb-2 flex items-center gap-2">
-            <span className="text-xl">📝</span> Coming Soon
+            <span className="text-xl">📝</span> {t("dashboard.coming_soon")}
           </h3>
           <p className="text-sm text-muted-foreground">
-            This dashboard will soon display your journey progress, recent
-            uploads, advisor feedback, and upcoming deadlines.
+            {t("dashboard.coming_soon_text")}
           </p>
         </CardContent>
       </Card>

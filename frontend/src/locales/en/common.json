@@ -351,6 +351,26 @@
     "calendar_hint": "View upcoming events and deadlines.",
     "open_calendar": "View Calendar"
   },
+  "dashboard": {
+    "welcome_back": "Welcome back, {{name}}!",
+    "subtitle": "Track your doctoral journey progress and manage your research milestones",
+    "settings": "Settings",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "progress": "Progress",
+    "total_tasks": "Total Tasks",
+    "quick_actions": "Quick Actions",
+    "journey_map": "Journey Map",
+    "track_progress": "Track your progress",
+    "messages": "Messages",
+    "chat_advisor": "Chat with advisor",
+    "calendar": "Calendar",
+    "view_events": "View upcoming events",
+    "my_profile": "My Profile",
+    "manage_account": "Manage account",
+    "coming_soon": "Coming Soon",
+    "coming_soon_text": "This dashboard will soon display your journey progress, recent uploads, advisor feedback, and upcoming deadlines."
+  },
   "map": {
     "title": "My Dissertation Map",
     "progress": "Progress",
