@@ -76,7 +76,7 @@ export default function ProfilePage() {
     <div className="container max-w-4xl py-8 space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gradient">Profile</h1>
           <p className="text-muted-foreground">
             Manage your personal information
           </p>
@@ -100,7 +100,7 @@ export default function ProfilePage() {
       )}
 
       <div className="grid gap-8 md:grid-cols-[300px_1fr]">
-        <Card>
+        <Card className="card-enhanced">
           <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
             <div className="relative group">
               <Avatar className="h-32 w-32">

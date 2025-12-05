@@ -182,7 +182,13 @@
   "journey": {
     "reset": "Reset Journey",
     "reset_confirm": "Reset your journey progress?",
-    "reset_hint": "You can reset your journey to start over."
+    "reset_hint": "You can reset your journey to start over.",
+    "reset_title": "Reset Journey",
+    "reset_warning": "This action cannot be undone. All your progress will be lost and you will start from the beginning.",
+    "reset_confirm_phrase": "reset map",
+    "reset_type_to_confirm": "To confirm, type \"{{phrase}}\" below:",
+    "reset_confirm_label": "Confirmation",
+    "reset_confirm_button": "Reset My Journey"
   },
   "upload": {
     "not_supported": "File uploads will be available soon.",

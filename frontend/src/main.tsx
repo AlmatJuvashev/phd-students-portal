@@ -7,6 +7,7 @@ import { router } from "./routes";
 import "./i18n";
 import { AuthProvider } from '@/contexts/AuthContext'
 import { registerSW } from "virtual:pwa-register";
+import { ThemeCustomizer } from "@/components/dev/ThemeCustomizer";
 
 registerSW({ immediate: true });
 
@@ -29,6 +30,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
         <AuthProvider>
           <RouterProvider router={router} />
+          <ThemeCustomizer />
         </AuthProvider>
       </Suspense>
     </QueryClientProvider>

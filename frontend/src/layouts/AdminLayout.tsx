@@ -66,18 +66,6 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
         {!collapsed && <span>{t("admin.sidebar.dashboard", "Dashboard")}</span>}
       </NavLink>
       <NavLink
-        to="/admin/calendar"
-        className={cn(
-          "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
-          isActive("/admin/calendar") && "bg-muted font-medium",
-          collapsed && "justify-center px-2"
-        )}
-        title={t("admin.sidebar.calendar", "Calendar")}
-      >
-        <LayoutDashboard className="h-4 w-4" />
-        {!collapsed && <span>{t("admin.sidebar.calendar", "Calendar")}</span>}
-      </NavLink>
-      <NavLink
         to="/admin/analytics"
         className={cn(
           "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
@@ -139,26 +127,23 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
             </div>
           )}
           
-          {/* User Management Group */}
-          <div className="space-y-1">
-
-            <NavLink
-              to="/admin/users"
-              className={cn(
-                "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted ml-2",
-                isActive("/admin/users") && "bg-muted font-medium",
-                collapsed && "justify-center px-2 ml-0"
-              )}
-              title={t("admin.sidebar.users", "Users")}
-            >
-              <Users className="h-4 w-4" />
-              {!collapsed && (
-                <span>
-                  {t("admin.sidebar.users", "Users")}
-                </span>
-              )}
-            </NavLink>
-          </div>
+          {/* User Management */}
+          <NavLink
+            to="/admin/users"
+            className={cn(
+              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/users") && "bg-muted font-medium",
+              collapsed && "justify-center px-2"
+            )}
+            title={t("admin.sidebar.users", "Users")}
+          >
+            <Users className="h-4 w-4" />
+            {!collapsed && (
+              <span>
+                {t("admin.sidebar.users", "Users")}
+              </span>
+            )}
+          </NavLink>
 
           <NavLink
             to="/admin/chat-rooms"
@@ -223,7 +208,7 @@ export function AdminLayout() {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden md:block border-r bg-background transition-all duration-200",
+          "hidden md:block border-r sidebar-gradient transition-all duration-200",
           collapsed ? "w-16" : "w-64"
         )}
       >
@@ -234,7 +219,10 @@ export function AdminLayout() {
           )}
         >
           <div
-            className="font-semibold truncate"
+            className={cn(
+              "font-bold truncate text-gradient text-lg",
+              collapsed && "text-base"
+            )}
             title={t("admin.topbar.admin_panel", "Admin Panel")}
           >
             {collapsed ? "A" : t("admin.topbar.admin_panel", "Admin Panel")}
