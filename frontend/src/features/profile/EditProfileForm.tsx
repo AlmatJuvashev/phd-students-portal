@@ -12,6 +12,7 @@ import {
 import { UserProfile, updateProfile } from "@/api/user";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const profileSchema = z.object({
   email: z.string().email(),
@@ -19,7 +20,7 @@ const profileSchema = z.object({
   bio: z.string().optional(),
   address: z.string().optional(),
   date_of_birth: z.string().optional(),
-  current_password: z.string().min(1, "Password is required to save changes"),
+  current_password: z.string().min(1),
 });
 
 interface EditProfileFormProps {
@@ -29,6 +30,7 @@ interface EditProfileFormProps {
 
 export function EditProfileForm({ user, onSuccess }: EditProfileFormProps) {
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -60,13 +62,13 @@ export function EditProfileForm({ user, onSuccess }: EditProfileFormProps) {
       }
 
       await updateProfile(payload);
-      toast({ title: "Profile updated successfully" });
+      toast({ title: t("profile.profile_updated") });
       onSuccess();
     } catch (error) {
       console.error(error);
       toast({
-        title: "Failed to update profile",
-        description: "Please try again later.",
+        title: t("profile.update_failed"),
+        description: t("profile.try_again"),
         variant: "destructive",
       });
     } finally {
@@ -77,19 +79,19 @@ export function EditProfileForm({ user, onSuccess }: EditProfileFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormItem>
-        <FormLabel>Email</FormLabel>
+        <FormLabel>{t("profile.email")}</FormLabel>
         <Input type="email" {...register("email")} />
         {errors.email && <FormMessage>{errors.email.message}</FormMessage>}
       </FormItem>
 
       <FormItem>
-        <FormLabel>Phone Number</FormLabel>
-        <Input placeholder="+7 (777) 123-45-67" {...register("phone")} />
+        <FormLabel>{t("profile.phone_number")}</FormLabel>
+        <Input placeholder={t("profile.phone_placeholder")} {...register("phone")} />
         {errors.phone && <FormMessage>{errors.phone.message}</FormMessage>}
       </FormItem>
 
       <FormItem>
-        <FormLabel>Date of Birth</FormLabel>
+        <FormLabel>{t("profile.date_of_birth")}</FormLabel>
         <Input type="date" {...register("date_of_birth")} />
         {errors.date_of_birth && (
           <FormMessage>{errors.date_of_birth.message}</FormMessage>
@@ -97,15 +99,15 @@ export function EditProfileForm({ user, onSuccess }: EditProfileFormProps) {
       </FormItem>
 
       <FormItem>
-        <FormLabel>Address</FormLabel>
-        <Input placeholder="City, Street, Apt..." {...register("address")} />
+        <FormLabel>{t("profile.address")}</FormLabel>
+        <Input placeholder={t("profile.address_placeholder")} {...register("address")} />
         {errors.address && <FormMessage>{errors.address.message}</FormMessage>}
       </FormItem>
 
       <FormItem>
-        <FormLabel>Bio</FormLabel>
+        <FormLabel>{t("profile.bio")}</FormLabel>
         <Textarea
-          placeholder="Tell us a bit about yourself..."
+          placeholder={t("profile.bio_placeholder")}
           className="resize-none"
           {...register("bio")}
         />
@@ -114,17 +116,17 @@ export function EditProfileForm({ user, onSuccess }: EditProfileFormProps) {
 
       <div className="border-t pt-4">
         <FormItem>
-          <FormLabel>Current Password (Required to save)</FormLabel>
+          <FormLabel>{t("profile.current_password")}</FormLabel>
           <Input type="password" {...register("current_password")} />
           {errors.current_password && (
-            <FormMessage>{errors.current_password.message}</FormMessage>
+            <FormMessage>{t("profile.password_required")}</FormMessage>
           )}
         </FormItem>
       </div>
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Changes"}
+          {isSubmitting ? t("profile.saving") : t("profile.save_changes")}
         </Button>
       </div>
     </form>
