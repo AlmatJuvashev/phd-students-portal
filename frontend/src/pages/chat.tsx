@@ -730,18 +730,6 @@ export function ChatPage() {
                               )}>
                                 {msg.sender_name || msg.sender_id}
                               </span>
-                              {msg.sender_role && (
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    "text-[10px]",
-                                    isAdminMessage && "border-purple-500/50 text-purple-600 dark:text-purple-400",
-                                    isAdvisorMessage && "border-blue-500/50 text-blue-600 dark:text-blue-400"
-                                  )}
-                                >
-                                  {msg.sender_role}
-                                </Badge>
-                              )}
                               <span>{formatTime(msg.created_at)}</span>
                             </div>
                           )}

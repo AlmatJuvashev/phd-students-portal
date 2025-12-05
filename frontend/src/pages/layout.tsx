@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import React, { useState } from "react";
 import { APP_NAME } from "../config";
 import { useTranslation } from "react-i18next";
-import { Menu } from "lucide-react";
+import { Menu, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -87,10 +87,16 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {pathname !== "/" && (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <Link to="/" className="font-semibold text-lg shrink-0">
-            {APP_NAME}
+          <Link to="/" className="font-bold text-xl shrink-0 flex items-center gap-2">
+            <div className="bg-primary/10 p-1.5 rounded-lg">
+              <GraduationCap className="h-5 w-5 text-primary" />
+            </div>
+            <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+              {APP_NAME}
+            </span>
           </Link>
 
           {/* Global Search (Desktop) */}
@@ -134,6 +140,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
           </nav>
         </div>
       </header>
+      )}
       <main className="flex-1">{children ?? <Outlet />}</main>
     </div>
   );
