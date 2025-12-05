@@ -32,7 +32,18 @@
     "max_size": "Max 5MB",
     "upload_failed": "Upload failed",
     "avatar_updated": "Avatar updated",
-    "failed_upload": "Failed to upload avatar"
+    "failed_upload": "Failed to upload avatar",
+    "phone_number": "Phone Number",
+    "phone_placeholder": "+7 (777) 123-45-67",
+    "address_placeholder": "City, Street, Apt...",
+    "bio_placeholder": "Tell us a bit about yourself...",
+    "current_password": "Current Password (Required to save)",
+    "save_changes": "Save Changes",
+    "saving": "Saving...",
+    "profile_updated": "Profile updated successfully",
+    "update_failed": "Failed to update profile",
+    "try_again": "Please try again later.",
+    "password_required": "Password is required to save changes"
   },
   "notifications": {
     "title": "Notifications",
