@@ -615,7 +615,27 @@ func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, userID stri
         VALUES ($1, $2)
         ON CONFLICT (user_id)
         DO UPDATE SET form_data = EXCLUDED.form_data, updated_at = NOW()`, userID, data)
-	return err
+	if err != nil {
+		return err
+	}
+	
+	// Reverse sync: Update users table with specialty from profile form
+	// This keeps the users.specialty column in sync with profile_submissions
+	var formData map[string]interface{}
+	if err := json.Unmarshal(data, &formData); err != nil {
+		log.Printf("[upsertProfileSubmission] Failed to parse form data for sync: %v", err)
+		return nil // Don't fail the main operation
+	}
+	
+	// Sync specialty if present
+	if specialty, ok := formData["specialty"].(string); ok && specialty != "" {
+		_, err = tx.Exec(`UPDATE users SET specialty = $1, updated_at = NOW() WHERE id = $2`, specialty, userID)
+		if err != nil {
+			log.Printf("[upsertProfileSubmission] Failed to sync specialty to users: %v", err)
+		}
+	}
+	
+	return nil
 }
 
 func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, inst *nodeInstanceRecord, userID, role, newState string) error {

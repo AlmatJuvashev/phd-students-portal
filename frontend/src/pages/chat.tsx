@@ -17,9 +17,10 @@ import {
   Pencil,
   Trash2,
   UserPlus,
+  TriangleAlert,
 } from "lucide-react";
 import { AddMemberDialog } from "@/features/chat/AddMemberDialog";
-import { api } from "@/api/client";
+import { api, API_URL } from "@/api/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -113,12 +114,15 @@ export function ChatPage() {
     },
   });
 
+  const [importance, setImportance] = useState<"alert" | "warning" | null>(null);
+
   const sendMutation = useMutation({
-    mutationFn: (vars: { body: string; attachments: ChatAttachment[] }) =>
-      sendMessage(activeRoomId, vars.body, vars.attachments),
+    mutationFn: (vars: { body: string; attachments: ChatAttachment[]; importance?: "alert" | "warning" | null }) =>
+      sendMessage(activeRoomId, vars.body, vars.attachments, vars.importance),
     onSuccess: () => {
       setDraft("");
       setAttachments([]);
+      setImportance(null);
       qc.invalidateQueries({ queryKey: ["chat", "messages", activeRoomId] });
     },
   });
@@ -133,7 +137,7 @@ export function ChatPage() {
     }
 
     if (!draft.trim() && attachments.length === 0) return;
-    sendMutation.mutate({ body: draft.trim(), attachments });
+    sendMutation.mutate({ body: draft.trim(), attachments, importance });
   };
 
   const startEditing = (msg: ChatMessage) => {
@@ -572,7 +576,13 @@ export function ChatPage() {
             />
           )}
 
-          <div className="flex-1 flex flex-col bg-muted/10 min-h-0">
+          <div 
+            className="flex-1 flex flex-col min-h-0"
+            style={{
+              backgroundColor: 'hsl(var(--muted) / 0.2)',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          >
             {messagesLoading ? (
               <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
                 {t("chat.loading_messages")}
@@ -607,6 +617,67 @@ export function ChatPage() {
                   // Role-based styling for admin/advisor messages
                   const isAdminMessage = msg.sender_role === "admin" || msg.sender_role === "superadmin";
                   const isAdvisorMessage = msg.sender_role === "advisor" || msg.sender_role === "chair";
+                  
+                  // Helper function for downloading attachments with auth
+                  const handleDownload = async (url: string, fileName: string) => {
+                    console.log('[DEBUG] handleDownload input:', url, 'fileName:', fileName);
+                    console.log('[DEBUG] activeRoomId:', activeRoomId);
+                    
+                    if (!url || !activeRoomId) {
+                      console.error('[ERROR] Missing URL or activeRoomId');
+                      return;
+                    }
+                    
+                    // Get token from localStorage
+                    const authToken = localStorage.getItem('token');
+                    if (!authToken) {
+                      console.error('[ERROR] No auth token found');
+                      alert(t('chat.auth_required', { defaultValue: 'Please log in again' }));
+                      return;
+                    }
+                    
+                    // Extract just the filename from the URL path
+                    const parts = url.split('/');
+                    const fileFromUrl = parts[parts.length - 1];
+                    const encodedFilename = encodeURIComponent(fileFromUrl);
+                    const downloadUrl = `${API_URL}/chat/rooms/${activeRoomId}/attachments/${encodedFilename}`;
+                    
+                    console.log('[DEBUG] Fetching from:', downloadUrl);
+                    
+                    try {
+                      const response = await fetch(downloadUrl, {
+                        headers: {
+                          'Authorization': `Bearer ${authToken}`,
+                        },
+                      });
+                      
+                      if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('[ERROR] Download failed:', response.status, errorText);
+                        alert(t('chat.download_failed', { defaultValue: 'Failed to download file' }));
+                        return;
+                      }
+                      
+                      const blob = await response.blob();
+                      const blobUrl = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = blobUrl;
+                      link.download = fileName; // Use original file name
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(blobUrl);
+                      console.log('[DEBUG] Download complete');
+                    } catch (error) {
+                      console.error('[ERROR] Download error:', error);
+                      alert(t('chat.download_failed', { defaultValue: 'Failed to download file' }));
+                    }
+                  };
+
+                  const getImageSrc = (url: string) => {
+                    // Images can use the static file URL for display
+                    return url.startsWith("http") ? url : `${API_URL.replace("/api", "")}${url}`;
+                  };
                   
                   return (
                     <div
@@ -701,25 +772,23 @@ export function ChatPage() {
                                       {msg.attachments.map((att, i) => (
                                         <div key={i}>
                                           {att.type.startsWith("image/") ? (
-                                            <a
-                                              href={att.url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="block"
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDownload(att.url, att.name)}
+                                              className="block cursor-pointer"
                                             >
                                               <img
-                                                src={att.url}
+                                                src={getImageSrc(att.url)}
                                                 alt={att.name}
                                                 className="max-w-full rounded-md max-h-60 object-cover border"
                                               />
-                                            </a>
+                                            </button>
                                           ) : (
-                                            <a
-                                              href={att.url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDownload(att.url, att.name)}
                                               className={cn(
-                                                "flex items-center gap-2 p-2 rounded-md transition border",
+                                                "flex items-center gap-2 p-2 rounded-md transition border cursor-pointer text-left w-full",
                                                 isOwnMessage 
                                                   ? "bg-primary-foreground/10 hover:bg-primary-foreground/20 border-primary-foreground/20" 
                                                   : "bg-muted/50 hover:bg-muted"
@@ -741,7 +810,7 @@ export function ChatPage() {
                                                   KB
                                                 </div>
                                               </div>
-                                            </a>
+                                            </button>
                                           )}
                                         </div>
                                       ))}
@@ -832,35 +901,39 @@ export function ChatPage() {
               </div>
             )}
             {attachments.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 px-1">
                 {attachments.map((att, i) => (
-                  <div key={i} className="relative group flex-shrink-0">
-                    <div className="w-16 h-16 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
+                  <div key={i} className="relative group flex-shrink-0 w-32">
+                    <div className="rounded-md border bg-muted/50 p-2 flex flex-col gap-1.5 items-center text-center h-24 relative overflow-hidden">
                       {att.type.startsWith("image/") ? (
                         <img
                           src={att.url}
                           alt={att.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-12 object-cover rounded-sm"
                         />
                       ) : (
-                        <FileIcon className="h-6 w-6 text-muted-foreground" />
+                        <FileIcon className="h-8 w-8 text-muted-foreground/50" />
                       )}
+                      <span className="text-[10px] leading-tight text-muted-foreground line-clamp-2 w-full break-all">
+                        {att.name}
+                      </span>
+                      
+                      <button
+                        onClick={() =>
+                          setAttachments((prev) =>
+                            prev.filter((_, idx) => idx !== i)
+                          )
+                        }
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() =>
-                        setAttachments((prev) =>
-                          prev.filter((_, idx) => idx !== i)
-                        )
-                      }
-                      className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
                   </div>
                 ))}
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-end">
               <input
                 type="file"
                 id="file-upload"
@@ -877,9 +950,53 @@ export function ChatPage() {
               >
                 <Paperclip className="h-5 w-5 text-muted-foreground" />
               </Button>
+
+              {isAdmin && !editingMessage && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "shrink-0",
+                        importance === "warning" && "text-amber-500 bg-amber-50",
+                        importance === "alert" && "text-red-500 bg-red-50"
+                      )}
+                      title="Message Importance"
+                    >
+                      <TriangleAlert className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => setImportance(null)}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-slate-400" />
+                        Normal
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setImportance("warning")}>
+                      <span className="flex items-center gap-2 text-amber-600">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        Warning
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setImportance("alert")}>
+                      <span className="flex items-center gap-2 text-red-600">
+                        <span className="w-2 h-2 rounded-full bg-red-500" />
+                        Alert
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
               <Textarea
                 placeholder={t("chat.input_placeholder")}
-                className="resize-none min-h-[40px] max-h-[120px]"
+                className={cn(
+                  "resize-none min-h-[40px] max-h-[120px] py-3",
+                  importance === "warning" && "border-amber-200 bg-amber-50/30 focus-visible:ring-amber-200",
+                  importance === "alert" && "border-red-200 bg-red-50/30 focus-visible:ring-red-200"
+                )}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -897,7 +1014,11 @@ export function ChatPage() {
               />
               <Button
                 size="icon"
-                className="shrink-0"
+                className={cn(
+                  "shrink-0",
+                  importance === "warning" && "bg-amber-500 hover:bg-amber-600",
+                  importance === "alert" && "bg-red-500 hover:bg-red-600"
+                )}
                 onClick={handleSend}
                 disabled={
                   disableInput ||

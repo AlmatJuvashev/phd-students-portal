@@ -40,6 +40,10 @@ interface Event {
   event_type: string;
   description?: string;
   location?: string;
+  meeting_type?: string;
+  meeting_url?: string;
+  physical_address?: string;
+  color?: string;
   creator_id: string;
 }
 
@@ -54,6 +58,7 @@ interface CalendarEvent {
 export const CalendarView = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const { t, i18n } = useTranslation("common");
@@ -124,9 +129,46 @@ export const CalendarView = () => {
 
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
     setSelectedEvent(null);
-    // Pre-fill dates if needed
+    setSelectedSlot({ start, end });
     setIsModalOpen(true);
   };
+
+  // Color mapping for events
+  const getEventColor = (event: CalendarEvent) => {
+    const resource = event.resource;
+    if (!resource) return "#3b82f6"; // default blue
+    
+    // Use saved color if available
+    if (resource.color) {
+      const colorMap: Record<string, string> = {
+        blue: "#3b82f6",
+        purple: "#8b5cf6",
+        red: "#ef4444",
+        green: "#22c55e",
+        orange: "#f97316",
+        pink: "#ec4899",
+      };
+      return colorMap[resource.color] || "#3b82f6";
+    }
+    
+    // Fallback: color by event type
+    switch (resource.event_type) {
+      case "deadline":
+        return "#ef4444"; // red
+      case "academic":
+        return "#22c55e"; // green
+      case "meeting":
+      default:
+        return resource.meeting_type === "online" ? "#3b82f6" : "#8b5cf6"; // blue for online, purple for offline
+    }
+  };
+
+  const eventPropGetter = (event: CalendarEvent) => ({
+    style: {
+      backgroundColor: getEventColor(event),
+      borderColor: getEventColor(event),
+    },
+  });
 
   // Show error message if events fail to load
   if (isError) {
@@ -196,6 +238,7 @@ export const CalendarView = () => {
               style={{ height: "100%" }}
               onSelectEvent={handleSelectEvent}
               onSelectSlot={handleSelectSlot}
+              eventPropGetter={eventPropGetter}
               selectable
               culture={culture}
               defaultView={defaultView}
@@ -241,8 +284,13 @@ export const CalendarView = () => {
       </div>
       <EventModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedSlot(null);
+        }}
         event={selectedEvent}
+        defaultStart={selectedSlot?.start}
+        defaultEnd={selectedSlot?.end}
         onSuccess={() =>
           queryClient.invalidateQueries({ queryKey: ["events"] })
         }

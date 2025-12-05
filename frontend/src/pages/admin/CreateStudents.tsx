@@ -392,8 +392,12 @@ export function CreateStudents() {
   };
 
   const copyCredentials = (creds: Creds) => {
-    const usernameLabel = t("admin.forms.username", { defaultValue: "Username" });
-    const passwordLabel = t("admin.forms.password", { defaultValue: "Password" });
+    const usernameLabel = t("admin.forms.username", {
+      defaultValue: "Username",
+    });
+    const passwordLabel = t("admin.forms.password", {
+      defaultValue: "Password",
+    });
     const message = `${usernameLabel}: ${creds.username}\n${passwordLabel}: ${creds.temp_password}`;
     navigator.clipboard.writeText(message);
   };

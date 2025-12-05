@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,6 +23,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { API_URL } from "@/api/client";
+import { Video, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type EventFormValues = {
   title: string;
@@ -31,6 +34,10 @@ type EventFormValues = {
   end_time: string;
   event_type: "meeting" | "deadline" | "academic";
   location?: string;
+  meeting_type: "online" | "offline";
+  meeting_url?: string;
+  physical_address?: string;
+  color?: string;
 };
 
 interface EventModalProps {
@@ -38,16 +45,33 @@ interface EventModalProps {
   onClose: () => void;
   event: any | null;
   onSuccess: () => void;
+  defaultStart?: Date;
+  defaultEnd?: Date;
 }
+
+// Color options for events
+const EVENT_COLORS = [
+  { key: "blue", label: "Blue (Online)", hex: "#3b82f6" },
+  { key: "purple", label: "Purple (Offline)", hex: "#8b5cf6" },
+  { key: "red", label: "Red (Deadline)", hex: "#ef4444" },
+  { key: "green", label: "Green (Academic)", hex: "#22c55e" },
+  { key: "orange", label: "Orange", hex: "#f97316" },
+  { key: "pink", label: "Pink", hex: "#ec4899" },
+];
 
 export const EventModal: React.FC<EventModalProps> = ({
   isOpen,
   onClose,
   event,
   onSuccess,
+  defaultStart,
+  defaultEnd,
 }) => {
   const { token } = useAuth();
   const { t } = useTranslation("common");
+  const [meetingType, setMeetingType] = useState<"online" | "offline">("offline");
+  const [selectedColor, setSelectedColor] = useState("blue");
+
   const eventSchema = React.useMemo(
     () =>
       z.object({
@@ -78,48 +102,76 @@ export const EventModal: React.FC<EventModalProps> = ({
           ),
         event_type: z.enum(["meeting", "deadline", "academic"]),
         location: z.string().optional(),
+        meeting_type: z.enum(["online", "offline"]),
+        meeting_url: z.string().optional(),
+        physical_address: z.string().optional(),
+        color: z.string().optional(),
       }),
     [t]
   );
+
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       event_type: "meeting",
+      meeting_type: "offline",
+      color: "blue",
     },
   });
+
+  const watchedMeetingType = watch("meeting_type");
+
+  // Helper to format date as local datetime for input[type="datetime-local"]
+  const formatLocalDatetime = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
 
   useEffect(() => {
     if (event) {
       setValue("title", event.title);
       setValue("description", event.description || "");
-      setValue(
-        "start_time",
-        new Date(event.start_time).toISOString().slice(0, 16)
-      );
-      setValue("end_time", new Date(event.end_time).toISOString().slice(0, 16));
+      // Use local time formatting for existing events
+      setValue("start_time", formatLocalDatetime(new Date(event.start_time)));
+      setValue("end_time", formatLocalDatetime(new Date(event.end_time)));
       setValue("event_type", event.event_type);
       setValue("location", event.location || "");
+      setValue("meeting_type", event.meeting_type || "offline");
+      setValue("meeting_url", event.meeting_url || "");
+      setValue("physical_address", event.physical_address || "");
+      setValue("color", event.color || "blue");
+      setMeetingType(event.meeting_type || "offline");
+      setSelectedColor(event.color || "blue");
     } else {
+      const startTime = defaultStart || new Date();
+      const endTime = defaultEnd || new Date(startTime.getTime() + 3600000);
       reset({
         event_type: "meeting",
-        start_time: new Date().toISOString().slice(0, 16),
-        end_time: new Date(new Date().getTime() + 3600000)
-          .toISOString()
-          .slice(0, 16),
+        meeting_type: "offline",
+        color: "blue",
+        // Use local time formatting for new events
+        start_time: formatLocalDatetime(startTime),
+        end_time: formatLocalDatetime(endTime),
       });
+      setMeetingType("offline");
+      setSelectedColor("blue");
     }
-  }, [event, isOpen, reset, setValue]);
+  }, [event, isOpen, reset, setValue, defaultStart, defaultEnd]);
 
   const mutation = useMutation({
     mutationFn: async (data: EventFormValues) => {
       const url = event ? `${API_URL}/events/${event.id}` : `${API_URL}/events`;
-
       const method = event ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -182,7 +234,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {event
@@ -236,40 +288,129 @@ export const EventModal: React.FC<EventModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="event_type">
-              {t("calendar.fields.type", { defaultValue: "Type" })}
-            </Label>
-            <Select
-              onValueChange={(val) => setValue("event_type", val as any)}
-              defaultValue={event?.event_type || "meeting"}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={t("calendar.fields.type_placeholder", {
-                    defaultValue: "Select type",
-                  })}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="meeting">
-                  {t("calendar.types.meeting", { defaultValue: "Meeting" })}
-                </SelectItem>
-                <SelectItem value="deadline">
-                  {t("calendar.types.deadline", { defaultValue: "Deadline" })}
-                </SelectItem>
-                <SelectItem value="academic">
-                  {t("calendar.types.academic", { defaultValue: "Academic" })}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="event_type">
+                {t("calendar.fields.type", { defaultValue: "Type" })}
+              </Label>
+              <Select
+                onValueChange={(val) => setValue("event_type", val as any)}
+                defaultValue={event?.event_type || "meeting"}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("calendar.fields.type_placeholder", {
+                      defaultValue: "Select type",
+                    })}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="meeting">
+                    {t("calendar.types.meeting", { defaultValue: "Meeting" })}
+                  </SelectItem>
+                  <SelectItem value="deadline">
+                    {t("calendar.types.deadline", { defaultValue: "Deadline" })}
+                  </SelectItem>
+                  <SelectItem value="academic">
+                    {t("calendar.types.academic", { defaultValue: "Academic" })}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                {t("calendar.fields.meeting_type", { defaultValue: "Format" })}
+              </Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={watchedMeetingType === "online" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    setValue("meeting_type", "online");
+                    setMeetingType("online");
+                  }}
+                >
+                  <Video className="h-4 w-4 mr-1" />
+                  Online
+                </Button>
+                <Button
+                  type="button"
+                  variant={watchedMeetingType === "offline" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    setValue("meeting_type", "offline");
+                    setMeetingType("offline");
+                  }}
+                >
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Offline
+                </Button>
+              </div>
+            </div>
           </div>
+
+          {/* Conditional fields based on meeting type */}
+          {watchedMeetingType === "online" ? (
+            <div className="space-y-2">
+              <Label htmlFor="meeting_url">
+                {t("calendar.fields.meeting_url", { defaultValue: "Meeting URL (Zoom/Google Meet)" })}
+              </Label>
+              <Input
+                id="meeting_url"
+                type="url"
+                placeholder="https://zoom.us/j/..."
+                {...register("meeting_url")}
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="physical_address">
+                {t("calendar.fields.physical_address", { defaultValue: "Physical Address" })}
+              </Label>
+              <Input
+                id="physical_address"
+                placeholder={t("calendar.fields.address_placeholder", { defaultValue: "Enter location address" })}
+                {...register("physical_address")}
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="location">
-              {t("calendar.fields.location", { defaultValue: "Location" })}
+              {t("calendar.fields.location", { defaultValue: "Location/Room" })}
             </Label>
             <Input id="location" {...register("location")} />
+          </div>
+
+          {/* Color picker */}
+          <div className="space-y-2">
+            <Label>
+              {t("calendar.fields.color", { defaultValue: "Event Color" })}
+            </Label>
+            <div className="flex gap-2 flex-wrap">
+              {EVENT_COLORS.map((color) => (
+                <button
+                  key={color.key}
+                  type="button"
+                  onClick={() => {
+                    setValue("color", color.key);
+                    setSelectedColor(color.key);
+                  }}
+                  className={cn(
+                    "w-8 h-8 rounded-full transition-all border-2",
+                    selectedColor === color.key
+                      ? "ring-2 ring-offset-2 ring-primary scale-110"
+                      : "border-transparent hover:scale-105"
+                  )}
+                  style={{ backgroundColor: color.hex }}
+                  title={color.label}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">

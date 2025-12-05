@@ -51,16 +51,20 @@ const (
 )
 
 type Event struct {
-	ID          string    `db:"id" json:"id"`
-	CreatorID   string    `db:"creator_id" json:"creator_id"`
-	Title       string    `db:"title" json:"title"`
-	Description string    `db:"description" json:"description"`
-	StartTime   time.Time `db:"start_time" json:"start_time"`
-	EndTime     time.Time `db:"end_time" json:"end_time"`
-	EventType   EventType `db:"event_type" json:"event_type"`
-	Location    string    `db:"location" json:"location"`
-	CreatedAt   time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+	ID              string    `db:"id" json:"id"`
+	CreatorID       string    `db:"creator_id" json:"creator_id"`
+	Title           string    `db:"title" json:"title"`
+	Description     string    `db:"description" json:"description"`
+	StartTime       time.Time `db:"start_time" json:"start_time"`
+	EndTime         time.Time `db:"end_time" json:"end_time"`
+	EventType       EventType `db:"event_type" json:"event_type"`
+	Location        string    `db:"location" json:"location"`
+	MeetingType     *string   `db:"meeting_type" json:"meeting_type,omitempty"`       // "online" or "offline"
+	MeetingURL      *string   `db:"meeting_url" json:"meeting_url,omitempty"`         // Zoom/Google Meet link for online
+	PhysicalAddress *string   `db:"physical_address" json:"physical_address,omitempty"` // Physical location for offline
+	Color           *string   `db:"color" json:"color,omitempty"`                     // Event color for calendar display
+	CreatedAt       time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type EventAttendee struct {
