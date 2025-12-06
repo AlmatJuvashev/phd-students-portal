@@ -34,14 +34,30 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			if strings.HasPrefix(origin, "http://127.0.0.1:") || strings.HasPrefix(origin, "https://127.0.0.1:") {
 				return true
 			}
+			// Allow subdomain-based tenant URLs (e.g., kaznmu.phd-portal.kz)
+			// Parse configured frontend base to extract the main domain
+			if cfg.FrontendBase != "" {
+				// Simple subdomain matching for production
+				// e.g., if FrontendBase is "https://phd-portal.kz", allow "*.phd-portal.kz"
+				mainDomain := strings.TrimPrefix(cfg.FrontendBase, "https://")
+				mainDomain = strings.TrimPrefix(mainDomain, "http://")
+				if strings.Contains(origin, "."+mainDomain) || strings.HasSuffix(origin, mainDomain) {
+					return true
+				}
+			}
 			return false
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Tenant-Slug"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	
+	// Add tenant middleware for all API routes
+	// This resolves tenant from subdomain or X-Tenant-Slug header
+	r.Use(middleware.TenantMiddleware(db))
+	
 	api := r.Group("/api")
 	
 	// Serve static files from uploads directory
@@ -56,6 +72,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		c.JSON(200, gin.H{
 			"frontend_base": cfg.FrontendBase,
 			"origin":        c.Request.Header.Get("Origin"),
+			"tenant_id":     middleware.GetTenantID(c),
+			"tenant_slug":   middleware.GetTenantSlug(c),
 		})
 	})
 
