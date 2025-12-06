@@ -145,6 +145,7 @@ export function NodeToken({
       disabled={!isClickable}
       aria-label={`${t(node.title, node.id)} - ${node.state}`}
       aria-disabled={!isClickable}
+      data-testid={`node-token-${node.id}`}
       className={clsx(
         "flex items-center gap-4 relative group transition-all duration-200 w-full text-left",
         "min-h-[48px] sm:min-h-[52px] touch-manipulation", // Minimum touch target
