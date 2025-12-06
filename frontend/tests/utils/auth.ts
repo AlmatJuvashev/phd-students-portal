@@ -34,7 +34,9 @@ export async function getAuthToken(role: Role, baseURL: string): Promise<string>
 export async function loginViaUI(page: Page, username: string, password: string) {
   await page.goto("/login");
   await page.getByLabel(/username/i).fill(username);
-  await page.getByLabel(/password/i).fill(password);
+  await page.locator('input[name="password"]').fill(password);
   await page.getByRole("button", { name: /sign in|войти|кіру/i }).click();
   await page.waitForLoadState("networkidle");
+  // Wait for redirect to dashboard or home
+  await page.waitForURL(/dashboard|journey|profile/);
 }
