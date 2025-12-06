@@ -21,6 +21,7 @@ type User struct {
 	Role         Role      `db:"role" json:"role"`
 	PasswordHash string    `db:"password_hash" json:"-"`
 	IsActive     bool      `db:"is_active" json:"is_active"`
+	IsSuperadmin bool      `db:"is_superadmin" json:"is_superadmin"` // Global admin across all tenants
 	Phone        string    `db:"phone" json:"phone"`
 	Program      string    `db:"program" json:"program"`
 	Specialty    string    `db:"specialty" json:"specialty"`
