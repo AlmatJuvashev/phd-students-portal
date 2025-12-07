@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet, NavLink, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useServiceEnabled } from "@/contexts/TenantServicesContext";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -45,6 +46,9 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
   const unreadCount = unreadData?.count || 0;
+  
+  // Check if optional services are enabled
+  const chatEnabled = useServiceEnabled('chat');
 
   return (
     <nav className={cn("p-4 space-y-2", collapsed && "px-2")}>
@@ -145,18 +149,21 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
             )}
           </NavLink>
 
-          <NavLink
-            to="/admin/chat-rooms"
-            className={cn(
-              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
-              isActive("/admin/chat-rooms") && "bg-muted font-medium",
-              collapsed && "justify-center px-2"
-            )}
-            title={t("admin.sidebar.chat_rooms", "Chat rooms")}
-          >
-            <MessageCircle className="h-4 w-4" />
-            {!collapsed && <span>{t("admin.sidebar.chat_rooms", "Chat rooms")}</span>}
-          </NavLink>
+          {/* Chat Rooms - Only if chat service is enabled */}
+          {chatEnabled && (
+            <NavLink
+              to="/admin/chat-rooms"
+              className={cn(
+                "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+                isActive("/admin/chat-rooms") && "bg-muted font-medium",
+                collapsed && "justify-center px-2"
+              )}
+              title={t("admin.sidebar.chat_rooms", "Chat rooms")}
+            >
+              <MessageCircle className="h-4 w-4" />
+              {!collapsed && <span>{t("admin.sidebar.chat_rooms", "Chat rooms")}</span>}
+            </NavLink>
+          )}
           <NavLink
             to="/admin/dictionaries"
             className={cn(
