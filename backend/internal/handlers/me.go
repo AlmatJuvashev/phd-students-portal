@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -94,13 +95,13 @@ func (h *MeHandler) MyTenant(c *gin.Context) {
 	}
 
 	type TenantInfo struct {
-		ID              string   `db:"id" json:"id"`
-		Slug            string   `db:"slug" json:"slug"`
-		Name            string   `db:"name" json:"name"`
-		AppName         *string  `db:"app_name" json:"app_name"`
-		PrimaryColor    string   `db:"primary_color" json:"primary_color"`
-		SecondaryColor  string   `db:"secondary_color" json:"secondary_color"`
-		EnabledServices []string `db:"enabled_services" json:"enabled_services"`
+		ID              string         `db:"id" json:"id"`
+		Slug            string         `db:"slug" json:"slug"`
+		Name            string         `db:"name" json:"name"`
+		AppName         *string        `db:"app_name" json:"app_name"`
+		PrimaryColor    string         `db:"primary_color" json:"primary_color"`
+		SecondaryColor  string         `db:"secondary_color" json:"secondary_color"`
+		EnabledServices pq.StringArray `db:"enabled_services" json:"enabled_services"`
 	}
 
 	var tenant TenantInfo
