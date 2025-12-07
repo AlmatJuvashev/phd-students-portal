@@ -218,7 +218,13 @@ export const router = createBrowserRouter([
       },
       {
         path: "calendar",
-        element: <ProtectedRoute>{WithSuspense(<CalendarView />)}</ProtectedRoute>,
+        element: (
+          <ProtectedRoute>
+            <ServiceProtectedRoute service="calendar">
+              {WithSuspense(<CalendarView />)}
+            </ServiceProtectedRoute>
+          </ProtectedRoute>
+        ),
       },
     ],
   },
@@ -333,7 +339,9 @@ export const router = createBrowserRouter([
         path: "calendar",
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
-            {WithSuspense(<CalendarView />)}
+            <ServiceProtectedRoute service="calendar">
+              {WithSuspense(<CalendarView />)}
+            </ServiceProtectedRoute>
           </ProtectedRoute>
         ),
       },
