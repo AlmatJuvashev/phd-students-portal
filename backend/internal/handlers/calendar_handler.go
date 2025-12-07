@@ -41,6 +41,11 @@ func (h *CalendarHandler) CreateEvent(c *gin.Context) {
 	}
 
 	userID := c.GetString("userID")
+	tenantID := c.GetString("tenant_id") // Get tenant from context (set by tenant middleware)
+	if tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return
+	}
 	
 	startTime, err := time.Parse(time.RFC3339, req.StartTime)
 	if err != nil {
@@ -68,6 +73,7 @@ func (h *CalendarHandler) CreateEvent(c *gin.Context) {
 	}
 
 	event := &models.Event{
+		TenantID:        tenantID,
 		CreatorID:       userID,
 		Title:           req.Title,
 		Description:     req.Description,
