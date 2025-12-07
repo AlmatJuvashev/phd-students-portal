@@ -53,6 +53,7 @@ const (
 
 type Event struct {
 	ID              string    `db:"id" json:"id"`
+	TenantID        string    `db:"tenant_id" json:"tenant_id"` // Added for multitenancy
 	CreatorID       string    `db:"creator_id" json:"creator_id"`
 	Title           string    `db:"title" json:"title"`
 	Description     string    `db:"description" json:"description"`
