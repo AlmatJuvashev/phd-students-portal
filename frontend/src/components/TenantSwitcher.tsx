@@ -2,12 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Building2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownItem } from '@/components/ui/dropdown-menu';
 import { api } from '@/api/client';
 import { setDevTenantSlug, getTenantSlug } from '@/lib/tenant';
 
@@ -68,8 +63,8 @@ export function TenantSwitcher({ className }: TenantSwitcherProps) {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <DropdownMenu
+      trigger={
         <Button variant="ghost" className={className}>
           <Building2 className="h-4 w-4 mr-2" />
           <span className="truncate max-w-[120px]">
@@ -77,14 +72,14 @@ export function TenantSwitcher({ className }: TenantSwitcherProps) {
           </span>
           <ChevronDown className="h-4 w-4 ml-1" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[220px]">
-        {memberships.map((membership) => (
-          <DropdownMenuItem
-            key={membership.tenant_id}
-            onClick={() => handleSwitch(membership)}
-            className="flex items-center justify-between"
-          >
+      }
+    >
+      {memberships.map((membership) => (
+        <DropdownItem
+          key={membership.tenant_id}
+          onClick={() => handleSwitch(membership)}
+        >
+          <div className="flex items-center justify-between w-full">
             <div className="flex flex-col">
               <span className="font-medium">{membership.tenant_name}</span>
               <span className="text-xs text-muted-foreground">
@@ -94,11 +89,12 @@ export function TenantSwitcher({ className }: TenantSwitcherProps) {
             {membership.tenant_slug === currentSlug && (
               <Check className="h-4 w-4 text-green-500" />
             )}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
+          </div>
+        </DropdownItem>
+      ))}
     </DropdownMenu>
   );
 }
 
 export default TenantSwitcher;
+
