@@ -19,26 +19,26 @@ func NewStore(db *sqlx.DB) *Store {
 	return &Store{db: db}
 }
 
-// CreateRoom inserts a new room.
-func (s *Store) CreateRoom(ctx context.Context, name string, roomType models.ChatRoomType, createdBy string, meta json.RawMessage) (*models.ChatRoom, error) {
+// CreateRoom inserts a new room with tenant_id.
+func (s *Store) CreateRoom(ctx context.Context, tenantID, name string, roomType models.ChatRoomType, createdBy string, meta json.RawMessage) (*models.ChatRoom, error) {
 	if len(meta) == 0 {
 		meta = json.RawMessage("{}")
 	}
 	var room models.ChatRoom
 	err := s.db.QueryRowxContext(ctx, `
 		WITH creator AS (
-			SELECT id, role FROM users WHERE id = $3
+			SELECT id, role FROM users WHERE id = $4
 		), new_room AS (
-			INSERT INTO chat_rooms (name, type, created_by, created_by_role, meta)
-			SELECT $1, $2, c.id, c.role, $4 FROM creator c
-			RETURNING id, name, type, created_by, created_by_role, is_archived, meta, created_at
+			INSERT INTO chat_rooms (tenant_id, name, type, created_by, created_by_role, meta)
+			SELECT $1, $2, $3, c.id, c.role, $5 FROM creator c
+			RETURNING id, tenant_id, name, type, created_by, created_by_role, is_archived, meta, created_at
 		), add_creator AS (
-			INSERT INTO chat_room_members (room_id, user_id, role_in_room)
-			SELECT nr.id, $3, 'admin' FROM new_room nr
+			INSERT INTO chat_room_members (tenant_id, room_id, user_id, role_in_room)
+			SELECT $1, nr.id, $4, 'admin' FROM new_room nr
 			ON CONFLICT (room_id, user_id) DO NOTHING
 		)
 		SELECT * FROM new_room
-	`, name, roomType, createdBy, meta).StructScan(&room)
+	`, tenantID, name, roomType, createdBy, meta).StructScan(&room)
 	if err != nil {
 		return nil, err
 	}
@@ -118,11 +118,11 @@ func (s *Store) IsMember(ctx context.Context, roomID, userID string) (bool, erro
 	return exists, err
 }
 
-// AddMember inserts or updates membership for a room.
+// AddMember inserts or updates membership for a room. Derives tenant_id from room.
 func (s *Store) AddMember(ctx context.Context, roomID, userID string, role models.ChatRoomMemberRole) error {
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO chat_room_members (room_id, user_id, role_in_room)
-		VALUES ($1, $2, $3)
+		INSERT INTO chat_room_members (tenant_id, room_id, user_id, role_in_room)
+		SELECT r.tenant_id, $1, $2, $3 FROM chat_rooms r WHERE r.id = $1
 		ON CONFLICT (room_id, user_id)
 		DO UPDATE SET role_in_room = EXCLUDED.role_in_room
 	`, roomID, userID, role)
@@ -159,20 +159,22 @@ func (s *Store) ListMembers(ctx context.Context, roomID string) ([]MemberWithUse
 	return members, err
 }
 
-// CreateMessage inserts a message and returns the stored record.
+// CreateMessage inserts a message and returns the stored record. Derives tenant_id from room.
 func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string) (*models.ChatMessage, error) {
 	if attachments == nil {
 		attachments = models.ChatAttachments{}
 	}
 	var msg models.ChatMessage
 	err := s.db.QueryRowxContext(ctx, `
-		WITH ins AS (
-			INSERT INTO chat_messages (room_id, sender_id, body, attachments, importance)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id, room_id, sender_id, body, attachments, importance, created_at, edited_at, deleted_at
+		WITH room_tenant AS (
+			SELECT tenant_id FROM chat_rooms WHERE id = $1
+		), ins AS (
+			INSERT INTO chat_messages (tenant_id, room_id, sender_id, body, attachments, importance)
+			SELECT rt.tenant_id, $1, $2, $3, $4, $5 FROM room_tenant rt
+			RETURNING id, tenant_id, room_id, sender_id, body, attachments, importance, created_at, edited_at, deleted_at
 		)
 		SELECT 
-			i.id, i.room_id, i.sender_id, i.body, i.attachments, i.importance, i.created_at, i.edited_at, i.deleted_at,
+			i.id, i.tenant_id, i.room_id, i.sender_id, i.body, i.attachments, i.importance, i.created_at, i.edited_at, i.deleted_at,
 			COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.email, u.username) AS sender_name,
 			u.role AS sender_role
 		FROM ins i
