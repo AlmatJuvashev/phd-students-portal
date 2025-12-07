@@ -79,6 +79,7 @@ type EventAttendee struct {
 
 type Notification struct {
 	ID          string    `db:"id" json:"id"`
+	TenantID    string    `db:"tenant_id" json:"tenant_id"` // Added for multitenancy
 	RecipientID string    `db:"recipient_id" json:"recipient_id"`
 	ActorID     *string   `db:"actor_id" json:"actor_id,omitempty"`
 	Title       string    `db:"title" json:"title"`
