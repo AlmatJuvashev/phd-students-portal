@@ -5,6 +5,7 @@ import NotFound from "@/pages/errors/NotFound";
 import { AppLayout } from "@/pages/layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantServices, OptionalService } from "@/contexts/TenantServicesContext";
 import { AdminLayout } from "@/layouts/AdminLayout";
 
 const LoginPage = lazy(() =>
@@ -140,6 +141,32 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Service-gated route - shows "service not available" for disabled services
+function ServiceProtectedRoute({ 
+  children, 
+  service 
+}: { 
+  children: React.ReactNode; 
+  service: OptionalService;
+}) {
+  const { isServiceEnabled, isLoading } = useTenantServices();
+  
+  if (isLoading) return <div className="p-4 text-sm">Loading…</div>;
+  
+  if (!isServiceEnabled(service)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
+        <h2 className="text-xl font-semibold mb-2">Service Not Available</h2>
+        <p className="text-muted-foreground">
+          This feature is not enabled for your institution.
+        </p>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
+}
+
 export const router = createBrowserRouter([
   // App routes (constrained width via AppLayout)
   {
@@ -156,7 +183,13 @@ export const router = createBrowserRouter([
       },
       {
         path: "chat",
-        element: <ProtectedRoute>{WithSuspense(<ChatPage />)}</ProtectedRoute>,
+        element: (
+          <ProtectedRoute>
+            <ServiceProtectedRoute service="chat">
+              {WithSuspense(<ChatPage />)}
+            </ServiceProtectedRoute>
+          </ProtectedRoute>
+        ),
       },
       { path: "contacts", element: WithSuspense(<ContactsPage />) },
       {
