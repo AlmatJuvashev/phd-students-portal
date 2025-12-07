@@ -273,3 +273,99 @@ func TestAuthMiddleware_UserNotInDB(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "user not found")
 }
+
+func TestHydrateUserFromClaims_NoClaims(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	// No claims set
+
+	HydrateUserFromClaims(c, db, nil)
+
+	// Should not set userID since no claims
+	userID := c.GetString("userID")
+	assert.Equal(t, "", userID)
+}
+
+func TestHydrateUserFromClaims_EmptySub(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set("claims", jwt.MapClaims{
+		"role": "student",
+		// no "sub" claim
+	})
+
+	HydrateUserFromClaims(c, db, nil)
+
+	// Should not set userID since no sub
+	userID := c.GetString("userID")
+	assert.Equal(t, "", userID)
+}
+
+func TestHydrateUserFromClaims_UserNotFound(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set("claims", jwt.MapClaims{
+		"sub": "nonexistent-user-id",
+	})
+
+	HydrateUserFromClaims(c, db, nil)
+
+	// Should not set userID since user not in DB
+	userID := c.GetString("userID")
+	assert.Equal(t, "", userID)
+}
+
+func TestHydrateUserFromClaims_UserFound(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	userID := "123e4567-e89b-12d3-a456-426614174999"
+	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)
+		ON CONFLICT (id) DO NOTHING`, userID)
+	require.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Set("claims", jwt.MapClaims{
+		"sub": userID,
+	})
+
+	HydrateUserFromClaims(c, db, nil)
+
+	// Should set userID and userRole
+	resultID := c.GetString("userID")
+	resultRole := c.GetString("userRole")
+	assert.Equal(t, userID, resultID)
+	assert.Equal(t, "student", resultRole)
+}
+
+func TestAuthMiddleware_InvalidToken(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	secret := []byte("test-secret")
+
+	router := gin.New()
+	router.Use(AuthMiddleware(secret, db, nil))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(200, gin.H{"ok": true})
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer invalid-token")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 401, w.Code)
+}
+
