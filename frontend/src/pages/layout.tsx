@@ -17,6 +17,7 @@ import { GlobalSearch } from "@/components/GlobalSearch";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useServiceEnabled } from "@/contexts/TenantServicesContext";
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const { t: T, i18n } = useTranslation("common");
@@ -24,6 +25,11 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   const authed = !!user && !isLoading;
   const role = user?.role;
   const { pathname } = useLocation();
+  
+  // Check which optional services are enabled for the tenant
+  const chatEnabled = useServiceEnabled('chat');
+  const calendarEnabled = useServiceEnabled('calendar');
+  
   const active = (p: string) =>
     pathname === p
       ? "text-primary font-medium bg-primary/10"
@@ -54,19 +60,17 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
 
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
-      {authed &&
-        (!["admin", "superadmin"].includes(role || "") ||
-          !import.meta.env.PROD) && (
+      {authed && (
           <NavLink to="/journey" mobile={mobile}>
             {T("nav.journey")}
           </NavLink>
         )}
-      {authed && (
+      {authed && chatEnabled && (
         <NavLink to="/chat" mobile={mobile}>
           {T("nav.chat", { defaultValue: "Messages" })}
         </NavLink>
       )}
-      {authed && (
+      {authed && calendarEnabled && (
         <NavLink to="/calendar" mobile={mobile}>
           {T("nav.calendar", { defaultValue: "Calendar" })}
         </NavLink>
