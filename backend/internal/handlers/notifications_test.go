@@ -17,15 +17,22 @@ func TestNotificationHandler_GetUnread(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	// Create test tenant first
+	tenantID := "66666666-6666-6666-6666-666666666666"
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ($1, 'test-notifications', 'Test Notifications Tenant', 'university', true)
+		ON CONFLICT (id) DO NOTHING`, tenantID)
+	assert.NoError(t, err)
+
 	userID := "123e4567-e89b-12d3-a456-426614174000"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)
 		ON CONFLICT (id) DO NOTHING`, userID)
 	assert.NoError(t, err)
 
-	// Seed notification
-	_, err = db.Exec(`INSERT INTO notifications (recipient_id, title, message, type, is_read) 
-		VALUES ($1, 'Test Notif', 'Hello', 'info', false)`, userID)
+	// Seed notification with tenant_id
+	_, err = db.Exec(`INSERT INTO notifications (tenant_id, recipient_id, title, message, type, is_read) 
+		VALUES ($1, $2, 'Test Notif', 'Hello', 'info', false)`, tenantID, userID)
 	assert.NoError(t, err)
 
 	svc := services.NewNotificationService(db)
@@ -56,15 +63,22 @@ func TestNotificationHandler_MarkAsRead(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	// Create test tenant first
+	tenantID := "66666666-6666-6666-6666-666666666666"
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ($1, 'test-notifications', 'Test Notifications Tenant', 'university', true)
+		ON CONFLICT (id) DO NOTHING`, tenantID)
+	assert.NoError(t, err)
+
 	userID := "123e4567-e89b-12d3-a456-426614174000"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)
 		ON CONFLICT (id) DO NOTHING`, userID)
 	assert.NoError(t, err)
 
 	var notifID string
-	err = db.QueryRow(`INSERT INTO notifications (recipient_id, title, message, type, is_read) 
-		VALUES ($1, 'Test Notif', 'Hello', 'info', false) RETURNING id`, userID).Scan(&notifID)
+	err = db.QueryRow(`INSERT INTO notifications (tenant_id, recipient_id, title, message, type, is_read) 
+		VALUES ($1, $2, 'Test Notif', 'Hello', 'info', false) RETURNING id`, tenantID, userID).Scan(&notifID)
 	assert.NoError(t, err)
 
 	svc := services.NewNotificationService(db)
@@ -97,15 +111,22 @@ func TestNotificationHandler_MarkAllAsRead(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	// Create test tenant first
+	tenantID := "66666666-6666-6666-6666-666666666666"
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ($1, 'test-notifications', 'Test Notifications Tenant', 'university', true)
+		ON CONFLICT (id) DO NOTHING`, tenantID)
+	assert.NoError(t, err)
+
 	userID := "123e4567-e89b-12d3-a456-426614174000"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)
 		ON CONFLICT (id) DO NOTHING`, userID)
 	assert.NoError(t, err)
 
-	// Seed multiple notifications
-	_, err = db.Exec(`INSERT INTO notifications (recipient_id, title, message, type, is_read) 
-		VALUES ($1, 'Notif 1', 'Msg 1', 'info', false), ($1, 'Notif 2', 'Msg 2', 'info', false)`, userID)
+	// Seed multiple notifications with tenant_id
+	_, err = db.Exec(`INSERT INTO notifications (tenant_id, recipient_id, title, message, type, is_read) 
+		VALUES ($1, $2, 'Notif 1', 'Msg 1', 'info', false), ($1, $2, 'Notif 2', 'Msg 2', 'info', false)`, tenantID, userID)
 	assert.NoError(t, err)
 
 	svc := services.NewNotificationService(db)
