@@ -45,6 +45,11 @@ func (h *ChatHandler) CreateRoom(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	tenantID := c.GetString("tenant_id") // Get tenant from context (set by tenant middleware)
+	if tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return
+	}
 	var req struct {
 		Name string              `json:"name" binding:"required"`
 		Type models.ChatRoomType `json:"type" binding:"required"`
@@ -58,7 +63,7 @@ func (h *ChatHandler) CreateRoom(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid room type"})
 		return
 	}
-	room, err := h.store.CreateRoom(c.Request.Context(), req.Name, req.Type, uid, req.Meta)
+	room, err := h.store.CreateRoom(c.Request.Context(), tenantID, req.Name, req.Type, uid, req.Meta)
 	if err != nil {
 		log.Printf("Failed to create room: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create room"})

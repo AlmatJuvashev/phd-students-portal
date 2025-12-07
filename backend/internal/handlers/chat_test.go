@@ -21,8 +21,15 @@ import (
 func setupChatTest(t *testing.T) (*handlers.ChatHandler, *gin.Engine, string, *sqlx.DB, func()) {
 	db, teardown := testutils.SetupTestDB()
 
+	// Create test tenant first
+	tenantID := "44444444-4444-4444-4444-444444444444"
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ($1, 'test-chat', 'Test Chat Tenant', 'university', true)
+		ON CONFLICT (id) DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	userID := "123e4567-e89b-12d3-a456-426614174000"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'admin', 'hash', true)
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
@@ -36,6 +43,7 @@ func setupChatTest(t *testing.T) (*handlers.ChatHandler, *gin.Engine, string, *s
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "admin"})
+		c.Set("tenant_id", tenantID) // Set tenant_id for handlers
 		c.Next()
 	})
 	
