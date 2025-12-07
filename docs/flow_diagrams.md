@@ -1,6 +1,6 @@
 # System Flow Diagrams
 
-This document provides visual flow diagrams for all major processes in the PhD Student Portal application. Each diagram shows the interaction between components with explanations.
+This document provides visual flow diagrams for all major processes in the PhD Student Portal application.
 
 ---
 
@@ -23,6 +23,11 @@ Students submit documents for advisor review. Advisors can approve, reject, or a
 
 ### Flow Diagram
 
+![Document Approval Flow](diagrams/01_document_approval.png)
+
+<details>
+<summary>Mermaid Source</summary>
+
 ```mermaid
 sequenceDiagram
     participant S as Student
@@ -32,7 +37,6 @@ sequenceDiagram
     participant N as NotifyAdvisors
     participant A as Advisor
 
-    %% Upload Phase
     S->>API: POST /journey/nodes/:id/uploads/presign
     API->>S3: PresignPut(objectKey)
     S3-->>API: Signed URL
@@ -52,23 +56,13 @@ sequenceDiagram
     N->>DB: INSERT admin_notifications
     API-->>S: 200 OK
     
-    %% Review Phase
     A->>API: PATCH /admin/attachments/:id/review
     API->>DB: Verify advisor assigned to student
     API->>DB: UPDATE attachment.status
     API->>DB: UPDATE node_instances.state
     API-->>A: 200 OK
 ```
-
-### Key Points
-
-| Step | Description |
-|------|-------------|
-| Presign | Get a time-limited S3 upload URL (15 min default) |
-| Direct Upload | Student uploads directly to S3, bypassing API |
-| Attach | Link the S3 object to the node instance |
-| Notify | All assigned advisors get a shared notification |
-| Review | Advisor approves/rejects, updates node state |
+</details>
 
 ### Status Mappings
 
@@ -88,44 +82,49 @@ Real-time chat between students, advisors, and admins. Supports rooms, direct me
 
 ### Message Flow
 
+![Chat Messaging Flow](diagrams/02_chat_messaging.png)
+
+<details>
+<summary>Mermaid Source</summary>
+
 ```mermaid
 sequenceDiagram
     participant U1 as User 1
     participant API as Chat Handler
     participant DB as PostgreSQL
-    participant S3 as S3 Storage
     participant U2 as User 2
 
-    %% Room Creation (Admin)
     Note over U1,API: Admin creates room
     U1->>API: POST /chat/rooms
     API->>DB: INSERT chat_rooms
     API->>DB: INSERT chat_room_members (creator)
     API-->>U1: {room_id, ...}
     
-    %% Add Members
     U1->>API: POST /chat/rooms/:id/members
     API->>DB: INSERT chat_room_members
     API-->>U1: 200 OK
     
-    %% Send Message
     U1->>API: POST /chat/rooms/:id/messages
     API->>DB: Verify membership
     API->>DB: INSERT chat_messages
     API-->>U1: {message_id, ...}
     
-    %% List Messages
     U2->>API: GET /chat/rooms/:id/messages
     API->>DB: SELECT chat_messages (paginated)
     API-->>U2: [{message}, ...]
     
-    %% Mark as Read
     U2->>API: POST /chat/rooms/:id/read
     API->>DB: UPDATE chat_room_members.last_read_at
     API-->>U2: 200 OK
 ```
+</details>
 
 ### File Attachment Flow
+
+![Chat Attachments Flow](diagrams/03_chat_attachments.png)
+
+<details>
+<summary>Mermaid Source</summary>
 
 ```mermaid
 sequenceDiagram
@@ -134,33 +133,22 @@ sequenceDiagram
     participant S3 as S3 Storage
     participant DB as PostgreSQL
 
-    %% Upload
     U->>API: POST /chat/upload (multipart)
     API->>S3: PutObject(file)
     S3-->>API: object_key, ETag
     API-->>U: {object_key, download_url}
     
-    %% Send with attachment
     U->>API: POST /chat/rooms/:id/messages
     Note right of API: attachments: [{object_key, name, size}]
     API->>DB: INSERT chat_messages
     API-->>U: {message_id, ...}
     
-    %% Download
     U->>API: GET /chat/download/:object_key
     API->>S3: PresignGet(object_key)
     S3-->>API: Signed URL
     API-->>U: Redirect to presigned URL
 ```
-
-### Chat Components
-
-| Component | Purpose |
-|-----------|---------|
-| `chat_rooms` | Stores room name, type (group/direct), archived status |
-| `chat_room_members` | Many-to-many with roles (admin/member), last_read_at |
-| `chat_messages` | Message body, sender, attachments JSONB, importance |
-| Unread Count | `COUNT(*) WHERE created_at > last_read_at` |
+</details>
 
 ---
 
@@ -169,7 +157,12 @@ sequenceDiagram
 ### Overview
 Admins/advisors can create calendar events visible to students based on permissions and scope.
 
-### Event Creation Flow
+### Event CRUD Flow
+
+![Calendar Events Flow](diagrams/04_calendar_events.png)
+
+<details>
+<summary>Mermaid Source</summary>
 
 ```mermaid
 sequenceDiagram
@@ -178,32 +171,29 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant S as Student
 
-    %% Create Event
     A->>API: POST /calendar/events
     Note right of API: {title, start, end, scope, recurrence}
     API->>DB: Permission check (is admin/advisor?)
     API->>DB: INSERT calendar_events
     API-->>A: {event_id, ...}
     
-    %% List Events (Student)
     S->>API: GET /calendar/events?from=...&to=...
     API->>DB: Determine visibility scope
-    Note right of API: Filter by: tenant, program, cohort, user assignments
+    Note right of API: Filter by: tenant, program, cohort, user
     API->>DB: SELECT calendar_events
     API-->>S: [{event}, ...]
     
-    %% Update Event
     A->>API: PUT /calendar/events/:id
     API->>DB: Verify creator or admin
     API->>DB: UPDATE calendar_events
     API-->>A: {event, ...}
     
-    %% Delete Event
     A->>API: DELETE /calendar/events/:id
     API->>DB: Verify creator or admin
     API->>DB: DELETE calendar_events
     API-->>A: 200 OK
 ```
+</details>
 
 ### Event Visibility Rules
 
@@ -214,16 +204,6 @@ sequenceDiagram
 | `cohort` | Users in specific cohort |
 | `personal` | Creator + specific attendees |
 
-### Event Types
-
-```mermaid
-graph LR
-    E[Event] --> D[deadline]
-    E --> M[meeting]
-    E --> S[seminar]
-    E --> O[other]
-```
-
 ---
 
 ## 4. Notifications Flow
@@ -233,6 +213,11 @@ Two notification systems: user notifications (bell icon) and admin notifications
 
 ### User Notification Flow
 
+![Notifications Flow](diagrams/05_notifications.png)
+
+<details>
+<summary>Mermaid Source</summary>
+
 ```mermaid
 sequenceDiagram
     participant SYS as System/Event
@@ -240,52 +225,22 @@ sequenceDiagram
     participant U as User
     participant API as Notification Handler
 
-    %% Create Notification
     SYS->>DB: INSERT notifications
     Note right of SYS: {user_id, type, message, link}
     
-    %% Poll Unread
     U->>API: GET /notifications/unread
     API->>DB: SELECT WHERE user_id AND read_at IS NULL
     API-->>U: [{id, type, message}, ...]
     
-    %% Mark as Read
     U->>API: POST /notifications/:id/read
     API->>DB: UPDATE notifications SET read_at = NOW()
     API-->>U: 200 OK
     
-    %% Mark All Read
     U->>API: POST /notifications/read-all
     API->>DB: UPDATE notifications SET read_at = NOW() WHERE user_id
     API-->>U: 200 OK
 ```
-
-### Admin Notification Flow (Document Review)
-
-```mermaid
-sequenceDiagram
-    participant S as Student
-    participant SYS as NotifyAdvisors
-    participant DB as PostgreSQL
-    participant A as Advisor
-    participant API as Admin Handler
-
-    %% Student submits
-    S->>SYS: Document submitted
-    SYS->>DB: Get advisors for student
-    SYS->>DB: INSERT admin_notifications
-    Note right of DB: event_type='document_submitted'
-    
-    %% Advisor views queue
-    A->>API: GET /admin/pending-reviews
-    API->>DB: SELECT admin_notifications
-    API-->>A: [{student, node, submitted_at}, ...]
-    
-    %% Advisor reviews
-    A->>API: PATCH /admin/attachments/:id/review
-    API->>DB: UPDATE attachment status + node state
-    API-->>A: 200 OK
-```
+</details>
 
 ### Notification Types
 
@@ -305,13 +260,17 @@ All files are stored in S3 (MinIO in dev). The API generates presigned URLs for 
 
 ### Upload Flow (Presign Pattern)
 
+![S3 Upload Flow](diagrams/06_s3_upload.png)
+
+<details>
+<summary>Mermaid Source</summary>
+
 ```mermaid
 sequenceDiagram
     participant C as Client
     participant API as Backend
     participant S3 as S3/MinIO
 
-    %% Step 1: Request presigned URL
     C->>API: POST /upload/presign
     Note right of C: {content_type, filename}
     API->>API: ValidateContentType()
@@ -320,12 +279,10 @@ sequenceDiagram
     S3-->>API: Signed URL
     API-->>C: {presign_url, object_key}
     
-    %% Step 2: Direct upload
     C->>S3: PUT file with headers
     Note right of C: Content-Type must match
     S3-->>C: 200 OK + ETag
     
-    %% Step 3: Confirm upload
     C->>API: POST /upload/confirm
     Note right of C: {object_key, etag, size}
     API->>S3: ObjectExists(key)
@@ -333,8 +290,14 @@ sequenceDiagram
     API->>API: Link to document/attachment
     API-->>C: 200 OK
 ```
+</details>
 
 ### Download Flow
+
+![S3 Download Flow](diagrams/07_s3_download.png)
+
+<details>
+<summary>Mermaid Source</summary>
 
 ```mermaid
 sequenceDiagram
@@ -342,7 +305,6 @@ sequenceDiagram
     participant API as Backend
     participant S3 as S3/MinIO
 
-    %% Request download
     C->>API: GET /documents/:id/download
     API->>API: Verify access permissions
     API->>API: Lookup object_key in DB
@@ -350,10 +312,10 @@ sequenceDiagram
     S3-->>API: Signed URL
     API-->>C: Redirect 302 to signed URL
     
-    %% Direct download
     C->>S3: GET signed URL
     S3-->>C: File content
 ```
+</details>
 
 ### S3 Configuration
 
@@ -364,18 +326,6 @@ sequenceDiagram
 | `S3_ACCESS_KEY_ID` | Access credentials |
 | `S3_SECRET_ACCESS_KEY` | Secret credentials |
 | `S3_PRESIGN_EXPIRES_MINUTES` | URL validity (default: 15) |
-| `S3_MAX_FILE_SIZE_MB` | Upload limit (default: 100) |
-
-### Allowed Content Types
-
-```
-application/pdf
-application/msword
-application/vnd.openxmlformats-officedocument.wordprocessingml.document
-image/jpeg, image/png, image/gif
-text/plain
-application/zip
-```
 
 ---
 
@@ -386,6 +336,11 @@ JWT-based authentication with refresh tokens. Supports multitenancy via X-Tenant
 
 ### Login Flow
 
+![Authentication Login Flow](diagrams/08_auth_login.png)
+
+<details>
+<summary>Mermaid Source</summary>
+
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -393,7 +348,6 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant JWT as JWT Service
 
-    %% Login
     U->>API: POST /auth/login
     Note right of U: {email, password, tenant_slug?}
     API->>DB: Find user by email
@@ -404,47 +358,7 @@ sequenceDiagram
     API->>DB: Store refresh token
     API-->>U: {access_token, refresh_token, user, tenants}
 ```
-
-### Refresh Token Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant API as Auth Handler
-    participant DB as PostgreSQL
-    participant JWT as JWT Service
-
-    %% Access token expired
-    U->>API: POST /auth/refresh
-    Note right of U: {refresh_token}
-    API->>DB: Verify refresh token exists
-    API->>JWT: Validate refresh token expiry
-    API->>JWT: Generate new access token
-    API-->>U: {access_token}
-```
-
-### Tenant Switching Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant API as Me Handler
-    participant DB as PostgreSQL
-
-    %% Get available tenants
-    U->>API: GET /me/tenants
-    API->>DB: Get user's tenant memberships
-    API-->>U: [{tenant_id, slug, name, role}, ...]
-    
-    %% Switch tenant
-    U->>API: POST /me/tenant
-    Note right of U: {tenant_slug}
-    API->>DB: Verify membership
-    API-->>U: {tenant, role}
-    
-    %% Subsequent requests
-    Note over U,API: X-Tenant-Slug: selected_tenant
-```
+</details>
 
 ### JWT Claims
 
@@ -468,6 +382,11 @@ Students progress through a playbook of nodes (tasks). Nodes can have prerequisi
 
 ### Node State Machine
 
+![Node State Machine](diagrams/10_node_state_machine.png)
+
+<details>
+<summary>Mermaid Source</summary>
+
 ```mermaid
 stateDiagram-v2
     [*] --> locked: Prerequisites not met
@@ -479,8 +398,14 @@ stateDiagram-v2
     needs_fixes --> submitted: Student resubmits
     done --> [*]
 ```
+</details>
 
 ### Journey Progression Flow
+
+![Journey Progression Flow](diagrams/09_journey_progression.png)
+
+<details>
+<summary>Mermaid Source</summary>
 
 ```mermaid
 sequenceDiagram
@@ -489,62 +414,25 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant PB as Playbook Manager
 
-    %% Get current state
     S->>API: GET /journey/nodes/:id/submission
     API->>DB: Get/create node_instance
     API->>PB: Get node definition
     API->>DB: Get form data, slots, attachments
     API-->>S: {node_id, state, form_data, slots}
     
-    %% Submit node
     S->>API: PATCH /journey/nodes/:id/state
     Note right of S: {state: "submitted"}
     API->>DB: UPDATE node_instances.state
     API->>DB: INSERT node_events
     API-->>S: 200 OK
     
-    %% Activate next nodes
     API->>PB: GetNextNodes(current_node)
     loop For each next node
         API->>DB: Check prerequisites met
         API->>DB: UPDATE/INSERT node_instances
     end
 ```
-
-### Node Types
-
-```mermaid
-graph TB
-    N[Node Types] --> I[info]
-    N --> F[form]
-    N --> C[confirmTask]
-    N --> D[decision]
-    
-    I --> |Read only| IL[Display instructions]
-    F --> |Fill data| FL[Profile fields, text inputs]
-    C --> |Upload docs| CL[File uploads, signatures]
-    D --> |Choose path| DL[Branching logic]
-```
-
-### Playbook Structure
-
-```json
-{
-  "version": "1.0",
-  "nodes": {
-    "S1_profile": {
-      "type": "form",
-      "title": {"en": "Profile"},
-      "requirements": {"fields": ["full_name", "email"]}
-    },
-    "S2_confirm_theme": {
-      "type": "confirmTask",
-      "requirements": {"uploads": [{"key": "theme_doc"}]},
-      "prerequisites": ["S1_profile"]
-    }
-  }
-}
-```
+</details>
 
 ---
 

@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant U as User
+    participant API as Chat Handler
+    participant S3 as S3 Storage
+    participant DB as PostgreSQL
+
+    U->>API: POST /chat/upload (multipart)
+    API->>S3: PutObject(file)
+    S3-->>API: object_key, ETag
+    API-->>U: {object_key, download_url}
+    
+    U->>API: POST /chat/rooms/:id/messages
+    Note right of API: attachments: [{object_key, name, size}]
+    API->>DB: INSERT chat_messages
+    API-->>U: {message_id, ...}
+    
+    U->>API: GET /chat/download/:object_key
+    API->>S3: PresignGet(object_key)
+    S3-->>API: Signed URL
+    API-->>U: Redirect to presigned URL

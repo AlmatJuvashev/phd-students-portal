@@ -1,0 +1,27 @@
+sequenceDiagram
+    participant A as Admin
+    participant API as Calendar Handler
+    participant DB as PostgreSQL
+    participant S as Student
+
+    A->>API: POST /calendar/events
+    Note right of API: {title, start, end, scope, recurrence}
+    API->>DB: Permission check (is admin/advisor?)
+    API->>DB: INSERT calendar_events
+    API-->>A: {event_id, ...}
+    
+    S->>API: GET /calendar/events?from=...&to=...
+    API->>DB: Determine visibility scope
+    Note right of API: Filter by: tenant, program, cohort, user assignments
+    API->>DB: SELECT calendar_events
+    API-->>S: [{event}, ...]
+    
+    A->>API: PUT /calendar/events/:id
+    API->>DB: Verify creator or admin
+    API->>DB: UPDATE calendar_events
+    API-->>A: {event, ...}
+    
+    A->>API: DELETE /calendar/events/:id
+    API->>DB: Verify creator or admin
+    API->>DB: DELETE calendar_events
+    API-->>A: 200 OK

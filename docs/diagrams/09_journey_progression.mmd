@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant S as Student
+    participant API as Node Submission Handler
+    participant DB as PostgreSQL
+    participant PB as Playbook Manager
+
+    S->>API: GET /journey/nodes/:id/submission
+    API->>DB: Get/create node_instance
+    API->>PB: Get node definition
+    API->>DB: Get form data, slots, attachments
+    API-->>S: {node_id, state, form_data, slots}
+    
+    S->>API: PATCH /journey/nodes/:id/state
+    Note right of S: {state: "submitted"}
+    API->>DB: UPDATE node_instances.state
+    API->>DB: INSERT node_events
+    API-->>S: 200 OK
+    
+    API->>PB: GetNextNodes(current_node)
+    loop For each next node
+        API->>DB: Check prerequisites met
+        API->>DB: UPDATE/INSERT node_instances
+    end
