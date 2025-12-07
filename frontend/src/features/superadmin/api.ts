@@ -12,6 +12,7 @@ export interface Tenant {
   app_name?: string;
   primary_color: string;
   secondary_color: string;
+  enabled_services: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -133,6 +134,11 @@ export const tenantsApi = {
   delete: (id: string) =>
     superadminFetch<{ message: string }>(`/superadmin/tenants/${id}`, {
       method: 'DELETE',
+    }),
+  updateServices: (id: string, enabledServices: string[]) =>
+    superadminFetch<{ message: string; enabled_services: string[] }>(`/superadmin/tenants/${id}/services`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabled_services: enabledServices }),
     }),
 };
 

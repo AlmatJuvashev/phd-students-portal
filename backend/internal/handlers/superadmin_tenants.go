@@ -9,6 +9,7 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 // SuperadminTenantsHandler handles tenant CRUD operations for superadmins
@@ -24,20 +25,21 @@ func NewSuperadminTenantsHandler(db *sqlx.DB, cfg config.AppConfig) *SuperadminT
 
 // TenantResponse is the API response for a tenant
 type TenantResponse struct {
-	ID             string    `json:"id"`
-	Slug           string    `json:"slug"`
-	Name           string    `json:"name"`
-	TenantType     string    `json:"tenant_type"`
-	Domain         *string   `json:"domain"`
-	LogoURL        *string   `json:"logo_url"`
-	AppName        *string   `json:"app_name"`
-	PrimaryColor   string    `json:"primary_color"`
-	SecondaryColor string    `json:"secondary_color"`
-	IsActive       bool      `json:"is_active"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	UserCount      int       `json:"user_count"`
-	AdminCount     int       `json:"admin_count"`
+	ID              string         `json:"id" db:"id"`
+	Slug            string         `json:"slug" db:"slug"`
+	Name            string         `json:"name" db:"name"`
+	TenantType      string         `json:"tenant_type" db:"tenant_type"`
+	Domain          *string        `json:"domain" db:"domain"`
+	LogoURL         *string        `json:"logo_url" db:"logo_url"`
+	AppName         *string        `json:"app_name" db:"app_name"`
+	PrimaryColor    string         `json:"primary_color" db:"primary_color"`
+	SecondaryColor  string         `json:"secondary_color" db:"secondary_color"`
+	EnabledServices pq.StringArray `json:"enabled_services" db:"enabled_services"`
+	IsActive        bool           `json:"is_active" db:"is_active"`
+	CreatedAt       time.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at" db:"updated_at"`
+	UserCount       int            `json:"user_count" db:"user_count"`
+	AdminCount      int            `json:"admin_count" db:"admin_count"`
 }
 
 // ListTenants returns all tenants
@@ -47,6 +49,7 @@ func (h *SuperadminTenantsHandler) ListTenants(c *gin.Context) {
 		       t.domain, t.logo_url, t.app_name, 
 		       COALESCE(t.primary_color, '#3b82f6') as primary_color,
 		       COALESCE(t.secondary_color, '#1e40af') as secondary_color,
+		       COALESCE(t.enabled_services, ARRAY['chat', 'calendar']) as enabled_services,
 		       t.is_active, t.created_at, t.updated_at,
 		       COALESCE(u.user_count, 0) as user_count,
 		       COALESCE(a.admin_count, 0) as admin_count
@@ -84,6 +87,7 @@ func (h *SuperadminTenantsHandler) GetTenant(c *gin.Context) {
 		       t.domain, t.logo_url, t.app_name,
 		       COALESCE(t.primary_color, '#3b82f6') as primary_color,
 		       COALESCE(t.secondary_color, '#1e40af') as secondary_color,
+		       COALESCE(t.enabled_services, ARRAY['chat', 'calendar']) as enabled_services,
 		       t.is_active, t.created_at, t.updated_at,
 		       COALESCE(u.user_count, 0) as user_count,
 		       COALESCE(a.admin_count, 0) as admin_count
@@ -305,6 +309,55 @@ func (h *SuperadminTenantsHandler) UploadLogo(c *gin.Context) {
 	logActivity(h.db, c, "update", "tenant", id, "Updated tenant logo", nil)
 
 	c.JSON(http.StatusOK, gin.H{"logo_url": logoURL})
+}
+
+// UpdateTenantServicesRequest is the request body for updating tenant services
+type UpdateTenantServicesRequest struct {
+	EnabledServices []string `json:"enabled_services" binding:"required"`
+}
+
+// UpdateTenantServices updates the enabled services for a tenant
+func (h *SuperadminTenantsHandler) UpdateTenantServices(c *gin.Context) {
+	id := c.Param("id")
+
+	var req UpdateTenantServicesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate services - only allow valid optional services
+	validServices := map[string]bool{"chat": true, "calendar": true}
+	for _, svc := range req.EnabledServices {
+		if !validServices[svc] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid service: " + svc + ". Valid services: chat, calendar"})
+			return
+		}
+	}
+
+	query := `
+		UPDATE tenants SET enabled_services = $2, updated_at = now()
+		WHERE id = $1
+		RETURNING name
+	`
+	var name string
+	err := h.db.QueryRowx(query, id, pq.StringArray(req.EnabledServices)).Scan(&name)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "tenant not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update services"})
+		return
+	}
+
+	// Log activity
+	logActivity(h.db, c, "update", "tenant", id, "Updated tenant services for: "+name, nil)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":          "services updated",
+		"enabled_services": req.EnabledServices,
+	})
 }
 
 // Helper to check if error is duplicate key

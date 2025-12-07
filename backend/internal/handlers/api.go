@@ -103,9 +103,17 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	adminHandler := NewAdminHandler(db, cfg, playbookManager)
 	chatHandler := NewChatHandler(db, cfg, emailService)
 	contactsHandler := NewContactsHandler(db)
-	_ = NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL)) // TODO: use me handler for routes
+	meHandler := NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL))
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 	api.GET("/contacts", contactsHandler.PublicList)
+
+	// /me routes (require auth)
+	meGroup := api.Group("/me")
+	meGroup.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
+	{
+		meGroup.GET("/tenants", meHandler.MyTenants)
+		meGroup.GET("/tenant", meHandler.MyTenant)
+	}
 
 	// Checklist + Documents + Comments
 	check := NewChecklistHandler(db, cfg)
@@ -296,6 +304,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		superadmin.PUT("/tenants/:id", superadminTenantsHandler.UpdateTenant)
 		superadmin.DELETE("/tenants/:id", superadminTenantsHandler.DeleteTenant)
 		superadmin.POST("/tenants/:id/logo", superadminTenantsHandler.UploadLogo)
+		superadmin.PUT("/tenants/:id/services", superadminTenantsHandler.UpdateTenantServices)
 
 		// Admins management
 		superadmin.GET("/admins", superadminAdminsHandler.ListAdmins)

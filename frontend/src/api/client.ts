@@ -1,6 +1,8 @@
 export const API_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8280/api";
 
+import { getTenantHeaders } from '@/lib/tenant';
+
 export async function api<T = any>(
   path: string,
   opts: RequestInit = {}
@@ -28,6 +30,7 @@ export async function api<T = any>(
   const headers: Record<string, string> = {
     ...((opts.headers as Record<string, string>) || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...getTenantHeaders(), // Add X-Tenant-Slug header
   };
 
   if (!headers["Content-Type"] && !(opts.body instanceof FormData)) {
