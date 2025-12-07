@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { TenantSwitcher } from "@/components/TenantSwitcher";
 
 function SidebarNav({ collapsed }: { collapsed?: boolean }) {
   const { t } = useTranslation("common");
@@ -304,6 +305,7 @@ export function AdminLayout() {
             <span className="font-medium">{user?.email}</span>
           </div>
           <div className="flex items-center gap-3">
+            <TenantSwitcher />
             <LanguageSwitcher />
             <NotificationCenter />
             <span className="text-xs px-2 py-1 rounded bg-muted">

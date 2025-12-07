@@ -8,6 +8,8 @@ import {
   Users,
   CheckCircle,
   XCircle,
+  MessageCircle,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -255,6 +257,21 @@ export function TenantsPage() {
       queryClient.invalidateQueries({ queryKey: ['superadmin', 'tenants'] }),
   });
 
+  const updateServicesMutation = useMutation({
+    mutationFn: ({ id, services }: { id: string; services: string[] }) =>
+      tenantsApi.updateServices(id, services),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['superadmin', 'tenants'] }),
+  });
+
+  const toggleService = (tenant: Tenant, service: 'chat' | 'calendar') => {
+    const current = tenant.enabled_services || [];
+    const newServices = current.includes(service)
+      ? current.filter((s) => s !== service)
+      : [...current, service];
+    updateServicesMutation.mutate({ id: tenant.id, services: newServices });
+  };
+
   const openCreate = () => {
     setEditingTenant(undefined);
     setDialogOpen(true);
@@ -319,6 +336,7 @@ export function TenantsPage() {
                 <TableHead>{t('superadmin.tenants.name', 'Name')}</TableHead>
                 <TableHead>{t('superadmin.tenants.slug', 'Slug')}</TableHead>
                 <TableHead>{t('superadmin.tenants.type', 'Type')}</TableHead>
+                <TableHead>{t('superadmin.tenants.services', 'Services')}</TableHead>
                 <TableHead>{t('superadmin.tenants.users', 'Users')}</TableHead>
                 <TableHead>{t('superadmin.tenants.status', 'Status')}</TableHead>
                 <TableHead className="w-24"></TableHead>
@@ -350,6 +368,32 @@ export function TenantsPage() {
                       <span className="flex items-center gap-1">
                         {typeInfo.icon} {typeInfo.label}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className={`p-1.5 rounded-md transition-colors ${
+                            tenant.enabled_services?.includes('chat')
+                              ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                          onClick={() => toggleService(tenant, 'chat')}
+                          title={`Chat: ${tenant.enabled_services?.includes('chat') ? 'Enabled' : 'Disabled'}`}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </button>
+                        <button
+                          className={`p-1.5 rounded-md transition-colors ${
+                            tenant.enabled_services?.includes('calendar')
+                              ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                          onClick={() => toggleService(tenant, 'calendar')}
+                          title={`Calendar: ${tenant.enabled_services?.includes('calendar') ? 'Enabled' : 'Disabled'}`}
+                        >
+                          <Calendar className="h-4 w-4" />
+                        </button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm">
@@ -400,7 +444,7 @@ export function TenantsPage() {
               })}
               {(!tenants || tenants.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     {t('superadmin.tenants.empty', 'No institutions yet')}
                   </TableCell>
                 </TableRow>

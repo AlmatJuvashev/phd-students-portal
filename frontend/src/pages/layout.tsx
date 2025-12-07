@@ -16,6 +16,7 @@ import {
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServiceEnabled } from "@/contexts/TenantServicesContext";
 
@@ -114,7 +115,8 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
               <NavLinks />
             </div>
 
-            {/* Common Items (Notification & Language) */}
+            {/* Common Items (TenantSwitcher, Notification & Language) */}
+            {authed && <TenantSwitcher className="hidden sm:flex" />}
             {authed && <NotificationCenter />}
 
             <LanguageSwitcher />
