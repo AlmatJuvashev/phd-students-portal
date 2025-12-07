@@ -18,6 +18,7 @@ type ContactsHandler struct {
 
 type Contact struct {
 	ID        string       `db:"id" json:"id"`
+	TenantID  string       `db:"tenant_id" json:"tenant_id"` // Added for multitenancy
 	Name      LocalizedMap `db:"name" json:"name"`
 	Title     LocalizedMap `db:"title" json:"title,omitempty"`
 	Email     *string      `db:"email" json:"email,omitempty"`
@@ -95,6 +96,12 @@ func (h *ContactsHandler) Create(c *gin.Context) {
 		return
 	}
 
+	tenantID := c.GetString("tenant_id") // Get tenant from context
+	if tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return
+	}
+
 	sortOrder := 0
 	if req.SortOrder != nil {
 		sortOrder = *req.SortOrder
@@ -106,8 +113,9 @@ func (h *ContactsHandler) Create(c *gin.Context) {
 
 	var id string
 	err := h.db.QueryRow(
-		`INSERT INTO contacts (name, title, email, phone, sort_order, is_active)
-		 VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+		`INSERT INTO contacts (tenant_id, name, title, email, phone, sort_order, is_active)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		tenantID,
 		toJSON(req.Name),
 		toJSON(req.Title),
 		contactNullablePtr(req.Email),

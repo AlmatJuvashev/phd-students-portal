@@ -17,10 +17,23 @@ func TestContactsHandler_CRUD(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	// Create test tenant first
+	tenantID := "55555555-5555-5555-5555-555555555555"
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ($1, 'test-contacts', 'Test Contacts Tenant', 'university', true)
+		ON CONFLICT (id) DO NOTHING`, tenantID)
+	if err != nil {
+		t.Fatalf("Failed to create test tenant: %v", err)
+	}
+
 	h := handlers.NewContactsHandler(db)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID) // Set tenant_id for handlers
+		c.Next()
+	})
 	r.GET("/contacts/public", h.PublicList)
 	r.GET("/contacts/admin", h.AdminList)
 	r.POST("/contacts", h.Create)
@@ -42,10 +55,16 @@ func TestContactsHandler_CRUD(t *testing.T) {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
+		if w.Code != http.StatusCreated {
+			t.Logf("Create Contact failed with status %d: %s", w.Code, w.Body.String())
+		}
 		assert.Equal(t, http.StatusCreated, w.Code)
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
-		assert.NotEmpty(t, resp["id"])
+		if resp["id"] == nil {
+			t.FailNow()
+			return
+		}
 		contactID = resp["id"].(string)
 	})
 
