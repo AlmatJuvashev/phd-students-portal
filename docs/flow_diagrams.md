@@ -1,0 +1,567 @@
+# System Flow Diagrams
+
+This document provides visual flow diagrams for all major processes in the PhD Student Portal application. Each diagram shows the interaction between components with explanations.
+
+---
+
+## Table of Contents
+
+1. [Document Approval Workflow](#1-document-approval-workflow)
+2. [Chat Messaging Flow](#2-chat-messaging-flow)
+3. [Calendar Events Flow](#3-calendar-events-flow)
+4. [Notifications Flow](#4-notifications-flow)
+5. [S3 Document Upload/Download](#5-s3-document-uploaddownload)
+6. [Authentication Flow](#6-authentication-flow)
+7. [Student Journey Progression](#7-student-journey-progression)
+
+---
+
+## 1. Document Approval Workflow
+
+### Overview
+Students submit documents for advisor review. Advisors can approve, reject, or approve with comments. All assigned advisors receive notifications.
+
+### Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant S as Student
+    participant API as AttachUpload Handler
+    participant S3 as S3 Storage
+    participant DB as PostgreSQL
+    participant N as NotifyAdvisors
+    participant A as Advisor
+
+    %% Upload Phase
+    S->>API: POST /journey/nodes/:id/uploads/presign
+    API->>S3: PresignPut(objectKey)
+    S3-->>API: Signed URL
+    API-->>S: {presign_url, object_key}
+    
+    S->>S3: PUT file to presigned URL
+    S3-->>S: 200 OK + ETag
+    
+    S->>API: POST /journey/nodes/:id/uploads/attach
+    API->>DB: Begin transaction
+    API->>DB: INSERT document_versions
+    API->>DB: INSERT node_instance_slot_attachments
+    API->>DB: UPDATE node_instances.state = 'submitted'
+    API->>DB: Commit transaction
+    API-->>N: NotifyAdvisorsOnSubmission (async)
+    N->>DB: Get advisors for student
+    N->>DB: INSERT admin_notifications
+    API-->>S: 200 OK
+    
+    %% Review Phase
+    A->>API: PATCH /admin/attachments/:id/review
+    API->>DB: Verify advisor assigned to student
+    API->>DB: UPDATE attachment.status
+    API->>DB: UPDATE node_instances.state
+    API-->>A: 200 OK
+```
+
+### Key Points
+
+| Step | Description |
+|------|-------------|
+| Presign | Get a time-limited S3 upload URL (15 min default) |
+| Direct Upload | Student uploads directly to S3, bypassing API |
+| Attach | Link the S3 object to the node instance |
+| Notify | All assigned advisors get a shared notification |
+| Review | Advisor approves/rejects, updates node state |
+
+### Status Mappings
+
+| Attachment Status | → Node State |
+|-------------------|--------------|
+| `submitted` | `under_review` |
+| `approved` | `done` |
+| `approved_with_comments` | `done` |
+| `rejected` | `needs_fixes` |
+
+---
+
+## 2. Chat Messaging Flow
+
+### Overview
+Real-time chat between students, advisors, and admins. Supports rooms, direct messages, file attachments, and read receipts.
+
+### Message Flow
+
+```mermaid
+sequenceDiagram
+    participant U1 as User 1
+    participant API as Chat Handler
+    participant DB as PostgreSQL
+    participant S3 as S3 Storage
+    participant U2 as User 2
+
+    %% Room Creation (Admin)
+    Note over U1,API: Admin creates room
+    U1->>API: POST /chat/rooms
+    API->>DB: INSERT chat_rooms
+    API->>DB: INSERT chat_room_members (creator)
+    API-->>U1: {room_id, ...}
+    
+    %% Add Members
+    U1->>API: POST /chat/rooms/:id/members
+    API->>DB: INSERT chat_room_members
+    API-->>U1: 200 OK
+    
+    %% Send Message
+    U1->>API: POST /chat/rooms/:id/messages
+    API->>DB: Verify membership
+    API->>DB: INSERT chat_messages
+    API-->>U1: {message_id, ...}
+    
+    %% List Messages
+    U2->>API: GET /chat/rooms/:id/messages
+    API->>DB: SELECT chat_messages (paginated)
+    API-->>U2: [{message}, ...]
+    
+    %% Mark as Read
+    U2->>API: POST /chat/rooms/:id/read
+    API->>DB: UPDATE chat_room_members.last_read_at
+    API-->>U2: 200 OK
+```
+
+### File Attachment Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant API as Chat Handler
+    participant S3 as S3 Storage
+    participant DB as PostgreSQL
+
+    %% Upload
+    U->>API: POST /chat/upload (multipart)
+    API->>S3: PutObject(file)
+    S3-->>API: object_key, ETag
+    API-->>U: {object_key, download_url}
+    
+    %% Send with attachment
+    U->>API: POST /chat/rooms/:id/messages
+    Note right of API: attachments: [{object_key, name, size}]
+    API->>DB: INSERT chat_messages
+    API-->>U: {message_id, ...}
+    
+    %% Download
+    U->>API: GET /chat/download/:object_key
+    API->>S3: PresignGet(object_key)
+    S3-->>API: Signed URL
+    API-->>U: Redirect to presigned URL
+```
+
+### Chat Components
+
+| Component | Purpose |
+|-----------|---------|
+| `chat_rooms` | Stores room name, type (group/direct), archived status |
+| `chat_room_members` | Many-to-many with roles (admin/member), last_read_at |
+| `chat_messages` | Message body, sender, attachments JSONB, importance |
+| Unread Count | `COUNT(*) WHERE created_at > last_read_at` |
+
+---
+
+## 3. Calendar Events Flow
+
+### Overview
+Admins/advisors can create calendar events visible to students based on permissions and scope.
+
+### Event Creation Flow
+
+```mermaid
+sequenceDiagram
+    participant A as Admin
+    participant API as Calendar Handler
+    participant DB as PostgreSQL
+    participant S as Student
+
+    %% Create Event
+    A->>API: POST /calendar/events
+    Note right of API: {title, start, end, scope, recurrence}
+    API->>DB: Permission check (is admin/advisor?)
+    API->>DB: INSERT calendar_events
+    API-->>A: {event_id, ...}
+    
+    %% List Events (Student)
+    S->>API: GET /calendar/events?from=...&to=...
+    API->>DB: Determine visibility scope
+    Note right of API: Filter by: tenant, program, cohort, user assignments
+    API->>DB: SELECT calendar_events
+    API-->>S: [{event}, ...]
+    
+    %% Update Event
+    A->>API: PUT /calendar/events/:id
+    API->>DB: Verify creator or admin
+    API->>DB: UPDATE calendar_events
+    API-->>A: {event, ...}
+    
+    %% Delete Event
+    A->>API: DELETE /calendar/events/:id
+    API->>DB: Verify creator or admin
+    API->>DB: DELETE calendar_events
+    API-->>A: 200 OK
+```
+
+### Event Visibility Rules
+
+| Scope | Visible To |
+|-------|------------|
+| `tenant` | All users in tenant |
+| `program` | Users in specific program |
+| `cohort` | Users in specific cohort |
+| `personal` | Creator + specific attendees |
+
+### Event Types
+
+```mermaid
+graph LR
+    E[Event] --> D[deadline]
+    E --> M[meeting]
+    E --> S[seminar]
+    E --> O[other]
+```
+
+---
+
+## 4. Notifications Flow
+
+### Overview
+Two notification systems: user notifications (bell icon) and admin notifications (review queue).
+
+### User Notification Flow
+
+```mermaid
+sequenceDiagram
+    participant SYS as System/Event
+    participant DB as PostgreSQL
+    participant U as User
+    participant API as Notification Handler
+
+    %% Create Notification
+    SYS->>DB: INSERT notifications
+    Note right of SYS: {user_id, type, message, link}
+    
+    %% Poll Unread
+    U->>API: GET /notifications/unread
+    API->>DB: SELECT WHERE user_id AND read_at IS NULL
+    API-->>U: [{id, type, message}, ...]
+    
+    %% Mark as Read
+    U->>API: POST /notifications/:id/read
+    API->>DB: UPDATE notifications SET read_at = NOW()
+    API-->>U: 200 OK
+    
+    %% Mark All Read
+    U->>API: POST /notifications/read-all
+    API->>DB: UPDATE notifications SET read_at = NOW() WHERE user_id
+    API-->>U: 200 OK
+```
+
+### Admin Notification Flow (Document Review)
+
+```mermaid
+sequenceDiagram
+    participant S as Student
+    participant SYS as NotifyAdvisors
+    participant DB as PostgreSQL
+    participant A as Advisor
+    participant API as Admin Handler
+
+    %% Student submits
+    S->>SYS: Document submitted
+    SYS->>DB: Get advisors for student
+    SYS->>DB: INSERT admin_notifications
+    Note right of DB: event_type='document_submitted'
+    
+    %% Advisor views queue
+    A->>API: GET /admin/pending-reviews
+    API->>DB: SELECT admin_notifications
+    API-->>A: [{student, node, submitted_at}, ...]
+    
+    %% Advisor reviews
+    A->>API: PATCH /admin/attachments/:id/review
+    API->>DB: UPDATE attachment status + node state
+    API-->>A: 200 OK
+```
+
+### Notification Types
+
+| Type | Trigger | Target |
+|------|---------|--------|
+| `document_submitted` | Student uploads | Assigned advisors |
+| `document_reviewed` | Advisor approves/rejects | Student |
+| `deadline_reminder` | Cron job | Students with upcoming deadlines |
+| `chat_mention` | @mention in chat | Mentioned user |
+
+---
+
+## 5. S3 Document Upload/Download
+
+### Overview
+All files are stored in S3 (MinIO in dev). The API generates presigned URLs for secure direct access.
+
+### Upload Flow (Presign Pattern)
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Backend
+    participant S3 as S3/MinIO
+
+    %% Step 1: Request presigned URL
+    C->>API: POST /upload/presign
+    Note right of C: {content_type, filename}
+    API->>API: ValidateContentType()
+    API->>API: GenerateObjectKey()
+    API->>S3: PresignPut(key, content_type, 15min)
+    S3-->>API: Signed URL
+    API-->>C: {presign_url, object_key}
+    
+    %% Step 2: Direct upload
+    C->>S3: PUT file with headers
+    Note right of C: Content-Type must match
+    S3-->>C: 200 OK + ETag
+    
+    %% Step 3: Confirm upload
+    C->>API: POST /upload/confirm
+    Note right of C: {object_key, etag, size}
+    API->>S3: ObjectExists(key)
+    S3-->>API: true
+    API->>API: Link to document/attachment
+    API-->>C: 200 OK
+```
+
+### Download Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Backend
+    participant S3 as S3/MinIO
+
+    %% Request download
+    C->>API: GET /documents/:id/download
+    API->>API: Verify access permissions
+    API->>API: Lookup object_key in DB
+    API->>S3: PresignGet(object_key, 15min)
+    S3-->>API: Signed URL
+    API-->>C: Redirect 302 to signed URL
+    
+    %% Direct download
+    C->>S3: GET signed URL
+    S3-->>C: File content
+```
+
+### S3 Configuration
+
+| Env Variable | Purpose |
+|--------------|---------|
+| `S3_BUCKET` | Bucket name |
+| `S3_ENDPOINT` | MinIO URL (dev) or AWS S3 |
+| `S3_ACCESS_KEY_ID` | Access credentials |
+| `S3_SECRET_ACCESS_KEY` | Secret credentials |
+| `S3_PRESIGN_EXPIRES_MINUTES` | URL validity (default: 15) |
+| `S3_MAX_FILE_SIZE_MB` | Upload limit (default: 100) |
+
+### Allowed Content Types
+
+```
+application/pdf
+application/msword
+application/vnd.openxmlformats-officedocument.wordprocessingml.document
+image/jpeg, image/png, image/gif
+text/plain
+application/zip
+```
+
+---
+
+## 6. Authentication Flow
+
+### Overview
+JWT-based authentication with refresh tokens. Supports multitenancy via X-Tenant-Slug header.
+
+### Login Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant API as Auth Handler
+    participant DB as PostgreSQL
+    participant JWT as JWT Service
+
+    %% Login
+    U->>API: POST /auth/login
+    Note right of U: {email, password, tenant_slug?}
+    API->>DB: Find user by email
+    API->>API: bcrypt.Compare(password, hash)
+    API->>DB: Get user's tenant memberships
+    API->>JWT: Generate access token (15min)
+    API->>JWT: Generate refresh token (7d)
+    API->>DB: Store refresh token
+    API-->>U: {access_token, refresh_token, user, tenants}
+```
+
+### Refresh Token Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant API as Auth Handler
+    participant DB as PostgreSQL
+    participant JWT as JWT Service
+
+    %% Access token expired
+    U->>API: POST /auth/refresh
+    Note right of U: {refresh_token}
+    API->>DB: Verify refresh token exists
+    API->>JWT: Validate refresh token expiry
+    API->>JWT: Generate new access token
+    API-->>U: {access_token}
+```
+
+### Tenant Switching Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant API as Me Handler
+    participant DB as PostgreSQL
+
+    %% Get available tenants
+    U->>API: GET /me/tenants
+    API->>DB: Get user's tenant memberships
+    API-->>U: [{tenant_id, slug, name, role}, ...]
+    
+    %% Switch tenant
+    U->>API: POST /me/tenant
+    Note right of U: {tenant_slug}
+    API->>DB: Verify membership
+    API-->>U: {tenant, role}
+    
+    %% Subsequent requests
+    Note over U,API: X-Tenant-Slug: selected_tenant
+```
+
+### JWT Claims
+
+```json
+{
+  "sub": "user_id",
+  "email": "user@example.com",
+  "role": "student|advisor|admin|superadmin",
+  "tenant_id": "uuid",
+  "is_superadmin": false,
+  "exp": 1234567890
+}
+```
+
+---
+
+## 7. Student Journey Progression
+
+### Overview
+Students progress through a playbook of nodes (tasks). Nodes can have prerequisites, deadlines, and different types.
+
+### Node State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> locked: Prerequisites not met
+    locked --> active: Prerequisites completed
+    active --> submitted: Student submits
+    submitted --> under_review: Advisor starts review
+    under_review --> done: Approved
+    under_review --> needs_fixes: Rejected
+    needs_fixes --> submitted: Student resubmits
+    done --> [*]
+```
+
+### Journey Progression Flow
+
+```mermaid
+sequenceDiagram
+    participant S as Student
+    participant API as Node Submission Handler
+    participant DB as PostgreSQL
+    participant PB as Playbook Manager
+
+    %% Get current state
+    S->>API: GET /journey/nodes/:id/submission
+    API->>DB: Get/create node_instance
+    API->>PB: Get node definition
+    API->>DB: Get form data, slots, attachments
+    API-->>S: {node_id, state, form_data, slots}
+    
+    %% Submit node
+    S->>API: PATCH /journey/nodes/:id/state
+    Note right of S: {state: "submitted"}
+    API->>DB: UPDATE node_instances.state
+    API->>DB: INSERT node_events
+    API-->>S: 200 OK
+    
+    %% Activate next nodes
+    API->>PB: GetNextNodes(current_node)
+    loop For each next node
+        API->>DB: Check prerequisites met
+        API->>DB: UPDATE/INSERT node_instances
+    end
+```
+
+### Node Types
+
+```mermaid
+graph TB
+    N[Node Types] --> I[info]
+    N --> F[form]
+    N --> C[confirmTask]
+    N --> D[decision]
+    
+    I --> |Read only| IL[Display instructions]
+    F --> |Fill data| FL[Profile fields, text inputs]
+    C --> |Upload docs| CL[File uploads, signatures]
+    D --> |Choose path| DL[Branching logic]
+```
+
+### Playbook Structure
+
+```json
+{
+  "version": "1.0",
+  "nodes": {
+    "S1_profile": {
+      "type": "form",
+      "title": {"en": "Profile"},
+      "requirements": {"fields": ["full_name", "email"]}
+    },
+    "S2_confirm_theme": {
+      "type": "confirmTask",
+      "requirements": {"uploads": [{"key": "theme_doc"}]},
+      "prerequisites": ["S1_profile"]
+    }
+  }
+}
+```
+
+---
+
+## Quick Reference
+
+### API Endpoints Summary
+
+| Module | Method | Endpoint | Description |
+|--------|--------|----------|-------------|
+| Auth | POST | `/auth/login` | Login |
+| Auth | POST | `/auth/refresh` | Refresh token |
+| Journey | GET | `/journey/nodes/:id/submission` | Get node state |
+| Journey | PATCH | `/journey/nodes/:id/state` | Update state |
+| Journey | POST | `/journey/nodes/:id/uploads/attach` | Attach file |
+| Admin | PATCH | `/admin/attachments/:id/review` | Review doc |
+| Chat | GET | `/chat/rooms` | List rooms |
+| Chat | POST | `/chat/rooms/:id/messages` | Send message |
+| Calendar | GET | `/calendar/events` | List events |
+| Calendar | POST | `/calendar/events` | Create event |
+| Notifications | GET | `/notifications/unread` | Get unread |
