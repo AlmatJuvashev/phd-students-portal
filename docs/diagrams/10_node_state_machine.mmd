@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> locked: Prerequisites not met
+    locked --> active: Prerequisites completed
+    active --> submitted: Student submits
+    submitted --> under_review: Advisor starts review
+    under_review --> done: Approved
+    under_review --> needs_fixes: Rejected
+    needs_fixes --> submitted: Student resubmits
+    done --> [*]

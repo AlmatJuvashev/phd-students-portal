@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant U1 as User 1
+    participant API as Chat Handler
+    participant DB as PostgreSQL
+    participant U2 as User 2
+
+    Note over U1,API: Admin creates room
+    U1->>API: POST /chat/rooms
+    API->>DB: INSERT chat_rooms
+    API->>DB: INSERT chat_room_members (creator)
+    API-->>U1: {room_id, ...}
+    
+    U1->>API: POST /chat/rooms/:id/members
+    API->>DB: INSERT chat_room_members
+    API-->>U1: 200 OK
+    
+    U1->>API: POST /chat/rooms/:id/messages
+    API->>DB: Verify membership
+    API->>DB: INSERT chat_messages
+    API-->>U1: {message_id, ...}
+    
+    U2->>API: GET /chat/rooms/:id/messages
+    API->>DB: SELECT chat_messages (paginated)
+    API-->>U2: [{message}, ...]
+    
+    U2->>API: POST /chat/rooms/:id/read
+    API->>DB: UPDATE chat_room_members.last_read_at
+    API-->>U2: 200 OK

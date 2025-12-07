@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant C as Client
+    participant API as Backend
+    participant S3 as S3/MinIO
+
+    C->>API: GET /documents/:id/download
+    API->>API: Verify access permissions
+    API->>API: Lookup object_key in DB
+    API->>S3: PresignGet(object_key, 15min)
+    S3-->>API: Signed URL
+    API-->>C: Redirect 302 to signed URL
+    
+    C->>S3: GET signed URL
+    S3-->>C: File content

@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant SYS as System/Event
+    participant DB as PostgreSQL
+    participant U as User
+    participant API as Notification Handler
+
+    SYS->>DB: INSERT notifications
+    Note right of SYS: {user_id, type, message, link}
+    
+    U->>API: GET /notifications/unread
+    API->>DB: SELECT WHERE user_id AND read_at IS NULL
+    API-->>U: [{id, type, message}, ...]
+    
+    U->>API: POST /notifications/:id/read
+    API->>DB: UPDATE notifications SET read_at = NOW()
+    API-->>U: 200 OK
+    
+    U->>API: POST /notifications/read-all
+    API->>DB: UPDATE notifications SET read_at = NOW() WHERE user_id
+    API-->>U: 200 OK
