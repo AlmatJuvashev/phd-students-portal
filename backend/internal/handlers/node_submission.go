@@ -426,6 +426,13 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		handleNodeErr(c, err)
 		return
 	}
+	
+	// Notify assigned advisors about the submission (non-blocking, errors just logged)
+	go func() {
+		if err := services.NotifyAdvisorsOnSubmission(h.db, uid, nodeID, inst.ID, ""); err != nil {
+			log.Printf("[AttachUpload] NotifyAdvisors error (non-fatal): %v", err)
+		}
+	}()
 	log.Printf("[AttachUpload] Building submission DTO...")
 	dto, err := h.buildSubmissionDTO(inst.ID)
 	if err != nil {

@@ -830,7 +830,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		return
 	}
 	status := strings.ToLower(strings.TrimSpace(body.Status))
-	allowed := map[string]bool{"approved": true, "rejected": true, "submitted": true}
+	allowed := map[string]bool{"approved": true, "approved_with_comments": true, "rejected": true, "submitted": true}
 	if !allowed[status] {
 		c.JSON(400, gin.H{"error": "invalid status"})
 		return
@@ -848,13 +848,14 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		NodeID     string `db:"node_id"`
 		StudentID  string `db:"user_id"`
 		State      string `db:"state"`
+		TenantID   string `db:"tenant_id"`
 	}
-	err = tx.QueryRowx(`SELECT ni.id AS instance_id, s.id AS slot_id, s.slot_key, ni.node_id, ni.user_id, ni.state
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, s.id AS slot_id, s.slot_key, ni.node_id, ni.user_id, ni.state, ni.tenant_id
 		FROM node_instance_slot_attachments a
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		JOIN node_instances ni ON ni.id=s.node_instance_id
 		WHERE a.id=$1 AND a.is_active=true`, attachmentID).
-		Scan(&meta.InstanceID, &meta.SlotID, &meta.SlotKey, &meta.NodeID, &meta.StudentID, &meta.State)
+		Scan(&meta.InstanceID, &meta.SlotID, &meta.SlotKey, &meta.NodeID, &meta.StudentID, &meta.State, &meta.TenantID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(404, gin.H{"error": "attachment not found"})
@@ -874,7 +875,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	log.Printf("[ReviewAttachment] attachmentID=%s status=%s note=%q actorID=%s", attachmentID, status, body.Note, actorID)
 	
 	// Update attachment with status and note
-	if status == "approved" || status == "rejected" {
+	if status == "approved" || status == "approved_with_comments" || status == "rejected" {
 		// For approved/rejected, set approved_by and approved_at
 		_, err = tx.Exec(`UPDATE node_instance_slot_attachments SET 
 			status=$1, 
@@ -927,7 +928,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	}
 	_ = tx.QueryRowx(`SELECT
 		COALESCE(SUM(CASE WHEN a.status='submitted' THEN 1 ELSE 0 END),0) AS submitted,
-		COALESCE(SUM(CASE WHEN a.status='approved' THEN 1 ELSE 0 END),0) AS approved,
+		COALESCE(SUM(CASE WHEN a.status IN ('approved', 'approved_with_comments') THEN 1 ELSE 0 END),0) AS approved,
 		COALESCE(SUM(CASE WHEN a.status='rejected' THEN 1 ELSE 0 END),0) AS rejected
 		FROM node_instance_slot_attachments a
 		JOIN node_instance_slots s ON s.id=a.slot_id
@@ -941,6 +942,9 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		switch {
 		case latestFileStatus == "approved":
 			// Latest file is approved - node is complete
+			newState = "done"
+		case latestFileStatus == "approved_with_comments":
+			// Approved with minor feedback - node is complete but student can see feedback
 			newState = "done"
 		case latestFileStatus == "rejected":
 			// Latest file is rejected - student needs to fix and resubmit
@@ -974,9 +978,9 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 			log.Printf("[ReviewAttachment] Warning: failed to update other instances: %v", err)
 		}
 		
-		_, _ = tx.Exec(`INSERT INTO journey_states (user_id, node_id, state)
-			VALUES ($1,$2,$3)
-			ON CONFLICT (user_id,node_id) DO UPDATE SET state=$3, updated_at=now()`, meta.StudentID, meta.NodeID, newState)
+		_, _ = tx.Exec(`INSERT INTO journey_states (tenant_id, user_id, node_id, state)
+			VALUES ($1,$2,$3,$4)
+			ON CONFLICT (user_id,node_id) DO UPDATE SET state=$4, updated_at=now()`, meta.TenantID, meta.StudentID, meta.NodeID, newState)
 		_ = insertNodeEvent(tx, meta.InstanceID, "state_changed", actorID, map[string]any{"from": meta.State, "to": newState})
 	}
 	if err := tx.Commit(); err != nil {
