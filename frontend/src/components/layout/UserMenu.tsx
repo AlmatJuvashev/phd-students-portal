@@ -19,6 +19,7 @@ export function UserMenu() {
         <Button
           variant="ghost"
           className="relative h-9 w-9 rounded-full ml-2"
+          data-testid="user-menu-button"
         >
           <Avatar className="h-9 w-9 border border-border">
             <AvatarImage src={me?.avatar_url} />

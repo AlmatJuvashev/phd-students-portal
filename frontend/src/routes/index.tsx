@@ -109,6 +109,24 @@ const AnalyticsDashboard = lazy(() =>
   import("@/features/analytics/AnalyticsDashboard").then((m) => ({ default: m.AnalyticsDashboard }))
 );
 
+// Superadmin pages
+const SuperadminLayout = lazy(() =>
+  import("@/layouts/SuperadminLayout").then((m) => ({ default: m.SuperadminLayout }))
+);
+const TenantsPage = lazy(() =>
+  import("@/features/superadmin/tenants/TenantsPage").then((m) => ({ default: m.TenantsPage }))
+);
+const AdminsPage = lazy(() =>
+  import("@/features/superadmin/admins/AdminsPage").then((m) => ({ default: m.AdminsPage }))
+);
+const LogsPage = lazy(() =>
+  import("@/features/superadmin/logs/LogsPage").then((m) => ({ default: m.LogsPage }))
+);
+const SettingsPage = lazy(() =>
+  import("@/features/superadmin/settings/SettingsPage").then((m) => ({ default: m.SettingsPage }))
+);
+
+
 const WithSuspense = (el: React.ReactNode) => (
   <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
     {el}
@@ -294,6 +312,20 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      { path: "*", element: <NotFound /> },
+    ],
+  },
+  // Superadmin routes (platform administration)
+  {
+    path: "/superadmin",
+    element: WithSuspense(<SuperadminLayout />),
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      { index: true, element: WithSuspense(<TenantsPage />) },
+      { path: "tenants", element: WithSuspense(<TenantsPage />) },
+      { path: "admins", element: WithSuspense(<AdminsPage />) },
+      { path: "logs", element: WithSuspense(<LogsPage />) },
+      { path: "settings", element: WithSuspense(<SettingsPage />) },
       { path: "*", element: <NotFound /> },
     ],
   },

@@ -1,0 +1,690 @@
+=== RUN   TestApp7_NormalizePayload
+--- PASS: TestApp7_NormalizePayload (0.00s)
+=== RUN   TestApp7_Summarize
+--- PASS: TestApp7_Summarize (0.00s)
+=== RUN   TestApp7_ValidateEntry
+=== RUN   TestApp7_ValidateEntry/Valid_Entry
+=== RUN   TestApp7_ValidateEntry/Missing_Title
+=== RUN   TestApp7_ValidateEntry/Title_Too_Long
+=== RUN   TestApp7_ValidateEntry/Invalid_Year
+=== RUN   TestApp7_ValidateEntry/Invalid_ISSN
+=== RUN   TestApp7_ValidateEntry/Missing_IP_Type
+--- PASS: TestApp7_ValidateEntry (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Valid_Entry (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Missing_Title (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Title_Too_Long (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Invalid_Year (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Invalid_ISSN (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Missing_IP_Type (0.00s)
+=== RUN   TestNotificationsHandler_ListNotifications
+=== RUN   TestNotificationsHandler_ListNotifications/List_All
+2025/12/06 08:21:31 [ListNotifications] Starting - unreadOnly: false
+2025/12/06 08:21:31 [ListNotifications] Executing query: 
+		SELECT 
+			n.id,
+			n.student_id,
+			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
+			COALESCE(u.email, '') as student_email,
+			n.node_id,
+			COALESCE(n.node_instance_id::text, '') as node_instance_id,
+			n.event_type,
+			n.is_read,
+			n.message,
+			n.metadata::text as metadata,
+			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM admin_notifications n
+		JOIN users u ON u.id = n.student_id
+	 ORDER BY n.created_at DESC LIMIT 100
+2025/12/06 08:21:31 [ListNotifications] Found 2 notifications
+2025/12/06 08:21:31 [ListNotifications] First notification: id=f42c8c50-a1b4-4f15-92d4-b9ca1bec87e3, student=Admin Notif, node=node1, message=Admin Msg 2
+2025/12/06 08:21:31 [ListNotifications] Returning 2 notifications
+=== RUN   TestNotificationsHandler_ListNotifications/List_Unread_Only
+2025/12/06 08:21:31 [ListNotifications] Starting - unreadOnly: true
+2025/12/06 08:21:31 [ListNotifications] Executing query: 
+		SELECT 
+			n.id,
+			n.student_id,
+			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
+			COALESCE(u.email, '') as student_email,
+			n.node_id,
+			COALESCE(n.node_instance_id::text, '') as node_instance_id,
+			n.event_type,
+			n.is_read,
+			n.message,
+			n.metadata::text as metadata,
+			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM admin_notifications n
+		JOIN users u ON u.id = n.student_id
+	 WHERE n.is_read = false ORDER BY n.created_at DESC LIMIT 100
+2025/12/06 08:21:31 [ListNotifications] Found 1 notifications
+2025/12/06 08:21:31 [ListNotifications] First notification: id=95939c41-dac1-4848-9871-7bc78b6caec2, student=Admin Notif, node=node1, message=Admin Msg 1
+2025/12/06 08:21:31 [ListNotifications] Returning 1 notifications
+--- PASS: TestNotificationsHandler_ListNotifications (0.63s)
+    --- PASS: TestNotificationsHandler_ListNotifications/List_All (0.00s)
+    --- PASS: TestNotificationsHandler_ListNotifications/List_Unread_Only (0.00s)
+=== RUN   TestNotificationsHandler_GetUnreadCount
+=== RUN   TestNotificationsHandler_GetUnreadCount/Get_Count
+--- PASS: TestNotificationsHandler_GetUnreadCount (0.58s)
+    --- PASS: TestNotificationsHandler_GetUnreadCount/Get_Count (0.00s)
+=== RUN   TestNotificationsHandler_MarkAsRead
+=== RUN   TestNotificationsHandler_MarkAsRead/Mark_As_Read
+--- PASS: TestNotificationsHandler_MarkAsRead (0.51s)
+    --- PASS: TestNotificationsHandler_MarkAsRead/Mark_As_Read (0.00s)
+=== RUN   TestNotificationsHandler_MarkAllAsRead
+=== RUN   TestNotificationsHandler_MarkAllAsRead/Mark_All_As_Read
+--- PASS: TestNotificationsHandler_MarkAllAsRead (0.52s)
+    --- PASS: TestNotificationsHandler_MarkAllAsRead/Mark_All_As_Read (0.00s)
+=== RUN   TestAdminHandler_StudentProgress
+=== RUN   TestAdminHandler_StudentProgress/List_Student_Progress
+--- PASS: TestAdminHandler_StudentProgress (0.60s)
+    --- PASS: TestAdminHandler_StudentProgress/List_Student_Progress (0.01s)
+=== RUN   TestAdminHandler_MonitorStudents
+=== RUN   TestAdminHandler_MonitorStudents/Admin_List_All
+=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Assigned
+=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty)
+=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Program
+=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program
+--- PASS: TestAdminHandler_MonitorStudents (0.52s)
+    --- PASS: TestAdminHandler_MonitorStudents/Admin_List_All (0.02s)
+    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Assigned (0.01s)
+    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty) (0.00s)
+    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Program (0.01s)
+    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program (0.00s)
+=== RUN   TestAdminHandler_GetStudentDetails
+=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Success
+=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Not_Found
+--- PASS: TestAdminHandler_GetStudentDetails (0.40s)
+    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Success (0.00s)
+    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Not_Found (0.00s)
+=== RUN   TestAdminHandler_StudentJourney
+=== RUN   TestAdminHandler_StudentJourney/Get_Student_Journey
+--- PASS: TestAdminHandler_StudentJourney (0.35s)
+    --- PASS: TestAdminHandler_StudentJourney/Get_Student_Journey (0.00s)
+=== RUN   TestAdminHandler_ListStudentNodeFiles
+=== RUN   TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files
+2025/12/06 08:21:35 [ListStudentNodeFiles] studentID=10000000-0000-0000-0000-000000000006 nodeID=node1
+2025/12/06 08:21:35 [ListStudentNodeFiles] found instanceID=40b62f8f-9cae-4da7-8bb5-3e6088901cda
+2025/12/06 08:21:35 [ListStudentNodeFiles] returning 1 files
+--- PASS: TestAdminHandler_ListStudentNodeFiles (0.40s)
+    --- PASS: TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files (0.00s)
+=== RUN   TestAdminHandler_MonitorAnalytics
+=== RUN   TestAdminHandler_MonitorAnalytics/Get_Analytics
+--- PASS: TestAdminHandler_MonitorAnalytics (0.30s)
+    --- PASS: TestAdminHandler_MonitorAnalytics/Get_Analytics (0.00s)
+=== RUN   TestAdminHandler_ReviewAttachment
+=== RUN   TestAdminHandler_ReviewAttachment/Review_Attachment
+2025/12/06 08:21:36 [ReviewAttachment] attachmentID=550265c6-a1d5-4f01-95c3-671dd61ebf59 status=approved note="" actorID=99999999-9999-9999-9999-999999999999
+2025/12/06 08:21:36 [ReviewAttachment] Counts: submitted=0 approved=1 rejected=0 total=1 currentState=done latestFileStatus=approved
+2025/12/06 08:21:36 [ReviewAttachment] State transition: done -> done
+--- PASS: TestAdminHandler_ReviewAttachment (0.31s)
+    --- PASS: TestAdminHandler_ReviewAttachment/Review_Attachment (0.01s)
+=== RUN   TestAdminHandler_ListStudentProgress
+=== RUN   TestAdminHandler_ListStudentProgress/List_Student_Progress
+    admin_progress_test.go:529: Response: [{"id":"11111111-1111-1111-1111-111111111111","name":"Student One","email":"s1@ex.com","role":"student","progress":{"completed_nodes":1,"total_nodes":1,"percent":100,"current_node_id":"node1","last_submission_at":"2025-12-06T03:21:36Z"}}]
+--- PASS: TestAdminHandler_ListStudentProgress (0.30s)
+    --- PASS: TestAdminHandler_ListStudentProgress/List_Student_Progress (0.00s)
+=== RUN   TestAdminHandler_UploadReviewedDocument
+=== RUN   TestAdminHandler_UploadReviewedDocument/Upload_Reviewed_Document
+2025/12/06 08:21:36 [UploadReviewedDocument] attachmentID=4a49b2ff-2684-413e-9be9-1047ebaaf3a9 versionID=fa96777c-8e07-4da7-8e51-ae63eb597a5a actorID=10000000-0000-0000-0000-000000000000
+--- PASS: TestAdminHandler_UploadReviewedDocument (0.30s)
+    --- PASS: TestAdminHandler_UploadReviewedDocument/Upload_Reviewed_Document (0.00s)
+=== RUN   TestAdminHandler_PatchStudentNodeState
+=== RUN   TestAdminHandler_PatchStudentNodeState/Patch_Node_State
+--- PASS: TestAdminHandler_PatchStudentNodeState (0.28s)
+    --- PASS: TestAdminHandler_PatchStudentNodeState/Patch_Node_State (0.00s)
+=== RUN   TestAdminHandler_PresignReviewedDocumentUpload
+=== RUN   TestAdminHandler_PresignReviewedDocumentUpload/Presign_Upload
+--- PASS: TestAdminHandler_PresignReviewedDocumentUpload (0.33s)
+    --- PASS: TestAdminHandler_PresignReviewedDocumentUpload/Presign_Upload (0.00s)
+=== RUN   TestAdminHandler_AttachReviewedDocument
+=== RUN   TestAdminHandler_AttachReviewedDocument/Attach_Reviewed_Document
+2025/12/06 08:21:37 [AttachReviewedDocument] Creating version: doc_id=36e1985f-526b-495d-a06b-2ccae84ac178 object_key=reviewed/file.pdf bucket=test-bucket size=200 mime=application/pdf
+2025/12/06 08:21:37 [AttachReviewedDocument] Created version_id=1810db33-2628-49ad-90ef-dd482cebb93f, updating attachment 974cc1bb-a2b8-4d2f-96a8-46281daf38cf
+--- PASS: TestAdminHandler_AttachReviewedDocument (0.30s)
+    --- PASS: TestAdminHandler_AttachReviewedDocument/Attach_Reviewed_Document (0.00s)
+=== RUN   TestAnalyticsHandler_GetStageStats
+--- PASS: TestAnalyticsHandler_GetStageStats (0.25s)
+=== RUN   TestAnalyticsHandler_GetOverdueStats
+--- PASS: TestAnalyticsHandler_GetOverdueStats (0.25s)
+=== RUN   TestAuthHandler_Login
+=== RUN   TestAuthHandler_Login/Successful_Login
+    auth_test.go:51: Response body: {"role":"student","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjUwNzc2OTgsImlhdCI6MTc2NDk5MTI5OCwicm9sZSI6InN0dWRlbnQiLCJzdWIiOiIxMjNlNDU2Ny1lODliLTEyZDMtYTQ1Ni00MjY2MTQxNzQwMDAifQ.fPXUAGsib-rhx9Dxjb201r7wJEpgQWGaIuebBC_aJ-0"}
+=== RUN   TestAuthHandler_Login/Invalid_Password
+=== RUN   TestAuthHandler_Login/User_Not_Found
+--- PASS: TestAuthHandler_Login (0.47s)
+    --- PASS: TestAuthHandler_Login/Successful_Login (0.07s)
+    --- PASS: TestAuthHandler_Login/Invalid_Password (0.07s)
+    --- PASS: TestAuthHandler_Login/User_Not_Found (0.00s)
+=== RUN   TestCalendarHandler_CreateEvent
+=== RUN   TestCalendarHandler_CreateEvent/Create_Event_Success
+--- PASS: TestCalendarHandler_CreateEvent (0.24s)
+    --- PASS: TestCalendarHandler_CreateEvent/Create_Event_Success (0.00s)
+=== RUN   TestCalendarHandler_GetEvents
+=== RUN   TestCalendarHandler_GetEvents/Get_Events
+--- PASS: TestCalendarHandler_GetEvents (0.34s)
+    --- PASS: TestCalendarHandler_GetEvents/Get_Events (0.00s)
+=== RUN   TestCalendarHandler_UpdateDelete
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event
+2025/12/06 08:21:39 [UpdateEvent] Updating event c76e0013-2536-4d60-b42e-54e1cf440c2f for user 11111111-1111-1111-1111-111111111111
+2025/12/06 08:21:39 [UpdateEvent] Request data: title=New Title, start=2025-12-06T08:21:39+05:00, end=2025-12-06T09:21:39+05:00, type=academic
+2025/12/06 08:21:39 [UpdateEvent] Event c76e0013-2536-4d60-b42e-54e1cf440c2f updated successfully
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_Invalid_Time
+2025/12/06 08:21:39 [UpdateEvent] Updating event c76e0013-2536-4d60-b42e-54e1cf440c2f for user 11111111-1111-1111-1111-111111111111
+2025/12/06 08:21:39 [UpdateEvent] Request data: title=Invalid Time, start=invalid, end=invalid, type=academic
+2025/12/06 08:21:39 [UpdateEvent] ERROR parsing start_time 'invalid': parsing time "invalid" as "2006-01-02T15:04:05Z07:00": cannot parse "invalid" as "2006"
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_End_Before_Start
+2025/12/06 08:21:39 [UpdateEvent] Updating event c76e0013-2536-4d60-b42e-54e1cf440c2f for user 11111111-1111-1111-1111-111111111111
+2025/12/06 08:21:39 [UpdateEvent] Request data: title=End Before Start, start=2025-12-06T09:21:39+05:00, end=2025-12-06T08:21:39+05:00, type=academic
+2025/12/06 08:21:39 [UpdateEvent] ERROR: end_time is before start_time
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied
+    calendar_test.go:204: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/calendar_test.go:204
+        	Error:      	Received unexpected error:
+        	            	pq: insert or update on table "events" violates foreign key constraint "events_creator_id_fkey"
+        	Test:       	TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied
+=== RUN   TestCalendarHandler_UpdateDelete/Delete_Event
+--- FAIL: TestCalendarHandler_UpdateDelete (0.34s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event (0.00s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event_Invalid_Time (0.00s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event_End_Before_Start (0.00s)
+    --- FAIL: TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied (0.00s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Delete_Event (0.00s)
+=== RUN   TestChatHandler_RoomManagement
+=== RUN   TestChatHandler_RoomManagement/Update_Room
+=== RUN   TestChatHandler_RoomManagement/List_Rooms_(Empty_initially)
+--- PASS: TestChatHandler_RoomManagement (0.29s)
+    --- PASS: TestChatHandler_RoomManagement/Update_Room (0.00s)
+    --- PASS: TestChatHandler_RoomManagement/List_Rooms_(Empty_initially) (0.00s)
+=== RUN   TestChatHandler_Members
+=== RUN   TestChatHandler_Members/Add_Member
+=== RUN   TestChatHandler_Members/List_Members
+=== RUN   TestChatHandler_Members/Remove_Member
+--- PASS: TestChatHandler_Members (0.27s)
+    --- PASS: TestChatHandler_Members/Add_Member (0.00s)
+    --- PASS: TestChatHandler_Members/List_Members (0.00s)
+    --- PASS: TestChatHandler_Members/Remove_Member (0.00s)
+=== RUN   TestChatHandler_MessageOperations
+=== RUN   TestChatHandler_MessageOperations/Update_Message
+=== RUN   TestChatHandler_MessageOperations/Mark_As_Read
+=== RUN   TestChatHandler_MessageOperations/Delete_Message
+--- PASS: TestChatHandler_MessageOperations (0.26s)
+    --- PASS: TestChatHandler_MessageOperations/Update_Message (0.00s)
+    --- PASS: TestChatHandler_MessageOperations/Mark_As_Read (0.00s)
+    --- PASS: TestChatHandler_MessageOperations/Delete_Message (0.00s)
+=== RUN   TestChatHandler_MessageCreation
+=== RUN   TestChatHandler_MessageCreation/Create_Message
+=== RUN   TestChatHandler_MessageCreation/List_Messages
+--- PASS: TestChatHandler_MessageCreation (0.32s)
+    --- PASS: TestChatHandler_MessageCreation/Create_Message (0.01s)
+    --- PASS: TestChatHandler_MessageCreation/List_Messages (0.00s)
+=== RUN   TestChatHandler_CreateRoom
+=== RUN   TestChatHandler_CreateRoom/Create_Room_Success
+--- PASS: TestChatHandler_CreateRoom (0.25s)
+    --- PASS: TestChatHandler_CreateRoom/Create_Room_Success (0.00s)
+=== RUN   TestChatHandler_Messages
+=== RUN   TestChatHandler_Messages/Send_Message
+=== RUN   TestChatHandler_Messages/List_Messages
+--- PASS: TestChatHandler_Messages (0.25s)
+    --- PASS: TestChatHandler_Messages/Send_Message (0.00s)
+    --- PASS: TestChatHandler_Messages/List_Messages (0.00s)
+=== RUN   TestChecklistHandler_ListModules
+--- PASS: TestChecklistHandler_ListModules (0.26s)
+=== RUN   TestChecklistHandler_ListStepsByModule
+--- PASS: TestChecklistHandler_ListStepsByModule (0.31s)
+=== RUN   TestChecklistHandler_ListStudentSteps
+--- PASS: TestChecklistHandler_ListStudentSteps (0.24s)
+=== RUN   TestChecklistHandler_UpdateStudentStep
+--- PASS: TestChecklistHandler_UpdateStudentStep (0.24s)
+=== RUN   TestChecklistHandler_AdvisorInbox
+--- PASS: TestChecklistHandler_AdvisorInbox (0.25s)
+=== RUN   TestChecklistHandler_ApproveStep
+--- PASS: TestChecklistHandler_ApproveStep (0.26s)
+=== RUN   TestChecklistHandler_ReturnStep
+--- PASS: TestChecklistHandler_ReturnStep (0.24s)
+=== RUN   TestCommentsHandler_CreateComment
+--- PASS: TestCommentsHandler_CreateComment (0.24s)
+=== RUN   TestCommentsHandler_GetComments
+--- PASS: TestCommentsHandler_GetComments (0.24s)
+=== RUN   TestContactsHandler_CRUD
+=== RUN   TestContactsHandler_CRUD/Create_Contact
+=== RUN   TestContactsHandler_CRUD/Public_List
+=== RUN   TestContactsHandler_CRUD/Update_Contact
+=== RUN   TestContactsHandler_CRUD/Admin_List
+=== RUN   TestContactsHandler_CRUD/Delete_Contact
+--- PASS: TestContactsHandler_CRUD (0.30s)
+    --- PASS: TestContactsHandler_CRUD/Create_Contact (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Public_List (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Update_Contact (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Admin_List (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Delete_Contact (0.00s)
+=== RUN   TestDictionaryHandler_Programs
+=== RUN   TestDictionaryHandler_Programs/Create_Program
+=== RUN   TestDictionaryHandler_Programs/List_Programs
+=== RUN   TestDictionaryHandler_Programs/Update_Program
+=== RUN   TestDictionaryHandler_Programs/Delete_Program
+--- PASS: TestDictionaryHandler_Programs (0.23s)
+    --- PASS: TestDictionaryHandler_Programs/Create_Program (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/List_Programs (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/Update_Program (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/Delete_Program (0.00s)
+=== RUN   TestDictionaryHandler_Departments
+=== RUN   TestDictionaryHandler_Departments/Create_Department
+=== RUN   TestDictionaryHandler_Departments/List_Departments
+=== RUN   TestDictionaryHandler_Departments/Update_Department
+=== RUN   TestDictionaryHandler_Departments/Delete_Department
+--- PASS: TestDictionaryHandler_Departments (0.22s)
+    --- PASS: TestDictionaryHandler_Departments/Create_Department (0.00s)
+    --- PASS: TestDictionaryHandler_Departments/List_Departments (0.00s)
+    --- PASS: TestDictionaryHandler_Departments/Update_Department (0.00s)
+    --- PASS: TestDictionaryHandler_Departments/Delete_Department (0.00s)
+=== RUN   TestDictionaryHandler_Cohorts
+=== RUN   TestDictionaryHandler_Cohorts/Create_Cohort
+=== RUN   TestDictionaryHandler_Cohorts/List_Cohorts
+=== RUN   TestDictionaryHandler_Cohorts/Update_Cohort
+=== RUN   TestDictionaryHandler_Cohorts/Delete_Cohort
+--- PASS: TestDictionaryHandler_Cohorts (0.23s)
+    --- PASS: TestDictionaryHandler_Cohorts/Create_Cohort (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/List_Cohorts (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/Update_Cohort (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/Delete_Cohort (0.00s)
+=== RUN   TestDictionaryHandler_Specialties
+=== RUN   TestDictionaryHandler_Specialties/List_Specialties
+--- PASS: TestDictionaryHandler_Specialties (0.23s)
+    --- PASS: TestDictionaryHandler_Specialties/List_Specialties (0.00s)
+=== RUN   TestDictionaryHandler_SpecialtyCRUD
+=== RUN   TestDictionaryHandler_SpecialtyCRUD/Create_Specialty
+=== RUN   TestDictionaryHandler_SpecialtyCRUD/Update_Specialty
+=== RUN   TestDictionaryHandler_SpecialtyCRUD/Delete_Specialty
+--- PASS: TestDictionaryHandler_SpecialtyCRUD (0.22s)
+    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Create_Specialty (0.00s)
+    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Update_Specialty (0.00s)
+    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Delete_Specialty (0.00s)
+=== RUN   TestDocumentsHandler_List
+=== RUN   TestDocumentsHandler_List/List_Documents
+--- PASS: TestDocumentsHandler_List (0.28s)
+    --- PASS: TestDocumentsHandler_List/List_Documents (0.00s)
+=== RUN   TestDocumentsHandler_Upload
+=== RUN   TestDocumentsHandler_Upload/Upload_Document_Version
+--- PASS: TestDocumentsHandler_Upload (0.21s)
+    --- PASS: TestDocumentsHandler_Upload/Upload_Document_Version (0.00s)
+=== RUN   TestDocumentsHandler_Delete
+=== RUN   TestDocumentsHandler_Delete/Delete_Document
+--- PASS: TestDocumentsHandler_Delete (0.33s)
+    --- PASS: TestDocumentsHandler_Delete/Delete_Document (0.00s)
+=== RUN   TestDocumentsHandler_Get
+=== RUN   TestDocumentsHandler_Get/Get_Document
+    documents_test.go:179: Response Code: 200
+    documents_test.go:180: Response Body: {"doc":{"id":"6eb6114d-4880-4c0e-8966-bba0ddc2f0b8","user_id":"30000000-0000-0000-0000-000000000004","title":"Get Doc","kind":"other","current_version_id":null},"versions":null}
+--- PASS: TestDocumentsHandler_Get (0.48s)
+    --- PASS: TestDocumentsHandler_Get/Get_Document (0.00s)
+=== RUN   TestDocumentsHandler_Create
+=== RUN   TestDocumentsHandler_Create/Create_Document
+    documents_test.go:235: Response Code: 200
+    documents_test.go:236: Response Body: {"id":"63e468d3-58a9-4ce4-98c7-a5c8876b51c0"}
+--- PASS: TestDocumentsHandler_Create (0.26s)
+    --- PASS: TestDocumentsHandler_Create/Create_Document (0.00s)
+=== RUN   TestDocumentsHandler_UploadVersion
+=== RUN   TestDocumentsHandler_UploadVersion/Upload_Version
+--- PASS: TestDocumentsHandler_UploadVersion (0.25s)
+    --- PASS: TestDocumentsHandler_UploadVersion/Upload_Version (0.00s)
+=== RUN   TestDocumentsHandler_PresignUpload
+=== RUN   TestDocumentsHandler_PresignUpload/Presign_Upload
+2025/12/06 08:21:46 [S3] Presigning PUT for key=4fc25d5e-4e6e-4fbf-a9be-a6feb2a74101/test.pdf bucket=test-bucket expires=15m0s
+--- PASS: TestDocumentsHandler_PresignUpload (0.25s)
+    --- PASS: TestDocumentsHandler_PresignUpload/Presign_Upload (0.00s)
+=== RUN   TestDocumentsHandler_PresignGetLatest
+=== RUN   TestDocumentsHandler_PresignGetLatest/Presign_Get_Latest
+2025/12/06 08:21:47 [S3] Presigning GET for key=path bucket=test-bucket expires=15m0s
+--- PASS: TestDocumentsHandler_PresignGetLatest (0.25s)
+    --- PASS: TestDocumentsHandler_PresignGetLatest/Presign_Get_Latest (0.00s)
+=== RUN   TestDocumentsHandler_DownloadVersion
+=== RUN   TestDocumentsHandler_DownloadVersion/Download_Version
+2025/12/06 08:21:47 [DownloadVersion] version=109c31aa-bedd-4d2f-9bd5-059c839ceeb4 storage_path=path bucket=bucket object_key=key size=100
+2025/12/06 08:21:47 [S3] Presigning GET for key=key bucket=test-bucket expires=15m0s
+2025/12/06 08:21:47 [DownloadVersion] redirecting to S3 presigned URL for key
+--- PASS: TestDocumentsHandler_DownloadVersion (0.93s)
+    --- PASS: TestDocumentsHandler_DownloadVersion/Download_Version (0.00s)
+=== RUN   TestJourneyHandler_GetState
+=== RUN   TestJourneyHandler_GetState/Get_State
+--- PASS: TestJourneyHandler_GetState (0.40s)
+    --- PASS: TestJourneyHandler_GetState/Get_State (0.00s)
+=== RUN   TestJourneyHandler_SetState
+=== RUN   TestJourneyHandler_SetState/Set_State_Success
+=== RUN   TestJourneyHandler_SetState/Set_State_Invalid
+--- PASS: TestJourneyHandler_SetState (0.44s)
+    --- PASS: TestJourneyHandler_SetState/Set_State_Success (0.00s)
+    --- PASS: TestJourneyHandler_SetState/Set_State_Invalid (0.00s)
+=== RUN   TestJourneyHandler_Reset
+=== RUN   TestJourneyHandler_Reset/Reset_Journey
+--- PASS: TestJourneyHandler_Reset (0.51s)
+    --- PASS: TestJourneyHandler_Reset/Reset_Journey (0.00s)
+=== RUN   TestMeHandler_Me
+=== RUN   TestMeHandler_Me/Get_Me_Success
+=== RUN   TestMeHandler_Me/Get_Me_Not_Found
+--- PASS: TestMeHandler_Me (0.36s)
+    --- PASS: TestMeHandler_Me/Get_Me_Success (0.00s)
+    --- PASS: TestMeHandler_Me/Get_Me_Not_Found (0.00s)
+=== RUN   TestInvalidNodeID
+--- PASS: TestInvalidNodeID (0.41s)
+=== RUN   TestUnauthorizedUser
+    node_errors_test.go:104: Unauthorized response: {"error":"unauthorized"}
+--- PASS: TestUnauthorizedUser (0.30s)
+=== RUN   TestMalformedJSON
+2025/12/06 08:21:50 [fetchSlots] instanceID=1442f756-dc08-4cc6-bf82-96c46c2c618e
+2025/12/06 08:21:50 [fetchSlots] returning 0 slots with total attachments
+    node_errors_test.go:160: Malformed JSON response: {"error":"invalid character 'o' in literal null (expecting 'u')"}
+--- PASS: TestMalformedJSON (0.38s)
+=== RUN   TestInvalidStateTransition
+2025/12/06 08:21:51 [fetchSlots] instanceID=ba9eea12-576c-4bcc-aa02-378356df0ee3
+2025/12/06 08:21:51 [fetchSlots] returning 0 slots with total attachments
+    node_errors_test.go:216: Invalid state transition response: {"error":"transition not allowed"}
+--- PASS: TestInvalidStateTransition (0.32s)
+=== RUN   TestGetProfile
+--- PASS: TestGetProfile (0.33s)
+=== RUN   TestGetProfile_NotFound
+--- PASS: TestGetProfile_NotFound (0.32s)
+=== RUN   TestLockedState_CantSubmit
+2025/12/06 08:21:52 [fetchSlots] instanceID=79c399ec-01d6-4b21-a75f-21a18b38553a
+2025/12/06 08:21:52 [fetchSlots] returning 0 slots with total attachments
+    node_state_full_test.go:84: Locked node response: {"error":"transition not allowed"}
+--- PASS: TestLockedState_CantSubmit (0.30s)
+=== RUN   TestWaitingState_CantAdvance
+2025/12/06 08:21:52 [fetchSlots] instanceID=1f1e998b-7fe4-4c91-a458-83e9c51ab377
+2025/12/06 08:21:52 [fetchSlots] returning 0 slots with total attachments
+    node_state_full_test.go:148: Waiting node response: {"error":"transition not allowed"}
+--- PASS: TestWaitingState_CantAdvance (0.35s)
+=== RUN   TestFullStateFlow
+2025/12/06 08:21:52 [fetchSlots] instanceID=a9f00a62-758c-455e-b306-ce00c296f125
+2025/12/06 08:21:52 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:52 [fetchSlots] instanceID=a9f00a62-758c-455e-b306-ce00c296f125
+2025/12/06 08:21:52 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:52 [fetchSlots] instanceID=a9f00a62-758c-455e-b306-ce00c296f125
+2025/12/06 08:21:52 [fetchSlots] returning 0 slots with total attachments
+    node_state_full_test.go:220: Done transition response: {"locale":"ru","node_id":"flow_node","playbook_version_id":"ffffffff-ffff-ffff-ffff-ffffffffffff","slots":[],"state":"done"}
+--- PASS: TestFullStateFlow (0.27s)
+=== RUN   TestNeedsFixes_Resubmit
+2025/12/06 08:21:53 [fetchSlots] instanceID=1fdb9ed9-566f-4631-af1b-a1a3bab8717b
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:53 [fetchSlots] instanceID=1fdb9ed9-566f-4631-af1b-a1a3bab8717b
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:53 [fetchSlots] instanceID=1fdb9ed9-566f-4631-af1b-a1a3bab8717b
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNeedsFixes_Resubmit (0.30s)
+=== RUN   TestNodeStateTransitions_StudentSubmitsNode
+2025/12/06 08:21:53 [fetchSlots] instanceID=b4790c31-db72-4156-b011-a8c7536fe241
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:53 [fetchSlots] instanceID=b4790c31-db72-4156-b011-a8c7536fe241
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_StudentSubmitsNode (0.29s)
+=== RUN   TestNodeStateTransitions_StudentCannotDirectlyApprove
+2025/12/06 08:21:53 [fetchSlots] instanceID=7f6788c0-7c5a-4e25-b531-4973da3c75b2
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:53 [fetchSlots] instanceID=7f6788c0-7c5a-4e25-b531-4973da3c75b2
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_StudentCannotDirectlyApprove (0.29s)
+=== RUN   TestNodeStateTransitions_AdminApprovesNode
+2025/12/06 08:21:53 [fetchSlots] instanceID=a6f2480e-0195-4b70-ae4f-2e9aea0441a1
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:53 [fetchSlots] instanceID=a6f2480e-0195-4b70-ae4f-2e9aea0441a1
+2025/12/06 08:21:53 [fetchSlots] returning 0 slots with total attachments
+    node_state_transitions_test.go:198: Admin approval response: {"error":"transition not allowed"}
+--- PASS: TestNodeStateTransitions_AdminApprovesNode (0.27s)
+=== RUN   TestNodeStateTransitions_AdvisorRequestsFixes
+2025/12/06 08:21:54 [fetchSlots] instanceID=59037051-7677-4203-bc92-a88c1aacb1a9
+2025/12/06 08:21:54 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:54 [fetchSlots] instanceID=59037051-7677-4203-bc92-a88c1aacb1a9
+2025/12/06 08:21:54 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_AdvisorRequestsFixes (0.26s)
+=== RUN   TestNodeStateTransitions_StudentResubmitsAfterFixes
+2025/12/06 08:21:54 [fetchSlots] instanceID=904b2a7e-d28f-4a98-a240-48c1d1ca9e5c
+2025/12/06 08:21:54 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:54 [fetchSlots] instanceID=904b2a7e-d28f-4a98-a240-48c1d1ca9e5c
+2025/12/06 08:21:54 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:54 [fetchSlots] instanceID=904b2a7e-d28f-4a98-a240-48c1d1ca9e5c
+2025/12/06 08:21:54 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_StudentResubmitsAfterFixes (0.32s)
+=== RUN   TestNodeStateTransitions_InvalidStateRejected
+2025/12/06 08:21:54 [fetchSlots] instanceID=67d3fba2-34a9-4530-896e-0bfbd66d4269
+2025/12/06 08:21:54 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_InvalidStateRejected (0.25s)
+=== RUN   TestNodeStateTransitions_EventsLogged
+2025/12/06 08:21:55 [fetchSlots] instanceID=1e56acf7-2ea4-48e6-bfd4-9725174fe3f0
+2025/12/06 08:21:55 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:55 [fetchSlots] instanceID=1e56acf7-2ea4-48e6-bfd4-9725174fe3f0
+2025/12/06 08:21:55 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_EventsLogged (0.25s)
+=== RUN   TestNodeSubmissionHandler_GetSubmission
+=== RUN   TestNodeSubmissionHandler_GetSubmission/Get_Submission
+2025/12/06 08:21:55 [fetchSlots] instanceID=7d93a75e-1644-40fa-b9c8-655890077632
+2025/12/06 08:21:55 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeSubmissionHandler_GetSubmission (0.24s)
+    --- PASS: TestNodeSubmissionHandler_GetSubmission/Get_Submission (0.00s)
+=== RUN   TestNodeSubmissionHandler_SubmitNode
+=== RUN   TestNodeSubmissionHandler_SubmitNode/Submit_Node
+    node_submission_test.go:123: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:123
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 500
+        	Test:       	TestNodeSubmissionHandler_SubmitNode/Submit_Node
+    node_submission_test.go:131: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:131
+        	Error:      	Not equal: 
+        	            	expected: "submitted"
+        	            	actual  : "active"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-submitted
+        	            	+active
+        	Test:       	TestNodeSubmissionHandler_SubmitNode/Submit_Node
+    node_submission_test.go:134: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:134
+        	Error:      	Received unexpected error:
+        	            	sql: no rows in result set
+        	Test:       	TestNodeSubmissionHandler_SubmitNode/Submit_Node
+    node_submission_test.go:135: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:135
+        	Error:      	"" does not contain "submitted_value"
+        	Test:       	TestNodeSubmissionHandler_SubmitNode/Submit_Node
+--- FAIL: TestNodeSubmissionHandler_SubmitNode (0.24s)
+    --- FAIL: TestNodeSubmissionHandler_SubmitNode/Submit_Node (0.00s)
+=== RUN   TestNodeSubmissionHandler_SubmitProfile
+=== RUN   TestNodeSubmissionHandler_SubmitProfile/Submit_Profile
+2025/12/06 08:21:55 [fetchSlots] instanceID=d5e8569d-d2b5-4b1a-a46c-cc64a76cb47a
+2025/12/06 08:21:55 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeSubmissionHandler_SubmitProfile (0.26s)
+    --- PASS: TestNodeSubmissionHandler_SubmitProfile/Submit_Profile (0.01s)
+=== RUN   TestFormNode_GetSubmission
+2025/12/06 08:21:56 [fetchSlots] instanceID=c13f39d3-fe12-405a-92f8-8d72fd541cab
+2025/12/06 08:21:56 [fetchSlots] returning 0 slots with total attachments
+    node_types_test.go:69: Form node response: map[locale:ru node_id:form_node playbook_version_id:22222222-2222-2222-2222-222222222222 slots:[] state:active]
+--- PASS: TestFormNode_GetSubmission (0.24s)
+=== RUN   TestConfirmTaskNode_GetSubmission
+2025/12/06 08:21:56 [fetchSlots] instanceID=810ac55f-6297-4e72-bbeb-934733701f7b
+2025/12/06 08:21:56 [fetchSlots] row 1: slot=document attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/06 08:21:56 [fetchSlots] returning 1 slots with total attachments
+    node_types_test.go:130: ConfirmTask slots: [map[attachments:[] key:document mime:[] multiplicity:single required:true]]
+    node_types_test.go:132: ConfirmTask node response: map[locale:ru node_id:confirm_node playbook_version_id:44444444-4444-4444-4444-444444444444 slots:[map[attachments:[] key:document mime:[] multiplicity:single required:true]] state:active]
+--- PASS: TestConfirmTaskNode_GetSubmission (0.23s)
+=== RUN   TestInfoNode_GetSubmission
+2025/12/06 08:21:56 [fetchSlots] instanceID=01ec197d-81ec-4dc1-b947-af49153726dd
+2025/12/06 08:21:56 [fetchSlots] returning 0 slots with total attachments
+    node_types_test.go:184: Info node response: map[locale:ru node_id:info_node playbook_version_id:66666666-6666-6666-6666-666666666666 slots:[] state:active]
+--- PASS: TestInfoNode_GetSubmission (0.28s)
+=== RUN   TestFormNode_PutSubmission
+2025/12/06 08:21:56 [fetchSlots] instanceID=5b6e1504-4cc9-4ced-ac75-850d4e0f9953
+2025/12/06 08:21:56 [fetchSlots] returning 0 slots with total attachments
+2025/12/06 08:21:56 [fetchSlots] instanceID=5b6e1504-4cc9-4ced-ac75-850d4e0f9953
+2025/12/06 08:21:56 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestFormNode_PutSubmission (0.23s)
+=== RUN   TestPresignUpload_Success
+2025/12/06 08:21:57 [fetchSlots] instanceID=71240e88-5d39-487c-bff8-6cb5436b1e80
+2025/12/06 08:21:57 [fetchSlots] row 1: slot=doc_slot attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/06 08:21:57 [fetchSlots] returning 1 slots with total attachments
+2025/12/06 08:21:57 [S3] Presigning PUT for key=nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251206-63a42a4d-4410-4766-a7ca-85339b67d68f-test.pdf bucket=test-bucket expires=15m0s
+    node_upload_test.go:89: Presign success: map[bucket:test-bucket document_id:cc9adbac-4b80-4219-9aa0-bad6f583340a expires_in:900 max_size_bytes:1.048576e+07 object_key:nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251206-63a42a4d-4410-4766-a7ca-85339b67d68f-test.pdf required_headers:map[Content-Type:application/pdf] upload_url:https://test-bucket.s3.us-east-1.amazonaws.com/nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251206-63a42a4d-4410-4766-a7ca-85339b67d68f-test.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test-key%2F20251206%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251206T032157Z&X-Amz-Expires=900&X-Amz-SignedHeaders=host&x-id=PutObject&X-Amz-Signature=d059f06e632939e0f2c782ebd5f5bbb59d484f46156f272880329d52893c4e4e]
+--- PASS: TestPresignUpload_Success (0.23s)
+=== RUN   TestUpload_InvalidMime
+2025/12/06 08:21:57 [fetchSlots] instanceID=2ea7aceb-82cd-4594-bc52-a52532ba8f17
+2025/12/06 08:21:57 [fetchSlots] row 1: slot=pdf_only attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/06 08:21:57 [fetchSlots] returning 1 slots with total attachments
+    node_upload_test.go:160: Invalid MIME response: {"error":"invalid mime type"}
+--- PASS: TestUpload_InvalidMime (0.24s)
+=== RUN   TestUpload_SizeTooLarge
+2025/12/06 08:21:57 [fetchSlots] instanceID=d20ebc88-3651-4894-9e03-0b738c37ea42
+2025/12/06 08:21:57 [fetchSlots] row 1: slot=small_file attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/06 08:21:57 [fetchSlots] returning 1 slots with total attachments
+    node_upload_test.go:229: Size too large response: {"error":"file too large (max 1 MB)"}
+--- PASS: TestUpload_SizeTooLarge (0.23s)
+=== RUN   TestAttachUpload
+2025/12/06 08:21:57 [fetchSlots] instanceID=2f211b18-6db3-4a89-b316-20053abb9392
+2025/12/06 08:21:57 [fetchSlots] row 1: slot=slot1 attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/06 08:21:57 [fetchSlots] returning 1 slots with total attachments
+2025/12/06 08:21:57 [AttachUpload] Starting: nodeID=attach_node, userID=77777777-aaaa-7777-7777-777777777777
+2025/12/06 08:21:57 [AttachUpload] Request: slotKey=slot1, filename=file.pdf, size=100
+2025/12/06 08:21:57 [AttachUpload] Starting transaction
+2025/12/06 08:21:57 [AttachUpload] ensureNodeInstanceTx...
+2025/12/06 08:21:57 [AttachUpload] Instance: id=2f211b18-6db3-4a89-b316-20053abb9392, state=active
+2025/12/06 08:21:57 [AttachUpload] getSlot...
+2025/12/06 08:21:57 [AttachUpload] Slot: id=a033e791-3412-464b-bbc6-1e18161f1927, multiplicity=single
+2025/12/06 08:21:57 [AttachUpload] ensureDocumentForSlot...
+2025/12/06 08:21:57 [AttachUpload] Document ID: 93ba9eef-6aad-4e9c-8832-03fdca79fa8c
+2025/12/06 08:21:57 [AttachUpload] Inserting document_version...
+2025/12/06 08:21:57 [AttachUpload] Version ID: 4db8f522-0434-466c-8f16-88725ec830a4
+2025/12/06 08:21:57 [AttachUpload] Updating document current_version_id...
+2025/12/06 08:21:57 [AttachUpload] Inserting slot attachment...
+2025/12/06 08:21:57 [AttachUpload] Inserting event...
+2025/12/06 08:21:57 [AttachUpload] Transitioning state to submitted...
+2025/12/06 08:21:57 [AttachUpload] Transaction completed successfully
+2025/12/06 08:21:57 [AttachUpload] Loading instance...
+2025/12/06 08:21:57 [AttachUpload] Building submission DTO...
+2025/12/06 08:21:57 [fetchSlots] instanceID=2f211b18-6db3-4a89-b316-20053abb9392
+2025/12/06 08:21:57 [fetchSlots] row 1: slot=slot1 attachment_id=07177971-3eea-435e-a64b-27d8b3439e33 version_id=4db8f522-0434-466c-8f16-88725ec830a4 is_active=true reviewed_doc_id=
+2025/12/06 08:21:57 [fetchSlots] returning 1 slots with total attachments
+2025/12/06 08:21:57 [AttachUpload] Success! Returning 200
+--- PASS: TestAttachUpload (0.24s)
+=== RUN   TestNotificationsHandler_Admin
+=== RUN   TestNotificationsHandler_Admin/List_Notifications
+2025/12/06 08:21:57 [ListNotifications] Starting - unreadOnly: false
+2025/12/06 08:21:57 [ListNotifications] Executing query: 
+		SELECT 
+			n.id,
+			n.student_id,
+			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
+			COALESCE(u.email, '') as student_email,
+			n.node_id,
+			COALESCE(n.node_instance_id::text, '') as node_instance_id,
+			n.event_type,
+			n.is_read,
+			n.message,
+			n.metadata::text as metadata,
+			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM admin_notifications n
+		JOIN users u ON u.id = n.student_id
+	 ORDER BY n.created_at DESC LIMIT 100
+2025/12/06 08:21:57 [ListNotifications] Found 2 notifications
+2025/12/06 08:21:57 [ListNotifications] First notification: id=feb75c80-7494-422e-b221-31c97644bbb1, student=Student One, node=node1, message=Student submitted node1
+2025/12/06 08:21:57 [ListNotifications] Returning 2 notifications
+=== RUN   TestNotificationsHandler_Admin/List_Unread_Only
+2025/12/06 08:21:57 [ListNotifications] Starting - unreadOnly: true
+2025/12/06 08:21:57 [ListNotifications] Executing query: 
+		SELECT 
+			n.id,
+			n.student_id,
+			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
+			COALESCE(u.email, '') as student_email,
+			n.node_id,
+			COALESCE(n.node_instance_id::text, '') as node_instance_id,
+			n.event_type,
+			n.is_read,
+			n.message,
+			n.metadata::text as metadata,
+			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM admin_notifications n
+		JOIN users u ON u.id = n.student_id
+	 WHERE n.is_read = false ORDER BY n.created_at DESC LIMIT 100
+2025/12/06 08:21:57 [ListNotifications] Found 1 notifications
+2025/12/06 08:21:57 [ListNotifications] First notification: id=feb75c80-7494-422e-b221-31c97644bbb1, student=Student One, node=node1, message=Student submitted node1
+2025/12/06 08:21:57 [ListNotifications] Returning 1 notifications
+=== RUN   TestNotificationsHandler_Admin/Get_Unread_Count
+=== RUN   TestNotificationsHandler_Admin/Mark_As_Read
+=== RUN   TestNotificationsHandler_Admin/Mark_All_As_Read
+--- PASS: TestNotificationsHandler_Admin (0.22s)
+    --- PASS: TestNotificationsHandler_Admin/List_Notifications (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/List_Unread_Only (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Get_Unread_Count (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Mark_As_Read (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Mark_All_As_Read (0.00s)
+=== RUN   TestNotificationHandler_Student_MarkAllAsRead
+--- PASS: TestNotificationHandler_Student_MarkAllAsRead (0.23s)
+=== RUN   TestNotificationHandler_GetUnread
+=== RUN   TestNotificationHandler_GetUnread/Get_Unread
+2025/12/06 08:21:58 [GetUnread reqID=1764991318416967000] Handler called
+2025/12/06 08:21:58 [GetUnread reqID=1764991318416967000] userID from context: '123e4567-e89b-12d3-a456-426614174000'
+2025/12/06 08:21:58 [GetUnread reqID=1764991318416967000] returning 1 notifications
+--- PASS: TestNotificationHandler_GetUnread (0.22s)
+    --- PASS: TestNotificationHandler_GetUnread/Get_Unread (0.00s)
+=== RUN   TestNotificationHandler_MarkAsRead
+=== RUN   TestNotificationHandler_MarkAsRead/Mark_As_Read
+--- PASS: TestNotificationHandler_MarkAsRead (0.31s)
+    --- PASS: TestNotificationHandler_MarkAsRead/Mark_As_Read (0.00s)
+=== RUN   TestSearchHandler_GlobalSearch
+=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Users
+=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Documents
+=== RUN   TestSearchHandler_GlobalSearch/Student_Search_Own_Document
+=== RUN   TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users
+--- PASS: TestSearchHandler_GlobalSearch (0.24s)
+    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Users (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Documents (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Student_Search_Own_Document (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users (0.00s)
+=== RUN   TestUsersHandler_GetPendingEmailVerification
+--- PASS: TestUsersHandler_GetPendingEmailVerification (0.22s)
+=== RUN   TestUsersHandler_UpdateMe_EmailChange
+2025/12/06 08:21:59 [EMAIL] SMTP not configured - email features disabled
+2025/12/06 08:21:59 [EMAIL] Skipping verification email to newemail@example.com (SMTP not configured)
+--- PASS: TestUsersHandler_UpdateMe_EmailChange (0.37s)
+=== RUN   TestUsersHandler_PresignAvatarUpload
+2025/12/06 08:21:59 [S3] Presigning PUT for key=avatars/5c9c8daf-b7e5-4342-b299-4cbe0f3f78d0/1764991319_avatar.jpg bucket=test-bucket expires=15m0s
+--- PASS: TestUsersHandler_PresignAvatarUpload (0.23s)
+=== RUN   TestUsersHandler_UpdateUser
+=== RUN   TestUsersHandler_UpdateUser/Update_User_Not_Found
+--- PASS: TestUsersHandler_UpdateUser (0.24s)
+    --- PASS: TestUsersHandler_UpdateUser/Update_User_Not_Found (0.00s)
+=== RUN   TestUsersHandler_ChangeOwnPassword
+--- PASS: TestUsersHandler_ChangeOwnPassword (0.42s)
+=== RUN   TestUsersHandler_ResetPasswordForUser
+--- PASS: TestUsersHandler_ResetPasswordForUser (0.43s)
+=== RUN   TestUsersHandler_CreateUser
+=== RUN   TestUsersHandler_CreateUser/Create_Student_Success
+--- PASS: TestUsersHandler_CreateUser (0.31s)
+    --- PASS: TestUsersHandler_CreateUser/Create_Student_Success (0.07s)
+=== RUN   TestUsersHandler_ListUsers
+=== RUN   TestUsersHandler_ListUsers/List_All_Users
+=== RUN   TestUsersHandler_ListUsers/Filter_by_Role
+--- PASS: TestUsersHandler_ListUsers (0.27s)
+    --- PASS: TestUsersHandler_ListUsers/List_All_Users (0.00s)
+    --- PASS: TestUsersHandler_ListUsers/Filter_by_Role (0.00s)
+=== RUN   TestUsersHandler_UpdateMe_Extended
+=== RUN   TestUsersHandler_UpdateMe_Extended/Update_Me_Extended
+--- PASS: TestUsersHandler_UpdateMe_Extended (0.38s)
+    --- PASS: TestUsersHandler_UpdateMe_Extended/Update_Me_Extended (0.07s)
+=== RUN   TestUsersHandler_PresignAvatar
+=== RUN   TestUsersHandler_PresignAvatar/Presign_Avatar
+--- PASS: TestUsersHandler_PresignAvatar (0.24s)
+    --- PASS: TestUsersHandler_PresignAvatar/Presign_Avatar (0.00s)
+=== RUN   TestUsersHandler_VerifyEmailChange
+=== RUN   TestUsersHandler_VerifyEmailChange/Verify_Email
+    users_test.go:234: Response: {"email":"new@ex.com","message":"email verified and updated successfully"}
+--- PASS: TestUsersHandler_VerifyEmailChange (0.25s)
+    --- PASS: TestUsersHandler_VerifyEmailChange/Verify_Email (0.00s)
+=== RUN   TestUsersHandler_SetActive
+=== RUN   TestUsersHandler_SetActive/Set_Active_False
+--- PASS: TestUsersHandler_SetActive (0.37s)
+    --- PASS: TestUsersHandler_SetActive/Set_Active_False (0.00s)
+FAIL
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	32.510s
+FAIL

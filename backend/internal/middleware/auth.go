@@ -162,6 +162,16 @@ func AuthMiddleware(secret []byte, dbx *sqlx.DB, rds *redis.Client) gin.HandlerF
 		}
 		c.Set("claims", claims)
 		
+		// Extract superadmin and tenant claims from JWT
+		if isSuperadmin, ok := claims["is_superadmin"].(bool); ok {
+			c.Set("is_superadmin", isSuperadmin)
+		} else {
+			c.Set("is_superadmin", false)
+		}
+		if tenantID, ok := claims["tenant_id"].(string); ok {
+			c.Set("jwt_tenant_id", tenantID)
+		}
+		
 		log.Printf("[AuthMiddleware] JWT validated, calling HydrateUserFromClaims for path=%s", c.Request.URL.Path)
 		HydrateUserFromClaims(c, dbx, rds)
 		

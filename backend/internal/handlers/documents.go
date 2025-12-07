@@ -25,7 +25,10 @@ func NewDocumentsHandler(db *sqlx.DB, cfg config.AppConfig) *DocumentsHandler {
 
 // CreateDocument creates a document metadata row.
 func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
-	uid := c.Param("id")
+	uid := c.GetString("userID")
+	if uid == "" {
+		uid = userIDFromClaims(c)
+	}
 	type req struct {
 		Kind  string `json:"kind" binding:"required"`
 		Title string `json:"title" binding:"required"`
@@ -83,11 +86,11 @@ func (h *DocumentsHandler) GetDocument(c *gin.Context) {
 	var doc struct {
 		ID      string `db:"id" json:"id"`
 		UserID  string `db:"user_id" json:"user_id"`
-		Title   string `db:"title" json:"title"`
-		Kind    string `db:"kind" json:"kind"`
-		Current string `db:"current_version_id" json:"current_version_id"`
+		Title   string  `db:"title" json:"title"`
+		Kind    string  `db:"kind" json:"kind"`
+		Current *string `db:"current_version_id" json:"current_version_id"`
 	}
-	if err := h.db.Get(&doc, `SELECT * FROM documents WHERE id=$1`, docId); err != nil {
+	if err := h.db.Get(&doc, `SELECT id, user_id, title, kind, current_version_id FROM documents WHERE id=$1`, docId); err != nil {
 		c.JSON(404, gin.H{"error": "not found"})
 		return
 	}
@@ -217,14 +220,25 @@ func (h *DocumentsHandler) DownloadVersion(c *gin.Context) {
 func (h *DocumentsHandler) ListDocuments(c *gin.Context) {
 	uid := c.Param("id")
 	type Row struct {
-		ID        string `db:"id" json:"id"`
-		Title     string `db:"title" json:"title"`
-		Kind      string `db:"kind" json:"kind"`
-		Current   string `db:"current_version_id" json:"current_version_id"`
-		CreatedAt string `db:"created_at" json:"created_at"`
+		ID        string  `db:"id" json:"id"`
+		Title     string  `db:"title" json:"title"`
+		Kind      string  `db:"kind" json:"kind"`
+		Current   *string `db:"current_version_id" json:"current_version_id"`
+		CreatedAt string  `db:"created_at" json:"created_at"`
 	}
 	var rows []Row
 	_ = h.db.Select(&rows, `SELECT id, title, kind, current_version_id, to_char(created_at,'YYYY-MM-DD HH24:MI:SS') as created_at
 		FROM documents WHERE user_id=$1 ORDER BY created_at DESC`, uid)
 	c.JSON(200, rows)
+}
+
+// DeleteDocument soft deletes a document
+func (h *DocumentsHandler) DeleteDocument(c *gin.Context) {
+	docID := c.Param("docId")
+	_, err := h.db.Exec(`DELETE FROM documents WHERE id=$1`, docID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"ok": true})
 }

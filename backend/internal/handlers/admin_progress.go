@@ -646,7 +646,7 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	defer rows.Close()
+
 	type Att struct {
 		Filename    string `json:"filename"`
 		DownloadURL string `json:"download_url"`
@@ -654,23 +654,39 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
 		AttachedAt  string `json:"attached_at"`
 	}
 	type N struct {
+		ID          string `json:"-"` // Internal use
 		NodeID      string `json:"node_id"`
 		State       string `json:"state"`
 		UpdatedAt   string `json:"updated_at"`
 		Attachments int    `json:"attachments"`
 		Files       []Att  `json:"files"`
 	}
-	list := []N{}
+
+	// Fetch all instances first to release connection
+	var instances []N
 	for rows.Next() {
 		var id, nodeID, state string
 		var updated time.Time
 		_ = rows.Scan(&id, &nodeID, &state, &updated)
+		instances = append(instances, N{
+			ID:        id,
+			NodeID:    nodeID,
+			State:     state,
+			UpdatedAt: updated.Format(time.RFC3339),
+		})
+	}
+	rows.Close()
+
+	// Now populate attachments for each instance
+	list := []N{}
+	for _, inst := range instances {
 		// count attachments
 		var cnt int
-		_ = h.db.QueryRowx(`SELECT COUNT(*) FROM node_instance_slots s JOIN node_instance_slot_attachments a ON a.slot_id=s.id AND a.is_active WHERE s.node_instance_id=$1`, id).Scan(&cnt)
+		_ = h.db.QueryRowx(`SELECT COUNT(*) FROM node_instance_slots s JOIN node_instance_slot_attachments a ON a.slot_id=s.id AND a.is_active WHERE s.node_instance_id=$1`, inst.ID).Scan(&cnt)
+		
 		// fetch attachments metadata
 		files := []Att{}
-		fr, _ := h.db.Queryx(`SELECT a.filename, a.size_bytes, a.attached_at, dv.id FROM node_instance_slot_attachments a JOIN node_instance_slots s ON s.id=a.slot_id JOIN document_versions dv ON dv.id=a.document_version_id WHERE s.node_instance_id=$1 AND a.is_active ORDER BY a.attached_at DESC`, id)
+		fr, _ := h.db.Queryx(`SELECT a.filename, a.size_bytes, a.attached_at, dv.id FROM node_instance_slot_attachments a JOIN node_instance_slots s ON s.id=a.slot_id JOIN document_versions dv ON dv.id=a.document_version_id WHERE s.node_instance_id=$1 AND a.is_active ORDER BY a.attached_at DESC`, inst.ID)
 		if fr != nil {
 			for fr.Next() {
 				var fn string
@@ -682,7 +698,9 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
 			}
 			fr.Close()
 		}
-		list = append(list, N{NodeID: nodeID, State: state, UpdatedAt: updated.Format(time.RFC3339), Attachments: cnt, Files: files})
+		inst.Attachments = cnt
+		inst.Files = files
+		list = append(list, inst)
 	}
 	c.JSON(200, gin.H{"nodes": list})
 }
@@ -969,7 +987,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	// If node is now done, activate next nodes in playbook
 	if newState == "done" && newState != meta.State {
 		log.Printf("[ReviewAttachment] Node %s is done, activating next nodes", meta.NodeID)
-		if err := h.activateNextNodes(meta.StudentID, meta.NodeID); err != nil {
+		if err := ActivateNextNodes(h.db, h.pb, meta.StudentID, meta.NodeID); err != nil {
 			log.Printf("[ReviewAttachment] Failed to activate next nodes: %v", err)
 			// Don't fail the request, just log the error
 		}
@@ -1232,84 +1250,7 @@ func insertNodeEvent(tx *sqlx.Tx, nodeInstanceID, eventType, actorID string, pay
 	return err
 }
 
-// activateNextNodes activates the next nodes in the playbook after a node is completed
-func (h *AdminHandler) activateNextNodes(userID, completedNodeID string) error {
-	// Parse playbook to get next nodes
-	var pb struct {
-		Worlds []struct {
-			Nodes []struct {
-				ID   string   `json:"id"`
-				Next []string `json:"next"`
-			} `json:"nodes"`
-		} `json:"worlds"`
-	}
-	
-	if err := json.Unmarshal(h.pb.Raw, &pb); err != nil {
-		return fmt.Errorf("parse playbook: %w", err)
-	}
-	
-	// Find the completed node and get its next nodes
-	var nextNodes []string
-	for _, world := range pb.Worlds {
-		for _, node := range world.Nodes {
-			if node.ID == completedNodeID {
-				nextNodes = node.Next
-				break
-			}
-		}
-		if len(nextNodes) > 0 {
-			break
-		}
-	}
-	
-	if len(nextNodes) == 0 {
-		log.Printf("[activateNextNodes] No next nodes found for %s", completedNodeID)
-		return nil
-	}
-	
-	log.Printf("[activateNextNodes] Activating next nodes %v for user %s", nextNodes, userID)
-	
-	// Activate each next node
-	for _, nodeID := range nextNodes {
-		// Check if node instance already exists
-		var existingID string
-		err := h.db.QueryRowx(`SELECT id FROM node_instances WHERE user_id=$1 AND node_id=$2 AND playbook_version_id=$3`,
-			userID, nodeID, h.pb.VersionID).Scan(&existingID)
-		
-		if err == sql.ErrNoRows {
-			// Create new node instance in active state
-			var newID string
-			err = h.db.QueryRowx(`INSERT INTO node_instances (user_id, playbook_version_id, node_id, state, opened_at)
-				VALUES ($1, $2, $3, 'active', now()) RETURNING id`,
-				userID, h.pb.VersionID, nodeID).Scan(&newID)
-			if err != nil {
-				log.Printf("[activateNextNodes] Failed to create instance for %s: %v", nodeID, err)
-				continue
-			}
-			log.Printf("[activateNextNodes] Created new instance %s for node %s", newID, nodeID)
-		} else if err != nil {
-			log.Printf("[activateNextNodes] Error checking instance for %s: %v", nodeID, err)
-			continue
-		} else {
-			// Instance exists, update to active if it's locked
-			_, err = h.db.Exec(`UPDATE node_instances SET state='active', updated_at=now() 
-				WHERE id=$1 AND state='locked'`, existingID)
-			if err != nil {
-				log.Printf("[activateNextNodes] Failed to activate instance %s: %v", existingID, err)
-			} else {
-				log.Printf("[activateNextNodes] Activated existing instance %s for node %s", existingID, nodeID)
-			}
-		}
-		
-		// Update journey_states
-		_, _ = h.db.Exec(`INSERT INTO journey_states (user_id, node_id, state)
-			VALUES ($1, $2, 'active')
-			ON CONFLICT (user_id, node_id) DO UPDATE SET state='active', updated_at=now()`,
-			userID, nodeID)
-	}
-	
-	return nil
-}
+
 
 // PresignReviewedDocumentUpload creates a presigned URL for uploading reviewed document
 // POST /api/admin/attachments/:attachmentId/presign
