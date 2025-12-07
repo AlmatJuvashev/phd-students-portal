@@ -22,12 +22,12 @@ type StudentStageStats struct {
 func (s *AnalyticsService) GetStudentsByStage(ctx context.Context) ([]StudentStageStats, error) {
 	query := `
 		SELECT 
-			COALESCE(js.current_stage, 'Not Started') as stage, 
+			COALESCE(js.state, 'Not Started') as stage, 
 			COUNT(*) as count
 		FROM users u
-		LEFT JOIN journey_state js ON u.id = js.user_id
+		LEFT JOIN journey_states js ON u.id = js.user_id
 		WHERE u.role = 'student'
-		GROUP BY js.current_stage`
+		GROUP BY js.state`
 	
 	var stats []StudentStageStats
 	err := s.db.SelectContext(ctx, &stats, query)

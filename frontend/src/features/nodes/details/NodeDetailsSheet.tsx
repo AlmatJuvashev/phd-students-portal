@@ -105,6 +105,7 @@ export function NodeDetailsSheet({
     <Sheet open={!!node} onOpenChange={onOpenChange}>
       <SheetContent
         side={isMobile ? "bottom" : "right"}
+        data-testid="node-details-sheet"
         className={`p-0 flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/10 shadow-2xl
           ${
             isMobile
@@ -157,7 +158,7 @@ export function NodeDetailsSheet({
                       {node.type}
                     </Badge>
                   )}
-                  <Badge className="capitalize shadow-sm hover:shadow transition-shadow text-xs">
+                  <Badge className="capitalize shadow-sm hover:shadow transition-shadow text-xs" data-testid="node-state-badge">
                     {stateLabel(node)}
                   </Badge>
                   {node.type === "form" &&

@@ -187,6 +187,15 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 	}
 	// reload dto
 	inst, _ := h.loadInstance(uid, nodeID)
+	
+	// If state is done, activate next nodes
+	if inst.State == "done" {
+		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID); err != nil {
+			log.Printf("[PutSubmission] Failed to activate next nodes: %v", err)
+			// Don't fail the request
+		}
+	}
+
 	dto, err := h.buildSubmissionDTO(inst.ID)
 	if err != nil {
 		handleNodeErr(c, err)
@@ -462,6 +471,14 @@ func (h *NodeSubmissionHandler) PatchState(c *gin.Context) {
 		return
 	}
 	inst, _ := h.loadInstance(uid, nodeID)
+	
+	// If state is done, activate next nodes
+	if inst.State == "done" {
+		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID); err != nil {
+			log.Printf("[PatchState] Failed to activate next nodes: %v", err)
+		}
+	}
+
 	dto, err := h.buildSubmissionDTO(inst.ID)
 	if err != nil {
 		handleNodeErr(c, err)
@@ -516,10 +533,12 @@ func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID
 		return nil, fmt.Errorf("node not found in playbook")
 	}
 	var rec nodeInstanceRecord
+	log.Printf("[ensureNodeInstanceTx] Creating node instance: userID=%s nodeID=%s versionID=%s", userID, nodeID, h.pb.VersionID)
 	err = tx.QueryRowx(`INSERT INTO node_instances (user_id, playbook_version_id, node_id, state, locale)
         VALUES ($1,$2,$3,'active',$4)
         RETURNING id, node_id, state, current_rev, locale`, userID, h.pb.VersionID, nodeID, locale).Scan(&rec.ID, &rec.NodeID, &rec.State, &rec.CurrentRev, &rec.Locale)
 	if err != nil {
+		log.Printf("[ensureNodeInstanceTx] INSERT failed: %v (versionID=%s)", err, h.pb.VersionID)
 		return nil, err
 	}
     if nodeDef.Requirements != nil {
@@ -632,6 +651,13 @@ func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, userID stri
 		_, err = tx.Exec(`UPDATE users SET specialty = $1, updated_at = NOW() WHERE id = $2`, specialty, userID)
 		if err != nil {
 			log.Printf("[upsertProfileSubmission] Failed to sync specialty to users: %v", err)
+		}
+	}
+	// Sync program if present
+	if program, ok := formData["program"].(string); ok && program != "" {
+		_, err = tx.Exec(`UPDATE users SET program = $1, updated_at = NOW() WHERE id = $2`, program, userID)
+		if err != nil {
+			log.Printf("[upsertProfileSubmission] Failed to sync program to users: %v", err)
 		}
 	}
 	
@@ -842,6 +868,8 @@ func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, er
 			} else {
 				dto["form"] = gin.H{"rev": rev.Rev, "data": rev.Data}
 			}
+		} else {
+			log.Printf("[buildSubmissionDTO] Error fetching revision: %v (instID=%s, rev=%d)", err, instanceID, inst.CurrentRev)
 		}
 	}
 	slots, err := h.fetchSlots(instanceID)

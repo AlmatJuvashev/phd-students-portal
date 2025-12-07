@@ -277,5 +277,48 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		dictGroup.DELETE("/departments/:id", dictHandler.DeleteDepartment)
 	}
 
+	// ===========================================
+	// SUPERADMIN ROUTES (global platform admin)
+	// ===========================================
+	superadminTenantsHandler := NewSuperadminTenantsHandler(db, cfg)
+	superadminAdminsHandler := NewSuperadminAdminsHandler(db, cfg)
+	superadminLogsHandler := NewSuperadminLogsHandler(db, cfg)
+	superadminSettingsHandler := NewSuperadminSettingsHandler(db, cfg)
+
+	superadmin := api.Group("/superadmin")
+	superadmin.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
+	superadmin.Use(middleware.RequireSuperadmin())
+	{
+		// Tenants management
+		superadmin.GET("/tenants", superadminTenantsHandler.ListTenants)
+		superadmin.POST("/tenants", superadminTenantsHandler.CreateTenant)
+		superadmin.GET("/tenants/:id", superadminTenantsHandler.GetTenant)
+		superadmin.PUT("/tenants/:id", superadminTenantsHandler.UpdateTenant)
+		superadmin.DELETE("/tenants/:id", superadminTenantsHandler.DeleteTenant)
+		superadmin.POST("/tenants/:id/logo", superadminTenantsHandler.UploadLogo)
+
+		// Admins management
+		superadmin.GET("/admins", superadminAdminsHandler.ListAdmins)
+		superadmin.POST("/admins", superadminAdminsHandler.CreateAdmin)
+		superadmin.GET("/admins/:id", superadminAdminsHandler.GetAdmin)
+		superadmin.PUT("/admins/:id", superadminAdminsHandler.UpdateAdmin)
+		superadmin.DELETE("/admins/:id", superadminAdminsHandler.DeleteAdmin)
+		superadmin.POST("/admins/:id/reset-password", superadminAdminsHandler.ResetPassword)
+
+		// Activity logs
+		superadmin.GET("/logs", superadminLogsHandler.ListLogs)
+		superadmin.GET("/logs/stats", superadminLogsHandler.GetLogStats)
+		superadmin.GET("/logs/actions", superadminLogsHandler.GetActions)
+		superadmin.GET("/logs/entity-types", superadminLogsHandler.GetEntityTypes)
+
+		// Global settings
+		superadmin.GET("/settings", superadminSettingsHandler.ListSettings)
+		superadmin.GET("/settings/categories", superadminSettingsHandler.GetCategories)
+		superadmin.GET("/settings/:key", superadminSettingsHandler.GetSetting)
+		superadmin.PUT("/settings/:key", superadminSettingsHandler.UpdateSetting)
+		superadmin.DELETE("/settings/:key", superadminSettingsHandler.DeleteSetting)
+		superadmin.POST("/settings/bulk", superadminSettingsHandler.BulkUpdate)
+	}
+
 	return r
 }

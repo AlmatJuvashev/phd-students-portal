@@ -457,7 +457,7 @@ func (h *ChatHandler) UploadFile(c *gin.Context) {
 func (h *ChatHandler) DownloadFile(c *gin.Context) {
 	roomID := c.Param("roomId")
 	filename := c.Param("filename")
-	uid := c.GetString("userID")
+	uid := userIDFromClaims(c)
 
 	log.Printf("[DownloadFile] Request received - roomID: %s, filename: %s, userID: %s", roomID, filename, uid)
 	log.Printf("[DownloadFile] UploadDir config: %s", h.cfg.UploadDir)
@@ -522,7 +522,11 @@ func (h *ChatHandler) DownloadFile(c *gin.Context) {
 // UpdateMessage handles editing a message
 func (h *ChatHandler) UpdateMessage(c *gin.Context) {
 	msgID := c.Param("messageId")
-	uid := c.GetString("userID")
+	uid := userIDFromClaims(c)
+	if uid == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	var req struct {
 		Body string `json:"body" binding:"required"`
@@ -548,7 +552,11 @@ func (h *ChatHandler) UpdateMessage(c *gin.Context) {
 // DeleteMessage handles deleting a message
 func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	msgID := c.Param("messageId")
-	uid := c.GetString("userID")
+	uid := userIDFromClaims(c)
+	if uid == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
 	err := h.store.DeleteMessage(c.Request.Context(), msgID, uid)
 	if err != nil {

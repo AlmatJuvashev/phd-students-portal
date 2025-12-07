@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -69,9 +70,10 @@ func (h *ChecklistHandler) UpdateStudentStep(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	jsonData, _ := json.Marshal(req.Data)
 	_, err := h.db.Exec(`INSERT INTO student_steps (user_id, step_id, status, data)
 		VALUES ($1,$2,$3,$4)
-		ON CONFLICT (user_id, step_id) DO UPDATE SET status=$3, data=$4, updated_at=now()`, uid, step, req.Status, req.Data)
+		ON CONFLICT (user_id, step_id) DO UPDATE SET status=$3, data=$4, updated_at=now()`, uid, step, req.Status, jsonData)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "update failed"})
 		return
