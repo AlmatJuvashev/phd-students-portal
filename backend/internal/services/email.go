@@ -110,6 +110,32 @@ PhD Student Portal Team`, userName, roomName, e.frontend)
 	return e.sendEmail(to, subject, body)
 }
 
+func (e *EmailService) SendPasswordResetEmail(to, token, userName string) error {
+	if !e.enabled {
+		log.Printf("[EMAIL] Skipping password reset email to %s (SMTP not configured)", to)
+		return fmt.Errorf("email service not configured")
+	}
+
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", e.frontend, token)
+	
+	subject := "Reset Your Password"
+	body := fmt.Sprintf(`Hello %s,
+
+You recently requested to reset your password in the PhD Student Portal.
+
+Please reset your password by clicking the link below:
+%s
+
+This link will expire in 1 hour.
+
+If you did not request this change, please ignore this email.
+
+Best regards,
+PhD Student Portal Team`, userName, resetURL)
+
+	return e.sendEmail(to, subject, body)
+}
+
 func (e *EmailService) sendEmail(to, subject, body string) error {
 	from := e.from
 	if from == "" {
