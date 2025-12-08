@@ -125,7 +125,7 @@ DATABASE_URL=postgres://username:password@hostname:5432/dbname?sslmode=require
 **Current (Development - MinIO):**
 
 ```env
-S3_ENDPOINT=http://localhost:9090
+S3_ENDPOINT=http://localhost:9000
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 S3_USE_PATH_STYLE=true

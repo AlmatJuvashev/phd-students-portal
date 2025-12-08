@@ -17,7 +17,7 @@ fi
 
 # Configure MinIO client
 echo "🔧 Configuring MinIO client..."
-mc alias set local http://localhost:9090 minioadmin minioadmin
+mc alias set local http://localhost:9000 minioadmin minioadmin
 
 # Create bucket if it doesn't exist
 echo "📁 Creating bucket 'phd-portal'..."

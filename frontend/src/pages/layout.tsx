@@ -92,7 +92,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {pathname !== "/" && (
+      {(pathname !== "/" || authed) && (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <Link to="/" className="font-bold text-xl shrink-0 flex items-center gap-2">

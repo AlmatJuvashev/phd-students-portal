@@ -499,7 +499,7 @@ minio server ~/minio-data --console-address ":9091"
 
 #### 3. Create Bucket
 
-Visit **http://localhost:9091**, login with `minioadmin` / `minioadmin`:
+Visit **http://localhost:9001**, login with `minioadmin` / `minioadmin`:
 
 1. Click **Buckets** → **Create Bucket**
 2. Enter name: `phd-portal`
@@ -770,7 +770,7 @@ aws s3api get-bucket-policy --bucket phd-portal
 
 **Solution** (MinIO):
 
-1. Go to **http://localhost:9091**
+1. Go to **http://localhost:9001**
 2. Select bucket → **Configuration** → **CORS**
 3. Add your frontend URL to `AllowedOrigins`
 

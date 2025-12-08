@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/api/client';
 
 // Optional services that can be enabled/disabled per tenant
-export const OPTIONAL_SERVICES = ['chat', 'calendar'] as const;
+export const OPTIONAL_SERVICES = ['chat', 'calendar', 'smtp', 'email'] as const;
 export type OptionalService = typeof OPTIONAL_SERVICES[number];
 
 // Core services that are always enabled

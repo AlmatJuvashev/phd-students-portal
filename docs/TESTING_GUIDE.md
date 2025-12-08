@@ -29,7 +29,7 @@ docker run -d -p 6381:6379 --name phd-redis redis:7-alpine
 
 ```bash
 # Check if running
-curl http://localhost:9090/minio/health/live
+curl http://localhost:9000/minio/health/live
 # Expected: 200 OK
 
 # If not running (with Docker):

@@ -206,10 +206,11 @@ func TestSuperadminTenantsHandler_UpdateTenantServices(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	// Create test tenant
+	// Create test tenant (use ON CONFLICT to handle re-runs)
 	tenantID := "c1000000-4444-4444-4444-444444444444"
 	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, is_active, enabled_services) 
-		VALUES ($1, 'servicestenant', 'Services Tenant', true, ARRAY['chat', 'calendar'])`, tenantID)
+		VALUES ($1, 'servicestenant', 'Services Tenant', true, ARRAY['chat', 'calendar'])
+		ON CONFLICT (id) DO UPDATE SET enabled_services = ARRAY['chat', 'calendar']`, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -306,6 +307,73 @@ func TestSuperadminTenantsHandler_UpdateTenantServices(t *testing.T) {
 
 		// Accepts 404 or 500 depending on handler implementation
 		assert.True(t, w.Code == http.StatusNotFound || w.Code == http.StatusInternalServerError)
+	})
+
+	t.Run("Update Services Success - Enable SMTP", func(t *testing.T) {
+		body := map[string]interface{}{
+			"enabled_services": []string{"chat", "smtp"},
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest("PUT", "/superadmin/tenants/"+tenantID+"/services", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		
+		services := resp["enabled_services"].([]interface{})
+		assert.Len(t, services, 2)
+		// Check smtp is included
+		var hasSMTP bool
+		for _, svc := range services {
+			if svc == "smtp" {
+				hasSMTP = true
+				break
+			}
+		}
+		assert.True(t, hasSMTP, "smtp should be in enabled_services")
+	})
+
+	t.Run("Update Services Success - Enable All Services", func(t *testing.T) {
+		body := map[string]interface{}{
+			"enabled_services": []string{"chat", "calendar", "smtp", "email"},
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest("PUT", "/superadmin/tenants/"+tenantID+"/services", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		
+		services := resp["enabled_services"].([]interface{})
+		assert.Len(t, services, 4)
+	})
+
+	t.Run("Update Services Success - Email Alias", func(t *testing.T) {
+		body := map[string]interface{}{
+			"enabled_services": []string{"email"},
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest("PUT", "/superadmin/tenants/"+tenantID+"/services", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		
+		services := resp["enabled_services"].([]interface{})
+		assert.Len(t, services, 1)
+		assert.Equal(t, "email", services[0])
 	})
 }
 

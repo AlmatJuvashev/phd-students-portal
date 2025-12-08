@@ -26,8 +26,7 @@ func NewMeHandler(db *sqlx.DB, cfg config.AppConfig, r *redis.Client) *MeHandler
 
 // Me returns current user info from cache or DB (populates cache for 10 min).
 func (h *MeHandler) Me(c *gin.Context) {
-	claims, _ := c.Get("claims")
-	sub := claims.(map[string]any)["sub"].(string)
+	sub := c.GetString("userID")
 
 	// try Redis
 	if h.rdb != nil {
@@ -59,8 +58,7 @@ func (h *MeHandler) Me(c *gin.Context) {
 
 // MyTenants returns all tenant memberships for the current user
 func (h *MeHandler) MyTenants(c *gin.Context) {
-	claims, _ := c.Get("claims")
-	sub := claims.(map[string]any)["sub"].(string)
+	sub := c.GetString("userID")
 
 	type Membership struct {
 		TenantID   string `db:"tenant_id" json:"tenant_id"`

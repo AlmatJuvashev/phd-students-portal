@@ -4,8 +4,8 @@
 
 ### 1. ✅ MinIO настроен и работает
 
-- **S3 API:** http://localhost:9090
-- **Console:** http://localhost:9091 (minioadmin / minioadmin)
+- **S3 API:** http://localhost:9000
+- **Console:** http://localhost:9001 (minioadmin / minioadmin)
 - **Bucket:** phd-portal создан
 - **CORS:** настроен для localhost:5173
 
@@ -104,7 +104,7 @@ npm run dev
 
 ### Шаг 5: Проверка в MinIO Console
 
-1. Откройте http://localhost:9091
+1. Откройте http://localhost:9001
 2. Войдите: minioadmin / minioadmin
 3. Buckets → phd-portal
 4. Проверьте структуру папок:
@@ -159,7 +159,7 @@ Backend
 Network tab должен показать:
 
 1. POST `/api/journey/nodes/S1_antiplag/uploads/presign` → 200 OK
-2. PUT `http://localhost:9090/phd-portal/nodes/...` → 200 OK
+2. PUT `http://localhost:9000/phd-portal/nodes/...` → 200 OK
 3. POST `/api/journey/nodes/S1_antiplag/uploads/attach` → 201 Created
 
 ## 🎉 Ожидаемый результат

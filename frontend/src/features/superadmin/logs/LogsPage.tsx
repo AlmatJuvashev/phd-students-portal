@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   ScrollText,
   Filter,
@@ -8,6 +8,8 @@ import {
   User,
   Activity,
   Building2,
+  Search,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { logsApi, tenantsApi, ActivityLog } from '../api';
+import { SuperadminPagination } from '../components';
 
 const ACTION_COLORS: Record<string, string> = {
   login: 'bg-green-500/10 text-green-700 border-green-500/30',
@@ -41,6 +44,8 @@ const ACTION_COLORS: Record<string, string> = {
 export function LogsPage() {
   const { t } = useTranslation('common');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<{
     tenant_id?: string;
     action?: string;
@@ -50,9 +55,14 @@ export function LogsPage() {
   }>({});
 
   const { data: logsData, isLoading } = useQuery({
-    queryKey: ['superadmin', 'logs', page, filters],
-    queryFn: () => logsApi.list({ page, limit: 50, ...filters }),
+    queryKey: ['superadmin', 'logs', page, pageSize, filters],
+    queryFn: () => logsApi.list({ page, limit: pageSize, ...filters }),
   });
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setPage(1);
+  }, []);
 
   const { data: stats } = useQuery({
     queryKey: ['superadmin', 'logs', 'stats'],
@@ -109,20 +119,20 @@ export function LogsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 border rounded-lg">
             <div className="text-sm text-muted-foreground">{t('superadmin.logs.total_logs', 'Total Logs')}</div>
-            <div className="text-2xl font-bold">{stats.total_logs.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats.total_logs ?? 0).toLocaleString()}</div>
           </div>
           <div className="p-4 border rounded-lg">
             <div className="text-sm text-muted-foreground">{t('superadmin.logs.action_types', 'Action Types')}</div>
-            <div className="text-2xl font-bold">{Object.keys(stats.logs_by_action).length}</div>
+            <div className="text-2xl font-bold">{Object.keys(stats.logs_by_action ?? {}).length}</div>
           </div>
           <div className="p-4 border rounded-lg">
             <div className="text-sm text-muted-foreground">{t('superadmin.logs.active_tenants', 'Active Tenants')}</div>
-            <div className="text-2xl font-bold">{stats.logs_by_tenant.length}</div>
+            <div className="text-2xl font-bold">{(stats.logs_by_tenant ?? []).length}</div>
           </div>
           <div className="p-4 border rounded-lg">
             <div className="text-sm text-muted-foreground">{t('superadmin.logs.today', 'Today')}</div>
             <div className="text-2xl font-bold">
-              {stats.recent_activity[0]?.count?.toLocaleString() || 0}
+              {(stats.recent_activity?.[0]?.count ?? 0).toLocaleString()}
             </div>
           </div>
         </div>
@@ -130,6 +140,26 @@ export function LogsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 p-4 border rounded-lg bg-muted/30">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t('superadmin.logs.search', 'Search by user or description...')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">{t('superadmin.logs.filters', 'Filters')}:</span>
@@ -286,32 +316,15 @@ export function LogsPage() {
       )}
 
       {/* Pagination */}
-      {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {t('superadmin.logs.showing', 'Showing')} {(page - 1) * pagination.limit + 1} -{' '}
-            {Math.min(page * pagination.limit, pagination.total)} {t('superadmin.logs.of', 'of')}{' '}
-            {pagination.total}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-            >
-              {t('common.previous', 'Previous')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= pagination.total_pages}
-              onClick={() => setPage(page + 1)}
-            >
-              {t('common.next', 'Next')}
-            </Button>
-          </div>
-        </div>
+      {pagination && pagination.total > 0 && (
+        <SuperadminPagination
+          currentPage={page}
+          totalPages={pagination.total_pages}
+          totalItems={pagination.total}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+        />
       )}
     </div>
   );

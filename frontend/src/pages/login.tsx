@@ -34,8 +34,12 @@ export function LoginPage() {
     try {
       setErrorMessage("");
       // Use AuthContext for login to refresh user state
-      await login({ username: data.username, password: data.password });
-      const from = (location.state as any)?.from || "/journey";
+      const res = await login({ username: data.username, password: data.password });
+      if (res.is_superadmin) {
+        navigate("/superadmin", { replace: true });
+        return;
+      }
+      const from = (location.state as any)?.from || "/";
       navigate(from, { replace: true });
     } catch (e: any) {
       console.error("Login failed", e);

@@ -10,6 +10,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+const DefaultTenantID = "00000000-0000-0000-0000-000000000001"
+
 type UploadRequirement struct {
 	Key      string            `json:"key"`
 	Mime     []string          `json:"mime"`
@@ -65,23 +67,23 @@ func EnsureActive(db *sqlx.DB, path string) (*Manager, error) {
 		if err := json.Unmarshal(raw, &pb); err != nil {
 			return nil, fmt.Errorf("parse playbook: %w", err)
 		}
-		err = db.QueryRowx(`INSERT INTO playbook_versions (version, checksum, raw_json)
-            VALUES ($1,$2,$3) RETURNING id`, pb.Version, checksum, raw).Scan(&versionID)
+		err = db.QueryRowx(`INSERT INTO playbook_versions (version, checksum, raw_json, tenant_id)
+            VALUES ($1,$2,$3,$4) RETURNING id`, pb.Version, checksum, raw, DefaultTenantID).Scan(&versionID)
 		if err != nil {
 			return nil, fmt.Errorf("insert playbook version: %w", err)
 		}
-		_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id)
-            VALUES (TRUE,$1)
-            ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, updated_at=now()`, versionID)
+		_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id, tenant_id)
+            VALUES (TRUE,$1,$2)
+            ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, tenant_id=EXCLUDED.tenant_id, updated_at=now()`, versionID, DefaultTenantID)
 		if err != nil {
 			return nil, fmt.Errorf("set active playbook: %w", err)
 		}
 		nodes := indexNodes(pb)
 		return &Manager{VersionID: versionID, Version: pb.Version, Checksum: checksum, Raw: raw, Nodes: nodes, DefaultLocale: pb.LocaleDefault}, nil
 	}
-	_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id)
-        VALUES (TRUE,$1)
-        ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, updated_at=now()`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id, tenant_id)
+        VALUES (TRUE,$1,$2)
+        ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, tenant_id=EXCLUDED.tenant_id, updated_at=now()`, versionID, DefaultTenantID)
 	if err != nil {
 		return nil, fmt.Errorf("update active playbook: %w", err)
 	}
