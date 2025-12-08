@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import RouteErrorBoundary from "@/pages/errors/RouteErrorBoundary";
 import NotFound from "@/pages/errors/NotFound";
 import { AppLayout } from "@/pages/layout";
@@ -137,7 +137,13 @@ const WithSuspense = (el: React.ReactNode) => (
 function PublicOnly({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div className="p-4 text-sm">Loading…</div>;
-  if (user) return WithSuspense(<DoctoralJourney />);
+  if (user) {
+    // Superadmins should go to /superadmin, not DoctoralJourney
+    if (user.is_superadmin || user.role === 'superadmin') {
+      return <Navigate to="/superadmin" replace />;
+    }
+    return WithSuspense(<DoctoralJourney />);
+  }
   return <>{children}</>;
 }
 
@@ -167,6 +173,15 @@ function ServiceProtectedRoute({
   return <>{children}</>;
 }
 
+
+function IndexRoute() {
+  const { user } = useAuth();
+  if (user) {
+    return WithSuspense(<HomePage />);
+  }
+  return WithSuspense(<LandingPage />);
+}
+
 export const router = createBrowserRouter([
   // App routes (constrained width via AppLayout)
   {
@@ -174,7 +189,7 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     errorElement: <RouteErrorBoundary />,
     children: [
-      { index: true, element: WithSuspense(<LandingPage />) },
+      { index: true, element: <IndexRoute /> },
       {
         path: "journey",
         element: (
@@ -232,7 +247,7 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: (
-      <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
+      <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
         {WithSuspense(<AdminLayout />)}
       </ProtectedRoute>
     ),
@@ -242,7 +257,7 @@ export const router = createBrowserRouter([
       {
         path: "create-admins",
         element: (
-          <ProtectedRoute requiredAnyRole={["superadmin"]}>
+          <ProtectedRoute requiredAnyRole={[]}>
             {WithSuspense(<CreateAdmins />)}
           </ProtectedRoute>
         ),
@@ -250,7 +265,7 @@ export const router = createBrowserRouter([
       {
         path: "create-students",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+          <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<CreateStudents />)}
           </ProtectedRoute>
         ),
@@ -258,7 +273,7 @@ export const router = createBrowserRouter([
       {
         path: "create-advisors",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+          <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<CreateAdvisors />)}
           </ProtectedRoute>
         ),
@@ -266,7 +281,7 @@ export const router = createBrowserRouter([
       {
         path: "create-users",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+          <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<CreateUsers />)}
           </ProtectedRoute>
         ),
@@ -274,7 +289,7 @@ export const router = createBrowserRouter([
       {
         path: "contacts",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+          <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<ContactsAdminPage />)}
           </ProtectedRoute>
         ),
@@ -282,7 +297,7 @@ export const router = createBrowserRouter([
       {
         path: "students-monitor",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             {WithSuspense(<StudentsMonitorPage />)}
           </ProtectedRoute>
         ),
@@ -290,7 +305,7 @@ export const router = createBrowserRouter([
       {
         path: "students-monitor/:id",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             {WithSuspense(<StudentDetailPage />)}
           </ProtectedRoute>
         ),
@@ -298,7 +313,7 @@ export const router = createBrowserRouter([
       {
         path: "notifications",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             {WithSuspense(<NotificationsPage />)}
           </ProtectedRoute>
         ),
@@ -306,7 +321,7 @@ export const router = createBrowserRouter([
       {
         path: "users",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+          <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<AdminUsersPage />)}
           </ProtectedRoute>
         ),
@@ -314,23 +329,17 @@ export const router = createBrowserRouter([
       {
         path: "chat-rooms",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
-            {WithSuspense(<ChatRoomsAdminPage />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "chat-rooms",
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
-            {WithSuspense(<ChatRoomsAdminPage />)}
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            <ServiceProtectedRoute service="chat">
+              {WithSuspense(<ChatRoomsAdminPage />)}
+            </ServiceProtectedRoute>
           </ProtectedRoute>
         ),
       },
       {
         path: "dictionaries",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin"]}>
+          <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<DictionariesPage />)}
           </ProtectedRoute>
         ),
@@ -338,7 +347,7 @@ export const router = createBrowserRouter([
       {
         path: "calendar",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "advisor"]}>
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             <ServiceProtectedRoute service="calendar">
               {WithSuspense(<CalendarView />)}
             </ServiceProtectedRoute>
@@ -348,7 +357,7 @@ export const router = createBrowserRouter([
       {
         path: "analytics",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "superadmin", "chair"]}>
+          <ProtectedRoute requiredAnyRole={["admin", "chair"]}>
             {WithSuspense(<AnalyticsDashboard />)}
           </ProtectedRoute>
         ),

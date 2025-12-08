@@ -20,7 +20,7 @@ docker-compose up -d
 
 **Порты:**
 
-- MinIO S3 API: `http://localhost:9090`
+- MinIO S3 API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9091`
   - Username: `minioadmin`
   - Password: `minioadmin`
@@ -30,7 +30,7 @@ docker-compose up -d
 Файл `backend/.env` должен содержать:
 
 ```properties
-S3_ENDPOINT=http://localhost:9090
+S3_ENDPOINT=http://localhost:9000
 S3_REGION=us-east-1
 S3_BUCKET=phd-portal
 S3_ACCESS_KEY=minioadmin
@@ -154,7 +154,7 @@ docker-compose up -d
 **Решение:**
 
 ```bash
-mc alias set local http://localhost:9090 minioadmin minioadmin
+mc alias set local http://localhost:9000 minioadmin minioadmin
 mc anonymous set download local/phd-portal
 ```
 
@@ -197,7 +197,7 @@ Content-Type: application/json
 
 ```json
 {
-  "upload_url": "http://localhost:9090/phd-portal/nodes/123/S1_antiplag/antiplag_report/...",
+  "upload_url": "http://localhost:9000/phd-portal/nodes/123/S1_antiplag/antiplag_report/...",
   "object_key": "nodes/123/S1_antiplag/antiplag_report/2025-11-15-uuid-antiplagiat_report.pdf",
   "expires_at": "2025-11-15T10:15:00Z"
 }

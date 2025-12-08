@@ -8,7 +8,7 @@
 -- Create demo.university tenant
 INSERT INTO tenants (id, slug, name, tenant_type, is_active, enabled_services, primary_color, secondary_color, app_name)
 VALUES (
-  'dd000000-0000-0000-0000-demo00000001',
+  'dd000000-0000-0000-0000-d00000000001',
   'demo',
   'Demo University',
   'university',
@@ -34,7 +34,7 @@ VALUES (
   'Demo',
   'Admin',
   'admin',
-  '$2a$10$Wz5yHrQmXhKLJxVKxUQXOeJ7.N6GYj9bIxJZ3vMVq7qh0Kz5D1DmC', -- password: demopassword123!
+  '$2a$10$3r/ZsOJoxgNK6mMj4Zl9FeYdq8pokmxAqk975/vu6JbEjeyXk6cR6', -- password: demopassword123!
   true,
   NOW()
 ) ON CONFLICT (username) DO NOTHING;
@@ -43,7 +43,7 @@ VALUES (
 INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary)
 VALUES (
   'dd000001-0000-0000-0001-000000000001',
-  'dd000000-0000-0000-0000-demo00000001',
+  'dd000000-0000-0000-0000-d00000000001',
   'admin',
   true
 ) ON CONFLICT (user_id, tenant_id) DO NOTHING;
@@ -61,11 +61,11 @@ ON CONFLICT (username) DO NOTHING;
 -- Create advisor memberships
 INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary)
 VALUES
-  ('dd000002-0000-0000-0001-000000000001', 'dd000000-0000-0000-0000-demo00000001', 'advisor', true),
-  ('dd000003-0000-0000-0002-000000000002', 'dd000000-0000-0000-0000-demo00000001', 'advisor', true),
-  ('dd000004-0000-0000-0003-000000000003', 'dd000000-0000-0000-0000-demo00000001', 'advisor', true),
-  ('dd000005-0000-0000-0004-000000000004', 'dd000000-0000-0000-0000-demo00000001', 'advisor', true),
-  ('dd000006-0000-0000-0005-000000000005', 'dd000000-0000-0000-0000-demo00000001', 'advisor', true)
+  ('dd000002-0000-0000-0001-000000000001', 'dd000000-0000-0000-0000-d00000000001', 'advisor', true),
+  ('dd000003-0000-0000-0002-000000000002', 'dd000000-0000-0000-0000-d00000000001', 'advisor', true),
+  ('dd000004-0000-0000-0003-000000000003', 'dd000000-0000-0000-0000-d00000000001', 'advisor', true),
+  ('dd000005-0000-0000-0004-000000000004', 'dd000000-0000-0000-0000-d00000000001', 'advisor', true),
+  ('dd000006-0000-0000-0005-000000000005', 'dd000000-0000-0000-0000-d00000000001', 'advisor', true)
 ON CONFLICT (user_id, tenant_id) DO NOTHING;
 
 -- Create 24 Student users (distributed across stages) - password: demopassword123!
@@ -108,53 +108,53 @@ ON CONFLICT (username) DO NOTHING;
 
 -- Create student memberships
 INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary)
-SELECT id, 'dd000000-0000-0000-0000-demo00000001', 'student', true
+SELECT id, 'dd000000-0000-0000-0000-d00000000001', 'student', true
 FROM users 
-WHERE id LIKE 'dd001%'
+WHERE id::text LIKE 'dd001%'
 ON CONFLICT (user_id, tenant_id) DO NOTHING;
 
 -- Create Public Health & Healthcare focused Specialties for demo tenant
 INSERT INTO specialties (id, name, code, tenant_id, is_active, created_at)
 VALUES
-  ('dd100001-0000-0000-0001-000000000001', 'Epidemiology', 'EPD', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd100002-0000-0000-0002-000000000002', 'Public Health', 'PBH', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd100003-0000-0000-0003-000000000003', 'Health Policy & Management', 'HPM', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd100004-0000-0000-0004-000000000004', 'Global Health', 'GLH', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd100005-0000-0000-0005-000000000005', 'Environmental Health Sciences', 'EHS', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd100006-0000-0000-0006-000000000006', 'Biostatistics', 'BST', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd100007-0000-0000-0007-000000000007', 'Health Behavior', 'HBV', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd100008-0000-0000-0008-000000000008', 'Clinical Research', 'CLR', 'dd000000-0000-0000-0000-demo00000001', true, NOW())
+  ('dd100001-0000-0000-0001-000000000001', 'Epidemiology', 'EPD', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd100002-0000-0000-0002-000000000002', 'Public Health', 'PBH', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd100003-0000-0000-0003-000000000003', 'Health Policy & Management', 'HPM', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd100004-0000-0000-0004-000000000004', 'Global Health', 'GLH', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd100005-0000-0000-0005-000000000005', 'Environmental Health Sciences', 'EHS', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd100006-0000-0000-0006-000000000006', 'Biostatistics', 'BST', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd100007-0000-0000-0007-000000000007', 'Health Behavior', 'HBV', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd100008-0000-0000-0008-000000000008', 'Clinical Research', 'CLR', 'dd000000-0000-0000-0000-d00000000001', true, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Create Programs for demo tenant
 INSERT INTO programs (id, name, code, tenant_id, is_active, created_at)
 VALUES
-  ('dd200001-0000-0000-0001-000000000001', 'Doctor of Public Health (DrPH)', 'DRPH', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd200002-0000-0000-0002-000000000002', 'PhD in Public Health', 'PHDPH', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd200003-0000-0000-0003-000000000003', 'PhD in Health Services Management', 'PHDHSM', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd200004-0000-0000-0004-000000000004', 'PhD in Epidemiology', 'PHDEPD', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd200005-0000-0000-0005-000000000005', 'PhD in Biostatistics', 'PHDBST', 'dd000000-0000-0000-0000-demo00000001', true, NOW())
+  ('dd200001-0000-0000-0001-000000000001', 'Doctor of Public Health (DrPH)', 'DRPH', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd200002-0000-0000-0002-000000000002', 'PhD in Public Health', 'PHDPH', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd200003-0000-0000-0003-000000000003', 'PhD in Health Services Management', 'PHDHSM', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd200004-0000-0000-0004-000000000004', 'PhD in Epidemiology', 'PHDEPD', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd200005-0000-0000-0005-000000000005', 'PhD in Biostatistics', 'PHDBST', 'dd000000-0000-0000-0000-d00000000001', true, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Create Cohorts for demo tenant
-INSERT INTO cohorts (id, name, year, tenant_id, is_active, created_at)
+INSERT INTO cohorts (id, name, start_date, tenant_id, is_active, created_at)
 VALUES
-  ('dd300001-0000-0000-0001-000000002020', 'Cohort 2020', 2020, 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd300002-0000-0000-0002-000000002021', 'Cohort 2021', 2021, 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd300003-0000-0000-0003-000000002022', 'Cohort 2022', 2022, 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd300004-0000-0000-0004-000000002023', 'Cohort 2023', 2023, 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd300005-0000-0000-0005-000000002024', 'Cohort 2024', 2024, 'dd000000-0000-0000-0000-demo00000001', true, NOW())
+  ('dd300001-0000-0000-0001-000000002020', 'Cohort 2020', '2020-09-01', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd300002-0000-0000-0002-000000002021', 'Cohort 2021', '2021-09-01', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd300003-0000-0000-0003-000000002022', 'Cohort 2022', '2022-09-01', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd300004-0000-0000-0004-000000002023', 'Cohort 2023', '2023-09-01', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd300005-0000-0000-0005-000000002024', 'Cohort 2024', '2024-09-01', 'dd000000-0000-0000-0000-d00000000001', true, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Create Departments for demo tenant
 INSERT INTO departments (id, name, code, tenant_id, is_active, created_at)
 VALUES
-  ('dd400001-0000-0000-0001-000000000001', 'Department of Epidemiology', 'EPID', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd400002-0000-0000-0002-000000000002', 'Department of Health Policy', 'HPOL', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd400003-0000-0000-0003-000000000003', 'Department of Biostatistics', 'BIOS', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd400004-0000-0000-0004-000000000004', 'Department of Environmental Health', 'ENVH', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd400005-0000-0000-0005-000000000005', 'Department of Global Health', 'GLBH', 'dd000000-0000-0000-0000-demo00000001', true, NOW()),
-  ('dd400006-0000-0000-0006-000000000006', 'Department of Behavioral Sciences', 'BHVS', 'dd000000-0000-0000-0000-demo00000001', true, NOW())
+  ('dd400001-0000-0000-0001-000000000001', 'Department of Epidemiology', 'EPID', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd400002-0000-0000-0002-000000000002', 'Department of Health Policy', 'HPOL', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd400003-0000-0000-0003-000000000003', 'Department of Biostatistics', 'BIOS', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd400004-0000-0000-0004-000000000004', 'Department of Environmental Health', 'ENVH', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd400005-0000-0000-0005-000000000005', 'Department of Global Health', 'GLBH', 'dd000000-0000-0000-0000-d00000000001', true, NOW()),
+  ('dd400006-0000-0000-0006-000000000006', 'Department of Behavioral Sciences', 'BHVS', 'dd000000-0000-0000-0000-d00000000001', true, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Link Programs to Specialties (many-to-many relationship)

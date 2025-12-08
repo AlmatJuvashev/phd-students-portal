@@ -11,6 +11,7 @@ export interface User {
   last_name?: string
   email?: string
   role: Role
+  is_superadmin?: boolean
   progress?: Record<string, any>
   completedNodes?: string[]
   phone?: string
@@ -28,7 +29,7 @@ interface AuthContextType {
   user: User | null
   isLoading: boolean
   token: string | null
-  login: (credentials: { username?: string; email?: string; password: string }) => Promise<void>
+  login: (credentials: { username?: string; email?: string; password: string }) => Promise<{ role: string; is_superadmin: boolean }>
   logout: () => void
 }
 
@@ -60,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('token', res.token)
       // Refresh user info
       await qc.invalidateQueries({ queryKey: ['me'] })
+      return { role: res.role, is_superadmin: res.is_superadmin }
     },
     logout: () => {
       localStorage.removeItem('token')

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Users,
   Plus,
@@ -9,6 +10,9 @@ import {
   Shield,
   CheckCircle,
   XCircle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +41,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { adminsApi, tenantsApi, Admin, CreateAdminRequest } from '../api';
-import { useState } from 'react';
+import { adminsApi, tenantsApi, Admin, CreateAdminRequest, Tenant } from '../api';
+import { SuperadminTableToolbar, SuperadminPagination, ConfirmDialog, type FilterConfig } from '../components';
 
 function AdminForm({
   admin,
@@ -291,17 +295,194 @@ export function AdminsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<Admin | undefined>();
   const [resetPasswordAdminId, setResetPasswordAdminId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
+
+  // Table state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<Record<string, string>>({
+    status: 'all',
+    tenant: 'all',
+    role: 'all',
+  });
+  const [sortColumn, setSortColumn] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data: admins, isLoading } = useQuery({
     queryKey: ['superadmin', 'admins'],
     queryFn: () => adminsApi.list(),
   });
 
+  const { data: tenants } = useQuery({
+    queryKey: ['superadmin', 'tenants'],
+    queryFn: tenantsApi.list,
+  });
+
+  // Filter configuration
+  const filterConfig: FilterConfig[] = useMemo(() => [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'all', label: 'All Status' },
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ],
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      options: [
+        { value: 'all', label: 'All Roles' },
+        { value: 'admin', label: 'Admin' },
+        { value: 'superadmin', label: 'Superadmin' },
+      ],
+    },
+    {
+      key: 'tenant',
+      label: 'Institution',
+      options: [
+        { value: 'all', label: 'All Institutions' },
+        ...(tenants?.map((t: Tenant) => ({ value: t.id, label: t.name })) || []),
+      ],
+    },
+  ], [tenants]);
+
+  // Filter, sort, and paginate data
+  const processedData = useMemo(() => {
+    if (!admins) return { items: [], total: 0, totalPages: 0 };
+
+    let filtered = [...admins];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (a) =>
+          a.first_name.toLowerCase().includes(query) ||
+          a.last_name.toLowerCase().includes(query) ||
+          a.email.toLowerCase().includes(query) ||
+          a.username.toLowerCase().includes(query)
+      );
+    }
+
+    // Status filter
+    if (filters.status !== 'all') {
+      filtered = filtered.filter((a) =>
+        filters.status === 'active' ? a.is_active : !a.is_active
+      );
+    }
+
+    // Role filter
+    if (filters.role !== 'all') {
+      filtered = filtered.filter((a) => a.role === filters.role);
+    }
+
+    // Tenant filter
+    if (filters.tenant !== 'all') {
+      filtered = filtered.filter((a) => a.tenant_id === filters.tenant);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: any, bVal: any;
+      switch (sortColumn) {
+        case 'name':
+          aVal = `${a.first_name} ${a.last_name}`.toLowerCase();
+          bVal = `${b.first_name} ${b.last_name}`.toLowerCase();
+          break;
+        case 'email':
+          aVal = a.email.toLowerCase();
+          bVal = b.email.toLowerCase();
+          break;
+        case 'tenant':
+          aVal = a.tenant_name || '';
+          bVal = b.tenant_name || '';
+          break;
+        case 'role':
+          aVal = a.role;
+          bVal = b.role;
+          break;
+        case 'status':
+          aVal = a.is_active ? 1 : 0;
+          bVal = b.is_active ? 1 : 0;
+          break;
+        default:
+          aVal = a.email;
+          bVal = b.email;
+      }
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Paginate
+    const start = (currentPage - 1) * pageSize;
+    const items = filtered.slice(start, start + pageSize);
+
+    return { items, total, totalPages };
+  }, [admins, searchQuery, filters, sortColumn, sortDirection, currentPage, pageSize]);
+
+  const handleSort = useCallback((column: string) => {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  }, [sortColumn]);
+
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery('');
+    setFilters({ status: 'all', tenant: 'all', role: 'all' });
+    setCurrentPage(1);
+  }, []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  }, []);
+
   const deleteMutation = useMutation({
     mutationFn: adminsApi.delete,
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['superadmin', 'admins'] }),
   });
+
+  const SortableHeader = ({ column, children }: { column: string; children: React.ReactNode }) => (
+    <TableHead
+      className="cursor-pointer select-none hover:bg-muted/50"
+      onClick={() => handleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        {sortColumn === column ? (
+          sortDirection === 'asc' ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-30" />
+        )}
+      </div>
+    </TableHead>
+  );
 
   return (
     <div className="space-y-6">
@@ -357,96 +538,133 @@ export function AdminsPage() {
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('superadmin.admins.name', 'Name')}</TableHead>
-                <TableHead>{t('superadmin.admins.email', 'Email')}</TableHead>
-                <TableHead>{t('superadmin.admins.institution', 'Institution')}</TableHead>
-                <TableHead>{t('superadmin.admins.role', 'Role')}</TableHead>
-                <TableHead>{t('superadmin.admins.status', 'Status')}</TableHead>
-                <TableHead className="w-32"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {admins?.map((admin) => (
-                <TableRow key={admin.id + (admin.tenant_id || '')}>
-                  <TableCell className="font-medium">
-                    {admin.first_name} {admin.last_name}
-                    {admin.is_superadmin && (
-                      <Shield className="inline h-4 w-4 ml-1 text-violet-500" />
-                    )}
-                  </TableCell>
-                  <TableCell>{admin.email}</TableCell>
-                  <TableCell>
-                    {admin.tenant_name ? (
-                      <span>{admin.tenant_name}</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{admin.role}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {admin.is_active ? (
-                      <Badge variant="outline" className="text-green-600 border-green-600">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-red-600 border-red-600">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Inactive
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => { setEditingAdmin(admin); setDialogOpen(true); }}
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setResetPasswordAdminId(admin.id)}
-                        title="Reset Password"
-                      >
-                        <Key className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          if (confirm(t('superadmin.admins.confirm_delete', 'Deactivate this admin?'))) {
-                            deleteMutation.mutate(admin.id);
-                          }
-                        }}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {(!admins || admins.length === 0) && (
+        <>
+          <SuperadminTableToolbar
+            searchPlaceholder={t('superadmin.admins.search', 'Search administrators...')}
+            searchValue={searchQuery}
+            onSearchChange={handleSearchChange}
+            filters={filterConfig}
+            filterValues={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+          />
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {t('superadmin.admins.empty', 'No administrators yet')}
-                  </TableCell>
+                  <SortableHeader column="name">{t('superadmin.admins.name', 'Name')}</SortableHeader>
+                  <SortableHeader column="email">{t('superadmin.admins.email', 'Email')}</SortableHeader>
+                  <SortableHeader column="tenant">{t('superadmin.admins.institution', 'Institution')}</SortableHeader>
+                  <SortableHeader column="role">{t('superadmin.admins.role', 'Role')}</SortableHeader>
+                  <SortableHeader column="status">{t('superadmin.admins.status', 'Status')}</SortableHeader>
+                  <TableHead className="w-32"></TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {processedData.items.map((admin) => (
+                  <TableRow key={admin.id + (admin.tenant_id || '')}>
+                    <TableCell className="font-medium">
+                      {admin.first_name} {admin.last_name}
+                      {admin.is_superadmin && (
+                        <Shield className="inline h-4 w-4 ml-1 text-violet-500" />
+                      )}
+                    </TableCell>
+                    <TableCell>{admin.email}</TableCell>
+                    <TableCell>
+                      {admin.tenant_name ? (
+                        <span>{admin.tenant_name}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{admin.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {admin.is_active ? (
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-red-600 border-red-600">
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Inactive
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => { setEditingAdmin(admin); setDialogOpen(true); }}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setResetPasswordAdminId(admin.id)}
+                          title="Reset Password"
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setAdminToDelete(admin);
+                            setDeleteDialogOpen(true);
+                          }}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {processedData.items.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {searchQuery || Object.values(filters).some(v => v !== 'all')
+                        ? t('superadmin.admins.no_results', 'No matching administrators found')
+                        : t('superadmin.admins.empty', 'No administrators yet')}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          {processedData.total > 0 && (
+            <SuperadminPagination
+              currentPage={currentPage}
+              totalPages={processedData.totalPages}
+              totalItems={processedData.total}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
+        </>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={t('superadmin.admins.delete_title', 'Deactivate Administrator')}
+        description={t('superadmin.admins.delete_description', `Are you sure you want to deactivate "${adminToDelete?.email}"? They will no longer be able to access the admin panel.`)}
+        confirmLabel={t('superadmin.admins.deactivate', 'Deactivate')}
+        onConfirm={() => {
+          if (adminToDelete) {
+            deleteMutation.mutate(adminToDelete.id);
+          }
+        }}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

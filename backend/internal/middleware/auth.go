@@ -78,12 +78,13 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 }
 
 type UserLite struct {
-	ID        string `db:"id" json:"id"`
-	Username  string `db:"username" json:"username"`
-	Email     string `db:"email" json:"email"`
-	FirstName string `db:"first_name" json:"first_name"`
-	LastName  string `db:"last_name" json:"last_name"`
-	Role      string `db:"role" json:"role"`
+	ID           string `db:"id" json:"id"`
+	Username     string `db:"username" json:"username"`
+	Email        string `db:"email" json:"email"`
+	FirstName    string `db:"first_name" json:"first_name"`
+	LastName     string `db:"last_name" json:"last_name"`
+	Role         string `db:"role" json:"role"`
+	IsSuperadmin bool   `db:"is_superadmin" json:"is_superadmin"`
 }
 
 // HydrateUserFromClaims fetches user by sub (from DB with Redis cache) and stores in context.
@@ -131,7 +132,7 @@ func HydrateUserFromClaims(c *gin.Context, dbx *sqlx.DB, rds interface{}) {
 	
 	log.Printf("[HydrateUser] Querying DB for sub=%s", sub)
 	var u UserLite
-	err := dbx.Get(&u, `SELECT id,username,email,first_name,last_name,role FROM users WHERE id=$1`, sub)
+	err := dbx.Get(&u, `SELECT id,username,email,first_name,last_name,role,COALESCE(is_superadmin, false) as is_superadmin FROM users WHERE id=$1`, sub)
 	if err != nil {
 		log.Printf("[HydrateUser] user not found in DB: sub=%s, error=%v", sub, err)
 		return

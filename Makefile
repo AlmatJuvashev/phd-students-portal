@@ -7,7 +7,7 @@ MAILSERVER_COMPOSE := mailserver/docker-compose.yml
 ROOT_COMPOSE := docker-compose.yml
 
 # Ports to clean up
-PORTS := 8080 5173 5435 9090 9091 8025 1025
+PORTS := 8080 5173 5435 9000 9001 8025 1025
 
 help:
 	@echo "KazNMU PhD Portal - Root Makefile"
@@ -53,8 +53,7 @@ migrate-down:
 
 kill-ports:
 	@echo "Killing processes on ports: $(PORTS)"
-	@lsof -ti:$(shell echo $(PORTS) | tr ' ' ',') | xargs kill -9 2>/dev/null || true
-	@echo "Ports cleared."
+	@./scripts/utils/kill_ports.sh $(PORTS)
 
 logs:
 	docker compose -f $(ROOT_COMPOSE) -f $(MAILSERVER_COMPOSE) logs -f

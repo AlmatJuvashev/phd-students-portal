@@ -19,8 +19,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - "9090:9000" # S3 API
-      - "9091:9091" # Web Console
+      - "9000:9000" # S3 API
+      - "9001:9091" # Web Console
     volumes:
       - minio_data:/data
     healthcheck:

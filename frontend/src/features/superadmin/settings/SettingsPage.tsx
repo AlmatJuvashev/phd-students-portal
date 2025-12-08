@@ -1,12 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Settings,
   Save,
   Plus,
   Trash2,
   Info,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +39,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { settingsApi, Setting } from '../api';
+import { SuperadminTableToolbar, SuperadminPagination, ConfirmDialog } from '../components';
 
 const CATEGORY_COLORS: Record<string, string> = {
   system: 'bg-red-500/10 text-red-700 border-red-500/30',
@@ -157,6 +161,15 @@ export function SettingsPage() {
   const queryClient = useQueryClient();
   const [editingSetting, setEditingSetting] = useState<Setting | { key: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [settingToDelete, setSettingToDelete] = useState<Setting | null>(null);
+
+  // Table state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortColumn, setSortColumn] = useState<string>('key');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['superadmin', 'settings', selectedCategory],
@@ -168,6 +181,83 @@ export function SettingsPage() {
     queryFn: settingsApi.getCategories,
   });
 
+  // Filter, sort, and paginate settings
+  const processedData = useMemo(() => {
+    if (!settings) return { items: [], total: 0, totalPages: 0 };
+
+    let filtered = [...settings];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (s) =>
+          s.key.toLowerCase().includes(query) ||
+          s.description?.toLowerCase().includes(query) ||
+          s.category.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: any, bVal: any;
+      switch (sortColumn) {
+        case 'key':
+          aVal = a.key.toLowerCase();
+          bVal = b.key.toLowerCase();
+          break;
+        case 'category':
+          aVal = a.category.toLowerCase();
+          bVal = b.category.toLowerCase();
+          break;
+        case 'updated':
+          aVal = new Date(a.updated_at).getTime();
+          bVal = new Date(b.updated_at).getTime();
+          break;
+        default:
+          aVal = a.key;
+          bVal = b.key;
+      }
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Paginate
+    const start = (currentPage - 1) * pageSize;
+    const items = filtered.slice(start, start + pageSize);
+
+    return { items, total, totalPages };
+  }, [settings, searchQuery, sortColumn, sortDirection, currentPage, pageSize]);
+
+  const handleSort = useCallback((column: string) => {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  }, [sortColumn]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setCurrentPage(1);
+  }, []);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  }, []);
+
   const deleteMutation = useMutation({
     mutationFn: settingsApi.delete,
     onSuccess: () =>
@@ -176,6 +266,26 @@ export function SettingsPage() {
 
   const getCategoryColor = (cat: string) =>
     CATEGORY_COLORS[cat] || CATEGORY_COLORS.general;
+
+  const SortableHeader = ({ column, children }: { column: string; children: React.ReactNode }) => (
+    <TableHead
+      className="cursor-pointer select-none hover:bg-muted/50"
+      onClick={() => handleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        {sortColumn === column ? (
+          sortDirection === 'asc' ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-30" />
+        )}
+      </div>
+    </TableHead>
+  );
 
   const formatValue = (value: unknown): string => {
     if (typeof value === 'boolean') return value ? 'true' : 'false';
@@ -249,103 +359,128 @@ export function SettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Category Filter */}
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          variant={selectedCategory === '' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSelectedCategory('')}
-        >
-          {t('superadmin.settings.all', 'All')}
-        </Button>
-        {categories?.map((cat) => (
-          <Button
-            key={cat}
-            variant={selectedCategory === cat ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedCategory(cat)}
-          >
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-          </Button>
-        ))}
-      </div>
+      {/* Search + Category Filter */}
+      <SuperadminTableToolbar
+        searchPlaceholder={t('superadmin.settings.search', 'Search settings...')}
+        searchValue={searchQuery}
+        onSearchChange={handleSearchChange}
+        filters={[{
+          key: 'category',
+          label: 'Category',
+          options: [
+            { value: 'all', label: 'All Categories' },
+            ...(categories?.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })) || []),
+          ],
+        }]}
+        filterValues={{ category: selectedCategory || 'all' }}
+        onFilterChange={(key, value) => setSelectedCategory(value === 'all' ? '' : value)}
+        onClearFilters={handleClearFilters}
+      />
 
       {/* Settings Table */}
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('superadmin.settings.key', 'Key')}</TableHead>
-                <TableHead>{t('superadmin.settings.value', 'Value')}</TableHead>
-                <TableHead>{t('superadmin.settings.description', 'Description')}</TableHead>
-                <TableHead>{t('superadmin.settings.category', 'Category')}</TableHead>
-                <TableHead className="w-24"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {settings?.map((setting) => (
-                <TableRow key={setting.key}>
-                  <TableCell className="font-mono text-sm font-medium">
-                    {setting.key}
-                  </TableCell>
-                  <TableCell>{renderValuePreview(setting)}</TableCell>
-                  <TableCell className="max-w-[250px]">
-                    {setting.description ? (
-                      <div className="flex items-start gap-1">
-                        <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                        <span className="text-sm text-muted-foreground">
-                          {setting.description}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getCategoryColor(setting.category)}>
-                      {setting.category}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingSetting(setting)}
-                        title="Edit"
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          if (confirm(t('superadmin.settings.confirm_delete', 'Delete this setting?'))) {
-                            deleteMutation.mutate(setting.key);
-                          }
-                        }}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {(!settings || settings.length === 0) && (
+        <>
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    {t('superadmin.settings.empty', 'No settings found')}
-                  </TableCell>
+                  <SortableHeader column="key">{t('superadmin.settings.key', 'Key')}</SortableHeader>
+                  <TableHead>{t('superadmin.settings.value', 'Value')}</TableHead>
+                  <TableHead>{t('superadmin.settings.description', 'Description')}</TableHead>
+                  <SortableHeader column="category">{t('superadmin.settings.category', 'Category')}</SortableHeader>
+                  <TableHead className="w-24"></TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {processedData.items.map((setting) => (
+                  <TableRow key={setting.key}>
+                    <TableCell className="font-mono text-sm font-medium">
+                      {setting.key}
+                    </TableCell>
+                    <TableCell>{renderValuePreview(setting)}</TableCell>
+                    <TableCell className="max-w-[250px]">
+                      {setting.description ? (
+                        <div className="flex items-start gap-1">
+                          <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                          <span className="text-sm text-muted-foreground">
+                            {setting.description}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getCategoryColor(setting.category)}>
+                        {setting.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditingSetting(setting)}
+                          title="Edit"
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSettingToDelete(setting);
+                            setDeleteDialogOpen(true);
+                          }}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {processedData.items.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      {searchQuery || selectedCategory
+                        ? t('superadmin.settings.no_results', 'No matching settings found')
+                        : t('superadmin.settings.empty', 'No settings found')}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          {processedData.total > 0 && (
+            <SuperadminPagination
+              currentPage={currentPage}
+              totalPages={processedData.totalPages}
+              totalItems={processedData.total}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
+        </>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={t('superadmin.settings.delete_title', 'Delete Setting')}
+        description={t('superadmin.settings.delete_description', `Are you sure you want to delete the setting "${settingToDelete?.key}"? This action cannot be undone.`)}
+        confirmLabel={t('common.delete', 'Delete')}
+        onConfirm={() => {
+          if (settingToDelete) {
+            deleteMutation.mutate(settingToDelete.key);
+          }
+        }}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -327,10 +327,10 @@ func (h *SuperadminTenantsHandler) UpdateTenantServices(c *gin.Context) {
 	}
 
 	// Validate services - only allow valid optional services
-	validServices := map[string]bool{"chat": true, "calendar": true}
+	validServices := map[string]bool{"chat": true, "calendar": true, "smtp": true, "email": true}
 	for _, svc := range req.EnabledServices {
 		if !validServices[svc] {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid service: " + svc + ". Valid services: chat, calendar"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid service: " + svc + ". Valid services: chat, calendar, smtp, email"})
 			return
 		}
 	}

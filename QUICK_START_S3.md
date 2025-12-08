@@ -71,7 +71,7 @@ cd frontend && npm run dev
 Файл `backend/.env`:
 
 ```properties
-S3_ENDPOINT=http://localhost:9090
+S3_ENDPOINT=http://localhost:9000
 S3_BUCKET=phd-portal
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
@@ -102,6 +102,6 @@ docker-compose restart minio
 **CORS ошибки:**
 
 ```bash
-mc alias set local http://localhost:9090 minioadmin minioadmin
+mc alias set local http://localhost:9000 minioadmin minioadmin
 mc anonymous set download local/phd-portal
 ```
