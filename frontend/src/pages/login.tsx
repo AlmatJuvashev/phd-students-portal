@@ -23,16 +23,15 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [errorMessage, setErrorMessage] = React.useState<string>("");
   const [showPassword, setShowPassword] = React.useState(false);
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<Form>({ resolver: zodResolver(Schema) });
   const onSubmit = async (data: Form) => {
     try {
-      setErrorMessage("");
       // Use AuthContext for login to refresh user state
       const res = await login({ username: data.username, password: data.password });
       if (res.is_superadmin) {
@@ -43,8 +42,15 @@ export function LoginPage() {
       navigate(from, { replace: true });
     } catch (e: any) {
       console.error("Login failed", e);
-      const message = e?.message || T("auth.failed");
-      setErrorMessage(message);
+      let message = e?.message || T("auth.failed");
+      try {
+        // Try to parse JSON error message from backend
+        const parsed = JSON.parse(message);
+        if (parsed.error) message = parsed.error;
+      } catch (err) {
+        // Not JSON, use original string
+      }
+      setError("password", { type: "manual", message });
     }
   };
   return (
@@ -56,11 +62,6 @@ export function LoginPage() {
             {T("app.name", { defaultValue: "PhD Portal" })}
           </p>
         </div>
-        {errorMessage && (
-          <div className="mb-4 p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-sm">
-            {errorMessage}
-          </div>
-        )}
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-1">
             <Label htmlFor="username">{T("auth.username")}</Label>

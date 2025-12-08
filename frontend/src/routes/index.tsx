@@ -79,10 +79,10 @@ const Dashboard = lazy(() =>
   import("@/pages/dashboard").then((m) => ({ default: m.Dashboard }))
 );
 const ForgotPassword = lazy(() =>
-  import("@/pages/forgot").then((m) => ({ default: m.ForgotPassword }))
+  import("@/pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
 );
 const ResetPassword = lazy(() =>
-  import("@/pages/reset").then((m) => ({ default: m.ResetPassword }))
+  import("@/pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage }))
 );
 const ChatPage = lazy(() =>
   import("@/pages/chat").then((m) => ({ default: m.ChatPage }))

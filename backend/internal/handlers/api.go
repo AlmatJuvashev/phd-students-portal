@@ -93,9 +93,11 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Services
 	emailService := services.NewEmailService()
 
-	// Auth routes (login only - password reset done by admin)
-	auth := NewAuthHandler(db, cfg)
+	// Auth routes (login and password reset)
+	auth := NewAuthHandler(db, cfg, emailService)
 	api.POST("/auth/login", auth.Login)
+	api.POST("/auth/forgot-password", auth.ForgotPassword)
+	api.POST("/auth/reset-password", auth.ResetPassword)
 
 	users := NewUsersHandler(db, cfg)
 	journey := NewJourneyHandler(db, cfg, playbookManager)
