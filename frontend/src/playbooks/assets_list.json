@@ -272,9 +272,9 @@
       "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "storage": {
         "provider": "public",
-        "key": "templates/app5_ru.docx"
+        "key": "templates/letter_to_dissertation_head_request_defence_ru.docx"
       },
-      "version": "2025-10-08"
+      "version": "2025-11-29"
     },
     {
       "id": "tpl_app6_ru",

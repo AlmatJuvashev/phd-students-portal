@@ -33,6 +33,9 @@ export type FormTaskDetailsProps = {
   canEdit?: boolean;
   disabled?: boolean;
   renderActions?: (ctx: FormTaskContext) => ReactNode;
+  validationErrors?: Record<string, Record<number, string>>;
+  persistKey?: string;
+  onValuesChange?: (values: Record<string, any>) => void;
 };
 
 export function FormTaskDetails({
@@ -42,6 +45,9 @@ export function FormTaskDetails({
   canEdit = true,
   disabled = false,
   renderActions,
+  validationErrors,
+  persistKey,
+  onValuesChange,
 }: FormTaskDetailsProps) {
   const { t: T } = useTranslation("common");
   const fields: FieldDef[] = node.requirements?.fields ?? [];
@@ -86,8 +92,37 @@ export function FormTaskDetails({
   );
 
   useEffect(() => {
-    dispatch({ type: "replace", values: initial ?? {} });
-  }, [initial]);
+    let merged = initial ?? {};
+    if (persistKey) {
+      try {
+        const saved = localStorage.getItem(persistKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          merged = { ...merged, ...parsed };
+        }
+      } catch (e) {
+        console.error("Failed to load draft from localStorage", e);
+      }
+    }
+    dispatch({ type: "replace", values: merged });
+  }, [initial, persistKey]);
+
+  useEffect(() => {
+    if (persistKey && canEdit && !disabled) {
+      const handler = setTimeout(() => {
+        try {
+          localStorage.setItem(persistKey, JSON.stringify(values));
+        } catch (e) {
+          console.error("Failed to save draft to localStorage", e);
+        }
+      }, 500);
+      return () => clearTimeout(handler);
+    }
+  }, [values, persistKey, canEdit, disabled]);
+
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
 
   const setField = useCallback(
     (key: string, value: any) => dispatch({ type: "set", key, value }),
@@ -102,17 +137,23 @@ export function FormTaskDetails({
   const submit = useCallback(
     (extra: Record<string, any> = {}) => {
       if (!onSubmit) return;
+      if (persistKey) {
+        localStorage.removeItem(persistKey);
+      }
       onSubmit({ ...values, ...extra });
     },
-    [onSubmit, values]
+    [onSubmit, values, persistKey]
   );
 
   const saveDraft = useCallback(
     (extra: Record<string, any> = {}) => {
       if (!onSubmit) return;
+      if (persistKey) {
+        localStorage.removeItem(persistKey);
+      }
       onSubmit({ ...values, ...extra, __draft: true });
     },
-    [onSubmit, values]
+    [onSubmit, values, persistKey]
   );
 
   const ctx = useMemo<FormTaskContext>(
@@ -210,6 +251,7 @@ export function FormTaskDetails({
                     otherValue={values[`${f.key}_other`]}
                     canEdit={canEdit}
                     disabled={disabled}
+                    itemErrors={validationErrors?.[f.key]}
                   />
                 );
               })}

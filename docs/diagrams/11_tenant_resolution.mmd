@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant C as Client
+    participant MW as TenantMiddleware
+    participant DB as PostgreSQL
+    participant API as Handler
+
+    C->>MW: Request with X-Tenant-Slug header
+    Note right of C: or subdomain (kaznmu.portal.kz)
+    MW->>MW: resolveTenantSlug()
+    MW->>DB: SELECT * FROM tenants WHERE slug=$1
+    DB-->>MW: Tenant record
+    MW->>MW: Verify tenant.is_active
+    MW->>API: c.Set("tenant_id", tenant.ID)
+    API->>DB: Query with tenant_id filter
+    DB-->>API: Tenant-scoped data
+    API-->>C: Response

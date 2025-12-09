@@ -5,10 +5,104 @@
   "nav": {
     "home": "Home",
     "journey": "Journey",
+    "chat": "Messages",
     "inbox": "Inbox",
     "admin": "Admin",
     "login": "Login",
-    "logout": "Logout"
+    "logout": "Logout",
+    "calendar": "Calendar",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your personal information",
+    "edit_button": "Edit Profile",
+    "cancel_edit": "Cancel Editing",
+    "personal_info": "Personal Information",
+    "edit_profile": "Edit Profile",
+    "email": "Email",
+    "phone": "Phone",
+    "date_of_birth": "Date of Birth",
+    "address": "Address",
+    "bio": "Bio",
+    "email_verification_pending": "Email verification pending",
+    "check_email": "Please check <strong>{email}</strong> for the verification link.",
+    "file_too_large": "File too large",
+    "max_size": "Max 5MB",
+    "upload_failed": "Upload failed",
+    "avatar_updated": "Avatar updated",
+    "failed_upload": "Failed to upload avatar",
+    "phone_number": "Phone Number",
+    "phone_placeholder": "+7 (777) 123-45-67",
+    "address_placeholder": "City, Street, Apt...",
+    "bio_placeholder": "Tell us a bit about yourself...",
+    "current_password": "Current Password (Required to save)",
+    "save_changes": "Save Changes",
+    "saving": "Saving...",
+    "profile_updated": "Profile updated successfully",
+    "update_failed": "Failed to update profile",
+    "try_again": "Please try again later.",
+    "password_required": "Password is required to save changes"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Mark all read",
+    "no_notifications": "No notifications"
+  },
+  "chat": {
+    "title": "Messages",
+    "subtitle": "Group rooms for cohorts and advisors. Messages post now; live streaming via WebSocket is coming soon.",
+    "preview": "Beta",
+    "demo_notice": "Posting uses the API today; we will add real-time delivery next.",
+    "rooms_heading": "Rooms",
+    "messages_heading": "Conversation",
+    "room_members": "{{count}} members",
+    "input_placeholder": "Share an update with your cohort…",
+    "send_disabled": "This room is archived. Sending is disabled.",
+    "empty_state": "Pick a room to see messages.",
+    "loading_rooms": "Loading your rooms…",
+    "loading_messages": "Loading messages…",
+    "send": "Send",
+    "no_rooms": "You are not a member of any rooms yet.",
+    "archived": "Archived",
+    "live_hint": "Messages post instantly; live stream coming soon.",
+    "search_placeholder": "Search chats…",
+    "active_rooms": "My rooms",
+    "types": {
+      "cohort": "Cohort room",
+      "advisory": "Advisor room",
+      "admin": "Admin space"
+    }
+  },
+  "chat_admin": {
+    "title": "Chat rooms",
+    "subtitle": "Create cohort/advisory rooms and manage access.",
+    "create_heading": "New room",
+    "room_name": "Room name",
+    "room_placeholder": "PhD 2025 • Public Health",
+    "room_type": "Type",
+    "create": "Create",
+    "rooms_heading": "Rooms",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "manage_members": "Members",
+    "members_title": "Members",
+    "add_member": "Add member",
+    "search_user": "Search by name or email",
+    "no_users": "No users found",
+    "add": "Add",
+    "current_members": "Current members",
+    "no_members": "No members yet",
+    "remove": "Remove",
+    "add_all": "Add all",
+    "remove_all": "Remove all",
+    "adding_all": "Adding...",
+    "removing_all": "Removing...",
+    "added_members": "Added members",
+    "added_members_count": "Added {{count}} members",
+    "removed_members": "Removed members",
+    "removed_members_count": "Removed {{count}} members"
   },
   "auth": {
     "login_title": "Login",
@@ -16,10 +110,66 @@
     "password": "Password",
     "signin": "Sign in",
     "forgot": "Forgot password?",
-    "failed": "Login failed"
+    "failed": "Login failed",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "templates": {
-    "heading": "Available Templates"
+    "heading": "Available Templates",
+    "profile_required": "Please complete your doctoral profile form to auto-fill templates."
+  },
+  "calendar": {
+    "title": "Calendar",
+    "new_event": "New Event",
+    "create_event": "Create Event",
+    "edit_event": "Edit Event",
+    "fields": {
+      "title": "Title",
+      "start": "Start",
+      "end": "End",
+      "type": "Type",
+      "type_placeholder": "Select type",
+      "location": "Location",
+      "description": "Description"
+    },
+    "types": {
+      "meeting": "Meeting",
+      "deadline": "Deadline",
+      "academic": "Academic"
+    },
+    "actions": {
+      "delete": "Delete",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "errors": {
+      "fetch": "Failed to fetch events",
+      "save": "Failed to save event",
+      "delete": "Failed to delete event"
+    },
+    "untitled": "Untitled",
+    "confirm_delete": "Are you sure you want to delete this event?",
+    "validation": {
+      "title": "Title is required",
+      "start": "Start time is required",
+      "end": "End time is required"
+    },
+    "new": "New",
+    "today": "Today",
+    "previous": "Back",
+    "next": "Next",
+    "month": "Month",
+    "week": "Week",
+    "day": "Day",
+    "agenda": "Agenda",
+    "date": "Date",
+    "time": "Time",
+    "event": "Event",
+    "all_day": "All Day",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "no_events": "No events in this range",
+    "show_more": "+{{count}} more"
   },
   "forms": {
     "validations_title": "Validations",
@@ -35,7 +185,99 @@
     "omid_info_after_yes": "Your application has been submitted. The Graduate Office will send a letter to the Scientific Committee to set the date and appoint two reviewers. The hearing date will be no earlier than 30 calendar days after the reviewers are appointed.",
     "proceed_next": "Proceed to next step",
     "nk_required_package_title": "Required document package for SC",
-    "nk_confirm_info": "Please confirm you have prepared and checked the full document package. Continue to scheduling the SC hearing?"
+    "nk_confirm_info": "Please confirm you have prepared and checked the full document package. Continue to scheduling the SC hearing?",
+    "create_students_title": "Manage Students",
+    "create_students_subtitle": "Invite new students, assign advisors, and manage existing accounts.",
+    "students_table": "Students",
+    "students_summary": "{{count}} students · page {{page}} of {{pages}}",
+    "students_empty": "No students yet.",
+    "students_error": "Unable to load students.",
+    "search_students": "Search students…",
+    "pagination_label": "Page {{page}} of {{pages}}",
+    "prev_page": "Prev",
+    "next_page": "Next",
+    "admins_table": "Admins",
+    "admins_summary": "{{count}} admins · page {{page}} of {{pages}}",
+    "admins_empty": "No admins yet.",
+    "admins_error": "Unable to load admins.",
+    "search_admins": "Search admins…",
+    "advisors_table": "Advisors",
+    "advisors_summary": "{{count}} advisors · page {{page}} of {{pages}}",
+    "advisors_empty": "No advisors yet.",
+    "advisors_error": "Unable to load advisors.",
+    "search_advisors_input": "Search advisors…",
+    "registration_date": "Registered",
+    "copy_credentials": "Copy credentials",
+    "active_state": "Status",
+    "status_all": "All",
+    "status_active": "Active",
+    "status_inactive": "Inactive",
+    "all_programs": "All programs",
+    "all_departments": "All departments",
+    "all_cohorts": "All cohorts",
+    "phone_optional": "Phone (optional)",
+    "email_optional": "Email (optional)",
+    "program": "Program",
+    "department": "Department",
+    "specialty": "Specialty",
+    "cohort": "Cohort",
+    "advisors": "Advisors",
+    "search_advisors": "Search advisors…",
+    "creating": "Creating…",
+    "username": "Username",
+    "temp_password": "Temp password",
+    "errors": {
+      "create_user": "Failed to create user",
+      "update_user": "Failed to update user",
+      "create_student": "Failed to create student",
+      "update_student": "Failed to update student",
+      "create_advisor": "Failed to create advisor",
+      "create_admin": "Failed to create admin",
+      "reset_password": "Failed to reset password",
+      "status_update": "Failed to update status",
+      "update_advisor": "Failed to update advisor",
+      "update_admin": "Failed to update admin"
+    },
+    "create_student": {
+      "title": "Create Student",
+      "subtitle": "Add a new student with program details and advisor assignments.",
+      "heading": "Student Details",
+      "submit": "Create Student",
+      "success": "Student Created"
+    },
+    "create_advisor": {
+      "title": "Manage Advisors",
+      "subtitle": "Add or update academic advisors.",
+      "heading": "Advisor Details",
+      "submit": "Create Advisor",
+      "success": "Advisor Created"
+    },
+    "create_admins": {
+      "title": "Manage Admins",
+      "subtitle": "Only superadmins can manage other admins.",
+      "heading": "Admin Details",
+      "submit": "Create Admin",
+      "success": "Admin Created"
+    },
+    "edit_advisor": "Edit Advisor",
+    "edit_admin": "Edit Admin",
+    "roles": {
+      "student": "Student",
+      "advisor": "Advisor",
+      "chair": "Department Chair",
+      "admin": "Administrator"
+    },
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "email": "Email",
+    "password": "Password",
+    "edit_student": "Edit Student",
+    "delete_student": "Deactivate Student",
+    "delete_advisor": "Deactivate Advisor",
+    "delete_admin": "Deactivate Admin",
+    "mark_active": "Activate",
+    "confirm_deactivate_named": "Deactivate this user?",
+    "confirm_activate_named": "Activate this user?"
   },
   "external": {
     "checklist_title": "Action checklist",
@@ -56,10 +298,13 @@
     "copied": "Copied",
     "edit": "Edit",
     "cancel_edit": "Cancel edit",
+    "retry": "Retry",
+    "remove": "Remove",
     "success": "Saved.",
     "error": "Error",
     "info": "Info",
-    "not_implemented": "Action not yet available."
+    "not_implemented": "Action not yet available.",
+    "required": "Required"
   },
   "gateway": {
     "prompt": "Proceed to the next chapter? You can unlock it now.",
@@ -68,7 +313,13 @@
   "journey": {
     "reset": "Reset Journey",
     "reset_confirm": "Reset your journey progress?",
-    "reset_hint": "You can reset your journey to start over."
+    "reset_hint": "You can reset your journey to start over.",
+    "reset_title": "Reset Journey",
+    "reset_warning": "This action cannot be undone. All your progress will be lost and you will start from the beginning.",
+    "reset_confirm_phrase": "reset map",
+    "reset_type_to_confirm": "To confirm, type \"{{phrase}}\" below:",
+    "reset_confirm_label": "Confirmation",
+    "reset_confirm_button": "Reset My Journey"
   },
   "upload": {
     "not_supported": "File uploads will be available soon.",
@@ -81,6 +332,10 @@
     "instructions": "Confirm when this checkpoint is ready.",
     "submit": "Mark as ready"
   },
+  "validation": {
+    "required": "Required",
+    "invalid_email": "Invalid email"
+  },
   "forms.nk.done_info": "Answers saved. Proceeding to the next step…",
   "home": {
     "journey_hint": "Open your doctoral journey map.",
@@ -90,7 +345,31 @@
     "open_contacts": "Contacts",
     "no_contacts": "No contacts available.",
     "hero_title": "PhD Student Portal",
-    "hero_subtitle": "Navigate your doctoral journey with clarity and confidence"
+    "hero_subtitle": "Navigate your doctoral journey with clarity and confidence",
+    "chat_hint": "Chat with your advisors and colleagues.",
+    "open_chat": "Open Chat",
+    "calendar_hint": "View upcoming events and deadlines.",
+    "open_calendar": "View Calendar"
+  },
+  "dashboard": {
+    "welcome_back": "Welcome back, {{name}}!",
+    "subtitle": "Track your doctoral journey progress and manage your research milestones",
+    "settings": "Settings",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "progress": "Progress",
+    "total_tasks": "Total Tasks",
+    "quick_actions": "Quick Actions",
+    "journey_map": "Journey Map",
+    "track_progress": "Track your progress",
+    "messages": "Messages",
+    "chat_advisor": "Chat with advisor",
+    "calendar": "Calendar",
+    "view_events": "View upcoming events",
+    "my_profile": "My Profile",
+    "manage_account": "Manage account",
+    "coming_soon": "Coming Soon",
+    "coming_soon_text": "This dashboard will soon display your journey progress, recent uploads, advisor feedback, and upcoming deadlines."
   },
   "map": {
     "title": "My Dissertation Map",
@@ -101,12 +380,438 @@
     "student_fallback_name": "Student"
   },
   "fields": {
-    "full_name": "Full name",
+    "full_name": "Full Name",
     "specialty": "Specialty",
     "program": "Program",
-    "graduation_date": "Graduation date",
-    "advisors_full_names": "Advisors' full names",
-    "dissertation_form": "Dissertation form",
-    "dissertation_form_other": "Other (specify)"
+    "graduation_date": "Graduation Date",
+    "advisors_full_names": "Advisors' Full Names",
+    "dissertation_form": "Dissertation Form",
+    "dissertation_form_other": "Other (please specify)",
+    "select_date": "Select a date"
+  },
+  "admin": {
+    "sidebar": {
+      "core": "Core",
+      "management": "Management",
+      "dashboard": "Dashboard",
+      "student_progress": "Student Progress",
+      "students_monitor": "Students Monitor",
+      "chat_rooms": "Chat rooms",
+      "create_students": "Manage Students",
+      "create_advisors": "Manage Advisors",
+      "create_admins": "Manage Admins",
+      "calendar": "Calendar",
+      "dictionaries": "Dictionaries",
+      "contacts": "Contacts",
+      "analytics": "Analytics",
+      "users": "Users"
+    },
+    "topbar": {
+      "admin_panel": "Admin Panel",
+      "menu": "Menu",
+      "admin": "Admin",
+      "signed_in_as": "Signed in as",
+      "back_to_main": "Back to main page",
+      "back_to_main_button": "Back to main",
+      "main": "Main"
+    },
+    "student_progress": {
+      "title": "Student Progress",
+      "subtitle": "Overview of students’ dissertation map completion.",
+      "search": "Search by name or email",
+      "refresh": "Refresh",
+      "students": "Students",
+      "empty": "No students found.",
+      "view_journey": "View Journey",
+      "tooltip_progress": "{{done}} of {{total}} nodes done ({{pct}}%)"
+    },
+    "review": {
+      "title": "Documents & Review",
+      "subtitle": "Review and approve student submissions",
+      "select_node": "Select node",
+      "hint": "Select a node above to inspect uploaded files.",
+      "loading": "Loading files...",
+      "empty_title": "No submissions yet",
+      "empty": "No files uploaded for this node yet.",
+      "approve": "Approve",
+      "request_changes": "Request changes",
+      "modal_title": "Request changes",
+      "modal_hint": "{{filename}}",
+      "modal_placeholder": "Let the student know what needs to be fixed",
+      "send": "Send request",
+      "approved_toast": "Document approved",
+      "requested_toast": "Requested changes sent",
+      "error_toast": "Unable to update status",
+      "uploaded_meta": "Uploaded {{date}}{{by}}",
+      "uploaded_by": " · {{name}}",
+      "confirm_reset": "Reset this student's password? They will need the new temporary password to login.",
+      "password_reset": "Password reset",
+      "reset_password": "Reset password"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "New documents and updates from students",
+      "show_all": "Show all",
+      "show_unread": "Unread only",
+      "mark_all_read": "Mark all read",
+      "no_unread": "No unread notifications",
+      "empty": "Notifications will appear here soon.",
+      "event_labels": {
+        "document_submitted": "Document submitted",
+        "document_uploaded": "Document uploaded",
+        "form_submitted": "Form submitted",
+        "default": "Notification"
+      },
+      "messages": {
+        "document_submitted": "Documents submitted for {{node}}",
+        "document_uploaded": "New file uploaded in {{node}}",
+        "form_submitted": "Form submitted in {{node}}",
+        "default": "Update in {{node}}"
+      },
+      "relative": {
+        "just_now": "Just now",
+        "minutes": "{{count}} min ago",
+        "hours": "{{count}} h ago",
+        "yesterday": "Yesterday",
+        "days": "{{count}} d ago",
+        "short_date": "{{date}}"
+      }
+    },
+    "monitor": {
+      "title": "Student Monitoring",
+      "count_label": "{{count}} students",
+      "tabs": {
+        "table": "Table View",
+        "kanban": "Kanban Board",
+        "analytics": "Analytics"
+      },
+      "loading": "Loading students...",
+      "empty": "No students match your filters.",
+      "bulk": {
+        "title": "New reminder for {{count}} students",
+        "title_placeholder": "Title",
+        "message_placeholder": "Message (optional)",
+        "due_label": "Due date",
+        "send": "Send"
+      },
+      "filters": {
+        "search_placeholder": "Search by name, ID, phone, or email...",
+        "program_placeholder": "Program",
+        "department_placeholder": "Department",
+        "cohort_placeholder": "Cohort",
+        "program_all": "All Programs",
+        "department_all": "All Departments",
+        "cohort_all": "All Cohorts",
+        "more": "More Filters",
+        "rp_only": "RP required only",
+        "overdue_only": "Overdue only",
+        "clear": "Clear",
+        "apply": "Apply Filters",
+        "export": "Export CSV",
+        "bulk": "Bulk Message",
+        "new_reminder": "New Reminder",
+        "programs": {
+          "phd_cs": "PhD Computer Science",
+          "phd_physics": "PhD Physics",
+          "phd_chemistry": "PhD Chemistry",
+          "phd_biomed": "PhD Biomedical Engineering",
+          "phd_math": "PhD Applied Mathematics"
+        },
+        "departments": {
+          "cs": "Computer Science",
+          "physics": "Physics",
+          "chemistry": "Chemistry",
+          "biomed": "Biomedical Engineering",
+          "math": "Applied Mathematics"
+        }
+      },
+      "detail": {
+        "loading": "Loading student details...",
+        "error": "Failed to load student details.",
+        "back": "Back to Students",
+        "title": "Student Details",
+        "copy_link": "Copy Link",
+        "advisors": "Advisors",
+        "no_advisor": "No advisor assigned",
+        "overall_progress": "Overall Progress",
+        "status": "Status",
+        "status_overdue": "OVERDUE",
+        "status_normal": "NORMAL",
+          "attach": "Attach File",
+          "add": "Add Comment"
+        },
+        "deadlines": {
+          "title": "Deadlines & Reminders",
+          "next_due": "Next due:",
+          "stage_progress": "{{done}}/{{total}} nodes completed in current stage",
+          "overdue_badge": "Overdue",
+          "upcoming": "Upcoming Deadlines",
+          "add": "Add New Reminder"
+        },
+        "files_count_one": "{{count}} file",
+        "files_count_other": "{{count}} files",
+        "node_states": {
+          "locked": "Locked",
+          "active": "Active",
+          "submitted": "Submitted",
+          "waiting": "Waiting",
+          "under_review": "Under Review",
+          "needs_fixes": "Needs Fixes",
+          "done": "Done"
+        },
+        "node_card": {
+          "due": "Due:",
+          "set_label": "Set deadline",
+          "set_aria": "Set due date"
+        }
+      },
+      "table": {
+        "columns": {
+          "student": "Student",
+          "program_department": "Program · Department",
+          "stage": "Stage",
+          "progress": "Progress",
+          "cohort": "Cohort",
+          "due": "Due",
+          "last_activity": "Last activity"
+        },
+        "select_all": "Select all",
+        "select_student": "Select {{name}}",
+        "stage_nodes": "{{done}}/{{total}} nodes",
+        "overdue_badge": "Overdue",
+        "stage_states": {
+          "completed": "Completed",
+          "in-progress": "In progress",
+          "at-risk": "At risk",
+          "pending": "Pending"
+        }
+      },
+      "kanban": {
+        "empty_stage": "No students in this stage",
+        "progress": "Progress",
+        "due_label": "Due:",
+        "overdue_label": "Overdue:",
+        "rp_required": "RP Required"
+      },
+      "analytics": {
+        "loading": "Loading analytics...",
+        "error": "Error: {{message}}",
+        "metrics": {
+          "antiplag": {
+            "title": "Antiplagiarism Compliance",
+            "description": "Students with S1_antiplag ≥85% confirmed"
+          },
+          "w2": {
+            "title": "Median Days in W2",
+            "description": "Average time spent in pre-examination stage"
+          },
+          "bottleneck": {
+            "title": "Bottleneck Node",
+            "description": "{{count}} students waiting"
+          },
+          "rp": {
+            "title": "RP Required",
+            "description": "Students requiring research proposal"
+          },
+          "completion": {
+            "title": "Completion Rate",
+            "description": "Students on track for graduation"
+          },
+          "overdue": {
+            "title": "Overdue Items",
+            "description": "Tasks past their due date"
+          }
+        },
+        "distribution_title": "Stage Distribution",
+        "distribution_placeholder": "Chart visualization coming soon..."
+      }
+    },
+    "users": {
+      "title": "User Management",
+      "students": "Students",
+      "advisors": "Advisors",
+      "admins": "Admins",
+      "subtitle": "Manage users and their access permissions",
+      "create": "Create User",
+      "create_title": "Create New User",
+      "table_title": "Users",
+      "search": "Search users...",
+      "loading": "Loading users...",
+      "empty_search": "No users found matching \"{{query}}\"",
+      "empty": "No users found",
+      "role": "Role",
+      "pagination": "Showing {{from}} to {{to}} of {{total}} users",
+      "edit_title": "Edit User",
+      "updating": "Updating...",
+      "update_action": "Update User",
+      "reset_success": "Password reset successfully",
+      "new_password": "New password",
+      "copy_reset_message": "Copy reset message",
+      "dismiss": "Dismiss",
+      "reset_notice": "The user must use this new password to login. Make sure they receive these credentials securely!",
+      "created_success": "User created successfully",
+      "password": "Password",
+      "copy_login_message": "Copy login message",
+      "copy_credentials": "Copy credentials",
+      "credentials_notice": "Make sure to save these credentials - they won't be shown again!",
+      "confirm_reset": "Are you sure you want to reset this user's password? They will need to use the new temporary password to login.",
+      "toast": {
+        "created": "User created",
+        "credentials_ready": "Credentials generated successfully",
+        "updated": "User updated",
+        "reset": "Password reset",
+        "credentials_copied": "Credentials copied"
+      }
+    },
+    "dictionaries": {
+      "title": "Dictionaries",
+      "tabs": {
+        "programs": "Programs",
+        "specialties": "Specialties",
+        "cohorts": "Cohorts",
+        "departments": "Departments"
+      },
+      "fields": {
+        "name": "Name",
+        "code": "Code",
+        "code_optional": "Code (optional)",
+        "programs": "Programs",
+        "start_date": "Start Date",
+        "end_date": "End Date"
+      },
+      "actions": {
+        "create": "Create",
+        "creating": "Creating...",
+        "saving": "Saving...",
+        "save_changes": "Save Changes",
+        "status_error": "Failed to update status"
+      },
+      "shared": {
+        "none": "None"
+      },
+      "programs": {
+        "title": "Programs",
+        "add": "Add Program",
+        "add_title": "Add New Program",
+        "name_placeholder": "Program name",
+        "created": "Program created",
+        "create_error": "Failed to create program",
+        "updated": "Program updated",
+        "update_error": "Failed to update program",
+        "deleted": "Program deleted",
+        "delete_confirm": "Are you sure you want to delete this program?",
+        "empty": "No programs found.",
+        "edit_title": "Edit Program"
+      },
+      "specialties": {
+        "title": "Specialties",
+        "add": "Add Specialty",
+        "add_title": "Add New Specialty",
+        "name_placeholder": "Specialty name",
+        "created": "Specialty created",
+        "create_error": "Failed to create specialty",
+        "updated": "Specialty updated",
+        "update_error": "Failed to update specialty",
+        "deleted": "Specialty deleted",
+        "status_updated": "Specialty status updated",
+        "no_programs": "No active programs available",
+        "empty": "No specialties found.",
+        "edit_title": "Edit Specialty",
+        "all": "All specialties"
+      },
+      "cohorts": {
+        "title": "Cohorts",
+        "add": "Add Cohort",
+        "add_title": "Add New Cohort",
+        "name_placeholder": "e.g. 2024-2025",
+        "created": "Cohort created",
+        "create_error": "Failed to create cohort",
+        "updated": "Cohort updated",
+        "update_error": "Failed to update cohort",
+        "deleted": "Cohort deleted",
+        "status_updated": "Cohort status updated",
+        "empty": "No cohorts found.",
+        "edit_title": "Edit Cohort"
+      },
+      "departments": {
+        "title": "Departments",
+        "add": "Add Department",
+        "add_title": "Add New Department",
+        "name_placeholder": "e.g. Department of Surgery",
+        "code_placeholder": "e.g. SURG",
+        "created": "Department created",
+        "create_error": "Failed to create department",
+        "updated": "Department updated",
+        "update_error": "Failed to update department",
+        "deleted": "Department deleted",
+        "status_updated": "Department status updated",
+        "empty": "No departments found.",
+        "edit_title": "Edit Department"
+      }
+    },
+    "contacts": {
+      "title": "Contacts",
+      "subtitle": "Manage visible contacts for students",
+      "add": "Add contact",
+      "edit_title": "Edit contact",
+      "table_title": "Contacts",
+      "empty": "No contacts yet.",
+      "show_inactive": "Show inactive",
+      "name_ru": "Name (RU)",
+      "name_kz": "Name (KZ)",
+      "name_en": "Name (EN)",
+      "title_ru": "Title (RU)",
+      "title_kz": "Title (KZ)",
+      "title_en": "Title (EN)",
+      "phone": "Phone",
+      "email": "Email",
+      "sort": "Sort order",
+      "status": "Status",
+      "title_col": "Title",
+      "errors": {
+        "name_required": "Name is required"
+      }
+    },
+  "analytics": {
+    "title": "Analytics Dashboard",
+    "students_by_stage": "Students by Stage",
+    "overdue_tasks": "Overdue Tasks by Node"
+  },
+  "table": {
+    "name": "Name",
+    "email": "Email",
+    "current_node": "Current Node",
+    "last_activity": "Last Activity",
+    "actions": "Actions"
+  },
+  "time": {
+    "ago": "{{value}} {{unit}} ago",
+    "units": {
+      "seconds": "sec",
+      "minutes": "min",
+      "hours": "hours",
+      "days": "days",
+      "weeks": "weeks",
+      "months": "months",
+      "years": "years"
+    }
+  },
+  "uploads": {
+    "title": "Supporting documents",
+    "subtitle": "Attach the required files for this stage.",
+    "allowed": "Allowed: {{mime}}",
+    "any_format": "Any format",
+    "replace": "Replace file",
+    "add": "Upload file",
+    "empty": "No files uploaded yet.",
+    "note": "Reviewer note:",
+    "download": "Download",
+    "success": "File uploaded",
+    "error": "Failed to upload file. Try again.",
+    "status": {
+      "submitted": "Pending",
+      "approved": "Approved",
+      "rejected": "Needs fixes"
+    }
   }
 }

@@ -18,6 +18,19 @@ export type NodeSubmissionDTO = {
       is_active: boolean;
       attached_at?: string;
       download_url: string;
+      status?: "submitted" | "approved" | "rejected";
+      review_note?: string;
+      approved_at?: string;
+      approved_by?: string;
+      reviewed_document?: {
+        version_id: string;
+        filename?: string;
+        size_bytes?: number;
+        mime_type?: string;
+        download_url: string;
+        reviewed_at?: string;
+        reviewed_by?: string;
+      };
     }>;
   }>;
   outcomes?: Array<{
@@ -34,7 +47,7 @@ export async function getNodeSubmission(nodeId: string) {
 
 export async function saveNodeSubmission(
   nodeId: string,
-  payload: { form_data?: any; state?: string },
+  payload: { form_data?: any; state?: string }
 ) {
   return api(`/journey/nodes/${nodeId}/submission`, {
     method: "PUT",
@@ -44,7 +57,12 @@ export async function saveNodeSubmission(
 
 export async function presignNodeUpload(
   nodeId: string,
-  payload: { slot_key: string; filename: string; content_type: string },
+  payload: {
+    slot_key: string;
+    filename: string;
+    content_type: string;
+    size_bytes: number;
+  }
 ) {
   return api(`/journey/nodes/${nodeId}/uploads/presign`, {
     method: "POST",
@@ -60,7 +78,8 @@ export async function attachNodeUpload(
     object_key: string;
     content_type: string;
     size_bytes: number;
-  },
+    etag?: string;
+  }
 ) {
   return api(`/journey/nodes/${nodeId}/uploads/attach`, {
     method: "POST",
@@ -70,7 +89,7 @@ export async function attachNodeUpload(
 
 export async function patchNodeState(
   nodeId: string,
-  payload: { state: string },
+  payload: { state: string }
 ) {
   return api(`/journey/nodes/${nodeId}/state`, {
     method: "PATCH",

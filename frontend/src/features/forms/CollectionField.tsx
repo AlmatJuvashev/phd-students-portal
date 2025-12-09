@@ -49,6 +49,7 @@ export type CollectionFieldProps = {
   canEdit?: boolean;
   disabled?: boolean;
   renderField: (props: FieldRendererProps) => JSX.Element;
+  itemErrors?: Record<number, string>;
 };
 
 export function CollectionField({
@@ -58,6 +59,7 @@ export function CollectionField({
   canEdit = true,
   disabled = false,
   renderField,
+  itemErrors,
 }: CollectionFieldProps) {
   const items = useMemo(
     () => (Array.isArray(value) ? value : EMPTY_ARRAY),
@@ -167,11 +169,6 @@ export function CollectionField({
       }
     });
 
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return null;
-    }
-
     // Preserve any additional keys from draft (like IDs injected later)
     Object.keys(draft).forEach((key) => {
       if (
@@ -183,8 +180,13 @@ export function CollectionField({
       }
     });
 
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return null;
+    }
+
     return normalized;
-  }, [T, draft, itemFields]);
+  }, [draft, itemFields, T]);
 
   const handleSave = useCallback(() => {
     const normalized = validateAndNormalize();
@@ -245,12 +247,21 @@ export function CollectionField({
         </Card>
       ) : (
         <div className="space-y-4 pt-2 md:pt-0">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="bg-card border rounded-lg p-4 md:p-6 space-y-4"
-            >
-              <div className="text-xs text-muted-foreground">#{index + 1}</div>
+          {items.map((item, index) => {
+            const error = itemErrors?.[index];
+            return (
+              <div
+                key={index}
+                className={`bg-card border rounded-lg p-4 md:p-6 space-y-4 ${
+                  error ? "border-destructive ring-1 ring-destructive" : ""
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="text-xs text-muted-foreground">#{index + 1}</div>
+                  {error && (
+                    <div className="text-xs text-destructive font-medium">{error}</div>
+                  )}
+                </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {previewFields.map((f) => {
                   const cell = item[f.key];
@@ -298,7 +309,8 @@ export function CollectionField({
                 </div>
               ) : null}
             </div>
-          ))}
+            );
+          })}
           <div className="text-xs text-muted-foreground">
             {T("forms.collection_total", "Всего записей")}: {total}
           </div>

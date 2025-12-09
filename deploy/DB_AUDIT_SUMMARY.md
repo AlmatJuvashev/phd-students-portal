@@ -123,7 +123,7 @@ WHERE ni.user_id = $1
 {
   "first_name": "Алмат",
   "last_name": "Жувашев",
-  "email": "juvashev@gmail.com",
+  "email": "admin@example.com",
   "phone": "+7 777 123 4567",
   "graduation_year": "2025"
 }

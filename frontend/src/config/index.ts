@@ -1,1 +1,1 @@
-export const APP_NAME = 'PhD Student Portal'
+export const APP_NAME = "ANaMed Doctoral Portal";

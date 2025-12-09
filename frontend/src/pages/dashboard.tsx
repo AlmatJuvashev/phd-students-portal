@@ -2,20 +2,63 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Map, Clock, CheckCircle2, TrendingUp } from "lucide-react";
+import {
+  Map,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  MessageCircle,
+  Calendar,
+  User,
+  Settings,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "react-i18next";
 
 export function Dashboard() {
+  const { user } = useAuth();
+  const { t } = useTranslation("common");
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl p-6 sm:p-8 border-l-4 border-primary">
-        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
-          Welcome to Your Dashboard
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Track your doctoral journey progress and manage your research
-          milestones
-        </p>
+    <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-8">
+      {/* Welcome Header & Profile Widget */}
+      <div className="grid gap-6 md:grid-cols-[1fr_300px]">
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl p-6 sm:p-8 border-l-4 border-primary flex flex-col justify-center">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
+            {t("dashboard.welcome_back", { name: user?.first_name })}
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            {t("dashboard.subtitle")}
+          </p>
+        </div>
+
+        {/* Profile Widget */}
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <Avatar className="h-16 w-16 border-2 border-primary/10">
+              <AvatarImage src={user?.avatar_url} />
+              <AvatarFallback className="text-lg">
+                {user?.first_name?.[0]}
+                {user?.last_name?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold truncate">
+                {user?.first_name} {user?.last_name}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.role}
+              </p>
+              <Link to="/profile" className="mt-2 inline-block">
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  <Settings className="w-3 h-3 mr-1.5" />
+                  {t("dashboard.settings")}
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Stats Grid */}
@@ -31,7 +74,7 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              In Progress
+              {t("dashboard.in_progress")}
             </div>
           </CardContent>
         </Card>
@@ -47,7 +90,7 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-green-700 dark:text-green-300">
-              Completed
+              {t("dashboard.completed")}
             </div>
           </CardContent>
         </Card>
@@ -63,7 +106,7 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-purple-700 dark:text-purple-300">
-              Progress
+              {t("dashboard.progress")}
             </div>
           </CardContent>
         </Card>
@@ -79,41 +122,90 @@ export function Dashboard() {
               </span>
             </div>
             <div className="text-sm font-medium text-amber-700 dark:text-amber-300">
-              Total Tasks
+              {t("dashboard.total_tasks")}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <Card className="bg-gradient-to-br from-card to-card/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Map className="w-5 h-5 text-primary" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground mb-4">
-            Navigate to your journey map to track progress, upload documents,
-            and complete required tasks.
-          </p>
+      {/* Quick Actions Grid */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">{t("dashboard.quick_actions")}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link to="/journey">
-            <Button size="lg" className="w-full sm:w-auto">
-              <Map className="w-4 h-4 mr-2" />
-              Open Journey Map
-            </Button>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Map className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{t("dashboard.journey_map")}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("dashboard.track_progress")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </Link>
-        </CardContent>
-      </Card>
+
+          <Link to="/chat">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <MessageCircle className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{t("dashboard.messages")}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("dashboard.chat_advisor")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/calendar">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <Calendar className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{t("dashboard.calendar")}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("dashboard.view_events")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/profile">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+              <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <User className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{t("dashboard.my_profile")}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("dashboard.manage_account")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </div>
 
       {/* Info Card */}
-      <Card className="border-l-4 border-primary">
+      <Card className="border-l-4 border-primary bg-muted/20">
         <CardContent className="p-6">
-          <h3 className="font-semibold mb-2">📝 Coming Soon</h3>
+          <h3 className="font-semibold mb-2 flex items-center gap-2">
+            <span className="text-xl">📝</span> {t("dashboard.coming_soon")}
+          </h3>
           <p className="text-sm text-muted-foreground">
-            This dashboard will soon display your journey progress, recent
-            uploads, advisor feedback, and upcoming deadlines.
+            {t("dashboard.coming_soon_text")}
           </p>
         </CardContent>
       </Card>

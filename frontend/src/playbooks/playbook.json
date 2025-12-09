@@ -232,7 +232,7 @@
           "type": "confirmTask",
           "who_can_complete": ["student"],
           "prerequisites": ["S1_profile"],
-          "next": ["S1_antiplag"],
+          "next": ["S0_antiplagiat"],
           "screen": {
             "question": {
               "ru": "Текст диссертации приведён к стандарту оформления?",
@@ -300,7 +300,26 @@
                   "en": "Confirm the manuscript is fully formatted to the standard?"
                 }
               }
-            ],
+            ]
+          },
+          "requirements": {
+            "uploads": [
+              {
+                "key": "dissertation_draft_file",
+                "label": {
+                  "ru": "Файл текста диссертации (DOCX/PDF)",
+                  "kz": "Диссертация мәтіні файлы (DOCX/PDF)",
+                  "en": "Dissertation manuscript file (DOCX/PDF)"
+                },
+                "required": true,
+                "mime": [
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  "application/msword",
+                  "application/pdf"
+                ]
+              }
+            ]
+          },
           "on_confirm": {
             "status": "completed",
             "message": {
@@ -310,1062 +329,194 @@
             },
             "next_node": "S1_antiplag"
           }
-        }
-      },
+        },
         {
-          "id": "S1_antiplag",
+          "id": "S0_antiplagiat",
+          "module": "I",
           "title": {
-            "ru": "Антиплагиат ≥ 85%",
-            "kz": "Антиплагиат ≥ 85%",
-            "en": "Anti-plagiarism ≥ 85%"
+            "ru": "Справка на антиплагиат",
+            "kz": "Антиплагиат анықтамасы",
+            "en": "Anti-plagiarism certificate"
           },
           "type": "confirmTask",
           "who_can_complete": ["student"],
           "prerequisites": ["S1_text_ready"],
           "next": ["S1_publications_list"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "antiplagiat_cert",
+                "label": {
+                  "ru": "Справка об уникальности диссертации (с подписью и печатью)",
+                  "kz": "Диссертацияның бірегейлігі туралы анықтама (қолтаңбамен және мөрмен)",
+                  "en": "Dissertation uniqueness certificate (signed and stamped)"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ]
+          },
           "screen": {
             "question": {
-              "ru": "Результат проверки Антиплагиат ≥ 85% подтверждён?",
-              "kz": "Антиплагиат нәтижесі ≥ 85% расталды ма?",
-              "en": "Is the antiplagiarism score ≥ 85% confirmed?"
+              "ru": "Вы загрузили справку об уникальности диссертации?",
+              "kz": "Диссертацияның бірегейлігі туралы анықтаманы жүктедіңіз бе?",
+              "en": "Have you uploaded the dissertation uniqueness certificate?"
             },
             "buttons": [
               {
-                "id": "view_guide",
+                "id": "confirm_upload",
                 "label": {
-                  "ru": "Как пройти проверку",
-                  "kz": "Тексеруді қалай өткізу",
-                  "en": "How to run the check"
-                },
-                "action": "show_instructions",
-                "instructions": {
-                  "title": {
-                    "ru": "Проверка в системе Антиплагиат",
-                    "kz": "Антиплагиат жүйесінде тексеру",
-                    "en": "Checking in the Antiplagiat system"
-                  },
-                  "text": {
-                    "ru": [
-                      "Загрузите окончательный текст в систему Антиплагиат КазНМУ или Smart-Zhub.",
-                      "Убедитесь, что показатель оригинальности ≥ 85%.",
-                      "Получите отчёт и при необходимости устраните совпадения."
-                    ],
-                    "kz": [
-                      "Қорытынды мәтінді ҚазҰМУ немесе Smart-Zhub Антиплагиат жүйесіне салыңыз.",
-                      "Түпнұсқалық көрсеткіші ≥ 85% екеніне көз жеткізіңіз.",
-                      "Есепті жүктеп алып, қажет кезде сәйкестіктерді жойыңыз."
-                    ],
-                    "en": [
-                      "Upload the final manuscript to the KazNMU or Smart-Zhub antiplagiarism system.",
-                      "Ensure the originality score is 85% or higher.",
-                      "Download the report and resolve any flagged matches if needed."
-                    ]
-                  }
-                }
-              },
-              {
-                "id": "confirm_score",
-                "label": {
-                  "ru": "Подтвердить результат",
-                  "kz": "Нәтижені растау",
-                  "en": "Confirm result"
+                  "ru": "Подтвердить загрузку",
+                  "kz": "Жүктеуді растау",
+                  "en": "Confirm upload"
                 },
                 "action": "confirm_completion",
                 "confirmation_text": {
-                  "ru": "Показатель оригинальности ≥ 85% подтверждён?",
-                  "kz": "Оригиналдық көрсеткіші ≥ 85% расталды ма?",
-                  "en": "Is the originality score ≥ 85% confirmed?"
+                  "ru": "Вы уверены, что загрузили корректную справку?",
+                  "kz": "Дұрыс анықтаманы жүктегеніңізге сенімдісіз бе?",
+                  "en": "Are you sure you uploaded the correct certificate?"
                 }
               }
             ],
-          "on_confirm": {
-            "status": "completed",
-            "message": {
-              "ru": "Антиплагиат подтверждён с результатом ≥ 85%.",
-              "kz": "Антиплагиат нәтижесі ≥ 85% расталды.",
-              "en": "Antiplagiarism verification confirmed with ≥ 85%."
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Справка загружена.",
+                "kz": "Анықтама жүктелді.",
+                "en": "Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["confirm_upload"]
             },
-            "next_node": "S1_publications_list"
+            "in_progress": {
+              "visible_buttons": ["confirm_upload"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Справка загружена.",
+                "kz": "✅ Анықтама жүктелді.",
+                "en": "✅ Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-11-29",
+            "requires_upload": true,
+            "reminder_required": false
           }
-        }
-      },
+        },
         {
           "id": "S1_publications_list",
+          "module": "I",
           "title": {
             "ru": "Список публикаций",
             "kz": "Жарияланымдар тізімі",
-            "en": "Publications list"
-          },
-          "description": {
-            "ru": "Заполните сведения по каждому материалу Приложения 7. Добавьте публикации, конференционные материалы и объекты интеллектуальной собственности по разделам I–IV. Шаблон DOCX можно скачать в блоке справа.",
-            "kz": "Қосымша 7 бойынша әр материал туралы деректерді толтырыңыз. I–IV бөлімдерге жарияланымдарды, конференция материалдарын және зияткерлік меншік объектілерін жазыңыз. DOCX үлгісін оң жақ блоктан жүктей аласыз.",
-            "en": "Provide details for each item in Appendix 7. Add publications, conference materials, and intellectual property items for sections I–IV. Download the DOCX template from the panel on the right."
+            "en": "Publications List"
           },
           "type": "form",
           "actionHints": ["form"],
-          "icon": "lucide:file-text",
+          "description": {
+            "ru": "Заполните данные о публикациях и загрузите подписанный список.",
+            "kz": "Жарияланымдар туралы деректерді толтырыңыз және қол қойылған тізімді жүктеңіз.",
+            "en": "Fill in publication data and upload the signed list."
+          },
           "who_can_complete": ["student"],
-          "prerequisites": ["S1_antiplag"],
+          "prerequisites": ["S0_antiplagiat"],
           "next": ["E1_apply_omid"],
+          "requirements": {
+            "templates": ["tpl_app7_ru", "tpl_app7_kz_docx", "tpl_app7_en_docx"],
+            "uploads": [
+              {
+                "key": "signed_pub_list",
+                "label": {
+                  "ru": "Список публикаций (с подписью и печатью)",
+                  "kz": "Жарияланымдар тізімі (қолтаңбамен және мөрмен)",
+                  "en": "Publications list (signed and stamped)"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
+            "fields": [
+              {
+                "key": "chk_thesis_unbound",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Несброшюрованная диссертация (1 экз.)",
+                  "kz": "Түптелмеген диссертация (1 дана)",
+                  "en": "Unbound thesis (1 copy)"
+                }
+              },
+              {
+                "key": "chk_advisor_reviews",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Отзывы консультантов (+ нотариальный перевод при иностранном языке)",
+                  "kz": "Кеңесшілер пікірлері (+ шетел тіліндегі болса нотариалды аударма)",
+                  "en": "Advisor reviews (+ notarized translation if foreign language)"
+                }
+              },
+              {
+                "key": "chk_pubs_app7",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Список и копии публикаций (по Прил. 7)",
+                  "kz": "Жарияланымдар тізімі мен көшірмелері (Қос. 7 бойынша)",
+                  "en": "List and copies of publications (per App. 7)"
+                }
+              },
+              {
+                "key": "chk_sc_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Выписка Ученого совета о теме и консультантах",
+                  "kz": "Ғылыми кеңес шешімінен үзінді (тақырып/кеңесшілер)",
+                  "en": "Academic Council extract on topic and advisors"
+                }
+              },
+              {
+                "key": "chk_primary_docs",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "Первичные документы (по запросу)",
+                  "kz": "Бастапқы құжаттар (сұрау бойынша)",
+                  "en": "Primary documents (on request)"
+                }
+              },
+              {
+                "key": "chk_lcb_defense",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заключение ЛКБ «на защиту» (запрос на lcb@kaznmu.kz с приложением первоначального заключения)",
+                  "kz": "ЛБК-ның «қорғауға» қорытындысы (алғашқы қорытындыны қоса lcb@kaznmu.kz поштасына сұрау)",
+                  "en": "LBC conclusion “for defense” (email request to lcb@kaznmu.kz with initial conclusion attached)"
+                }
+              }
+            ]
+          },
           "outcomes": [
             {
               "value": "done",
               "label": {
-                "ru": "Список подготовлен",
-                "kz": "Тізім дайын",
-                "en": "List prepared"
+                "ru": "Пакет сдан",
+                "kz": "Топтама тапсырылды",
+                "en": "Package submitted"
               },
               "next": ["E1_apply_omid"]
             }
-          ],
-          "requirements": {
-            "templates": [
-              "tpl_app7_ru_docx",
-              "tpl_app7_kz_docx",
-              "tpl_app7_en_docx"
-            ],
-
-            "fields": [
-              {
-                "key": "wos_scopus",
-                "type": "collection",
-                "icon": "lucide:globe",
-                "label": {
-                  "ru": "I. Публикации в базах Web of Science или Scopus",
-                  "kz": "I. Web of Science немесе Scopus базаларындағы жарияланымдар",
-                  "en": "I. Publications indexed in Web of Science or Scopus"
-                },
-                "help_text": {
-                  "ru": "Добавьте все публикации, проиндексированные в международных базах данных",
-                  "kz": "Халықаралық деректер базаларында индекстелген барлық жарияланымдарды қосыңыз",
-                  "en": "Add all publications indexed in international databases"
-                },
-                "item_label": {
-                  "ru": "Запись о публикации",
-                  "kz": "Жарияланым жазбасы",
-                  "en": "Publication entry"
-                },
-                "add_button": {
-                  "ru": "➕ Добавить публикацию",
-                  "kz": "➕ Жарияланым қосу",
-                  "en": "➕ Add publication"
-                },
-                "item_fields": [
-                  {
-                    "key": "title",
-                    "required": true,
-                    "icon": "lucide:heading",
-                    "label": {
-                      "ru": "📝 Наименование работы",
-                      "kz": "📝 Жұмыстың атауы",
-                      "en": "📝 Title of work"
-                    },
-                    "placeholder": {
-                      "ru": "Введите полное название публикации",
-                      "kz": "Жарияланымның толық атауын енгізіңіз",
-                      "en": "Enter full publication title"
-                    }
-                  },
-                  {
-                    "key": "format",
-                    "type": "select",
-                    "icon": "lucide:layout",
-                    "label": {
-                      "ru": "📋 Формат публикации",
-                      "kz": "📋 Жарияланым форматы",
-                      "en": "📋 Publication format"
-                    },
-                    "options": [
-                      {
-                        "value": "print",
-                        "label": {
-                          "ru": "🖨️ Печатный",
-                          "kz": "🖨️ Баспа",
-                          "en": "🖨️ Printed"
-                        }
-                      },
-                      {
-                        "value": "manuscript",
-                        "label": {
-                          "ru": "📄 На правах рукописи",
-                          "kz": "📄 Қолжазба",
-                          "en": "📄 Manuscript"
-                        }
-                      },
-                      {
-                        "value": "electronic",
-                        "label": {
-                          "ru": "💻 Электронный",
-                          "kz": "💻 Электрондық",
-                          "en": "💻 Electronic"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "➕ Другое",
-                          "kz": "➕ Басқа",
-                          "en": "➕ Other"
-                        }
-                      }
-                    ],
-                    "other_key": "format_other"
-                  },
-                  {
-                    "key": "journal",
-                    "icon": "lucide:book",
-                    "label": {
-                      "ru": "📚 Журнал / издательство",
-                      "kz": "📚 Журнал / баспа",
-                      "en": "📚 Journal / publisher"
-                    },
-                    "placeholder": {
-                      "ru": "Название журнала или издательства",
-                      "kz": "Журнал немесе баспа атауы",
-                      "en": "Journal or publisher name"
-                    }
-                  },
-                  {
-                    "key": "year",
-                    "type": "number",
-                    "icon": "lucide:calendar",
-                    "label": {
-                      "ru": "📅 Год",
-                      "kz": "📅 Жыл",
-                      "en": "📅 Year"
-                    },
-                    "placeholder": {
-                      "ru": "например, 2024",
-                      "kz": "мысалы, 2024",
-                      "en": "e.g. 2024"
-                    },
-                    "min": 2000,
-                    "max": 2030
-                  },
-                  {
-                    "key": "volume_issue",
-                    "icon": "lucide:hash",
-                    "label": {
-                      "ru": "📖 Том / №",
-                      "kz": "📖 Том / №",
-                      "en": "📖 Volume / issue"
-                    },
-                    "placeholder": {
-                      "ru": "Том 5, №3",
-                      "kz": "5-том, 3-№",
-                      "en": "Vol. 5, No. 3"
-                    }
-                  },
-                  {
-                    "key": "pages_or_sheets",
-                    "icon": "lucide:file-text",
-                    "label": {
-                      "ru": "📄 Кол-во печатных листов или страниц",
-                      "kz": "📄 Баспа табақтары немесе беттер саны",
-                      "en": "📄 Printed sheets or pages"
-                    },
-                    "placeholder": {
-                      "ru": "Например: с. 45-67 или 2,5 п.л.",
-                      "kz": "Мысалы: 45-67 б. немесе 2,5 б.т.",
-                      "en": "E.g.: pp. 45-67 or 2.5 sheets"
-                    }
-                  },
-                  {
-                    "key": "doi",
-                    "icon": "lucide:link",
-                    "label": {
-                      "ru": "🔗 DOI",
-                      "kz": "🔗 DOI",
-                      "en": "🔗 DOI"
-                    },
-                    "placeholder": {
-                      "ru": "10.1234/example.2024",
-                      "kz": "10.1234/example.2024",
-                      "en": "10.1234/example.2024"
-                    },
-                    "help_text": {
-                      "ru": "Цифровой идентификатор объекта",
-                      "kz": "Объектінің цифрлық идентификаторы",
-                      "en": "Digital Object Identifier"
-                    }
-                  },
-                  {
-                    "key": "issn_print",
-                    "icon": "lucide:printer",
-                    "label": {
-                      "ru": "🖨️ ISSN (print)",
-                      "kz": "🖨️ ISSN (баспа)",
-                      "en": "🖨️ ISSN (print)"
-                    },
-                    "placeholder": {
-                      "ru": "XXXX-XXXX",
-                      "kz": "XXXX-XXXX",
-                      "en": "XXXX-XXXX"
-                    }
-                  },
-                  {
-                    "key": "issn_online",
-                    "icon": "lucide:monitor",
-                    "label": {
-                      "ru": "💻 ISSN (online)",
-                      "kz": "💻 ISSN (онлайн)",
-                      "en": "💻 ISSN (online)"
-                    },
-                    "placeholder": {
-                      "ru": "XXXX-XXXX",
-                      "kz": "XXXX-XXXX",
-                      "en": "XXXX-XXXX"
-                    }
-                  },
-                  {
-                    "key": "coauthors",
-                    "type": "array",
-                    "icon": "lucide:users",
-                    "label": {
-                      "ru": "👥 Фамилии соавторов",
-                      "kz": "👥 Авторлар тізімі",
-                      "en": "👥 Co-authors"
-                    },
-                    "placeholder": {
-                      "ru": "по одному в строке",
-                      "kz": "әр жолға бір есім",
-                      "en": "one per line"
-                    },
-                    "add_button_text": {
-                      "ru": "+ Добавить соавтора",
-                      "kz": "+ Автор қосу",
-                      "en": "+ Add co-author"
-                    }
-                  },
-                  {
-                    "key": "indexing",
-                    "type": "select",
-                    "icon": "lucide:database",
-                    "label": {
-                      "ru": "🗂️ Индексирование",
-                      "kz": "🗂️ Индекстеу",
-                      "en": "🗂️ Indexing"
-                    },
-                    "options": [
-                      {
-                        "value": "wos",
-                        "label": {
-                          "ru": "🌐 Web of Science",
-                          "kz": "🌐 Web of Science",
-                          "en": "🌐 Web of Science"
-                        }
-                      },
-                      {
-                        "value": "scopus",
-                        "label": {
-                          "ru": "🔬 Scopus",
-                          "kz": "🔬 Scopus",
-                          "en": "🔬 Scopus"
-                        }
-                      },
-                      {
-                        "value": "kokson",
-                        "label": {
-                          "ru": "📋 Перечень КОКСОН",
-                          "kz": "📋 КОКСОН тізімі",
-                          "en": "📋 KOKSON list"
-                        }
-                      },
-                      {
-                        "value": "rsci",
-                        "label": {
-                          "ru": "🇷🇺 РИНЦ",
-                          "kz": "🇷🇺 РИНЦ",
-                          "en": "🇷🇺 RSCI"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "➕ Другое",
-                          "kz": "➕ Басқа",
-                          "en": "➕ Other"
-                        }
-                      }
-                    ],
-                    "other_key": "indexing_other"
-                  }
-                ]
-              },
-              {
-                "key": "kokson",
-                "type": "collection",
-                "icon": "lucide:book-open",
-                "label": {
-                  "ru": "II. Статьи в журналах перечня КОКСОН МНиВО РК",
-                  "kz": "II. ҚР ҒЖБМ КОКСОН тізіміндегі журналдардағы мақалалар",
-                  "en": "II. Articles in journals from the KOKSON MSHE RK list"
-                },
-                "help_text": {
-                  "ru": "Статьи в казахстанских и зарубежных изданиях, рекомендованных КОКСОН",
-                  "kz": "КОКСОН ұсынған қазақстандық және шетелдік басылымдардағы мақалалар",
-                  "en": "Articles in Kazakh and foreign publications recommended by KOKSON"
-                },
-                "item_label": {
-                  "ru": "Запись о статье",
-                  "kz": "Мақала жазбасы",
-                  "en": "Article entry"
-                },
-                "add_button": {
-                  "ru": "➕ Добавить статью",
-                  "kz": "➕ Мақала қосу",
-                  "en": "➕ Add article"
-                },
-                "item_fields": [
-                  {
-                    "key": "title",
-                    "required": true,
-                    "icon": "lucide:heading",
-                    "label": {
-                      "ru": "📝 Наименование работы",
-                      "kz": "📝 Жұмыстың атауы",
-                      "en": "📝 Title of work"
-                    },
-                    "placeholder": {
-                      "ru": "Введите полное название статьи",
-                      "kz": "Мақаланың толық атауын енгізіңіз",
-                      "en": "Enter full article title"
-                    }
-                  },
-                  {
-                    "key": "format",
-                    "type": "select",
-                    "icon": "lucide:layout",
-                    "label": {
-                      "ru": "📋 Формат публикации",
-                      "kz": "📋 Жарияланым форматы",
-                      "en": "📋 Publication format"
-                    },
-                    "options": [
-                      {
-                        "value": "print",
-                        "label": {
-                          "ru": "🖨️ Печатный",
-                          "kz": "🖨️ Баспа",
-                          "en": "🖨️ Printed"
-                        }
-                      },
-                      {
-                        "value": "manuscript",
-                        "label": {
-                          "ru": "📄 На правах рукописи",
-                          "kz": "📄 Қолжазба",
-                          "en": "📄 Manuscript"
-                        }
-                      },
-                      {
-                        "value": "electronic",
-                        "label": {
-                          "ru": "💻 Электронный",
-                          "kz": "💻 Электрондық",
-                          "en": "💻 Electronic"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "➕ Другое",
-                          "kz": "➕ Басқа",
-                          "en": "➕ Other"
-                        }
-                      }
-                    ],
-                    "other_key": "format_other"
-                  },
-                  {
-                    "key": "journal",
-                    "icon": "lucide:book",
-                    "label": {
-                      "ru": "📚 Журнал / издательство",
-                      "kz": "📚 Журнал / баспа",
-                      "en": "📚 Journal / publisher"
-                    },
-                    "placeholder": {
-                      "ru": "Название журнала или издательства",
-                      "kz": "Журнал немесе баспа атауы",
-                      "en": "Journal or publisher name"
-                    }
-                  },
-                  {
-                    "key": "year",
-                    "type": "number",
-                    "icon": "lucide:calendar",
-                    "label": {
-                      "ru": "📅 Год",
-                      "kz": "📅 Жыл",
-                      "en": "📅 Year"
-                    },
-                    "placeholder": {
-                      "ru": "например, 2024",
-                      "kz": "мысалы, 2024",
-                      "en": "e.g. 2024"
-                    },
-                    "min": 2000,
-                    "max": 2030
-                  },
-                  {
-                    "key": "volume_issue",
-                    "icon": "lucide:hash",
-                    "label": {
-                      "ru": "📖 Том / №",
-                      "kz": "📖 Том / №",
-                      "en": "📖 Volume / issue"
-                    },
-                    "placeholder": {
-                      "ru": "Том 5, №3",
-                      "kz": "5-том, 3-№",
-                      "en": "Vol. 5, No. 3"
-                    }
-                  },
-                  {
-                    "key": "pages_or_sheets",
-                    "icon": "lucide:file-text",
-                    "label": {
-                      "ru": "📄 Кол-во печатных листов или страниц",
-                      "kz": "📄 Баспа табақтары немесе беттер саны",
-                      "en": "📄 Printed sheets or pages"
-                    },
-                    "placeholder": {
-                      "ru": "Например: с. 45-67 или 2,5 п.л.",
-                      "kz": "Мысалы: 45-67 б. немесе 2,5 б.т.",
-                      "en": "E.g.: pp. 45-67 or 2.5 sheets"
-                    }
-                  },
-                  {
-                    "key": "doi",
-                    "icon": "lucide:link",
-                    "label": {
-                      "ru": "🔗 DOI",
-                      "kz": "🔗 DOI",
-                      "en": "🔗 DOI"
-                    },
-                    "placeholder": {
-                      "ru": "10.1234/example.2024",
-                      "kz": "10.1234/example.2024",
-                      "en": "10.1234/example.2024"
-                    },
-                    "help_text": {
-                      "ru": "Цифровой идентификатор объекта",
-                      "kz": "Объектінің цифрлық идентификаторы",
-                      "en": "Digital Object Identifier"
-                    }
-                  },
-                  {
-                    "key": "issn_print",
-                    "icon": "lucide:printer",
-                    "label": {
-                      "ru": "🖨️ ISSN (print)",
-                      "kz": "🖨️ ISSN (баспа)",
-                      "en": "🖨️ ISSN (print)"
-                    },
-                    "placeholder": {
-                      "ru": "XXXX-XXXX",
-                      "kz": "XXXX-XXXX",
-                      "en": "XXXX-XXXX"
-                    }
-                  },
-                  {
-                    "key": "issn_online",
-                    "icon": "lucide:monitor",
-                    "label": {
-                      "ru": "💻 ISSN (online)",
-                      "kz": "💻 ISSN (онлайн)",
-                      "en": "💻 ISSN (online)"
-                    },
-                    "placeholder": {
-                      "ru": "XXXX-XXXX",
-                      "kz": "XXXX-XXXX",
-                      "en": "XXXX-XXXX"
-                    }
-                  },
-                  {
-                    "key": "coauthors",
-                    "type": "array",
-                    "icon": "lucide:users",
-                    "label": {
-                      "ru": "👥 Фамилии соавторов",
-                      "kz": "👥 Авторлар тізімі",
-                      "en": "👥 Co-authors"
-                    },
-                    "placeholder": {
-                      "ru": "по одному в строке",
-                      "kz": "әр жолға бір есім",
-                      "en": "one per line"
-                    },
-                    "add_button_text": {
-                      "ru": "+ Добавить соавтора",
-                      "kz": "+ Автор қосу",
-                      "en": "+ Add co-author"
-                    }
-                  },
-                  {
-                    "key": "indexing",
-                    "type": "select",
-                    "icon": "lucide:database",
-                    "label": {
-                      "ru": "🗂️ Индексирование",
-                      "kz": "🗂️ Индекстеу",
-                      "en": "🗂️ Indexing"
-                    },
-                    "options": [
-                      {
-                        "value": "wos",
-                        "label": {
-                          "ru": "🌐 Web of Science",
-                          "kz": "🌐 Web of Science",
-                          "en": "🌐 Web of Science"
-                        }
-                      },
-                      {
-                        "value": "scopus",
-                        "label": {
-                          "ru": "🔬 Scopus",
-                          "kz": "🔬 Scopus",
-                          "en": "🔬 Scopus"
-                        }
-                      },
-                      {
-                        "value": "kokson",
-                        "label": {
-                          "ru": "📋 Перечень КОКСОН",
-                          "kz": "📋 КОКСОН тізімі",
-                          "en": "📋 KOKSON list"
-                        }
-                      },
-                      {
-                        "value": "rsci",
-                        "label": {
-                          "ru": "🇷🇺 РИНЦ",
-                          "kz": "🇷🇺 РИНЦ",
-                          "en": "🇷🇺 RSCI"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "➕ Другое",
-                          "kz": "➕ Басқа",
-                          "en": "➕ Other"
-                        }
-                      }
-                    ],
-                    "other_key": "indexing_other"
-                  }
-                ]
-              },
-              {
-                "key": "conferences",
-                "type": "collection",
-                "icon": "lucide:presentation",
-                "label": {
-                  "ru": "III. Научные труды в материалах международных конференций и др.",
-                  "kz": "III. Халықаралық конференциялар материалдарындағы ғылыми еңбектер",
-                  "en": "III. Scientific works in international conference proceedings and others"
-                },
-                "help_text": {
-                  "ru": "Доклады, тезисы и статьи в материалах конференций",
-                  "kz": "Конференциялар материалдарындағы баяндамалар, тезистер және мақалалар",
-                  "en": "Reports, abstracts and papers in conference proceedings"
-                },
-                "item_label": {
-                  "ru": "Запись о материале конференции",
-                  "kz": "Конференция материалы",
-                  "en": "Conference material entry"
-                },
-                "add_button": {
-                  "ru": "➕ Добавить материал",
-                  "kz": "➕ Материал қосу",
-                  "en": "➕ Add material"
-                },
-                "item_fields": [
-                  {
-                    "key": "title",
-                    "required": true,
-                    "icon": "lucide:heading",
-                    "label": {
-                      "ru": "📝 Наименование работы",
-                      "kz": "📝 Жұмыстың атауы",
-                      "en": "📝 Title of work"
-                    },
-                    "placeholder": {
-                      "ru": "Введите полное название материала",
-                      "kz": "Материалдың толық атауын енгізіңіз",
-                      "en": "Enter full material title"
-                    }
-                  },
-                  {
-                    "key": "format",
-                    "type": "select",
-                    "icon": "lucide:layout",
-                    "label": {
-                      "ru": "📋 Формат публикации",
-                      "kz": "📋 Жарияланым форматы",
-                      "en": "📋 Publication format"
-                    },
-                    "options": [
-                      {
-                        "value": "print",
-                        "label": {
-                          "ru": "🖨️ Печатный",
-                          "kz": "🖨️ Баспа",
-                          "en": "🖨️ Printed"
-                        }
-                      },
-                      {
-                        "value": "manuscript",
-                        "label": {
-                          "ru": "📄 На правах рукописи",
-                          "kz": "📄 Қолжазба",
-                          "en": "📄 Manuscript"
-                        }
-                      },
-                      {
-                        "value": "electronic",
-                        "label": {
-                          "ru": "💻 Электронный",
-                          "kz": "💻 Электрондық",
-                          "en": "💻 Electronic"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "➕ Другое",
-                          "kz": "➕ Басқа",
-                          "en": "➕ Other"
-                        }
-                      }
-                    ],
-                    "other_key": "format_other"
-                  },
-                  {
-                    "key": "journal",
-                    "icon": "lucide:book",
-                    "label": {
-                      "ru": "📚 Журнал / издательство",
-                      "kz": "📚 Журнал / баспа",
-                      "en": "📚 Journal / publisher"
-                    },
-                    "placeholder": {
-                      "ru": "Название журнала или издательства",
-                      "kz": "Журнал немесе баспа атауы",
-                      "en": "Journal or publisher name"
-                    }
-                  },
-                  {
-                    "key": "year",
-                    "type": "number",
-                    "icon": "lucide:calendar",
-                    "label": {
-                      "ru": "📅 Год",
-                      "kz": "📅 Жыл",
-                      "en": "📅 Year"
-                    },
-                    "placeholder": {
-                      "ru": "например, 2024",
-                      "kz": "мысалы, 2024",
-                      "en": "e.g. 2024"
-                    },
-                    "min": 2000,
-                    "max": 2030
-                  },
-                  {
-                    "key": "volume_issue",
-                    "icon": "lucide:hash",
-                    "label": {
-                      "ru": "📖 Том / №",
-                      "kz": "📖 Том / №",
-                      "en": "📖 Volume / issue"
-                    },
-                    "placeholder": {
-                      "ru": "Том 5, №3",
-                      "kz": "5-том, 3-№",
-                      "en": "Vol. 5, No. 3"
-                    }
-                  },
-                  {
-                    "key": "pages_or_sheets",
-                    "icon": "lucide:file-text",
-                    "label": {
-                      "ru": "📄 Кол-во печатных листов или страниц",
-                      "kz": "📄 Баспа табақтары немесе беттер саны",
-                      "en": "📄 Printed sheets or pages"
-                    },
-                    "placeholder": {
-                      "ru": "Например: с. 45-67 или 2,5 п.л.",
-                      "kz": "Мысалы: 45-67 б. немесе 2,5 б.т.",
-                      "en": "E.g.: pp. 45-67 or 2.5 sheets"
-                    }
-                  },
-                  {
-                    "key": "doi",
-                    "icon": "lucide:link",
-                    "label": {
-                      "ru": "🔗 DOI",
-                      "kz": "🔗 DOI",
-                      "en": "🔗 DOI"
-                    },
-                    "placeholder": {
-                      "ru": "10.1234/example.2024",
-                      "kz": "10.1234/example.2024",
-                      "en": "10.1234/example.2024"
-                    },
-                    "help_text": {
-                      "ru": "Цифровой идентификатор объекта",
-                      "kz": "Объектінің цифрлық идентификаторы",
-                      "en": "Digital Object Identifier"
-                    }
-                  },
-                  {
-                    "key": "issn_print",
-                    "icon": "lucide:printer",
-                    "label": {
-                      "ru": "🖨️ ISSN (print)",
-                      "kz": "+ Автор қосу",
-                      "en": "+ Add co-author"
-                    }
-                  },
-                  {
-                    "key": "indexing",
-                    "type": "select",
-                    "icon": "lucide:database",
-                    "label": {
-                      "ru": "🗂️ Индексирование",
-                      "kz": "🗂️ Индекстеу",
-                      "en": "🗂️ Indexing"
-                    },
-                    "options": [
-                      {
-                        "value": "wos",
-                        "label": {
-                          "ru": "🌐 Web of Science",
-                          "kz": "🌐 Web of Science",
-                          "en": "🌐 Web of Science"
-                        }
-                      },
-                      {
-                        "value": "scopus",
-                        "label": {
-                          "ru": "🔬 Scopus",
-                          "kz": "🔬 Scopus",
-                          "en": "🔬 Scopus"
-                        }
-                      },
-                      {
-                        "value": "kokson",
-                        "label": {
-                          "ru": "📋 Перечень КОКСОН",
-                          "kz": "📋 КОКСОН тізімі",
-                          "en": "📋 KOKSON list"
-                        }
-                      },
-                      {
-                        "value": "rsci",
-                        "label": {
-                          "ru": "🇷🇺 РИНЦ",
-                          "kz": "🇷🇺 РИНЦ",
-                          "en": "🇷🇺 RSCI"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "➕ Другое",
-                          "kz": "➕ Басқа",
-                          "en": "➕ Other"
-                        }
-                      }
-                    ],
-                    "other_key": "indexing_other"
-                  }
-                ]
-              },
-              {
-                "key": "ip",
-                "type": "collection",
-                "icon": "lucide:lightbulb",
-                "label": {
-                  "ru": "IV. Интеллектуальная собственность (патенты, авторские права и др.)",
-                  "kz": "IV. Зияткерлік меншік (патенттер, авторлық құқықтар және т.б.)",
-                  "en": "IV. Intellectual property (patents, copyrights, etc.)"
-                },
-                "help_text": {
-                  "ru": "Патенты, авторские свидетельства, полезные модели",
-                  "kz": "Патенттер, авторлық куәліктер, пайдалы модельдер",
-                  "en": "Patents, copyright certificates, utility models"
-                },
-                "item_label": {
-                  "ru": "Объект интеллектуальной собственности",
-                  "kz": "Зияткерлік меншік объектісі",
-                  "en": "Intellectual property entry"
-                },
-                "add_button": {
-                  "ru": "➕ Добавить объект ИС",
-                  "kz": "➕ ЗМ объектісін қосу",
-                  "en": "➕ Add IP item"
-                },
-                "item_fields": [
-                  {
-                    "key": "title",
-                    "required": true,
-                    "icon": "lucide:lightbulb",
-                    "label": {
-                      "ru": "💡 Наименование объекта",
-                      "kz": "💡 Объект атауы",
-                      "en": "💡 Title of work"
-                    }
-                  },
-                  {
-                    "key": "ip_type",
-                    "type": "select",
-                    "required": true,
-                    "icon": "lucide:tag",
-                    "label": {
-                      "ru": "🏷️ Тип",
-                      "kz": "🏷️ Түрі",
-                      "en": "🏷️ Type"
-                    },
-                    "options": [
-                      {
-                        "value": "patent",
-                        "label": {
-                          "ru": "📜 Патент",
-                          "kz": "📜 Патент",
-                          "en": "📜 Patent"
-                        }
-                      },
-                      {
-                        "value": "copyright",
-                        "label": {
-                          "ru": "©️ Авторское право",
-                          "kz": "©️ Авторлық құқық",
-                          "en": "©️ Copyright"
-                        }
-                      },
-                      {
-                        "value": "utility_model",
-                        "label": {
-                          "ru": "🔧 Полезная модель / изобретение",
-                          "kz": "🔧 Пайдалы модель / өнертабыс",
-                          "en": "🔧 Utility model / invention"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "➕ Другое",
-                          "kz": "➕ Басқа",
-                          "en": "➕ Other"
-                        }
-                      }
-                    ],
-                    "other_key": "ip_type_other"
-                  },
-                  {
-                    "key": "certificate_no",
-                    "label": {
-                      "ru": "№ свидетельства / патента",
-                      "kz": "Куәлік / патент №",
-                      "en": "Certificate / patent number"
-                    }
-                  },
-                  {
-                    "key": "year",
-                    "label": {
-                      "ru": "Год",
-                      "kz": "Жыл",
-                      "en": "Year"
-                    },
-                    "placeholder": {
-                      "ru": "например, 2024",
-                      "kz": "мысалы, 2024",
-                      "en": "e.g. 2024"
-                    }
-                  },
-                  {
-                    "key": "journal",
-                    "label": {
-                      "ru": "Организация / издательство",
-                      "kz": "Ұйым / баспа",
-                      "en": "Organization / publisher"
-                    }
-                  },
-                  {
-                    "key": "isbn",
-                    "label": {
-                      "ru": "ISBN",
-                      "kz": "ISBN",
-                      "en": "ISBN"
-                    }
-                  },
-                  {
-                    "key": "pages_or_sheets",
-                    "label": {
-                      "ru": "Кол-во печатных листов или страниц",
-                      "kz": "Баспа табақтары немесе беттер саны",
-                      "en": "Printed sheets or pages"
-                    }
-                  },
-                  {
-                    "key": "coauthors",
-                    "type": "array",
-                    "label": {
-                      "ru": "Фамилии соавторов",
-                      "kz": "Авторлар тізімі",
-                      "en": "Co-authors"
-                    },
-                    "placeholder": {
-                      "ru": "по одному в строке",
-                      "kz": "әр жолға бір есім",
-                      "en": "one per line"
-                    }
-                  },
-                  {
-                    "key": "indexing",
-                    "type": "select",
-                    "label": {
-                      "ru": "Индексирование",
-                      "kz": "Индекстеу",
-                      "en": "Indexing"
-                    },
-                    "options": [
-                      {
-                        "value": "national",
-                        "label": {
-                          "ru": "Национальные базы",
-                          "kz": "Ұлттық базалар",
-                          "en": "National databases"
-                        }
-                      },
-                      {
-                        "value": "international",
-                        "label": {
-                          "ru": "Международные базы",
-                          "kz": "Халықаралық базалар",
-                          "en": "International databases"
-                        }
-                      },
-                      {
-                        "value": "other",
-                        "label": {
-                          "ru": "Другое",
-                          "kz": "Басқа",
-                          "en": "Other"
-                        }
-                      }
-                    ],
-                    "other_key": "indexing_other"
-                  }
-                ]
-              }
-            ]
-          },
-          "outputs": []
+          ]
         }
       ]
     },
@@ -1391,6 +542,22 @@
             "ru": "Подтвердите подготовку и отправку заявления на предварительную экспертизу в ОМиД.",
             "kz": "ОМиД-ке алдын ала сараптамаға өтініш дайындалып, жіберілгенін растаңыз.",
             "en": "Confirm the OMiD preliminary review application is prepared and submitted."
+          },
+          "requirements": {
+            "uploads": [
+              {
+                "key": "omid_application",
+                "label": {
+                  "ru": "Заявление в ОМиД (подписанное PDF)",
+                  "kz": "ОМиД-ке өтініш (қол қойылған PDF)",
+                  "en": "OMiD Application (signed PDF)"
+                },
+                "required": true,
+                "mime": [
+                  "application/pdf"
+                ]
+              }
+            ]
           },
           "screen": {
             "question": {
@@ -1506,105 +673,6 @@
           "next": ["NK_package"]
         },
         {
-          "id": "NK_package",
-          "title": {
-            "ru": "Пакет на НК",
-            "kz": "ҒК-ға пакет",
-            "en": "Package for SC"
-          },
-          "type": "form",
-          "actionHints": ["form"],
-          "description": {
-            "ru": "Пакет документов собран?",
-            "kz": "Құжаттар топтамасы жиналды ма?",
-            "en": "Is the document package complete?"
-          },
-          "who_can_complete": ["student"],
-          "prerequisites": ["E1_apply_omid"],
-          "requirements": {
-            "templates": [
-              "tpl_lcb_request_ru_docx",
-              "tpl_lcb_request_kz_docx",
-              "tpl_lcb_request_en_docx"
-            ],
-            
-            "fields": [
-              {
-                "key": "chk_thesis_unbound",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Несброшюрованная диссертация (1 экз.)",
-                  "kz": "Түптелмеген диссертация (1 дана)",
-                  "en": "Unbound thesis (1 copy)"
-                }
-              },
-              {
-                "key": "chk_advisor_reviews",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Отзывы консультантов (+ нотариальный перевод при иностранном языке)",
-                  "kz": "Кеңесшілер пікірлері (+ шетел тіліндегі болса нотариалды аударма)",
-                  "en": "Advisor reviews (+ notarized translation if foreign language)"
-                }
-              },
-              {
-                "key": "chk_pubs_app7",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Список и копии публикаций (по Прил. 7)",
-                  "kz": "Жарияланымдар тізімі мен көшірмелері (Қос. 7 бойынша)",
-                  "en": "List and copies of publications (per App. 7)"
-                }
-              },
-              {
-                "key": "chk_sc_extract",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Выписка Ученого совета о теме и консультантах",
-                  "kz": "Ғылыми кеңес шешімінен үзінді (тақырып/кеңесшілер)",
-                  "en": "Academic Council extract on topic and advisors"
-                }
-              },
-              {
-                "key": "chk_primary_docs",
-                "type": "boolean",
-                "required": false,
-                "label": {
-                  "ru": "Первичные документы (по запросу)",
-                  "kz": "Бастапқы құжаттар (сұрау бойынша)",
-                  "en": "Primary documents (on request)"
-                }
-              },
-              {
-                "key": "chk_lcb_defense",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Заключение ЛКБ «на защиту» (запрос на lcb@kaznmu.kz с приложением первоначального заключения)",
-                  "kz": "ЛБК-ның «қорғауға» қорытындысы (алғашқы қорытындыны қоса lcb@kaznmu.kz поштасына сұрау)",
-                  "en": "LBC conclusion “for defense” (email request to lcb@kaznmu.kz with initial conclusion attached)"
-                }
-              }
-            ]
-          },
-          "outcomes": [
-            {
-              "value": "done",
-              "label": {
-                "ru": "Пакет сдан",
-                "kz": "Топтама тапсырылды",
-                "en": "Package submitted"
-              },
-              "next": ["E3_hearing_nk"]
-            }
-          ],
-          "next": ["E3_hearing_nk"]
-        },
-        {
           "id": "E3_hearing_nk",
           "title": {
             "ru": "Заслушивание НК",
@@ -1629,6 +697,18 @@
               },
               "buttons_style": "yes_no"
             },
+            "uploads": [
+              {
+                "key": "sc_protocol_extract_nk",
+                "label": {
+                  "ru": "Выписка из протокола НК о положительном заключении",
+                  "kz": "ҒК хаттамасынан оң қорытынды туралы үзінді",
+                  "en": "SC protocol extract with positive conclusion"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
             "fields": [
               {
                 "key": "hearing_happened",
@@ -1824,9 +904,9 @@
           },
           "type": "info",
           "description": {
-            "ru": "Если со дня выпуска прошло 3 года и более, допуск к защите возможен только после повторного утверждения Research Proposal на заседании Научного комитета.",
-            "kz": "Бітіру күнінен 3 жыл және одан көп өтсе, қорғауға жіберу тек Ғылыми комитет отырысында Research Proposal қайта бекітілгеннен кейін мүмкін.",
-            "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee."
+            "ru": "Если со дня выпуска прошло 3 года и более, допуск к защите возможен только после повторного утверждения Research Proposal на заседании Научного комитета. ВНИМАНИЕ: Документы должны быть поданы не менее чем за 1 месяц до заседания НК.",
+            "kz": "Бітіру күнінен 3 жыл және одан көп өтсе, қорғауға жіберу тек Ғылыми комитет отырысында Research Proposal қайта бекітілгеннен кейін мүмкін. НАЗАР АУДАРЫҢЫЗ: Құжаттар ҒК отырысына дейін кемінде 1 ай бұрын тапсырылуы тиіс.",
+            "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee. ATTENTION: Documents must be submitted at least 1 month before the SC meeting."
           },
           "who_can_complete": ["student"],
           "prerequisites": ["E3_hearing_nk"],
@@ -1879,9 +959,9 @@
             "en": "SC hearing of the Research Proposal"
           },
           "description": {
-            "ru": "Подготовьтесь к заслушиванию: отметьте контрольные пункты и подтвердите получение выписки из протокола.",
-            "kz": "Тыңдауға дайындалыңыз: бақылану тармақтарын белгілеңіз және хаттамадан үзіндіні алғаныңызды растаңыз.",
-            "en": "Prepare for the hearing: check off the milestones and confirm the protocol extract."
+            "ru": "Подготовьтесь к заслушиванию и загрузите выписку из протокола.",
+            "kz": "Тыңдауға дайындалыңыз және хаттамадан үзіндіні жүктеңіз.",
+            "en": "Prepare for the hearing and upload the protocol extract."
           },
           "type": "form",
           "who_can_complete": ["student"],
@@ -1900,6 +980,18 @@
           ],
           "requirements": {
             "templates": ["tpl_app7_ru"],
+            "uploads": [
+              {
+                "key": "sc_protocol_extract",
+                "label": {
+                  "ru": "Выписка из протокола НК о положительном заключении",
+                  "kz": "ҒК хаттамасынан оң қорытынды туралы үзінді",
+                  "en": "SC protocol extract with positive conclusion"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
             "fields": [
               {
                 "key": "chk_hearing_date_received",
@@ -1942,16 +1034,6 @@
                 }
               },
               {
-                "key": "chk_protocol_extract_received",
-                "type": "boolean",
-                "required": true,
-                "label": {
-                  "ru": "Получена выписка из протокола об актуальности темы",
-                  "kz": "Тақырыптың өзектілігі туралы хаттамадан үзінді алынды",
-                  "en": "Protocol extract on topic relevance received"
-                }
-              },
-              {
                 "key": "chk_predefense_recommended",
                 "type": "boolean",
                 "required": true,
@@ -1975,8 +1057,8 @@
           },
           "meta": {
             "created_by": "KazNMU PhD Portal",
-            "last_updated": "2025-10-09",
-            "requires_upload": false,
+            "last_updated": "2025-11-29",
+            "requires_upload": true,
             "reminder_required": false
           }
         },
@@ -2097,6 +1179,23 @@
           "prerequisites": ["E3_hearing_nk"],
           "next": ["IV_rector_application"],
           "who_can_complete": ["student"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "dissertation_docx",
+                "label": { "ru": "Файл диссертации (DOCX)", "kz": "Диссертация файлы (DOCX)", "en": "Dissertation manuscript (DOCX)" },
+                "required": true,
+                "mime": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+              },
+              {
+                "key": "ncste_receipt",
+                "label": { "ru": "Квитанция об оплате (PDF/изображение)", "kz": "Төлем түбіртегі (PDF/сурет)", "en": "Payment receipt (PDF/image)" },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ]
+          },
+          
           "screen": {
             "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
             "buttons": [
@@ -2117,7 +1216,7 @@
                   ],
                   "download": {
                     "label": "Скачать пример письма",
-                    "asset_id": "normocontrol_letter.docx",
+                    "asset_id": "tpl_ncste_normocontrol_letter_ru_docx",
                     "asset_path": "/assets/templates/normocontrol_letter.docx"
                   }
                 }
@@ -2167,6 +1266,17 @@
           "prerequisites": ["D1_normokontrol_ncste"],
           "next": ["IV3_publication_certificate_ncste"],
           "who_can_complete": ["student"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "rector_letter",
+                "label": { "ru": "Заявление ректору (подписанное)", "kz": "Ректорға өтініш (қол қойылған)", "en": "Letter to Rector (signed)" },
+                "required": true,
+                "mime": ["application/pdf"]
+              }
+            ]
+          },
+          
           "screen": {
             "question": {
               "ru": "Вы подали заявление на имя Председателя Правления – Ректора на допуск к защите (Приложение 4)?",
@@ -2297,8 +1407,23 @@
             "en": "NCSTE: publication certificate (indexed journals)"
           },
           "type": "confirmTask",
+          "requirements": {
+            "uploads": [
+              {
+                "key": "ncste_publication_certificate",
+                "label": { "ru": "Справка НЦГНТЭ о публикациях", "kz": "НЦҒНТЭ жарияланымдар анықтамасы", "en": "NCSTE publication certificate" },
+                "required": true,
+                "mime": ["application/pdf"]
+              }
+            ]
+          },
+          
           "screen": {
-            "question": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?",
+            "question": {
+              "ru": "Вы получили справку НЦГНТЭ, подтверждающую публикации в индексируемых международных журналах?",
+              "kz": "Индекстелетін халықаралық журналдардағы жарияланымдарды растайтын НЦҒНТЭ анықтамасын алдыңыз ба?",
+              "en": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?"
+            },
             "buttons": [
               {
                 "id": "how_to_request",

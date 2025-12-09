@@ -5,10 +5,104 @@
   "nav": {
     "home": "Басты бет",
     "journey": "Жол картасы",
+    "chat": "Чат",
     "inbox": "Кіріс жәшігі",
     "admin": "Админ",
     "login": "Кіру",
-    "logout": "Шығу"
+    "logout": "Шығу",
+    "calendar": "Күнтізбе",
+    "profile": "Профиль",
+    "settings": "Баптаулар"
+  },
+  "profile": {
+    "title": "Профиль",
+    "subtitle": "Жеке ақпаратты басқару",
+    "edit_button": "Профильді өңдеу",
+    "cancel_edit": "Өңдеуді болдырмау",
+    "personal_info": "Жеке ақпарат",
+    "edit_profile": "Профильді өңдеу",
+    "email": "Email",
+    "phone": "Телефон",
+    "date_of_birth": "Туған күні",
+    "address": "Мекенжай",
+    "bio": "Өзі туралы",
+    "email_verification_pending": "Email растау күтілуде",
+    "check_email": "Растау сілтемесі үшін <strong>{email}</strong> тексеріңіз.",
+    "file_too_large": "Файл тым үлкен",
+    "max_size": "Макс 5МБ",
+    "upload_failed": "Жүктеу қатесі",
+    "avatar_updated": "Аватар жаңартылды",
+    "failed_upload": "Аватарды жүктеу мүмкін болмады",
+    "phone_number": "Телефон нөмірі",
+    "phone_placeholder": "+7 (777) 123-45-67",
+    "address_placeholder": "Қала, Көше, Пәтер...",
+    "bio_placeholder": "Өзіңіз туралы айтып беріңіз...",
+    "current_password": "Ағымдағы құпиясөз (Сақтау үшін міндетті)",
+    "save_changes": "Өзгерістерді сақтау",
+    "saving": "Сақталуда...",
+    "profile_updated": "Профиль сәтті жаңартылды",
+    "update_failed": "Профильді жаңарту мүмкін болмады",
+    "try_again": "Кейінірек қайталап көріңіз.",
+    "password_required": "Өзгерістерді сақтау үшін құпиясөз міндетті"
+  },
+  "notifications": {
+    "title": "Хабарламалар",
+    "mark_all_read": "Барлығын оқылған деп белгілеу",
+    "no_notifications": "Хабарламалар жоқ"
+  },
+  "chat": {
+    "title": "Чат",
+    "subtitle": "Когорталар мен кеңесшілерге арналған бөлмелер. Хабарламалар қазір жіберіледі, live-стримді WebSocket арқылы қосамыз.",
+    "preview": "Бета",
+    "demo_notice": "API жұмыс істеп тұр; нақты уақыт режимін келесі қадамда қосамыз.",
+    "rooms_heading": "Бөлмелер",
+    "messages_heading": "Хабарламалар",
+    "room_members": "{{count}} қатысушы",
+    "input_placeholder": "Топқа жаңартуды жазыңыз…",
+    "send_disabled": "Бөлме архивте. Жіберу өшірілген.",
+    "empty_state": "Хабарламаларды көру үшін бөлмені таңдаңыз.",
+    "loading_rooms": "Бөлмелер жүктелуде…",
+    "loading_messages": "Хабарламалар жүктелуде…",
+    "send": "Жіберу",
+    "no_rooms": "Сіз әлі ешбір бөлмеге қосылмадыңыз.",
+    "archived": "Архив",
+    "live_hint": "Хабарламалар бірден сақталады; live-стрим жақында.",
+    "search_placeholder": "Чаттарды іздеу…",
+    "active_rooms": "Топтарым",
+    "types": {
+      "cohort": "Когорталық бөлме",
+      "advisory": "Кеңесші бөлмесі",
+      "admin": "Админ хабарламалары"
+    }
+  },
+  "chat_admin": {
+    "title": "Чаттар",
+    "subtitle": "Когорталар мен кеңесшілер бөлмелерін жасап, қатысушыларды басқарыңыз.",
+    "create_heading": "Жаңа бөлме",
+    "room_name": "Бөлме атауы",
+    "room_placeholder": "PhD 2025 • Public Health",
+    "room_type": "Түрі",
+    "create": "Жасау",
+    "rooms_heading": "Бөлмелер",
+    "archive": "Архивтеу",
+    "unarchive": "Қалпына келтіру",
+    "manage_members": "Қатысушылар",
+    "members_title": "Қатысушылар",
+    "add_member": "Қатысушы қосу",
+    "search_user": "Аты немесе email арқылы іздеу",
+    "no_users": "Пайдаланушылар табылмады",
+    "add": "Қосу",
+    "current_members": "Қазіргі қатысушылар",
+    "no_members": "Әзірге қатысушылар жоқ",
+    "remove": "Өшіру",
+    "add_all": "Барлығын қосу",
+    "remove_all": "Барлығын жою",
+    "adding_all": "Қосылуда...",
+    "removing_all": "Жойылуда...",
+    "added_members": "Қатысушылар қосылды",
+    "added_members_count": "{{count}} қатысушы қосылды",
+    "removed_members": "Қатысушылар жойылды",
+    "removed_members_count": "{{count}} қатысушы жойылды"
   },
   "auth": {
     "login_title": "Кіру",
@@ -16,10 +110,66 @@
     "password": "Құпиясөз",
     "signin": "Кіру",
     "forgot": "Құпиясөзді ұмыттыңыз ба?",
-    "failed": "Кіру қатесі"
+    "failed": "Кіру қатесі",
+    "show_password": "Құпиясөзді көрсету",
+    "hide_password": "Құпиясөзді жасыру"
   },
   "templates": {
-    "heading": "Қолжетімді шаблондар"
+    "heading": "Қолжетімді шаблондар",
+    "profile_required": "Шаблондар автоматты толтырылуы үшін «Докторант профилі» формасын толтырыңыз."
+  },
+  "calendar": {
+    "title": "Күнтізбе",
+    "new_event": "Жаңа оқиға",
+    "create_event": "Оқиға қосу",
+    "edit_event": "Оқиғаны өңдеу",
+    "fields": {
+      "title": "Атауы",
+      "start": "Басталуы",
+      "end": "Аяқталуы",
+      "type": "Түрі",
+      "type_placeholder": "Түрін таңдаңыз",
+      "location": "Орны",
+      "description": "Сипаттама"
+    },
+    "types": {
+      "meeting": "Кездесу",
+      "deadline": "Дедлайн",
+      "academic": "Академиялық"
+    },
+    "actions": {
+      "delete": "Жою",
+      "save": "Сақтау",
+      "saving": "Сақталуда..."
+    },
+    "errors": {
+      "fetch": "Оқиғаларды жүктеу мүмкін болмады",
+      "save": "Оқиғаны сақтау мүмкін болмады",
+      "delete": "Оқиғаны жою мүмкін болмады"
+    },
+    "untitled": "Аталмаған",
+    "confirm_delete": "Бұл оқиғаны жою керек пе?",
+    "validation": {
+      "title": "Атауы міндетті",
+      "start": "Басталу уақытын көрсетіңіз",
+      "end": "Аяқталу уақытын көрсетіңіз"
+    },
+    "new": "Жаңа",
+    "today": "Бүгін",
+    "previous": "Артқа",
+    "next": "Алға",
+    "month": "Ай",
+    "week": "Апта",
+    "day": "Күн",
+    "agenda": "Күн тәртібі",
+    "date": "Күні",
+    "time": "Уақыты",
+    "event": "Оқиға",
+    "all_day": "Күні бойы",
+    "yesterday": "Кеше",
+    "tomorrow": "Ертең",
+    "no_events": "Бұл аралықта оқиғалар жоқ",
+    "show_more": "тағы +{{count}}"
   },
   "forms": {
     "validations_title": "Тексерулер",
@@ -56,10 +206,13 @@
     "copied": "Көшірілді",
     "edit": "Өңдеу",
     "cancel_edit": "Өңдеуден бас тарту",
+    "retry": "Қайталау",
+    "remove": "Жою",
     "success": "Сақталды.",
     "error": "Қате",
     "info": "Ақпарат",
-    "not_implemented": "Әлі қолжетімді емес."
+    "not_implemented": "Әлі қолжетімді емес.",
+    "required": "Міндетті"
   },
   "gateway": {
     "prompt": "Келесі бөлімге өтесіз бе? Қазір ашуға болады.",
@@ -68,7 +221,13 @@
   "journey": {
     "reset": "Картаны тастау",
     "reset_confirm": "Карта прогресін тастайсыз ба?",
-    "reset_hint": "Бастан бастау үшін картаны тастауға болады."
+    "reset_hint": "Бастан бастау үшін картаны тастауға болады.",
+    "reset_title": "Картаны тастау",
+    "reset_warning": "Бұл әрекетті болдырмау мүмкін емес. Барлық прогресіңіз жоғалады және сіз басынан бастайсыз.",
+    "reset_confirm_phrase": "картаны тастау",
+    "reset_type_to_confirm": "Растау үшін төменде «{{phrase}}» деп жазыңыз:",
+    "reset_confirm_label": "Растау",
+    "reset_confirm_button": "Менің картамды тастау"
   },
   "upload": {
     "not_supported": "Файлдарды жүктеу кейінірек қолжетімді болады.",
@@ -81,6 +240,10 @@
     "instructions": "Бұл кезеңнің дайын екенін растаңыз.",
     "submit": "Дайын деп белгілеу"
   },
+  "validation": {
+    "required": "Міндетті өріс",
+    "invalid_email": "Жарамсыз email"
+  },
   "forms.nk.done_info": "Жауаптар сақталды. Келесі қадамға өту…",
   "home": {
     "journey_hint": "Докторант жол картасын ашыңыз.",
@@ -90,7 +253,31 @@
     "open_contacts": "Контактілер",
     "no_contacts": "Контактілер жоқ.",
     "hero_title": "Докторант порталы",
-    "hero_subtitle": "Докторант жолын айқын әрі сенімді жүріңіз"
+    "hero_subtitle": "Докторант жолын айқын әрі сенімді жүріңіз",
+    "chat_hint": "Ғылыми жетекшілер мен әріптестермен хабарласыңыз.",
+    "open_chat": "Чатты ашу",
+    "calendar_hint": "Алдағы оқиғалар мен мерзімдерді көріңіз.",
+    "open_calendar": "Күнтізбені ашу"
+  },
+  "dashboard": {
+    "welcome_back": "Қайта келдіңіз, {{name}}!",
+    "subtitle": "Докторлық диссертацияңыздың прогресін қадағалаңыз және ғылыми кезеңдерді басқарыңыз",
+    "settings": "Баптаулар",
+    "in_progress": "Орындалуда",
+    "completed": "Аяқталды",
+    "progress": "Прогресс",
+    "total_tasks": "Барлық тапсырмалар",
+    "quick_actions": "Жылдам әрекеттер",
+    "journey_map": "Жол картасы",
+    "track_progress": "Прогресіңізді қадағалаңыз",
+    "messages": "Хабарламалар",
+    "chat_advisor": "Ғылыми жетекшімен чат",
+    "calendar": "Күнтізбе",
+    "view_events": "Келе жатқан оқиғаларды көру",
+    "my_profile": "Менің профилім",
+    "manage_account": "Аккаунтты басқару",
+    "coming_soon": "Жақында",
+    "coming_soon_text": "Бұл панель жақында сіздің прогресіңізді, соңғы жүктеулерді, ғылыми жетекшінің пікірлерін және келе жатқан мерзімдерді көрсетеді."
   },
   "map": {
     "title": "Менің диссертация картам",
@@ -107,6 +294,536 @@
     "graduation_date": "Бағдарламаны бітірген күні",
     "advisors_full_names": "Жетекшілердің толық аты-жөні",
     "dissertation_form": "Диссертация формасы",
-    "dissertation_form_other": "Басқа (нақтылаңыз)"
+    "dissertation_form_other": "Басқа (нақтылаңыз)",
+    "select_date": "Күнді таңдаңыз"
+  },
+  "admin": {
+    "sidebar": {
+      "core": "Негізгі",
+      "management": "Басқару",
+      "dashboard": "Панель",
+      "student_progress": "Студент прогресі",
+      "students_monitor": "Студенттер мониторингі",
+      "chat_rooms": "Чаттар",
+      "create_students": "Студенттерді басқару",
+      "create_advisors": "Кеңесшілерді басқару",
+      "create_admins": "Админдерді басқару",
+      "calendar": "Күнтізбе",
+      "dictionaries": "Анықтамалықтар",
+      "contacts": "Контактілер",
+      "analytics": "Аналитика",
+      "users": "Пайдаланушылар"
+    },
+    "topbar": {
+      "admin_panel": "Админ панелі",
+      "menu": "Мәзір",
+      "admin": "Администратор",
+      "signed_in_as": "Кіру:",
+      "back_to_main": "Басты бетке оралу",
+      "back_to_main_button": "Басты бет",
+      "main": "Басты"
+    },
+
+    "student_progress": {
+      "title": "Студент прогресі",
+      "subtitle": "Студенттердің диссертациялық картаны орындауының көрінісі.",
+      "search": "Аты-жөні немесе email бойынша іздеу",
+      "refresh": "Жаңарту",
+      "students": "Студенттер",
+      "empty": "Студенттер табылмады.",
+      "view_journey": "Картаны ашу",
+      "tooltip_progress": "{{done}} / {{total}} түйін орындалды ({{pct}}%)"
+    },
+    "monitor": {
+      "title": "Студенттер мониторингі",
+      "count_label": "{{count}} студент",
+      "tabs": {
+        "table": "Кесте",
+        "kanban": "Канбан",
+        "analytics": "Аналитика"
+      },
+      "loading": "Студенттер тізімі жүктелуде...",
+      "empty": "Сүзгілерге сәйкес студенттер жоқ.",
+      "bulk": {
+        "title": "{{count}} студентке жаңа ескерту",
+        "title_placeholder": "Тақырып",
+        "message_placeholder": "Хабарлама (міндетті емес)",
+        "due_label": "Мерзімі",
+        "send": "Жіберу"
+      },
+      "filters": {
+        "search_placeholder": "Аты, ID, телефон немесе email бойынша іздеу...",
+        "program_placeholder": "Бағдарлама",
+        "department_placeholder": "Кафедра",
+        "cohort_placeholder": "Ағын",
+        "program_all": "Барлық бағдарламалар",
+        "department_all": "Барлық кафедралар",
+        "cohort_all": "Барлық ағындар",
+        "more": "Қосымша сүзгілер",
+        "rp_only": "Тек RP бар",
+        "overdue_only": "Тек мерзімі өткендер",
+        "clear": "Тазалау",
+        "apply": "Сүзгілерді қолдану",
+        "export": "CSV экспорт",
+        "bulk": "Жаппай хабарлама",
+        "new_reminder": "Жаңа ескерту",
+        "programs": {
+          "phd_cs": "PhD Компьютерлік ғылымдар",
+          "phd_physics": "PhD Физика",
+          "phd_chemistry": "PhD Химия",
+          "phd_biomed": "PhD Биомедициналық инженерия",
+          "phd_math": "PhD Қолданбалы математика"
+        },
+        "departments": {
+          "cs": "Компьютерлік ғылымдар кафедрасы",
+          "physics": "Физика кафедрасы",
+          "chemistry": "Химия кафедрасы",
+          "biomed": "Биомедициналық инженерия",
+          "math": "Қолданбалы математика"
+        }
+      },
+      "detail": {
+        "loading": "Студент деректері жүктелуде...",
+        "error": "Студент деректерін жүктеу мүмкін болмады.",
+        "back": "Тізімге оралу",
+        "title": "Студент картасы",
+        "copy_link": "Сілтемені көшіру",
+        "advisors": "Кеңесшілер",
+        "no_advisor": "Кеңесші тағайындалмаған",
+        "overall_progress": "Жалпы прогресс",
+        "status": "Статус",
+        "status_overdue": "МЕРЗІМІ ӨТТІ",
+        "status_normal": "ҚАЛЫПТЫ",
+        "journey_card": "Диссертациялық жол картасы",
+        "current_stage": "Ағымдағы кезең: {{stage}}",
+        "stage_nodes_badge": "{{count}} түйін",
+        "stage_empty": "Бұл кезеңде түйіндер жоқ",
+        "comments": {
+          "title": "Пікірлер мен жазбалар",
+          "placeholder": "Пікір қосыңыз... Кеңесшілерді атау үшін @ қолданыңыз",
+          "attach": "Файл тіркеу",
+          "add": "Пікір қосу"
+        },
+        "deadlines": {
+          "title": "Дедлайндар мен ескертулер",
+          "next_due": "Келесі мерзім:",
+          "stage_progress": "{{done}}/{{total}} түйін осы кезеңде аяқталды",
+          "overdue_badge": "Мерзімі өтті",
+          "upcoming": "Алдағы дедлайндар",
+          "add": "Ескерту қосу"
+        },
+        "files_count_one": "{{count}} файл",
+        "files_count_other": "{{count}} файл",
+        "node_states": {
+          "locked": "Бұғатталған",
+          "active": "Белсенді",
+          "submitted": "Жіберілді",
+          "waiting": "Күту",
+          "under_review": "Қаралуда",
+          "needs_fixes": "Түзету керек",
+          "done": "Аяқталды"
+        },
+        "node_card": {
+          "due": "Мерзімі:",
+          "set_label": "Дедлайн қою",
+          "set_aria": "Тапсыру мерзімін қою"
+        }
+      },
+      "table": {
+        "columns": {
+          "student": "Студент",
+          "program_department": "Бағдарлама · Кафедра",
+          "stage": "Кезең",
+          "progress": "Прогресс",
+          "cohort": "Ағын",
+          "due": "Мерзімі",
+          "last_activity": "Соңғы әрекет"
+        },
+        "select_all": "Барлығын таңдау",
+        "select_student": "{{name}} таңдау",
+        "stage_nodes": "{{done}}/{{total}} түйін",
+        "overdue_badge": "Мерзімі өтті",
+        "stage_states": {
+          "completed": "Аяқталды",
+          "in-progress": "Орындауда",
+          "at-risk": "Қауіп бар",
+          "pending": "Күтілуде"
+        }
+      },
+      "kanban": {
+        "empty_stage": "Бұл кезеңде студенттер жоқ",
+        "progress": "Прогресс",
+        "due_label": "Мерзімі:",
+        "overdue_label": "Мерзімі өтті:",
+        "rp_required": "RP қажет"
+      },
+      "analytics": {
+        "loading": "Аналитика жүктелуде...",
+        "error": "Қате: {{message}}",
+        "metrics": {
+          "antiplag": {
+            "title": "Антиплагиат сәйкестігі",
+            "description": "S1_antiplag ≥85% студенттер"
+          },
+          "w2": {
+            "title": "W2 кезеңіндегі орташа күн",
+            "description": "Алдын ала сараптаманың орташа уақыты"
+          },
+          "bottleneck": {
+            "title": "Тұйық түйін",
+            "description": "{{count}} студент күтіп тұр"
+          },
+          "rp": {
+            "title": "RP қажет",
+            "description": "Research proposal қажет студенттер"
+          },
+          "completion": {
+            "title": "Аяқтау үлесі",
+            "description": "Жоспар бойынша келе жатқан студенттер"
+          },
+          "overdue": {
+            "title": "Мерзімі өткен тапсырмалар",
+            "description": "Мерзімі өтіп кеткен тапсырмалар"
+          }
+        },
+        "distribution_title": "Кезеңдер бойынша бөлу",
+        "distribution_placeholder": "Диаграмма жақында көрсетіледі..."
+      }
+    },
+    "review": {
+      "title": "Құжаттар және тексеру",
+      "subtitle": "Студент жіберген файлдарды қарап, растаңыз",
+      "select_node": "Узел таңдаңыз",
+      "hint": "Жүктелген файлдарды көру үшін узел таңдаңыз.",
+      "loading": "Файлдар жүктелуде...",
+      "empty_title": "Файлдар жоқ",
+      "empty": "Бұл узелде әзірше файл жоқ.",
+      "approve": "Қабылдау",
+      "request_changes": "Түзетуді сұрау",
+      "modal_title": "Түзетуді сұрау",
+      "modal_hint": "{{filename}}",
+      "modal_placeholder": "Қандай түзету қажет екенін жазыңыз",
+      "send": "Сұраныс жіберу",
+      "approved_toast": "Құжат қабылданды",
+      "requested_toast": "Түзету сұранысы жіберілді",
+      "error_toast": "Статусты жаңарту мүмкін болмады",
+      "uploaded_meta": "Жүктелген күні {{date}}{{by}}",
+      "uploaded_by": " · {{name}}",
+      "confirm_reset": "Осы студенттің құпиясөзін қалпына келтіресіз бе? Оған жаңа уақытша құпиясөз керек болады.",
+      "password_reset": "Құпиясөз жаңартылды",
+      "reset_password": "Құпиясөзді қалпына келтіру"
+    },
+    "notifications": {
+      "title": "Хабарламалар",
+      "subtitle": "Студенттерден жаңа құжаттар мен жаңартулар",
+      "show_all": "Барлығын көрсету",
+      "show_unread": "Тек оқылмаған",
+      "mark_all_read": "Барлығын оқылған белгілеу",
+      "no_unread": "Оқылмаған хабарламалар жоқ",
+      "empty": "Хабарламалар әлі жоқ",
+      "event_labels": {
+        "document_submitted": "Құжат жіберілді",
+        "document_uploaded": "Файл жүктелді",
+        "form_submitted": "Форма жіберілді",
+        "default": "Хабарлама"
+      },
+      "messages": {
+        "document_submitted": "{{node}} бойынша құжаттар жіберілді",
+        "document_uploaded": "{{node}} ішінде жаңа файл жүктелді",
+        "form_submitted": "{{node}} ішінде форма жіберілді",
+        "default": "{{node}} узелінде жаңарту"
+      },
+      "relative": {
+        "just_now": "Жаңа ғана",
+        "minutes": "{{count}} мин бұрын",
+        "hours": "{{count}} сағ бұрын",
+        "yesterday": "Кеше",
+        "days": "{{count}} күн бұрын",
+        "short_date": "{{date}}"
+      }
+    },
+    "users": {
+      "title": "Пайдаланушыларды басқару",
+      "students": "Студенттер",
+      "advisors": "Кеңесшілер",
+      "admins": "Админдер",
+      "subtitle": "Пайдаланушылар мен рұқсаттарды басқарыңыз",
+      "create": "Пайдаланушы қосу",
+      "create_title": "Жаңа пайдаланушы құру",
+      "table_title": "Пайдаланушылар",
+      "search": "Пайдаланушыларды іздеу...",
+      "loading": "Пайдаланушылар жүктелуде...",
+      "empty_search": "\"{{query}}\" бойынша пайдаланушылар табылмады",
+      "empty": "Пайдаланушылар табылмады",
+      "role": "Рөлі",
+      "pagination": "{{from}}–{{to}} / {{total}} пайдаланушы",
+      "edit_title": "Пайдаланушыны өңдеу",
+      "updating": "Жаңартылуда...",
+      "update_action": "Пайдаланушыны жаңарту",
+      "reset_success": "Құпиясөз сәтті қалпына келтірілді",
+      "new_password": "Жаңа құпиясөз",
+      "copy_reset_message": "Қалпына келтіру хабарламасын көшіру",
+      "dismiss": "Жабу",
+      "reset_notice": "Пайдаланушы жаңа құпиясөзбен кіруі керек. Деректерді қауіпсіз беріңіз.",
+      "created_success": "Пайдаланушы жасалды",
+      "password": "Құпиясөз",
+      "copy_login_message": "Кіру хабарламасын көшіру",
+      "copy_credentials": "Деректерді көшіру",
+      "credentials_notice": "Бұл деректерді сақтаңыз — қайта көрсетілмейді.",
+      "confirm_reset": "Осы пайдаланушының құпиясөзін қалпына келтіру керек пе? Жаңа уақытша құпиясөз қажет болады.",
+      "toast": {
+        "created": "Пайдаланушы жасалды",
+        "credentials_ready": "Деректер дайын",
+        "updated": "Пайдаланушы жаңартылды",
+        "reset": "Құпиясөз қалпына келтірілді",
+        "credentials_copied": "Деректер көшірілді"
+      }
+    },
+    "dictionaries": {
+      "title": "Анықтамалықтар",
+      "tabs": {
+        "programs": "Бағдарламалар",
+        "specialties": "Мамандықтар",
+        "cohorts": "Ағындар",
+        "departments": "Кафедралар"
+      },
+      "fields": {
+        "name": "Атауы",
+        "code": "Код",
+        "code_optional": "Код (міндетті емес)",
+        "programs": "Бағдарламалар",
+        "start_date": "Басталу күні",
+        "end_date": "Аяқталу күні"
+      },
+      "actions": {
+        "create": "Құру",
+        "creating": "Құрылуда...",
+        "saving": "Сақталуда...",
+        "save_changes": "Өзгерістерді сақтау",
+        "status_error": "Күйді жаңарту мүмкін болмады"
+      },
+      "shared": {
+        "none": "Жоқ"
+      },
+      "programs": {
+        "title": "Бағдарламалар",
+        "add": "Бағдарлама қосу",
+        "add_title": "Жаңа бағдарлама",
+        "name_placeholder": "Бағдарлама атауы",
+        "created": "Бағдарлама жасалды",
+        "create_error": "Бағдарлама құру мүмкін болмады",
+        "updated": "Бағдарлама жаңартылды",
+        "update_error": "Бағдарлама жаңарту мүмкін болмады",
+        "deleted": "Бағдарлама жойылды",
+        "delete_confirm": "Бұл бағдарламаны жоясыз ба?",
+        "empty": "Бағдарламалар жоқ.",
+        "edit_title": "Бағдарламаны өңдеу"
+      },
+      "specialties": {
+        "title": "Мамандықтар",
+        "add": "Мамандық қосу",
+        "add_title": "Жаңа мамандық",
+        "name_placeholder": "Мамандық атауы",
+        "created": "Мамандық жасалды",
+        "create_error": "Мамандық құру мүмкін болмады",
+        "updated": "Мамандық жаңартылды",
+        "update_error": "Мамандық жаңарту мүмкін болмады",
+        "deleted": "Мамандық жойылды",
+        "status_updated": "Мамандық күйі жаңартылды",
+        "no_programs": "Белсенді бағдарламалар жоқ",
+        "empty": "Мамандықтар жоқ.",
+        "edit_title": "Мамандықты өңдеу",
+        "all": "Барлық мамандықтар"
+      },
+      "cohorts": {
+        "title": "Ағындар",
+        "add": "Ағын қосу",
+        "add_title": "Жаңа ағын",
+        "name_placeholder": "мысалы, 2024-2025",
+        "created": "Ағын жасалды",
+        "create_error": "Ағын құру мүмкін болмады",
+        "updated": "Ағын жаңартылды",
+        "update_error": "Ағын жаңарту мүмкін болмады",
+        "deleted": "Ағын жойылды",
+        "status_updated": "Ағын күйі жаңартылды",
+        "empty": "Ағындар табылмады.",
+        "edit_title": "Ағынды өңдеу"
+      },
+      "departments": {
+        "title": "Кафедралар",
+        "add": "Кафедра қосу",
+        "add_title": "Жаңа кафедра",
+        "name_placeholder": "мысалы, Хирургия кафедрасы",
+        "code_placeholder": "мысалы, SURG",
+        "created": "Кафедра жасалды",
+        "create_error": "Кафедра құру мүмкін болмады",
+        "updated": "Кафедра жаңартылды",
+        "update_error": "Кафедраны жаңарту мүмкін болмады",
+        "deleted": "Кафедра жойылды",
+        "status_updated": "Кафедра күйі жаңартылды",
+        "empty": "Кафедралар табылмады.",
+        "edit_title": "Кафедраны өңдеу"
+      }
+    },
+    "contacts": {
+      "title": "Контактілер",
+      "subtitle": "Студенттер көретін контактілерді басқарыңыз",
+      "add": "Контакт қосу",
+      "edit_title": "Контактіні өңдеу",
+      "table_title": "Контактілер",
+      "empty": "Контактілер жоқ.",
+      "show_inactive": "Белсенді емесін көрсету",
+      "name_ru": "Аты (RU)",
+      "name_kz": "Аты (KZ)",
+      "name_en": "Аты (EN)",
+      "title_ru": "Лауазымы (RU)",
+      "title_kz": "Лауазымы (KZ)",
+      "title_en": "Лауазымы (EN)",
+      "phone": "Телефон",
+      "email": "Email",
+      "sort": "Реті",
+      "status": "Күйі",
+      "title_col": "Лауазымы",
+      "errors": {
+        "name_required": "Аты міндетті"
+      }
+    },
+    "forms": {
+      "create_students_title": "Студенттерді қосу",
+      "create_students_subtitle": "Жаңа студенттерді шақырып, кеңесшілер тағайындаңыз және аккаунттарды басқарыңыз.",
+      "students_table": "Студенттер",
+      "students_summary": "{{count}} студент · {{page}} / {{pages}} бет",
+      "students_empty": "Әзірге студенттер жоқ.",
+      "students_error": "Студенттер тізімін жүктеу мүмкін болмады.",
+      "search_students": "Студенттерді іздеу…",
+      "pagination_label": "{{page}} / {{pages}} бет",
+      "prev_page": "Алдыңғы",
+      "next_page": "Келесі",
+      "admins_table": "Админдер",
+      "admins_summary": "{{count}} админ · {{page}} / {{pages}} бет",
+      "admins_empty": "Админдер әлі жоқ.",
+      "admins_error": "Админдер тізімін жүктеу мүмкін болмады.",
+      "search_admins": "Админдерді іздеу…",
+      "advisors_table": "Кеңесшілер",
+      "advisors_summary": "{{count}} кеңесші · {{page}} / {{pages}} бет",
+      "advisors_empty": "Кеңесшілер жоқ.",
+      "advisors_error": "Кеңесшілер тізімін жүктеу мүмкін болмады.",
+      "search_advisors_input": "Кеңесшілерді іздеу…",
+      "registration_date": "Тіркелген күні",
+      "copy_credentials": "Деректерді көшіру",
+      "active_state": "Күйі",
+      "status_all": "Барлығы",
+      "status_active": "Белсенді",
+      "status_inactive": "Белсенді емес",
+      "all_programs": "Барлық бағдарламалар",
+      "all_departments": "Барлық кафедралар",
+      "all_cohorts": "Барлық ағымдар",
+      "phone_optional": "Телефон (міндетті емес)",
+      "email_optional": "Email (міндетті емес)",
+      "program": "Бағдарлама",
+      "department": "Кафедра",
+      "specialty": "Мамандық",
+      "cohort": "Ағын",
+      "advisors": "Кеңесшілер",
+      "search_advisors": "Кеңесшілерді іздеу…",
+      "creating": "Жасалуда…",
+      "username": "Логин",
+      "temp_password": "Уақытша құпиясөз",
+      "first_name": "Аты",
+      "last_name": "Тегі",
+      "email": "Email",
+      "password": "Құпия сөз",
+      "edit_student": "Студентті өңдеу",
+      "delete_student": "Студентті бұғаттау",
+      "delete_advisor": "Эдвайзерді бұғаттау",
+      "delete_admin": "Админді бұғаттау",
+      "mark_active": "Белсендіру",
+      "confirm_deactivate_named": "Бұл пайдаланушыны бұғаттау керек пе?",
+      "confirm_activate_named": "Бұл пайдаланушыны белсендіру керек пе?",
+      "edit_advisor": "Кеңесшіні өңдеу",
+      "edit_admin": "Админді өңдеу",
+      "share_credentials": "Бұл деректерді қауіпсіз түрде жеткізіңіз.",
+      "errors": {
+        "create_user": "Пайдаланушыны қосу мүмкін болмады",
+        "update_user": "Пайдаланушыны жаңарту мүмкін болмады",
+        "create_student": "Студентті қосу мүмкін болмады",
+        "update_student": "Студентті жаңарту мүмкін болмады",
+        "create_advisor": "Кеңесшіні қосу мүмкін болмады",
+        "create_admin": "Админді қосу мүмкін болмады",
+        "reset_password": "Құпиясөзді қалпына келтіру мүмкін болмады",
+        "status_update": "Статусты жаңарту мүмкін болмады",
+        "update_advisor": "Кеңесшіні жаңарту мүмкін болмады",
+        "update_admin": "Админді жаңарту мүмкін болмады"
+      },
+      "create_student": {
+        "title": "Студент қосу",
+        "subtitle": "Бағдарлама деректерімен және кеңесшілермен студент қосыңыз.",
+        "heading": "Студент деректері",
+        "submit": "Студент қосу",
+        "success": "Студент жасалды"
+      },
+      "create_advisor": {
+        "title": "Кеңесшілерді басқару",
+        "subtitle": "Жаңа кеңесшілерді қосып, барларын жаңартыңыз.",
+        "heading": "Кеңесші деректері",
+        "submit": "Кеңесші қосу",
+        "success": "Кеңесші жасалды"
+      },
+      "create_admins": {
+        "title": "Админдерді басқару",
+        "subtitle": "Тек супер-админдер басқа админдерді басқара алады.",
+        "heading": "Жаңа админ",
+        "submit": "Админ қосу",
+        "success": "Админ жасалды"
+      },
+      "roles": {
+        "student": "Студент",
+        "advisor": "Кеңесші",
+        "chair": "Кафедра меңгерушісі",
+        "admin": "Админ"
+      }
+    }
+  },
+  "analytics": {
+    "title": "Аналитикалық панель",
+    "students_by_stage": "Кезеңдер бойынша студенттер",
+    "overdue_tasks": "Түйіндер бойынша мерзімі өткен тапсырмалар"
+  },
+  "table": {
+    "name": "Аты-жөні",
+    "email": "Email",
+    "current_node": "Ағымдағы түйін",
+    "last_activity": "Соңғы әрекет",
+    "actions": "Әрекеттер"
+  },
+  "time": {
+    "ago": "{{value}} {{unit}} бұрын",
+    "units": {
+      "seconds": "сек",
+      "minutes": "мин",
+      "hours": "сағ",
+      "days": "күн",
+      "weeks": "апта",
+      "months": "ай",
+      "years": "жыл"
+    }
+  },
+  "uploads": {
+    "title": "Құжаттарды тіркеу",
+    "subtitle": "Осы кезеңге қажет файлдарды жүктеңіз.",
+    "allowed": "Рұқсат етілген: {{mime}}",
+    "any_format": "Кез келген формат",
+    "replace": "Файлды ауыстыру",
+    "add": "Файл жүктеу",
+    "empty": "Бұл жерде әлі файлдар жоқ.",
+    "note": "Рецензент ескертпесі:",
+    "download": "Жүктеп алу",
+    "success": "Файл жүктелді",
+    "error": "Файлды жүктеу мүмкін болмады. Қайта көріңіз.",
+    "status": {
+      "submitted": "Күтіп тұр",
+      "approved": "Қабылданды",
+      "rejected": "Түзетуді қажет етеді"
+    }
   }
 }

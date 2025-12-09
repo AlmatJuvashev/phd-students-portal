@@ -65,7 +65,7 @@ DATABASE_URL=${{Postgres.DATABASE_URL}}
 FRONTEND_BASE=https://phd-students-portal.vercel.app
 GIN_MODE=release
 JWT_SECRET=super-secret-jwt-key-change-this-now
-ADMIN_EMAIL=juvashev@gmail.com
+ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=<ваш-пароль>
 ```
 

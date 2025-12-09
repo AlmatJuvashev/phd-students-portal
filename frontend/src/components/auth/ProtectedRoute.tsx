@@ -1,14 +1,15 @@
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, Role } from '@/contexts/AuthContext'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
   fallback?: React.ReactNode
   requiredRole?: 'student' | 'advisor' | 'secretary' | 'chair' | 'admin'
+  requiredAnyRole?: Role[]
 }
 
-export function ProtectedRoute({ children, fallback, requiredRole }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, fallback, requiredRole, requiredAnyRole }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth()
   const location = useLocation()
 
@@ -24,8 +25,12 @@ export function ProtectedRoute({ children, fallback, requiredRole }: ProtectedRo
     )
   }
 
-  if (requiredRole) {
-    const roleOk = user.role === requiredRole || user.role === 'admin' || user.role === 'superadmin'
+  // Backward-compat: requiredRole OR new requiredAnyRole
+  if (requiredRole || (requiredAnyRole && requiredAnyRole.length > 0)) {
+    const allowed = new Set<Role>([ 'superadmin', 'admin' ])
+    if (requiredRole) allowed.add(requiredRole as Role)
+    if (requiredAnyRole) requiredAnyRole.forEach(r => allowed.add(r))
+    const roleOk = allowed.has(user.role)
     if (!roleOk) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-2">
@@ -38,4 +43,3 @@ export function ProtectedRoute({ children, fallback, requiredRole }: ProtectedRo
 
   return <>{children}</>
 }
-

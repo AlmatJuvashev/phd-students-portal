@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS specialties;
+DROP TABLE IF EXISTS programs;

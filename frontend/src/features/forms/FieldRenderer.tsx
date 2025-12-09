@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { FieldDef } from "@/lib/playbook";
 import { t } from "@/lib/playbook";
 import { CollectionField } from "./CollectionField";
@@ -16,6 +17,7 @@ export type FieldRendererProps = {
   canEdit?: boolean;
   setField?: (key: string, value: any) => void;
   otherValue?: any;
+  itemErrors?: Record<number, string>;
 };
 
 const SelectField = memo(
@@ -165,18 +167,24 @@ const BooleanField = memo(
 BooleanField.displayName = "BooleanField";
 
 const DateField = memo(
-  ({ field, value, onChange, disabled, canEdit }: FieldRendererProps) => (
+  ({
+    field,
+    value,
+    onChange,
+    disabled,
+    canEdit,
+    T,
+  }: FieldRendererProps & { T: ReturnType<typeof useTranslation>["t"] }) => (
     <div className="grid gap-1">
       <Label htmlFor={field.key}>
         {t(field.label, field.key)}{" "}
         {field.required ? <span className="text-destructive">*</span> : null}
       </Label>
-      <Input
-        id={field.key}
-        type="date"
-        disabled={!canEdit || disabled}
+      <DatePicker
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
+        disabled={!canEdit || disabled}
+        placeholder={T("fields.select_date", "Select a date")}
       />
     </div>
   )
@@ -239,6 +247,7 @@ function renderField(
         canEdit={props.canEdit}
         disabled={props.disabled}
         renderField={(childProps) => renderField(childProps, T)}
+        itemErrors={props.itemErrors}
       />
     );
   }
@@ -256,7 +265,7 @@ function renderField(
   }
 
   if (field.type === "date") {
-    return <DateField {...props} />;
+    return <DateField {...props} T={T} />;
   }
 
   return <TextField {...props} T={T} />;
