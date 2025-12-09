@@ -52,6 +52,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 					return true
 				}
 			}
+			// Allow all Vercel deployments (they use X-Tenant-Slug header for tenant resolution)
+			if strings.HasSuffix(origin, ".vercel.app") {
+				return true
+			}
 			return false
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
