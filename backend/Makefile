@@ -15,7 +15,7 @@ endif
 VERSION?=1
 PORT_TO_KILL?=8280
 
-.PHONY: help run migrate-up migrate-down migrate-force seed dev kill-port
+.PHONY: help run migrate-up migrate-down migrate-force seed seed-demo dev kill-port
 
 help:
 	@echo "Available targets:"
@@ -25,7 +25,8 @@ help:
 	@echo "  make migrate-up        # apply all pending migrations"
 	@echo "  make migrate-down      # roll back the most recent migration"
 	@echo "  make migrate-force VERSION=N  # force-set schema version to N (use after fixing dirty state)"
-	@echo "  make seed              # seed demo data"
+	@echo "  make seed              # seed initial data"
+	@echo "  make seed-demo         # seed comprehensive demo data for demo.university"
 	@echo "Environment variables:"
 	@echo "  DB_URL=$(DB_URL)"
 	@echo "  VERSION=$(VERSION)"
@@ -45,6 +46,10 @@ migrate-force:
 
 seed:
 	go run ./cmd/server --seed
+
+seed-demo:
+	@echo "Seeding comprehensive demo data for demo.university tenant..."
+	go run ./cmd/mock
 
 dev:
 	@echo "Starting dev server on APP_PORT=$(APP_PORT)"
