@@ -87,6 +87,9 @@ func EnsureContacts(db *sqlx.DB) error {
 	}
 	defer tx.Rollback()
 
+	// Default tenant ID for seeded contacts
+	defaultTenantID := "00000000-0000-0000-0000-000000000001"
+
 	order := 1
 	for _, rc := range raw {
 		name := normalizeLocalized(rc.Name)
@@ -95,8 +98,8 @@ func EnsureContacts(db *sqlx.DB) error {
 		}
 		title := normalizeLocalized(rc.Title)
 		if _, err := tx.Exec(
-			`INSERT INTO contacts (name, title, email, phone, sort_order) VALUES ($1,$2,$3,$4,$5)`,
-			toJSON(name), toJSON(title), nullableString(rc.Email), nullableString(rc.Phone), order,
+			`INSERT INTO contacts (name, title, email, phone, sort_order, tenant_id) VALUES ($1,$2,$3,$4,$5,$6)`,
+			toJSON(name), toJSON(title), nullableString(rc.Email), nullableString(rc.Phone), order, defaultTenantID,
 		); err != nil {
 			return fmt.Errorf("insert contact seed failed: %w", err)
 		}
