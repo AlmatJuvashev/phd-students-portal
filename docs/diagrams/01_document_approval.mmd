@@ -1,0 +1,32 @@
+sequenceDiagram
+    participant S as Student
+    participant API as AttachUpload Handler
+    participant S3 as S3 Storage
+    participant DB as PostgreSQL
+    participant N as NotifyAdvisors
+    participant A as Advisor
+
+    S->>API: POST /journey/nodes/:id/uploads/presign
+    API->>S3: PresignPut(objectKey)
+    S3-->>API: Signed URL
+    API-->>S: {presign_url, object_key}
+    
+    S->>S3: PUT file to presigned URL
+    S3-->>S: 200 OK + ETag
+    
+    S->>API: POST /journey/nodes/:id/uploads/attach
+    API->>DB: Begin transaction
+    API->>DB: INSERT document_versions
+    API->>DB: INSERT node_instance_slot_attachments
+    API->>DB: UPDATE node_instances.state = 'submitted'
+    API->>DB: Commit transaction
+    API-->>N: NotifyAdvisorsOnSubmission (async)
+    N->>DB: Get advisors for student
+    N->>DB: INSERT admin_notifications
+    API-->>S: 200 OK
+    
+    A->>API: PATCH /admin/attachments/:id/review
+    API->>DB: Verify advisor assigned to student
+    API->>DB: UPDATE attachment.status
+    API->>DB: UPDATE node_instances.state
+    API-->>A: 200 OK

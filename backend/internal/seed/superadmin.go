@@ -31,8 +31,8 @@ func EnsureSuperAdmin(db *sqlx.DB, cfg config.AppConfig) (generated string, err 
 			username := strings.Split(email, "@")[0]
 			first := "Super"
 			last := "Admin"
-			_, err = db.Exec(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active)
-				VALUES ($1,$2,$3,$4,'superadmin',$5,true)`, username, email, first, last, hash)
+			_, err = db.Exec(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active,is_superadmin)
+				VALUES ($1,$2,$3,$4,'superadmin',$5,true,true)`, username, email, first, last, hash)
 			return generated, err
 		}
 		return generated, err

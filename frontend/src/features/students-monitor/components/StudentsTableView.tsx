@@ -1,0 +1,265 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertCircle } from "lucide-react";
+import type { MonitorStudent } from "../api";
+import { stageLabel } from "../utils";
+import { computeTimeAgo } from "@/lib/time";
+import { useTranslation } from "react-i18next";
+
+const STAGES = ["W1", "W2", "W3", "W4", "W5", "W6", "W7"];
+
+type StageStatus = "completed" | "in-progress" | "at-risk" | "pending";
+
+function getStageHistory(
+  student: MonitorStudent
+): Array<{ stage: string; status: StageStatus }> {
+  const currentStageIndex = STAGES.indexOf(student.current_stage || "W1");
+
+  return STAGES.map((stage, idx) => {
+    // Skip W3 if RP not required
+    if (stage === "W3" && !student.rp_required) {
+      return null;
+    }
+
+    let status: StageStatus = "pending";
+
+    if (idx < currentStageIndex) {
+      status = "completed";
+    } else if (idx === currentStageIndex) {
+      status = "in-progress";
+    }
+
+    return { stage, status };
+  }).filter(Boolean) as Array<{ stage: string; status: StageStatus }>;
+}
+
+export function StudentsTableView({
+  rows,
+  selected,
+  onToggle,
+  onToggleAll,
+}: {
+  rows: MonitorStudent[];
+  selected: Set<string>;
+  onToggle: (id: string, checked: boolean) => void;
+  onToggleAll: (checked: boolean) => void;
+}) {
+  const navigate = useNavigate();
+  const { t, i18n } = useTranslation("common");
+
+  const lang = i18n.language || "en";
+
+  const getRowClass = (student: MonitorStudent, index: number) => {
+    const baseClass = index % 2 === 0 ? "bg-white" : "bg-muted/5";
+    return `${baseClass} hover:bg-muted/30`;
+  };
+
+  const handleRowClick = (studentId: string) => {
+    navigate(`/admin/students-monitor/${studentId}`);
+  };
+
+  return (
+    <Card className="border-border shadow-sm">
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="border-b border-border/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+              <tr>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <Checkbox
+                    checked={selected.size > 0 && selected.size === rows.length}
+                    onCheckedChange={(checked) => onToggleAll(!!checked)}
+                    aria-label={t("admin.monitor.table.select_all", {
+                      defaultValue: "Select all",
+                    })}
+                  />
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.student", {
+                    defaultValue: "Student",
+                  })}
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.program_department", {
+                    defaultValue: "Program · Department",
+                  })}
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.stage", {
+                    defaultValue: "Stage",
+                  })}
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.progress", {
+                    defaultValue: "Progress",
+                  })}
+                </th>
+                <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.cohort", {
+                    defaultValue: "Cohort",
+                  })}
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.last_activity", {
+                    defaultValue: "Last activity",
+                  })}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((student, index) => (
+                <tr
+                  key={student.id}
+                  className={`border-b border-border/50 cursor-pointer transition-colors ${getRowClass(
+                    student,
+                    index
+                  )}`}
+                  onClick={() => handleRowClick(student.id)}
+                >
+                  <td
+                    className="py-2.5 px-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={selected.has(student.id)}
+                      onCheckedChange={(checked) =>
+                        onToggle(student.id, !!checked)
+                      }
+                      aria-label={t("admin.monitor.table.select_student", {
+                        defaultValue: "Select {{name}}",
+                        name: student.name,
+                      })}
+                    />
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-border">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                          {student.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-sm text-foreground">
+                          {student.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{student.email || '—'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <div className="text-sm text-foreground">
+                      {student.program?.split(" ")[0] || "—"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {student.department || "—"}
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <div className="text-sm font-medium text-primary">
+                      {student.current_stage || "—"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {typeof student.stage_done === "number" &&
+                      typeof student.stage_total === "number"
+                        ? t("admin.monitor.table.stage_nodes", {
+                            defaultValue: "{{done}}/{{total}} nodes",
+                            done: student.stage_done,
+                            total: student.stage_total,
+                          })
+                        : "—"}
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <div className="flex items-center gap-1.5">
+                      {getStageHistory(student).map((stage, idx) => (
+                        <div
+                          key={idx}
+                          className={`h-5 w-7 rounded-sm flex items-center justify-center text-xs font-medium transition-colors ${
+                            stage.status === "completed"
+                              ? "bg-green-600 text-white"
+                              : stage.status === "in-progress"
+                              ? "bg-primary text-primary-foreground"
+                              : stage.status === "at-risk"
+                              ? "bg-red-600 text-white"
+                              : "bg-muted/30 text-muted-foreground"
+                          }`}
+                          title={`${stageLabel(stage.stage, lang)}: ${t(
+                            `admin.monitor.table.stage_states.${stage.status}`,
+                            {
+                              defaultValue: stage.status,
+                            }
+                          )}`}
+                        >
+                          {stage.stage.replace("W", "")}
+                        </div>
+                      ))}
+                      <span className="ml-2 text-sm font-semibold text-foreground">
+                        {Math.round(student.overall_progress_pct || 0)}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-4 text-center">
+                    <div className="text-sm text-foreground">
+                      {student.cohort || "—"}
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-4">
+                    {student.last_update ? (
+                      <div className="text-sm text-foreground">
+                        {(() => {
+                          const rel = computeTimeAgo(student.last_update);
+                          const abs = new Date(
+                            student.last_update
+                          ).toLocaleString(i18n.language);
+                          if (!rel) return abs;
+                          const unitKey = `time.units.${rel.unit}` as const;
+                          const unitLabel = t(unitKey, {
+                            defaultValue: rel.unit,
+                          });
+                          const ago = t("time.ago", {
+                            defaultValue: "{{value}} {{unit}} ago",
+                            value: rel.value,
+                            unit: unitLabel,
+                          });
+                          return (
+                            <>
+                              <span className="font-medium">{ago}</span>
+                              <span className="text-xs text-muted-foreground ml-2">({abs})</span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">—</div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="p-8 text-center text-muted-foreground"
+                  >
+                    {t("admin.monitor.empty", {
+                      defaultValue: "No students match your filters.",
+                    })}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

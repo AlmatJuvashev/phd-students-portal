@@ -1,0 +1,369 @@
+=== RUN   TestAdminHandler_StudentProgress
+=== RUN   TestAdminHandler_StudentProgress/List_Student_Progress
+--- PASS: TestAdminHandler_StudentProgress (0.41s)
+    --- PASS: TestAdminHandler_StudentProgress/List_Student_Progress (0.00s)
+=== RUN   TestAdminHandler_MonitorStudents
+=== RUN   TestAdminHandler_MonitorStudents/Admin_List_All
+=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Assigned
+=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty)
+=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Program
+=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program
+--- PASS: TestAdminHandler_MonitorStudents (0.33s)
+    --- PASS: TestAdminHandler_MonitorStudents/Admin_List_All (0.01s)
+    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Assigned (0.00s)
+    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty) (0.00s)
+    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Program (0.01s)
+    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program (0.00s)
+=== RUN   TestAdminHandler_GetStudentDetails
+=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Success
+=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Not_Found
+--- PASS: TestAdminHandler_GetStudentDetails (0.43s)
+    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Success (0.01s)
+    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Not_Found (0.00s)
+=== RUN   TestAuthHandler_Login
+=== RUN   TestAuthHandler_Login/Successful_Login
+    auth_test.go:51: Response body: {"role":"student","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjUwMzk3NTgsImlhdCI6MTc2NDk1MzM1OCwicm9sZSI6InN0dWRlbnQiLCJzdWIiOiIxMjNlNDU2Ny1lODliLTEyZDMtYTQ1Ni00MjY2MTQxNzQwMDAifQ.z3CNzumtebg_sf81wkTBr4eKpo6pxi2w_HW0bE_lEqQ"}
+=== RUN   TestAuthHandler_Login/Invalid_Password
+=== RUN   TestAuthHandler_Login/User_Not_Found
+--- PASS: TestAuthHandler_Login (0.53s)
+    --- PASS: TestAuthHandler_Login/Successful_Login (0.07s)
+    --- PASS: TestAuthHandler_Login/Invalid_Password (0.07s)
+    --- PASS: TestAuthHandler_Login/User_Not_Found (0.00s)
+=== RUN   TestCalendarHandler_CreateEvent
+=== RUN   TestCalendarHandler_CreateEvent/Create_Event_Success
+--- PASS: TestCalendarHandler_CreateEvent (0.35s)
+    --- PASS: TestCalendarHandler_CreateEvent/Create_Event_Success (0.00s)
+=== RUN   TestCalendarHandler_GetEvents
+=== RUN   TestCalendarHandler_GetEvents/Get_Events
+--- PASS: TestCalendarHandler_GetEvents (0.34s)
+    --- PASS: TestCalendarHandler_GetEvents/Get_Events (0.00s)
+=== RUN   TestCalendarHandler_UpdateDelete
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event
+2025/12/05 21:49:19 [UpdateEvent] Updating event 0c473201-b5ff-4d2d-a0f0-ab5c2947f148 for user 11111111-1111-1111-1111-111111111111
+2025/12/05 21:49:19 [UpdateEvent] Request data: title=New Title, start=2025-12-05T21:49:19+05:00, end=2025-12-05T22:49:19+05:00, type=academic
+2025/12/05 21:49:19 [UpdateEvent] Event 0c473201-b5ff-4d2d-a0f0-ab5c2947f148 updated successfully
+=== RUN   TestCalendarHandler_UpdateDelete/Delete_Event
+--- PASS: TestCalendarHandler_UpdateDelete (0.35s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event (0.01s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Delete_Event (0.00s)
+=== RUN   TestChatHandler_RoomManagement
+=== RUN   TestChatHandler_RoomManagement/Update_Room
+=== RUN   TestChatHandler_RoomManagement/List_Rooms_(Empty_initially)
+--- PASS: TestChatHandler_RoomManagement (0.36s)
+    --- PASS: TestChatHandler_RoomManagement/Update_Room (0.00s)
+    --- PASS: TestChatHandler_RoomManagement/List_Rooms_(Empty_initially) (0.00s)
+=== RUN   TestChatHandler_Members
+=== RUN   TestChatHandler_Members/Add_Member
+=== RUN   TestChatHandler_Members/List_Members
+=== RUN   TestChatHandler_Members/Remove_Member
+--- PASS: TestChatHandler_Members (0.27s)
+    --- PASS: TestChatHandler_Members/Add_Member (0.00s)
+    --- PASS: TestChatHandler_Members/List_Members (0.00s)
+    --- PASS: TestChatHandler_Members/Remove_Member (0.00s)
+=== RUN   TestChatHandler_MessageOperations
+    chat_extra_test.go:167: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_extra_test.go:167
+        	Error:      	Received unexpected error:
+        	            	pq: column "user_id" of relation "chat_messages" does not exist
+        	Test:       	TestChatHandler_MessageOperations
+--- FAIL: TestChatHandler_MessageOperations (0.25s)
+=== RUN   TestChatHandler_CreateRoom
+=== RUN   TestChatHandler_CreateRoom/Create_Room_Success
+--- PASS: TestChatHandler_CreateRoom (0.27s)
+    --- PASS: TestChatHandler_CreateRoom/Create_Room_Success (0.00s)
+=== RUN   TestChatHandler_Messages
+=== RUN   TestChatHandler_Messages/Send_Message
+=== RUN   TestChatHandler_Messages/List_Messages
+--- PASS: TestChatHandler_Messages (0.26s)
+    --- PASS: TestChatHandler_Messages/Send_Message (0.00s)
+    --- PASS: TestChatHandler_Messages/List_Messages (0.00s)
+=== RUN   TestDictionaryHandler_Programs
+=== RUN   TestDictionaryHandler_Programs/Create_Program
+=== RUN   TestDictionaryHandler_Programs/List_Programs
+--- PASS: TestDictionaryHandler_Programs (0.27s)
+    --- PASS: TestDictionaryHandler_Programs/Create_Program (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/List_Programs (0.00s)
+=== RUN   TestDictionaryHandler_Departments
+=== RUN   TestDictionaryHandler_Departments/Create_Department
+=== RUN   TestDictionaryHandler_Departments/List_Departments
+--- PASS: TestDictionaryHandler_Departments (0.27s)
+    --- PASS: TestDictionaryHandler_Departments/Create_Department (0.00s)
+    --- PASS: TestDictionaryHandler_Departments/List_Departments (0.00s)
+=== RUN   TestDictionaryHandler_Cohorts
+=== RUN   TestDictionaryHandler_Cohorts/Create_Cohort
+=== RUN   TestDictionaryHandler_Cohorts/List_Cohorts
+=== RUN   TestDictionaryHandler_Cohorts/Update_Cohort
+=== RUN   TestDictionaryHandler_Cohorts/Delete_Cohort
+--- PASS: TestDictionaryHandler_Cohorts (0.28s)
+    --- PASS: TestDictionaryHandler_Cohorts/Create_Cohort (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/List_Cohorts (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/Update_Cohort (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/Delete_Cohort (0.00s)
+=== RUN   TestDocumentsHandler_List
+=== RUN   TestDocumentsHandler_List/List_Documents
+--- PASS: TestDocumentsHandler_List (0.35s)
+    --- PASS: TestDocumentsHandler_List/List_Documents (0.01s)
+=== RUN   TestDocumentsHandler_Upload
+=== RUN   TestDocumentsHandler_Upload/Upload_Document_Version
+--- PASS: TestDocumentsHandler_Upload (0.26s)
+    --- PASS: TestDocumentsHandler_Upload/Upload_Document_Version (0.00s)
+=== RUN   TestDocumentsHandler_Delete
+=== RUN   TestDocumentsHandler_Delete/Delete_Document
+--- PASS: TestDocumentsHandler_Delete (0.28s)
+    --- PASS: TestDocumentsHandler_Delete/Delete_Document (0.00s)
+=== RUN   TestNodeSubmissionHandler_GetSubmission
+=== RUN   TestNodeSubmissionHandler_GetSubmission/Get_New_Submission
+2025/12/05 21:49:23 [fetchSlots] instanceID=8f5012f5-8c55-4c81-b3fc-f11b3d4cf86c
+2025/12/05 21:49:23 [fetchSlots] returning 0 slots with total attachments
+    journey_test.go:67: Response: map[locale:ru node_id:node1 playbook_version_id:22222222-2222-2222-2222-222222222222 slots:[] state:active]
+--- PASS: TestNodeSubmissionHandler_GetSubmission (0.29s)
+    --- PASS: TestNodeSubmissionHandler_GetSubmission/Get_New_Submission (0.01s)
+=== RUN   TestNodeSubmissionHandler_PutSubmission
+=== RUN   TestNodeSubmissionHandler_PutSubmission/Update_Submission
+2025/12/05 21:49:23 [fetchSlots] instanceID=19c32d7a-116c-4fea-bfe6-c61a1992abda
+2025/12/05 21:49:23 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeSubmissionHandler_PutSubmission (0.30s)
+    --- PASS: TestNodeSubmissionHandler_PutSubmission/Update_Submission (0.01s)
+=== RUN   TestInvalidNodeID
+--- PASS: TestInvalidNodeID (0.43s)
+=== RUN   TestUnauthorizedUser
+    node_errors_test.go:104: Unauthorized response: {"error":"unauthorized"}
+--- PASS: TestUnauthorizedUser (0.46s)
+=== RUN   TestMalformedJSON
+2025/12/05 21:49:24 [fetchSlots] instanceID=1a953105-2471-430a-91e5-4e3b45f379e3
+2025/12/05 21:49:24 [fetchSlots] returning 0 slots with total attachments
+    node_errors_test.go:160: Malformed JSON response: {"error":"invalid character 'o' in literal null (expecting 'u')"}
+--- PASS: TestMalformedJSON (0.44s)
+=== RUN   TestInvalidStateTransition
+2025/12/05 21:49:25 [fetchSlots] instanceID=35568aa7-ad9b-4170-a003-80690d0dfdff
+2025/12/05 21:49:25 [fetchSlots] returning 0 slots with total attachments
+    node_errors_test.go:216: Invalid state transition response: {"error":"transition not allowed"}
+--- PASS: TestInvalidStateTransition (0.29s)
+=== RUN   TestLockedState_CantSubmit
+2025/12/05 21:49:25 [fetchSlots] instanceID=0a648506-45ad-4ab4-be3d-3c9ead4556a8
+2025/12/05 21:49:25 [fetchSlots] returning 0 slots with total attachments
+    node_state_full_test.go:84: Locked node response: {"error":"transition not allowed"}
+--- PASS: TestLockedState_CantSubmit (0.30s)
+=== RUN   TestWaitingState_CantAdvance
+2025/12/05 21:49:25 [fetchSlots] instanceID=a5b80f80-11e7-4ec6-8e8a-3ddcd330168b
+2025/12/05 21:49:25 [fetchSlots] returning 0 slots with total attachments
+    node_state_full_test.go:148: Waiting node response: {"error":"transition not allowed"}
+--- PASS: TestWaitingState_CantAdvance (0.27s)
+=== RUN   TestFullStateFlow
+2025/12/05 21:49:25 [fetchSlots] instanceID=38f655d8-4317-4d5b-8478-fb0f9607781e
+2025/12/05 21:49:25 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:25 [fetchSlots] instanceID=38f655d8-4317-4d5b-8478-fb0f9607781e
+2025/12/05 21:49:25 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:26 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 [fetchSlots] instanceID=38f655d8-4317-4d5b-8478-fb0f9607781e
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+    node_state_full_test.go:220: Done transition response: {"locale":"ru","node_id":"flow_node","playbook_version_id":"ffffffff-ffff-ffff-ffff-ffffffffffff","slots":[],"state":"done"}
+--- PASS: TestFullStateFlow (0.27s)
+=== RUN   TestNeedsFixes_Resubmit
+2025/12/05 21:49:26 [fetchSlots] instanceID=fc25f2ab-ebdf-4d67-85dc-29b70ae46e8c
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:26 [fetchSlots] instanceID=fc25f2ab-ebdf-4d67-85dc-29b70ae46e8c
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:26 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 [fetchSlots] instanceID=fc25f2ab-ebdf-4d67-85dc-29b70ae46e8c
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNeedsFixes_Resubmit (0.30s)
+=== RUN   TestNodeStateTransitions_StudentSubmitsNode
+2025/12/05 21:49:26 [fetchSlots] instanceID=96635fa8-ee20-4c3c-b342-8830212c3a46
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:26 [fetchSlots] instanceID=96635fa8-ee20-4c3c-b342-8830212c3a46
+2025/12/05 21:49:26 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_StudentSubmitsNode (0.30s)
+=== RUN   TestNodeStateTransitions_StudentCannotDirectlyApprove
+2025/12/05 21:49:26 [fetchSlots] instanceID=0283fad5-2841-4e55-94c5-193f9f05c90a
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:26 [fetchSlots] instanceID=0283fad5-2841-4e55-94c5-193f9f05c90a
+2025/12/05 21:49:26 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:26 [sendStateChangeEmail] Error fetching user: sql: no rows in result set
+--- PASS: TestNodeStateTransitions_StudentCannotDirectlyApprove (0.27s)
+=== RUN   TestNodeStateTransitions_AdminApprovesNode
+2025/12/05 21:49:27 [fetchSlots] instanceID=f4379a4d-931c-4366-a75f-98f428df66a3
+2025/12/05 21:49:27 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:27 [fetchSlots] instanceID=f4379a4d-931c-4366-a75f-98f428df66a3
+2025/12/05 21:49:27 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:27 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:27 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+    node_state_transitions_test.go:198: Admin approval response: {"error":"transition not allowed"}
+--- PASS: TestNodeStateTransitions_AdminApprovesNode (0.30s)
+=== RUN   TestNodeStateTransitions_AdvisorRequestsFixes
+2025/12/05 21:49:27 [fetchSlots] instanceID=848c74d5-aeb4-4fc9-acaf-b1b38fcbd129
+2025/12/05 21:49:27 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:27 [fetchSlots] instanceID=848c74d5-aeb4-4fc9-acaf-b1b38fcbd129
+2025/12/05 21:49:27 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:27 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:27 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+--- PASS: TestNodeStateTransitions_AdvisorRequestsFixes (0.31s)
+=== RUN   TestNodeStateTransitions_StudentResubmitsAfterFixes
+2025/12/05 21:49:27 [fetchSlots] instanceID=271d0eb0-07b4-4c92-bf9c-4c2d39eb4da1
+2025/12/05 21:49:27 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:27 [fetchSlots] instanceID=271d0eb0-07b4-4c92-bf9c-4c2d39eb4da1
+2025/12/05 21:49:27 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:27 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:27 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:27 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:27 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
+2025/12/05 21:49:27 [fetchSlots] instanceID=271d0eb0-07b4-4c92-bf9c-4c2d39eb4da1
+2025/12/05 21:49:27 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_StudentResubmitsAfterFixes (0.29s)
+=== RUN   TestNodeStateTransitions_InvalidStateRejected
+2025/12/05 21:49:28 [fetchSlots] instanceID=f34b5148-f2af-46fc-8ba7-e1eb99275000
+2025/12/05 21:49:28 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestNodeStateTransitions_InvalidStateRejected (0.31s)
+=== RUN   TestNodeStateTransitions_EventsLogged
+2025/12/05 21:49:28 [fetchSlots] instanceID=8f399a1b-13c2-44a7-82d0-a8045e8ce3a9
+2025/12/05 21:49:28 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:28 [fetchSlots] instanceID=8f399a1b-13c2-44a7-82d0-a8045e8ce3a9
+2025/12/05 21:49:28 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:28 [sendStateChangeEmail] Error fetching user: sql: no rows in result set
+--- PASS: TestNodeStateTransitions_EventsLogged (0.28s)
+=== RUN   TestFormNode_GetSubmission
+2025/12/05 21:49:28 [fetchSlots] instanceID=83e57496-3e86-4cb6-907a-933c14455558
+2025/12/05 21:49:28 [fetchSlots] returning 0 slots with total attachments
+    node_types_test.go:69: Form node response: map[locale:ru node_id:form_node playbook_version_id:22222222-2222-2222-2222-222222222222 slots:[] state:active]
+--- PASS: TestFormNode_GetSubmission (0.34s)
+=== RUN   TestConfirmTaskNode_GetSubmission
+2025/12/05 21:49:28 [fetchSlots] instanceID=8c327b4a-6af1-4189-bf8b-498120381095
+2025/12/05 21:49:28 [fetchSlots] row 1: slot=document attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/05 21:49:28 [fetchSlots] returning 1 slots with total attachments
+    node_types_test.go:130: ConfirmTask slots: [map[attachments:[] key:document mime:[] multiplicity:single required:true]]
+    node_types_test.go:132: ConfirmTask node response: map[locale:ru node_id:confirm_node playbook_version_id:44444444-4444-4444-4444-444444444444 slots:[map[attachments:[] key:document mime:[] multiplicity:single required:true]] state:active]
+--- PASS: TestConfirmTaskNode_GetSubmission (0.31s)
+=== RUN   TestInfoNode_GetSubmission
+2025/12/05 21:49:29 [fetchSlots] instanceID=3e72c8fd-469e-41ee-9529-d362b695f576
+2025/12/05 21:49:29 [fetchSlots] returning 0 slots with total attachments
+    node_types_test.go:184: Info node response: map[locale:ru node_id:info_node playbook_version_id:66666666-6666-6666-6666-666666666666 slots:[] state:active]
+--- PASS: TestInfoNode_GetSubmission (0.34s)
+=== RUN   TestFormNode_PutSubmission
+2025/12/05 21:49:29 [fetchSlots] instanceID=bd432034-07de-4964-9d32-5f120794b210
+2025/12/05 21:49:29 [fetchSlots] returning 0 slots with total attachments
+2025/12/05 21:49:29 [fetchSlots] instanceID=bd432034-07de-4964-9d32-5f120794b210
+2025/12/05 21:49:29 [fetchSlots] returning 0 slots with total attachments
+--- PASS: TestFormNode_PutSubmission (0.33s)
+=== RUN   TestPresignUpload_Success
+2025/12/05 21:49:29 [fetchSlots] instanceID=7c3dc7a3-bf4c-49cf-8d09-3538fab4637f
+2025/12/05 21:49:29 [fetchSlots] row 1: slot=doc_slot attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/05 21:49:29 [fetchSlots] returning 1 slots with total attachments
+2025/12/05 21:49:29 [S3] Presigning PUT for key=nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251205-ad8bbcf3-25ba-479b-a1ea-f65a3c116404-test.pdf bucket=phd-portal expires=15m0s
+    node_upload_test.go:89: Presign success: map[bucket:phd-portal document_id:1e6aeaab-c1f7-476f-ad7b-dd64f7b814a2 expires_in:900 max_size_bytes:1.048576e+07 object_key:nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251205-ad8bbcf3-25ba-479b-a1ea-f65a3c116404-test.pdf required_headers:map[Content-Type:application/pdf] upload_url:http://localhost:9090/phd-portal/nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251205-ad8bbcf3-25ba-479b-a1ea-f65a3c116404-test.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20251205%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251205T164929Z&X-Amz-Expires=900&X-Amz-SignedHeaders=host&x-id=PutObject&X-Amz-Signature=f588e21d9cf863ba81e085a9b26f75384a26f3f8b9f1bea5d8a0c1609fbc56c9]
+--- PASS: TestPresignUpload_Success (0.43s)
+=== RUN   TestUpload_InvalidMime
+2025/12/05 21:49:30 [fetchSlots] instanceID=82a0d55f-f3fa-4591-96df-fec8490968b8
+2025/12/05 21:49:30 [fetchSlots] row 1: slot=pdf_only attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/05 21:49:30 [fetchSlots] returning 1 slots with total attachments
+    node_upload_test.go:160: Invalid MIME response: {"error":"invalid mime type"}
+--- PASS: TestUpload_InvalidMime (0.46s)
+=== RUN   TestUpload_SizeTooLarge
+2025/12/05 21:49:30 [fetchSlots] instanceID=174334c5-fcf9-4bd9-9751-328e205cfcd0
+2025/12/05 21:49:30 [fetchSlots] row 1: slot=small_file attachment_id= version_id= is_active=false reviewed_doc_id=
+2025/12/05 21:49:30 [fetchSlots] returning 1 slots with total attachments
+    node_upload_test.go:229: Size too large response: {"error":"file too large (max 1 MB)"}
+--- PASS: TestUpload_SizeTooLarge (0.28s)
+=== RUN   TestNotificationsHandler_Admin
+=== RUN   TestNotificationsHandler_Admin/List_Notifications
+2025/12/05 21:49:31 [ListNotifications] Starting - unreadOnly: false
+2025/12/05 21:49:31 [ListNotifications] Executing query: 
+		SELECT 
+			n.id,
+			n.student_id,
+			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
+			COALESCE(u.email, '') as student_email,
+			n.node_id,
+			COALESCE(n.node_instance_id::text, '') as node_instance_id,
+			n.event_type,
+			n.is_read,
+			n.message,
+			n.metadata::text as metadata,
+			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM admin_notifications n
+		JOIN users u ON u.id = n.student_id
+	 ORDER BY n.created_at DESC LIMIT 100
+2025/12/05 21:49:31 [ListNotifications] Found 2 notifications
+2025/12/05 21:49:31 [ListNotifications] First notification: id=f8f2983d-20e5-416e-90da-f5caebeee160, student=Student One, node=node1, message=Student submitted node1
+2025/12/05 21:49:31 [ListNotifications] Returning 2 notifications
+=== RUN   TestNotificationsHandler_Admin/List_Unread_Only
+2025/12/05 21:49:31 [ListNotifications] Starting - unreadOnly: true
+2025/12/05 21:49:31 [ListNotifications] Executing query: 
+		SELECT 
+			n.id,
+			n.student_id,
+			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
+			COALESCE(u.email, '') as student_email,
+			n.node_id,
+			COALESCE(n.node_instance_id::text, '') as node_instance_id,
+			n.event_type,
+			n.is_read,
+			n.message,
+			n.metadata::text as metadata,
+			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
+		FROM admin_notifications n
+		JOIN users u ON u.id = n.student_id
+	 WHERE n.is_read = false ORDER BY n.created_at DESC LIMIT 100
+2025/12/05 21:49:31 [ListNotifications] Found 1 notifications
+2025/12/05 21:49:31 [ListNotifications] First notification: id=f8f2983d-20e5-416e-90da-f5caebeee160, student=Student One, node=node1, message=Student submitted node1
+2025/12/05 21:49:31 [ListNotifications] Returning 1 notifications
+=== RUN   TestNotificationsHandler_Admin/Get_Unread_Count
+=== RUN   TestNotificationsHandler_Admin/Mark_As_Read
+=== RUN   TestNotificationsHandler_Admin/Mark_All_As_Read
+--- PASS: TestNotificationsHandler_Admin (0.27s)
+    --- PASS: TestNotificationsHandler_Admin/List_Notifications (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/List_Unread_Only (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Get_Unread_Count (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Mark_As_Read (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Mark_All_As_Read (0.00s)
+=== RUN   TestNotificationHandler_Student_MarkAllAsRead
+--- PASS: TestNotificationHandler_Student_MarkAllAsRead (0.27s)
+=== RUN   TestNotificationHandler_GetUnread
+=== RUN   TestNotificationHandler_GetUnread/Get_Unread
+2025/12/05 21:49:31 [GetUnread reqID=1764953371636124000] Handler called
+2025/12/05 21:49:31 [GetUnread reqID=1764953371636124000] userID from context: '123e4567-e89b-12d3-a456-426614174000'
+2025/12/05 21:49:31 [GetUnread reqID=1764953371636124000] returning 1 notifications
+--- PASS: TestNotificationHandler_GetUnread (0.27s)
+    --- PASS: TestNotificationHandler_GetUnread/Get_Unread (0.00s)
+=== RUN   TestNotificationHandler_MarkAsRead
+=== RUN   TestNotificationHandler_MarkAsRead/Mark_As_Read
+--- PASS: TestNotificationHandler_MarkAsRead (0.27s)
+    --- PASS: TestNotificationHandler_MarkAsRead/Mark_As_Read (0.00s)
+=== RUN   TestSearchHandler_GlobalSearch
+=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Users
+=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Documents
+=== RUN   TestSearchHandler_GlobalSearch/Student_Search_Own_Document
+=== RUN   TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users
+--- PASS: TestSearchHandler_GlobalSearch (0.28s)
+    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Users (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Documents (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Student_Search_Own_Document (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users (0.00s)
+=== RUN   TestUsersHandler_UpdateUser
+--- PASS: TestUsersHandler_UpdateUser (0.30s)
+=== RUN   TestUsersHandler_ChangeOwnPassword
+--- PASS: TestUsersHandler_ChangeOwnPassword (0.53s)
+=== RUN   TestUsersHandler_ResetPasswordForUser
+--- PASS: TestUsersHandler_ResetPasswordForUser (0.48s)
+=== RUN   TestUsersHandler_UpdateMe
+--- PASS: TestUsersHandler_UpdateMe (0.43s)
+=== RUN   TestUsersHandler_UpdateMe_RateLimit
+--- PASS: TestUsersHandler_UpdateMe_RateLimit (0.44s)
+=== RUN   TestUsersHandler_CreateUser
+=== RUN   TestUsersHandler_CreateUser/Create_Student_Success
+--- PASS: TestUsersHandler_CreateUser (0.41s)
+    --- PASS: TestUsersHandler_CreateUser/Create_Student_Success (0.08s)
+=== RUN   TestUsersHandler_ListUsers
+=== RUN   TestUsersHandler_ListUsers/List_All_Users
+=== RUN   TestUsersHandler_ListUsers/Filter_by_Role
+--- PASS: TestUsersHandler_ListUsers (0.31s)
+    --- PASS: TestUsersHandler_ListUsers/List_All_Users (0.00s)
+    --- PASS: TestUsersHandler_ListUsers/Filter_by_Role (0.00s)
+FAIL
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	18.962s
+FAIL

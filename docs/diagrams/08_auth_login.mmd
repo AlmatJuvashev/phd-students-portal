@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant U as User
+    participant API as Auth Handler
+    participant DB as PostgreSQL
+    participant JWT as JWT Service
+
+    U->>API: POST /auth/login
+    Note right of U: {email, password, tenant_slug?}
+    API->>DB: Find user by email
+    API->>API: bcrypt.Compare(password, hash)
+    API->>DB: Get user's tenant memberships
+    API->>JWT: Generate access token (15min)
+    API->>JWT: Generate refresh token (7d)
+    API->>DB: Store refresh token
+    API-->>U: {access_token, refresh_token, user, tenants}

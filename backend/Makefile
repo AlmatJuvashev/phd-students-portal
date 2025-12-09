@@ -13,17 +13,20 @@ endif
 endif
 # VERSION is used by `make migrate-force VERSION=<n>` to set the forced migration version.
 VERSION?=1
+PORT_TO_KILL?=8280
 
-.PHONY: help run migrate-up migrate-down migrate-force seed dev
+.PHONY: help run migrate-up migrate-down migrate-force seed seed-demo dev kill-port
 
 help:
 	@echo "Available targets:"
 	@echo "  make run               # start the API server"
 	@echo "  make dev               # run with Air live reload (AIR env configurable)"
+	@echo "  make kill-port         # kill processes bound to port $(PORT_TO_KILL)"
 	@echo "  make migrate-up        # apply all pending migrations"
 	@echo "  make migrate-down      # roll back the most recent migration"
 	@echo "  make migrate-force VERSION=N  # force-set schema version to N (use after fixing dirty state)"
-	@echo "  make seed              # seed demo data"
+	@echo "  make seed              # seed initial data"
+	@echo "  make seed-demo         # seed comprehensive demo data for demo.university"
 	@echo "Environment variables:"
 	@echo "  DB_URL=$(DB_URL)"
 	@echo "  VERSION=$(VERSION)"
@@ -44,6 +47,19 @@ migrate-force:
 seed:
 	go run ./cmd/server --seed
 
+seed-demo:
+	@echo "Seeding comprehensive demo data for demo.university tenant..."
+	go run ./cmd/mock
+
 dev:
 	@echo "Starting dev server on APP_PORT=$(APP_PORT)"
-	APP_PORT=$(APP_PORT) $(AIR)
+	@if command -v $(AIR) >/dev/null 2>&1; then \
+		APP_PORT=$(APP_PORT) $(AIR); \
+	else \
+		echo "Warning: '$(AIR)' command not found. Falling back to 'go run ./cmd/server'"; \
+		APP_PORT=$(APP_PORT) go run ./cmd/server; \
+	fi
+
+kill-port:
+	@echo "Killing processes listening on port $(PORT_TO_KILL)"
+	@lsof -ti:$(PORT_TO_KILL) | xargs kill -9 2>/dev/null || true

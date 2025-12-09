@@ -7,16 +7,29 @@ export type Role = 'student' | 'advisor' | 'secretary' | 'chair' | 'admin' | 'su
 export interface User {
   id: string
   full_name?: string
+  first_name?: string
+  last_name?: string
   email?: string
   role: Role
+  is_superadmin?: boolean
   progress?: Record<string, any>
   completedNodes?: string[]
+  phone?: string
+  bio?: string
+  address?: string
+  date_of_birth?: string
+  avatar_url?: string
+  program?: string
+  specialty?: string
+  department?: string
+  cohort?: string
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
-  login: (credentials: { username?: string; email?: string; password: string }) => Promise<void>
+  token: string | null
+  login: (credentials: { username?: string; email?: string; password: string }) => Promise<{ role: string; is_superadmin: boolean }>
   logout: () => void
 }
 
@@ -31,9 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     retry: 0,
   })
 
+  const token = localStorage.getItem('token');
+
   const value = useMemo<AuthContextType>(() => ({
     user: (data as User) ?? null,
     isLoading,
+    token,
     login: async (credentials) => {
       const res = await api('/auth/login', {
         method: 'POST',
@@ -45,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('token', res.token)
       // Refresh user info
       await qc.invalidateQueries({ queryKey: ['me'] })
+      return { role: res.role, is_superadmin: res.is_superadmin }
     },
     logout: () => {
       localStorage.removeItem('token')
@@ -52,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Soft reload to reset app state
       window.location.href = '/login'
     },
-  }), [data, isLoading, qc])
+  }), [data, isLoading, qc, token])
 
   return (
     <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -64,4 +81,3 @@ export const useAuth = () => {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
 }
-

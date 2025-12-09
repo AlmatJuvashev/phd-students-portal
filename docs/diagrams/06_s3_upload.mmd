@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant C as Client
+    participant API as Backend
+    participant S3 as S3/MinIO
+
+    C->>API: POST /upload/presign
+    Note right of C: {content_type, filename}
+    API->>API: ValidateContentType()
+    API->>API: GenerateObjectKey()
+    API->>S3: PresignPut(key, content_type, 15min)
+    S3-->>API: Signed URL
+    API-->>C: {presign_url, object_key}
+    
+    C->>S3: PUT file with headers
+    Note right of C: Content-Type must match
+    S3-->>C: 200 OK + ETag
+    
+    C->>API: POST /upload/confirm
+    Note right of C: {object_key, etag, size}
+    API->>S3: ObjectExists(key)
+    S3-->>API: true
+    API->>API: Link to document/attachment
+    API-->>C: 200 OK

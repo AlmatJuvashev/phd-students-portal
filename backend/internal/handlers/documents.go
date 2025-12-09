@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
@@ -23,7 +25,10 @@ func NewDocumentsHandler(db *sqlx.DB, cfg config.AppConfig) *DocumentsHandler {
 
 // CreateDocument creates a document metadata row.
 func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
-	uid := c.Param("id")
+	uid := c.GetString("userID")
+	if uid == "" {
+		uid = userIDFromClaims(c)
+	}
 	type req struct {
 		Kind  string `json:"kind" binding:"required"`
 		Title string `json:"title" binding:"required"`
@@ -81,11 +86,11 @@ func (h *DocumentsHandler) GetDocument(c *gin.Context) {
 	var doc struct {
 		ID      string `db:"id" json:"id"`
 		UserID  string `db:"user_id" json:"user_id"`
-		Title   string `db:"title" json:"title"`
-		Kind    string `db:"kind" json:"kind"`
-		Current string `db:"current_version_id" json:"current_version_id"`
+		Title   string  `db:"title" json:"title"`
+		Kind    string  `db:"kind" json:"kind"`
+		Current *string `db:"current_version_id" json:"current_version_id"`
 	}
-	if err := h.db.Get(&doc, `SELECT * FROM documents WHERE id=$1`, docId); err != nil {
+	if err := h.db.Get(&doc, `SELECT id, user_id, title, kind, current_version_id FROM documents WHERE id=$1`, docId); err != nil {
 		c.JSON(404, gin.H{"error": "not found"})
 		return
 	}
@@ -111,6 +116,13 @@ func (h *DocumentsHandler) PresignUpload(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// Validate content type
+	if err := services.ValidateContentType(r.ContentType); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	
 	s3c, err := services.NewS3FromEnv()
 	if err != nil {
 		c.JSON(500, gin.H{"error": "s3 init failed"})
@@ -121,7 +133,8 @@ func (h *DocumentsHandler) PresignUpload(c *gin.Context) {
 		return
 	}
 	key := fmt.Sprintf("%s/%s", docId, r.Filename)
-	url, err := s3c.PresignPut(key, r.ContentType, time.Minute*15)
+	expires := services.GetPresignExpires()
+	url, err := s3c.PresignPut(key, r.ContentType, expires)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "presign failed"})
 		return
@@ -147,7 +160,8 @@ func (h *DocumentsHandler) PresignGetLatest(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "S3 not configured"})
 		return
 	}
-	url, err := s3c.PresignGet(key, time.Minute*15)
+	expires := services.GetPresignExpires()
+	url, err := s3c.PresignGet(key, expires)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "presign failed"})
 		return
@@ -158,27 +172,73 @@ func (h *DocumentsHandler) PresignGetLatest(c *gin.Context) {
 // Local download (serve file on disk) for a version id
 func (h *DocumentsHandler) DownloadVersion(c *gin.Context) {
 	ver := c.Param("versionId")
-	var path string
-	err := h.db.QueryRowx(`SELECT storage_path FROM document_versions WHERE id=$1`, ver).Scan(&path)
+	var row struct {
+		StoragePath string         `db:"storage_path"`
+		Bucket      sql.NullString `db:"bucket"`
+		ObjectKey   sql.NullString `db:"object_key"`
+		MimeType    string         `db:"mime_type"`
+		SizeBytes   int64          `db:"size_bytes"`
+	}
+	err := h.db.QueryRowx(`SELECT storage_path, bucket, object_key, mime_type, size_bytes FROM document_versions WHERE id=$1`, ver).
+		Scan(&row.StoragePath, &row.Bucket, &row.ObjectKey, &row.MimeType, &row.SizeBytes)
 	if err != nil {
+		log.Printf("[DownloadVersion] version %s not found: %v", ver, err)
 		c.JSON(404, gin.H{"error": "not found"})
 		return
 	}
-	c.File(path)
+	log.Printf("[DownloadVersion] version=%s storage_path=%s bucket=%v object_key=%v size=%d", 
+		ver, row.StoragePath, row.Bucket.String, row.ObjectKey.String, row.SizeBytes)
+	
+	if row.Bucket.Valid && row.ObjectKey.Valid {
+		s3c, err := services.NewS3FromEnv()
+		if err != nil {
+			log.Printf("[DownloadVersion] S3 init failed: %v", err)
+			c.JSON(500, gin.H{"error": "s3 init failed"})
+			return
+		}
+		if s3c == nil {
+			log.Printf("[DownloadVersion] S3 not configured")
+			c.JSON(500, gin.H{"error": "s3 not configured"})
+			return
+		}
+		expires := services.GetPresignExpires()
+		url, err := s3c.PresignGet(row.ObjectKey.String, expires)
+		if err != nil {
+			log.Printf("[DownloadVersion] presign failed for %s: %v", row.ObjectKey.String, err)
+			c.JSON(500, gin.H{"error": "presign failed"})
+			return
+		}
+		log.Printf("[DownloadVersion] redirecting to S3 presigned URL for %s", row.ObjectKey.String)
+		c.Redirect(http.StatusTemporaryRedirect, url)
+		return
+	}
+	log.Printf("[DownloadVersion] serving local file: %s", row.StoragePath)
+	c.File(row.StoragePath)
 }
 
 // ListDocuments returns documents for a given student
 func (h *DocumentsHandler) ListDocuments(c *gin.Context) {
 	uid := c.Param("id")
 	type Row struct {
-		ID        string `db:"id" json:"id"`
-		Title     string `db:"title" json:"title"`
-		Kind      string `db:"kind" json:"kind"`
-		Current   string `db:"current_version_id" json:"current_version_id"`
-		CreatedAt string `db:"created_at" json:"created_at"`
+		ID        string  `db:"id" json:"id"`
+		Title     string  `db:"title" json:"title"`
+		Kind      string  `db:"kind" json:"kind"`
+		Current   *string `db:"current_version_id" json:"current_version_id"`
+		CreatedAt string  `db:"created_at" json:"created_at"`
 	}
 	var rows []Row
 	_ = h.db.Select(&rows, `SELECT id, title, kind, current_version_id, to_char(created_at,'YYYY-MM-DD HH24:MI:SS') as created_at
 		FROM documents WHERE user_id=$1 ORDER BY created_at DESC`, uid)
 	c.JSON(200, rows)
+}
+
+// DeleteDocument soft deletes a document
+func (h *DocumentsHandler) DeleteDocument(c *gin.Context) {
+	docID := c.Param("docId")
+	_, err := h.db.Exec(`DELETE FROM documents WHERE id=$1`, docID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"ok": true})
 }

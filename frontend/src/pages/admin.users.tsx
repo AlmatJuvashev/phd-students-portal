@@ -25,6 +25,7 @@ import {
   Edit,
   RefreshCw,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Schema = z.object({
   first_name: z.string().min(1),
@@ -68,6 +69,7 @@ export function AdminUsers() {
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
     "asc"
   );
+  const { t } = useTranslation("common");
   const itemsPerPage = 10;
   const push = (msg: { title: string; description?: string }) => {
     // toasts removed; fallback to console + optional alert on important events
@@ -116,13 +118,20 @@ export function AdminUsers() {
       setShowModal(false);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       push({
-        title: "User created",
-        description: "Credentials generated successfully",
+        title: t("admin.users.toast.created", { defaultValue: "User created" }),
+        description: t("admin.users.toast.credentials_ready", {
+          defaultValue: "Credentials generated successfully",
+        }),
       });
     },
     onError: (error: any) => {
       console.error(error);
-      alert("Error creating user");
+      alert(
+        error?.message ||
+          t("admin.forms.errors.create_user", {
+            defaultValue: "Error creating user",
+          })
+      );
     },
   });
 
@@ -135,11 +144,18 @@ export function AdminUsers() {
       setShowEditModal(false);
       setEditingUser(null);
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      push({ title: "User updated" });
+      push({
+        title: t("admin.users.toast.updated", { defaultValue: "User updated" }),
+      });
     },
     onError: (error: any) => {
       console.error(error);
-      alert("Error updating user");
+      alert(
+        error?.message ||
+          t("admin.forms.errors.update_user", {
+            defaultValue: "Error updating user",
+          })
+      );
     },
   });
 
@@ -149,11 +165,18 @@ export function AdminUsers() {
       api(`/admin/users/${userId}/reset-password`, { method: "POST" }),
     onSuccess: (result) => {
       setResetPassword(result);
-      push({ title: "Password reset" });
+      push({
+        title: t("admin.users.toast.reset", { defaultValue: "Password reset" }),
+      });
     },
     onError: (error: any) => {
       console.error(error);
-      alert("Error resetting password");
+      alert(
+        error?.message ||
+          t("admin.forms.errors.reset_password", {
+            defaultValue: "Error resetting password",
+          })
+      );
     },
   });
 
@@ -180,7 +203,10 @@ export function AdminUsers() {
   const handleResetPassword = (userId: string) => {
     if (
       confirm(
-        "Are you sure you want to reset this user's password? They will need to use the new temporary password to login."
+        t("admin.users.confirm_reset", {
+          defaultValue:
+            "Are you sure you want to reset this user's password? They will need to use the new temporary password to login.",
+        })
       )
     ) {
       resetPasswordMutation.mutate(userId);
@@ -189,21 +215,29 @@ export function AdminUsers() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    push({ title: "Copied" });
+    push({ title: t("common.copied", { defaultValue: "Copied" }) });
   };
 
   const copyUserCredentials = (username: string, password: string) => {
     const loginUrl = window.location.origin + "/login";
     const message = `Your password has been reset. You can login at ${loginUrl}.\n\nUsername: ${username}\nNew Password: ${password}\n\nPlease save these credentials securely and change your password after login.`;
     navigator.clipboard.writeText(message);
-    push({ title: "Credentials Copied" });
+    push({
+      title: t("admin.users.toast.credentials_copied", {
+        defaultValue: "Credentials copied",
+      }),
+    });
   };
 
   const copyNewUserCredentials = (username: string, password: string) => {
     const loginUrl = window.location.origin + "/login";
     const message = `Your account has been created. You can login at ${loginUrl}.\n\nUsername: ${username}\nPassword: ${password}\n\nPlease save these credentials securely and change your password after first login.`;
     navigator.clipboard.writeText(message);
-    push({ title: "Credentials Copied" });
+    push({
+      title: t("admin.users.toast.credentials_copied", {
+        defaultValue: "Credentials copied",
+      }),
+    });
   };
 
   const handleSort = (field: keyof User) => {
@@ -273,9 +307,13 @@ export function AdminUsers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">User Management</h2>
+          <h2 className="text-2xl font-bold">
+            {t("admin.users.title", { defaultValue: "User Management" })}
+          </h2>
           <p className="text-gray-600">
-            Manage users and their access permissions
+            {t("admin.users.subtitle", {
+              defaultValue: "Manage users and their access permissions",
+            })}
           </p>
         </div>
         <Button
@@ -283,7 +321,7 @@ export function AdminUsers() {
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Create User
+          {t("admin.users.create", { defaultValue: "Create User" })}
         </Button>
       </div>
 
@@ -291,11 +329,16 @@ export function AdminUsers() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Users ({filteredAndSortedUsers.length})</CardTitle>
+            <CardTitle>
+              {t("admin.users.table_title", { defaultValue: "Users" })} (
+              {filteredAndSortedUsers.length})
+            </CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search users..."
+                placeholder={t("admin.users.search", {
+                  defaultValue: "Search users...",
+                })}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10 w-64"
@@ -306,13 +349,16 @@ export function AdminUsers() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-gray-500">
-              Loading users...
+              {t("admin.users.loading", { defaultValue: "Loading users..." })}
             </div>
           ) : paginatedUsers.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {searchQuery
-                ? `No users found matching "${searchQuery}"`
-                : "No users found"}
+                ? t("admin.users.empty_search", {
+                    defaultValue: 'No users found matching "{{query}}"',
+                    query: searchQuery,
+                  })
+                : t("admin.users.empty", { defaultValue: "No users found" })}
             </div>
           ) : (
             <>
@@ -322,50 +368,52 @@ export function AdminUsers() {
                     <tr className="border-b">
                       <th
                         className="text-left py-3 px-4 font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
-                        onClick={() => handleSort("name")}
-                      >
-                        <div className="flex items-center gap-2">
-                          Name
-                          <SortIcon field="name" />
-                        </div>
-                      </th>
-                      <th
-                        className="text-left py-3 px-4 font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
-                        onClick={() => handleSort("email")}
-                      >
-                        <div className="flex items-center gap-2">
-                          Email
-                          <SortIcon field="email" />
-                        </div>
-                      </th>
-                      <th
-                        className="text-left py-3 px-4 font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
-                        onClick={() => handleSort("role")}
-                      >
-                        <div className="flex items-center gap-2">
-                          Role
-                          <SortIcon field="role" />
-                        </div>
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedUsers.map((user) => (
-                      <tr key={user.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium">{user.name}</td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {user.email}
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge className={getRoleBadgeColor(user.role)}>
-                            {user.role}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center gap-2">
+                      {t("table.name", { defaultValue: "Name" })}
+                      <SortIcon field="name" />
+                    </div>
+                  </th>
+                  <th
+                    className="text-left py-3 px-4 font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleSort("email")}
+                  >
+                    <div className="flex items-center gap-2">
+                      {t("table.email", { defaultValue: "Email" })}
+                      <SortIcon field="email" />
+                    </div>
+                  </th>
+                  <th
+                    className="text-left py-3 px-4 font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleSort("role")}
+                  >
+                    <div className="flex items-center gap-2">
+                      {t("admin.users.role", { defaultValue: "Role" })}
+                      <SortIcon field="role" />
+                    </div>
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">
+                    {t("table.actions", { defaultValue: "Actions" })}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedUsers.map((user) => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4 font-medium">{user.name}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {user.email}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Badge className={getRoleBadgeColor(user.role)}>
+                        {t(`admin.forms.roles.${user.role}`, {
+                          defaultValue: user.role,
+                        })}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -373,7 +421,7 @@ export function AdminUsers() {
                               className="flex items-center gap-1"
                             >
                               <Edit className="w-3 h-3" />
-                              Edit
+                              {t("common.edit", { defaultValue: "Edit" })}
                             </Button>
                             <Button
                               variant="outline"
@@ -382,7 +430,9 @@ export function AdminUsers() {
                               className="flex items-center gap-1"
                             >
                               <RefreshCw className="w-3 h-3" />
-                              Reset
+                              {t("admin.review.reset_password", {
+                                defaultValue: "Reset password",
+                              })}
                             </Button>
                             <Button
                               variant="outline"
@@ -391,7 +441,7 @@ export function AdminUsers() {
                               className="flex items-center gap-1"
                             >
                               <Copy className="w-3 h-3" />
-                              Email
+                              {t("common.copy", { defaultValue: "Copy" })}
                             </Button>
                           </div>
                         </td>
@@ -405,12 +455,15 @@ export function AdminUsers() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                   <div className="text-sm text-gray-500">
-                    Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                    {Math.min(
-                      currentPage * itemsPerPage,
-                      filteredAndSortedUsers.length
-                    )}{" "}
-                    of {filteredAndSortedUsers.length} users
+                    {t("admin.users.pagination", {
+                      defaultValue: "Showing {{from}} to {{to}} of {{total}} users",
+                      from: (currentPage - 1) * itemsPerPage + 1,
+                      to: Math.min(
+                        currentPage * itemsPerPage,
+                        filteredAndSortedUsers.length
+                      ),
+                      total: filteredAndSortedUsers.length,
+                    })}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -423,7 +476,7 @@ export function AdminUsers() {
                       className="flex items-center gap-1"
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      Previous
+                      {t("admin.forms.prev_page", { defaultValue: "Prev" })}
                     </Button>
 
                     <div className="flex items-center gap-1">
@@ -462,7 +515,7 @@ export function AdminUsers() {
                       disabled={currentPage === totalPages}
                       className="flex items-center gap-1"
                     >
-                      Next
+                      {t("admin.forms.next_page", { defaultValue: "Next" })}
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
@@ -478,7 +531,9 @@ export function AdminUsers() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Edit User</h3>
+              <h3 className="text-lg font-semibold">
+                {t("admin.users.edit_title", { defaultValue: "Edit User" })}
+              </h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -499,7 +554,9 @@ export function AdminUsers() {
             >
               <div>
                 <Input
-                  placeholder="First name"
+                  placeholder={t("admin.forms.first_name", {
+                    defaultValue: "First name",
+                  })}
                   {...registerEdit("first_name")}
                 />
                 {editErrors.first_name && (
@@ -510,7 +567,12 @@ export function AdminUsers() {
               </div>
 
               <div>
-                <Input placeholder="Last name" {...registerEdit("last_name")} />
+                <Input
+                  placeholder={t("admin.forms.last_name", {
+                    defaultValue: "Last name",
+                  })}
+                  {...registerEdit("last_name")}
+                />
                 {editErrors.last_name && (
                   <div className="text-xs text-red-600 mt-1">
                     {editErrors.last_name.message}
@@ -520,7 +582,9 @@ export function AdminUsers() {
 
               <div>
                 <Input
-                  placeholder="Email"
+                  placeholder={t("admin.forms.email", {
+                    defaultValue: "Email",
+                  })}
                   type="email"
                   {...registerEdit("email")}
                 />
@@ -536,10 +600,20 @@ export function AdminUsers() {
                   className="w-full border border-gray-300 p-2 rounded-md"
                   {...registerEdit("role")}
                 >
-                  <option value="student">Student</option>
-                  <option value="advisor">Advisor</option>
-                  <option value="chair">Department Chair</option>
-                  <option value="admin">Administrator</option>
+                  <option value="student">
+                    {t("admin.forms.roles.student", { defaultValue: "Student" })}
+                  </option>
+                  <option value="advisor">
+                    {t("admin.forms.roles.advisor", { defaultValue: "Advisor" })}
+                  </option>
+                  <option value="chair">
+                    {t("admin.forms.roles.chair", {
+                      defaultValue: "Department Chair",
+                    })}
+                  </option>
+                  <option value="admin">
+                    {t("admin.forms.roles.admin", { defaultValue: "Administrator" })}
+                  </option>
                 </select>
               </div>
 
@@ -554,14 +628,16 @@ export function AdminUsers() {
                   }}
                   className="flex-1"
                 >
-                  Cancel
+                  {t("common.cancel", { defaultValue: "Cancel" })}
                 </Button>
                 <Button
                   type="submit"
                   disabled={isEditSubmitting || editUserMutation.isPending}
                   className="flex-1"
                 >
-                  {editUserMutation.isPending ? "Updating..." : "Update User"}
+                  {editUserMutation.isPending
+                    ? t("admin.users.updating", { defaultValue: "Updating..." })
+                    : t("admin.users.update_action", { defaultValue: "Update User" })}
                 </Button>
               </div>
             </form>
@@ -574,7 +650,9 @@ export function AdminUsers() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Create New User</h3>
+              <h3 className="text-lg font-semibold">
+                {t("admin.users.create_title", { defaultValue: "Create New User" })}
+              </h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -587,7 +665,12 @@ export function AdminUsers() {
 
             <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
               <div>
-                <Input placeholder="First name" {...register("first_name")} />
+                <Input
+                  placeholder={t("admin.forms.first_name", {
+                    defaultValue: "First name",
+                  })}
+                  {...register("first_name")}
+                />
                 {errors.first_name && (
                   <div className="text-xs text-red-600 mt-1">
                     {errors.first_name.message}
@@ -596,7 +679,12 @@ export function AdminUsers() {
               </div>
 
               <div>
-                <Input placeholder="Last name" {...register("last_name")} />
+                <Input
+                  placeholder={t("admin.forms.last_name", {
+                    defaultValue: "Last name",
+                  })}
+                  {...register("last_name")}
+                />
                 {errors.last_name && (
                   <div className="text-xs text-red-600 mt-1">
                     {errors.last_name.message}
@@ -606,7 +694,9 @@ export function AdminUsers() {
 
               <div>
                 <Input
-                  placeholder="Email"
+                  placeholder={t("admin.forms.email", {
+                    defaultValue: "Email",
+                  })}
                   type="email"
                   {...register("email")}
                 />
@@ -622,10 +712,20 @@ export function AdminUsers() {
                   className="w-full border border-gray-300 p-2 rounded-md"
                   {...register("role")}
                 >
-                  <option value="student">Student</option>
-                  <option value="advisor">Advisor</option>
-                  <option value="chair">Department Chair</option>
-                  <option value="admin">Administrator</option>
+                  <option value="student">
+                    {t("admin.forms.roles.student", { defaultValue: "Student" })}
+                  </option>
+                  <option value="advisor">
+                    {t("admin.forms.roles.advisor", { defaultValue: "Advisor" })}
+                  </option>
+                  <option value="chair">
+                    {t("admin.forms.roles.chair", {
+                      defaultValue: "Department Chair",
+                    })}
+                  </option>
+                  <option value="admin">
+                    {t("admin.forms.roles.admin", { defaultValue: "Administrator" })}
+                  </option>
                 </select>
               </div>
 
@@ -636,14 +736,16 @@ export function AdminUsers() {
                   onClick={() => setShowModal(false)}
                   className="flex-1"
                 >
-                  Cancel
+                  {t("common.cancel", { defaultValue: "Cancel" })}
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting || createUserMutation.isPending}
                   className="flex-1"
                 >
-                  {createUserMutation.isPending ? "Creating..." : "Create User"}
+                  {createUserMutation.isPending
+                    ? t("admin.forms.creating", { defaultValue: "Creating..." })
+                    : t("admin.users.create", { defaultValue: "Create User" })}
                 </Button>
               </div>
             </form>
@@ -656,7 +758,10 @@ export function AdminUsers() {
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
             <CardTitle className="text-orange-800 flex items-center gap-2">
-              🔄 Password Reset Successfully
+              🔄{" "}
+              {t("admin.users.reset_success", {
+                defaultValue: "Password reset successfully",
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -664,7 +769,7 @@ export function AdminUsers() {
               <div className="flex items-center justify-between p-3 bg-white rounded border">
                 <div>
                   <div className="text-sm font-medium text-gray-600">
-                    Username
+                    {t("admin.forms.username", { defaultValue: "Username" })}
                   </div>
                   <div className="font-mono text-sm">
                     {resetPassword.username}
@@ -677,14 +782,14 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy
+                  {t("common.copy", { defaultValue: "Copy" })}
                 </Button>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-white rounded border">
                 <div>
                   <div className="text-sm font-medium text-gray-600">
-                    New Password
+                    {t("admin.users.new_password", { defaultValue: "New password" })}
                   </div>
                   <div className="font-mono text-sm">
                     {resetPassword.temp_password}
@@ -697,7 +802,7 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy
+                  {t("common.copy", { defaultValue: "Copy" })}
                 </Button>
               </div>
 
@@ -713,7 +818,9 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy Reset Message
+                  {t("admin.users.copy_reset_message", {
+                    defaultValue: "Copy reset message",
+                  })}
                 </Button>
                 <Button
                   variant="ghost"
@@ -721,13 +828,16 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <X className="w-3 h-3" />
-                  Dismiss
+                  {t("admin.users.dismiss", { defaultValue: "Dismiss" })}
                 </Button>
               </div>
 
               <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border">
-                ⚠️ The user must use this new password to login. Make sure they
-                receive these credentials securely!
+                ⚠️{" "}
+                {t("admin.users.reset_notice", {
+                  defaultValue:
+                    "The user must use this new password to login. Make sure they receive these credentials securely!",
+                })}
               </div>
             </div>
           </CardContent>
@@ -739,7 +849,10 @@ export function AdminUsers() {
         <Card className="border-green-200 bg-green-50">
           <CardHeader>
             <CardTitle className="text-green-800 flex items-center gap-2">
-              ✅ User Created Successfully
+              ✅{" "}
+              {t("admin.users.created_success", {
+                defaultValue: "User created successfully",
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -747,7 +860,7 @@ export function AdminUsers() {
               <div className="flex items-center justify-between p-3 bg-white rounded border">
                 <div>
                   <div className="text-sm font-medium text-gray-600">
-                    Username
+                    {t("admin.forms.username", { defaultValue: "Username" })}
                   </div>
                   <div className="font-mono text-sm">{created.username}</div>
                 </div>
@@ -758,14 +871,14 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy
+                  {t("common.copy", { defaultValue: "Copy" })}
                 </Button>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-white rounded border">
                 <div>
                   <div className="text-sm font-medium text-gray-600">
-                    Password
+                    {t("admin.users.password", { defaultValue: "Password" })}
                   </div>
                   <div className="font-mono text-sm">
                     {created.temp_password}
@@ -778,7 +891,7 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy
+                  {t("common.copy", { defaultValue: "Copy" })}
                 </Button>
               </div>
 
@@ -794,7 +907,9 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy Login Message
+                  {t("admin.users.copy_login_message", {
+                    defaultValue: "Copy login message",
+                  })}
                 </Button>
                 <Button
                   variant="outline"
@@ -806,7 +921,9 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy Credentials
+                  {t("admin.users.copy_credentials", {
+                    defaultValue: "Copy credentials",
+                  })}
                 </Button>
                 <Button
                   variant="ghost"
@@ -814,13 +931,16 @@ export function AdminUsers() {
                   className="flex items-center gap-1"
                 >
                   <X className="w-3 h-3" />
-                  Dismiss
+                  {t("admin.users.dismiss", { defaultValue: "Dismiss" })}
                 </Button>
               </div>
 
               <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded border">
-                ⚠️ Make sure to save these credentials - they won't be shown
-                again!
+                ⚠️{" "}
+                {t("admin.users.credentials_notice", {
+                  defaultValue:
+                    "Make sure to save these credentials - they won't be shown again!",
+                })}
               </div>
             </div>
           </CardContent>

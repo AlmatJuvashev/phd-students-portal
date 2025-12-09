@@ -19,8 +19,8 @@ export function useJourneyState() {
     },
     initialData: loadJourneyState() || undefined,
     retry: 0,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000, // 30 seconds - shorter cache to catch state changes faster
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
   const reset = useMutation({
     mutationFn: async () => api("/journey/reset", { method: "POST" }),
@@ -65,24 +65,39 @@ export function useJourneyState() {
 
 export function useSubmission(nodeId?: string | null) {
   const enabled = !!nodeId;
+  const qc = useQueryClient();
   const query = useQuery({
     queryKey: ["journey", "node", nodeId, "submission"],
-    queryFn: () => getNodeSubmission(nodeId!),
+    queryFn: async () => {
+      const result = await getNodeSubmission(nodeId!);
+      // Invalidate journey state when fetching submission to ensure node states are fresh
+      qc.invalidateQueries({ queryKey: ["journey", "state"] });
+      return result;
+    },
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds - match journey state cache
     placeholderData: (previousData) => previousData,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true, // Refetch when returning to tab
   });
-  const qc = useQueryClient();
   const save = useMutation({
     mutationFn: async (payload: { form_data?: any; state?: string }) =>
       saveNodeSubmission(nodeId!, payload),
-    onSuccess: () =>
+    onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["journey", "node", nodeId, "submission"],
-      }),
+      });
+      qc.invalidateQueries({ queryKey: ["journey", "state"] });
+      if (nodeId === "S1_profile") {
+        qc.invalidateQueries({ queryKey: ["journey", "profile", "snapshot"] });
+      }
+    },
   });
-  return { submission: query.data, isLoading: query.isLoading, save };
+  return {
+    submission: query.data,
+    isLoading: query.isLoading,
+    save,
+    refetch: query.refetch,
+  };
 }
 
 export function useAdvance(playbook: any) {

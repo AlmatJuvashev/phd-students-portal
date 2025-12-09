@@ -6,6 +6,11 @@ import "./index.css";
 import { router } from "./routes";
 import "./i18n";
 import { AuthProvider } from '@/contexts/AuthContext'
+import { TenantServicesProvider } from '@/contexts/TenantServicesContext';
+import { registerSW } from "virtual:pwa-register";
+import { ThemeCustomizer } from "@/components/dev/ThemeCustomizer";
+
+registerSW({ immediate: true });
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -25,7 +30,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={qc}>
       <Suspense fallback={<div className="p-4 text-sm">Loading…</div>}>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <TenantServicesProvider>
+            <RouterProvider router={router} />
+            <ThemeCustomizer />
+          </TenantServicesProvider>
         </AuthProvider>
       </Suspense>
     </QueryClientProvider>

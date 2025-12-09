@@ -90,26 +90,35 @@ func normalizeApp7Payload(raw json.RawMessage) ([]byte, *App7Form, error) {
 
 func buildApp7Form(raw json.RawMessage) (*App7Form, error) {
 	var incoming app7Incoming
-	if err := json.Unmarshal(raw, &incoming); err != nil {
-		// fallback to legacy counts-only structure
+	_ = json.Unmarshal(raw, &incoming) // Ignore error, check content
+
+	// Check if incoming is effectively empty (no sections, no legacy counts map, no flat arrays)
+	isEmpty := incoming.Sections == nil && len(incoming.LegacyCounts) == 0 &&
+		len(incoming.WosScopus) == 0 && len(incoming.Kokson) == 0 &&
+		len(incoming.Conferences) == 0 && len(incoming.IP) == 0
+
+	if isEmpty {
+		// Try legacy counts-only structure
 		var legacy app7LegacyCounts
-		if errLegacy := json.Unmarshal(raw, &legacy); errLegacy != nil {
-			return nil, err
+		if errLegacy := json.Unmarshal(raw, &legacy); errLegacy == nil {
+			// Check if any legacy field is present
+			if legacy.CountWosScopus != nil || legacy.CountKokson != nil || legacy.CountConferences != nil || legacy.CountIP != nil {
+				counts := map[string]int{}
+				if legacy.CountWosScopus != nil {
+					counts["wos_scopus"] = *legacy.CountWosScopus
+				}
+				if legacy.CountKokson != nil {
+					counts["kokson"] = *legacy.CountKokson
+				}
+				if legacy.CountConferences != nil {
+					counts["conferences"] = *legacy.CountConferences
+				}
+				if legacy.CountIP != nil {
+					counts["ip"] = *legacy.CountIP
+				}
+				return &App7Form{Sections: App7Sections{}, LegacyCounts: counts}, nil
+			}
 		}
-		counts := map[string]int{}
-		if legacy.CountWosScopus != nil {
-			counts["wos_scopus"] = *legacy.CountWosScopus
-		}
-		if legacy.CountKokson != nil {
-			counts["kokson"] = *legacy.CountKokson
-		}
-		if legacy.CountConferences != nil {
-			counts["conferences"] = *legacy.CountConferences
-		}
-		if legacy.CountIP != nil {
-			counts["ip"] = *legacy.CountIP
-		}
-		return &App7Form{Sections: App7Sections{}, LegacyCounts: counts}, nil
 	}
 
 	form := &App7Form{Sections: App7Sections{}}

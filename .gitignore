@@ -11,6 +11,13 @@ backend/tmp/
 backend/.env
 backend/uploads/
 
+# Mock data (development only)
+mocks/credentials.txt
+mocks/*.txt
+
+# UI examples and prototypes
+ui-examples/
+
 # OS/editor
 .DS_Store
 Thumbs.db
@@ -30,3 +37,12 @@ Thumbs.db
 **/.parcel-cache/
 **/.expo/
 **/.expo-shared/
+# Backups
+*.backup
+
+# Playwright artifacts
+playwright-report/
+test-results/
+frontend/playwright-report/
+frontend/test-results/
+frontend/playwright/.auth/

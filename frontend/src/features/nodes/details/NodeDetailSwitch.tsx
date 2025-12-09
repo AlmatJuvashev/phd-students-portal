@@ -93,6 +93,7 @@ type Props = {
   submission?: NodeSubmissionDTO | null;
   saving?: boolean;
   canEdit?: boolean;
+  onAttachmentsRefresh?: () => void;
 };
 
 export function NodeDetailSwitch({
@@ -101,6 +102,7 @@ export function NodeDetailSwitch({
   submission,
   saving = false,
   canEdit,
+  onAttachmentsRefresh,
 }: Props) {
   const uiKind = deriveNodeKind(node);
   const renderGuide = useGuideForNode(node) || undefined;
@@ -140,6 +142,9 @@ export function NodeDetailSwitch({
     return (
       <ConfirmTaskDetails
         node={node}
+        slots={submission?.slots}
+        canEdit={canEdit}
+        onRefresh={onAttachmentsRefresh}
         onComplete={() =>
           onEvent?.({
             type: "submit-decision",

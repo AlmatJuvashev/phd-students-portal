@@ -314,7 +314,7 @@ export function WorldMap({
   }, [visibleWorlds]);
 
   return (
-    <div className="p-4 space-y-6" {...swipeHandlers}>
+    <div className="p-4 space-y-6 max-w-4xl mx-auto" data-testid="journey-map" {...swipeHandlers}>
       <header className="sticky top-0 z-20 bg-gradient-to-b from-background via-background to-background/80 backdrop-blur-md shadow-lg -mx-4 -mt-4 px-4 py-4 rounded-b-xl">
         <div className="flex items-center justify-between mb-3 gap-2">
           <BackButton to="/" />
@@ -420,6 +420,7 @@ export function WorldMap({
             style={{ animationDelay: `${wi * 100}ms` }}
           >
             <Card
+              data-testid={`world-${w.id}`}
               className={`rounded-2xl shadow-lg overflow-hidden bg-gradient-to-br from-card via-card to-card/50 border-2 transition-all duration-300 hover:shadow-xl ${
                 isWorldLocked
                   ? "opacity-50 grayscale"
@@ -589,7 +590,7 @@ export function WorldMap({
                 setOpenNode(null);
                 return;
               }
-              // Same module: open next node immediately
+              // Same module: keep sheet open and animate content switch
               setOpenNode(nextNode);
               return;
             }
