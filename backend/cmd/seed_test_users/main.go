@@ -12,8 +12,10 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load("../.env"); err != nil {
-		log.Println("warning: .env not found, relying on existing env vars")
+	if err := godotenv.Load(".env"); err != nil {
+		if err := godotenv.Load("../../.env"); err != nil {
+			log.Println("warning: .env not found, relying on existing env vars")
+		}
 	}
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
