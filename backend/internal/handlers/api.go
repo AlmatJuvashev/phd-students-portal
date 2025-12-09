@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -19,12 +20,18 @@ import (
 func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager *pb.Manager) *gin.Engine {
 	r.Use(middleware.RequestLogger())
 	// CORS for frontend dev and configured origin
+	// Clean FrontendBase in case env var has embedded quotes
+	cleanedFrontendBase := strings.Trim(cfg.FrontendBase, "\"' \t")
+	
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
 			if origin == "" {
 				return false
 			}
-			if origin == cfg.FrontendBase {
+			// Log CORS check for debugging
+			log.Printf("[CORS] Origin=%q, FrontendBase=%q, Cleaned=%q", origin, cfg.FrontendBase, cleanedFrontendBase)
+			
+			if origin == cleanedFrontendBase {
 				return true
 			}
 			// allow any localhost/127.0.0.1 port for dev
@@ -36,10 +43,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			}
 			// Allow subdomain-based tenant URLs (e.g., kaznmu.phd-portal.kz)
 			// Parse configured frontend base to extract the main domain
-			if cfg.FrontendBase != "" {
+			if cleanedFrontendBase != "" {
 				// Simple subdomain matching for production
 				// e.g., if FrontendBase is "https://phd-portal.kz", allow "*.phd-portal.kz"
-				mainDomain := strings.TrimPrefix(cfg.FrontendBase, "https://")
+				mainDomain := strings.TrimPrefix(cleanedFrontendBase, "https://")
 				mainDomain = strings.TrimPrefix(mainDomain, "http://")
 				if strings.Contains(origin, "."+mainDomain) || strings.HasSuffix(origin, mainDomain) {
 					return true
