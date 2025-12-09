@@ -29,10 +29,18 @@ export function getTenantSlug(): string {
     return localStorage.getItem('tenant-slug') || 'kaznmu';
   }
   
-  // Vercel deployments - the app name isn't a real tenant slug
-  // e.g., phd-students-portal.vercel.app should use default tenant
+  // Vercel deployments - map specific app names to tenants
+  // Add new entries here for additional Vercel deployments
   if (hostname.endsWith('.vercel.app')) {
-    return 'kaznmu';
+    const vercelTenantMap: Record<string, string> = {
+      'demo-phd-students-portal': 'demo.university',
+      'phd-students-portal': 'kaznmu',
+      // Add more mappings as needed: 'other-app-name': 'other-tenant-slug'
+    };
+    
+    // Extract app name from hostname (e.g., 'demo-phd-students-portal' from 'demo-phd-students-portal.vercel.app')
+    const appName = hostname.replace('.vercel.app', '');
+    return vercelTenantMap[appName] || 'kaznmu';
   }
   
   // Production/staging - extract subdomain
