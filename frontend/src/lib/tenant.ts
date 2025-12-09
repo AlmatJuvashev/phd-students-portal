@@ -29,6 +29,12 @@ export function getTenantSlug(): string {
     return localStorage.getItem('tenant-slug') || 'kaznmu';
   }
   
+  // Vercel deployments - the app name isn't a real tenant slug
+  // e.g., phd-students-portal.vercel.app should use default tenant
+  if (hostname.endsWith('.vercel.app')) {
+    return 'kaznmu';
+  }
+  
   // Production/staging - extract subdomain
   const parts = hostname.split('.');
   if (parts.length >= 2) {
