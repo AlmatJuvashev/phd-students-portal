@@ -273,29 +273,37 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// TODO: checklist, documents, comments handlers (skeletons for now)
 
-	// Dictionary endpoints (admin only)
+	// Dictionary endpoints
 	dictHandler := NewDictionaryHandler(db)
-	dictGroup := admin.Group("/dictionaries")
+
+	// Public (Authenticated) Read Access
+	dicts := api.Group("/dictionaries")
+	dicts.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	{
-		dictGroup.GET("/programs", dictHandler.ListPrograms)
-		dictGroup.POST("/programs", dictHandler.CreateProgram)
-		dictGroup.PUT("/programs/:id", dictHandler.UpdateProgram)
-		dictGroup.DELETE("/programs/:id", dictHandler.DeleteProgram)
+		dicts.GET("/programs", dictHandler.ListPrograms)
+		dicts.GET("/specialties", dictHandler.ListSpecialties)
+		dicts.GET("/cohorts", dictHandler.ListCohorts)
+		dicts.GET("/departments", dictHandler.ListDepartments)
+	}
 
-		dictGroup.GET("/specialties", dictHandler.ListSpecialties)
-		dictGroup.POST("/specialties", dictHandler.CreateSpecialty)
-		dictGroup.PUT("/specialties/:id", dictHandler.UpdateSpecialty)
-		dictGroup.DELETE("/specialties/:id", dictHandler.DeleteSpecialty)
+	// Admin Write Access
+	dictAdminGroup := admin.Group("/dictionaries")
+	{
+		dictAdminGroup.POST("/programs", dictHandler.CreateProgram)
+		dictAdminGroup.PUT("/programs/:id", dictHandler.UpdateProgram)
+		dictAdminGroup.DELETE("/programs/:id", dictHandler.DeleteProgram)
 
-		dictGroup.GET("/cohorts", dictHandler.ListCohorts)
-		dictGroup.POST("/cohorts", dictHandler.CreateCohort)
-		dictGroup.PUT("/cohorts/:id", dictHandler.UpdateCohort)
-		dictGroup.DELETE("/cohorts/:id", dictHandler.DeleteCohort)
+		dictAdminGroup.POST("/specialties", dictHandler.CreateSpecialty)
+		dictAdminGroup.PUT("/specialties/:id", dictHandler.UpdateSpecialty)
+		dictAdminGroup.DELETE("/specialties/:id", dictHandler.DeleteSpecialty)
 
-		dictGroup.GET("/departments", dictHandler.ListDepartments)
-		dictGroup.POST("/departments", dictHandler.CreateDepartment)
-		dictGroup.PUT("/departments/:id", dictHandler.UpdateDepartment)
-		dictGroup.DELETE("/departments/:id", dictHandler.DeleteDepartment)
+		dictAdminGroup.POST("/cohorts", dictHandler.CreateCohort)
+		dictAdminGroup.PUT("/cohorts/:id", dictHandler.UpdateCohort)
+		dictAdminGroup.DELETE("/cohorts/:id", dictHandler.DeleteCohort)
+
+		dictAdminGroup.POST("/departments", dictHandler.CreateDepartment)
+		dictAdminGroup.PUT("/departments/:id", dictHandler.UpdateDepartment)
+		dictAdminGroup.DELETE("/departments/:id", dictHandler.DeleteDepartment)
 	}
 
 	// ===========================================
