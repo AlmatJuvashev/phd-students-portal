@@ -91,7 +91,7 @@ export default function ChecklistDetails({
             {bools.length > 0 && (
               <div className="mb-6 px-2">
                 <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  <span>Quest Progress</span>
+                  <span>{T('journey.progress_label')}</span>
                   <span className={cn(bools.every(f => !!values[f.key]) && "text-emerald-500")}>
                     {bools.filter(f => !!values[f.key]).length} / {bools.length}
                   </span>

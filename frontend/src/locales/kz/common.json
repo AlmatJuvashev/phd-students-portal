@@ -227,7 +227,13 @@
     "reset_confirm_phrase": "картаны тастау",
     "reset_type_to_confirm": "Растау үшін төменде «{{phrase}}» деп жазыңыз:",
     "reset_confirm_label": "Растау",
-    "reset_confirm_button": "Менің картамды тастау"
+    "reset_confirm_button": "Менің картамды тастау",
+    "header_title": "PhD Жолы",
+    "header_subtitle": "ҚазҰМУ Докторант порталы",
+    "total_progress": "Жалпы прогресс",
+    "level": "Деңгей",
+    "quest_complete": "КВЕСТ АЯҚТАЛДЫ: ДӘРЕЖЕ БЕРІЛДІ",
+    "progress_label": "Прогресс"
   },
   "upload": {
     "not_supported": "Файлдарды жүктеу кейінірек қолжетімді болады.",

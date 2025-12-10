@@ -58,7 +58,7 @@ export default function RP2HearingPrepScene({
         {fields.filter(f => f.type === 'boolean').length > 0 && (
           <div className="mb-6 px-1">
             <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-              <span>Quest Progress</span>
+              <span>{T('journey.progress_label')}</span>
               <span className={cn(fields.filter(f => f.type === 'boolean').every(f => !!values[f.key]) && "text-emerald-500")}>
                 {fields.filter(f => f.type === 'boolean' && !!values[f.key]).length} / {fields.filter(f => f.type === 'boolean').length}
               </span>

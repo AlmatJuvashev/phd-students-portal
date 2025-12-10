@@ -319,7 +319,13 @@
     "reset_confirm_phrase": "reset map",
     "reset_type_to_confirm": "To confirm, type \"{{phrase}}\" below:",
     "reset_confirm_label": "Confirmation",
-    "reset_confirm_button": "Reset My Journey"
+    "reset_confirm_button": "Reset My Journey",
+    "header_title": "PhD Adventure",
+    "header_subtitle": "KazNMU Student Portal",
+    "total_progress": "Total Progress",
+    "level": "Level",
+    "quest_complete": "QUEST COMPLETE: DEGREE AWARDED",
+    "progress_label": "Progress"
   },
   "upload": {
     "not_supported": "File uploads will be available soon.",

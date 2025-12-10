@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Lock, Trophy, Star } from 'lucide-react';
 import { NodeVM, t } from "@/lib/playbook";
 import { JourneyNode } from './JourneyNode';
@@ -20,6 +21,7 @@ interface WorldContainerProps {
 }
 
 export const WorldContainer: React.FC<WorldContainerProps> = ({ world, index, onNodeClick, isLocked = false }) => {
+    const { t: T } = useTranslation('common');
     // Calculate world stats
     const stats = useMemo(() => {
         const total = world.nodes.length;
@@ -74,7 +76,7 @@ export const WorldContainer: React.FC<WorldContainerProps> = ({ world, index, on
              </div>
              {stats.completed && (
                <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 text-[0.6rem] font-bold px-2 py-0.5 rounded-full border border-white shadow-sm flex items-center gap-1">
-                 <Star size={8} fill="currentColor" /> DONE
+                 <Star size={8} fill="currentColor" /> {T('map.done_suffix')}
                </div>
              )}
           </div>
@@ -84,7 +86,7 @@ export const WorldContainer: React.FC<WorldContainerProps> = ({ world, index, on
                 "text-xs font-bold uppercase tracking-widest mb-1 block",
                 isLocked ? "text-muted-foreground" : "text-muted-foreground"
               )}>
-                Level {index + 1}
+                 {T('journey.level')} {index + 1}
             </span>
             <h3 className={cn(
                 "text-xl sm:text-2xl font-black tracking-tight", 
