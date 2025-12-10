@@ -145,13 +145,37 @@
               {
                 "key": "specialty",
                 "required": true,
-                "label": {}
+                "type": "select",
+                "label": {
+                    "ru": "Специальность",
+                    "kz": "Мамандық",
+                    "en": "Specialty"
+                },
+                "options": [] 
               },
               {
                 "key": "program",
                 "required": true,
-                "label": {}
+                "type": "select",
+                "label": {
+                    "ru": "Образовательная программа",
+                    "kz": "Білім беру бағдарламасы",
+                    "en": "Queue Program"
+                },
+                "options": []
               },
+              {
+                "key": "department",
+                "required": true,
+                "type": "select",
+                "label": {
+                    "ru": "Кафедра / Департамент",
+                    "kz": "Кафедра / Департамент",
+                    "en": "Department"
+                },
+                "options": []
+              },
+
               {
                 "key": "graduation_date",
                 "required": true,
