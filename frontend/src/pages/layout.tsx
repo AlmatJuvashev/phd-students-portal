@@ -19,6 +19,7 @@ import { UserMenu } from "@/components/layout/UserMenu";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServiceEnabled } from "@/contexts/TenantServicesContext";
+import { FloatingMenu } from "@/components/map/FloatingMenu";
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const { t: T, i18n } = useTranslation("common");
@@ -148,6 +149,8 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       </header>
       )}
       <main className="flex-1">{children ?? <Outlet />}</main>
+      
+      {authed && <FloatingMenu />}
     </div>
   );
 }
