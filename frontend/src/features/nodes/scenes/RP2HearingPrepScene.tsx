@@ -5,8 +5,15 @@ import { Button } from "@/components/ui/button";
 import { ChecklistItem } from "@/components/ui/checklist-item";
 import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { TemplatesPanel } from "@/features/forms/TemplatesPanel";
+import { AssetsDownloads } from "@/features/nodes/details/AssetsDownloads";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
+import { motion } from "framer-motion";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export default function RP2HearingPrepScene({
   node,
@@ -40,13 +47,36 @@ export default function RP2HearingPrepScene({
     node.outcomes?.[0]?.next?.[0];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
-      <div className="lg:col-span-3 min-h-0 overflow-auto space-y-4">
+    <div className="flex flex-col h-full overflow-auto p-1">
+      <div className="space-y-4">
         {Boolean((node as any)?.description) && (
           <div className="text-sm text-muted-foreground mb-4 p-4 rounded-lg bg-muted/30 border-l-4 border-primary/50">
             {t((node as any).description, "")}
           </div>
         )}
+        {/* Quest Progress Bar */}
+        {fields.filter(f => f.type === 'boolean').length > 0 && (
+          <div className="mb-6 px-1">
+            <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              <span>Quest Progress</span>
+              <span className={cn(fields.filter(f => f.type === 'boolean').every(f => !!values[f.key]) && "text-emerald-500")}>
+                {fields.filter(f => f.type === 'boolean' && !!values[f.key]).length} / {fields.filter(f => f.type === 'boolean').length}
+              </span>
+            </div>
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <motion.div 
+                initial={false}
+                animate={{ width: `${(fields.filter(f => f.type === 'boolean' && !!values[f.key]).length / fields.filter(f => f.type === 'boolean').length) * 100}%` }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={cn(
+                  "h-full rounded-full transition-colors duration-500",
+                  fields.filter(f => f.type === 'boolean').every(f => !!values[f.key]) ? "bg-emerald-500" : "bg-primary"
+                )}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           {fields.map((f) => (
             <div key={f.key}>
@@ -109,8 +139,11 @@ export default function RP2HearingPrepScene({
             )}
           </div>
         )}
+
+        <div className="pt-8">
+            <AssetsDownloads node={node} />
+        </div>
       </div>
-      <TemplatesPanel node={node} />
 
       <ConfirmModal
         open={confirmOpen}

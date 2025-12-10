@@ -1,6 +1,6 @@
 // components/map/JourneyMap.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NodeVM, Playbook, toViewModel } from "@/lib/playbook";
+import { NodeVM, Playbook, toViewModel, t } from "@/lib/playbook";
 import { WorldContainer } from "./WorldContainer";
 import { Rocket, Sparkles, FileText, Check } from "lucide-react";
 import { api } from "@/api/client";
@@ -269,8 +269,8 @@ export function JourneyMap({
                             <FileText size={20} />
                         </div>
                         <div>
-                             <h3 className="text-lg font-bold leading-tight">
-                                {T(selectedNode.title as any)}
+                            <h3 className="text-lg font-bold leading-tight">
+                                {t(selectedNode.title, "")}
                             </h3>
                              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                                 {selectedNode.type}

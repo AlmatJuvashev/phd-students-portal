@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { AssetsDownloads } from "@/features/nodes/details/AssetsDownloads";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -86,6 +87,29 @@ export default function ChecklistDetails({
                 </div>
             )}
 
+            {/* Quest Progress Bar */}
+            {bools.length > 0 && (
+              <div className="mb-6 px-2">
+                <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  <span>Quest Progress</span>
+                  <span className={cn(bools.every(f => !!values[f.key]) && "text-emerald-500")}>
+                    {bools.filter(f => !!values[f.key]).length} / {bools.length}
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={false}
+                    animate={{ width: `${(bools.filter(f => !!values[f.key]).length / bools.length) * 100}%` }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className={cn(
+                      "h-full rounded-full transition-colors duration-500",
+                      bools.every(f => !!values[f.key]) ? "bg-emerald-500" : "bg-primary-500"
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Checklist Items */}
             <div className="space-y-3">
                 {bools.map((f) => {
@@ -158,6 +182,10 @@ export default function ChecklistDetails({
                 )}
                 </div>
             )}
+            
+            <div className="pt-4 px-2">
+                 <AssetsDownloads node={node} />
+            </div>
           </div>
       </div>
 
