@@ -212,6 +212,15 @@ export const JourneyNode: React.FC<JourneyNodeProps> = ({ node, isLast, index, o
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                       </span>
                     )}
+                    {['submitted', 'needs_fixes'].includes(node.state || '') && (
+                         <span className={cn("text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ml-2", 
+                             node.state === 'submitted' ? "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" : 
+                             "bg-destructive/20 text-destructive"
+                         )}>
+                           {node.state === 'submitted' ? t({ru: "На проверке", kz: "Тексерілуде", en: "Under Review"}, "Pending") : 
+                            t({ru: "Требует исправления", kz: "Түзету қажет", en: "Needs Fixes"}, "Fixes")}
+                         </span>
+                    )}
                   </div>
                   <h4 className={cn("text-base sm:text-lg font-bold leading-tight", styles.title)}>
                     {title}
