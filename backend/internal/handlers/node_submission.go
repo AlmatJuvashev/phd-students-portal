@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
@@ -54,8 +55,9 @@ func (h *NodeSubmissionHandler) GetSubmission(c *gin.Context) {
 		return
 	}
 	locale := h.resolveLocale(c.Query("locale"))
+	tenantID := middleware.GetTenantID(c)
 
-	instance, err := h.ensureNodeInstance(c, uid, nodeID, locale)
+	instance, err := h.ensureNodeInstance(c, tenantID, uid, nodeID, locale)
 	if err != nil {
 		handleNodeErr(c, err)
 		return
@@ -149,10 +151,11 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 		return
 	}
 	locale := h.resolveLocale(c.Query("locale"))
+	tenantID := middleware.GetTenantID(c)
 
 	var err error
 	err = h.withTx(func(tx *sqlx.Tx) error {
-		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
+		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
 		if err != nil {
 			return err
 		}
@@ -168,14 +171,14 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 				return err
 			}
 			if nodeID == "S1_profile" {
-				if err := h.upsertProfileSubmission(tx, uid, req.FormData); err != nil {
+				if err := h.upsertProfileSubmission(tx, tenantID, uid, req.FormData); err != nil {
 					return err
 				}
 			}
 		}
 		if req.State != "" && req.State != inst.State {
 			role := roleFromContext(c)
-			if err := h.transitionState(tx, inst, uid, role, req.State); err != nil {
+			if err := h.transitionState(tx, tenantID, inst, uid, role, req.State); err != nil {
 				return err
 			}
 		}
@@ -227,14 +230,14 @@ func (h *NodeSubmissionHandler) PresignUpload(c *gin.Context) {
 	maxBytes := int64(h.cfg.FileUploadMaxMB) * 1024 * 1024
 	if maxBytes > 0 && req.SizeBytes > maxBytes {
 		c.JSON(400, gin.H{"error": fmt.Sprintf("file too large (max %d MB)", h.cfg.FileUploadMaxMB)})
-		return
 	}
 	locale := h.resolveLocale(c.Query("locale"))
+	tenantID := middleware.GetTenantID(c)
 	var docID string
 	var instanceID string
 	var err error
 	err = h.withTx(func(tx *sqlx.Tx) error {
-		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
+		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
 		if err != nil {
 			return err
 		}
@@ -255,7 +258,7 @@ func (h *NodeSubmissionHandler) PresignUpload(c *gin.Context) {
 			}
 		}
 		instanceID = inst.ID
-		docID, err = h.ensureDocumentForSlot(tx, uid, nodeID, req.SlotKey)
+		docID, err = h.ensureDocumentForSlot(tx, tenantID, uid, nodeID, req.SlotKey)
 		return err
 	})
 	if err != nil {
@@ -343,10 +346,11 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 	}
 	bucket := s3c.Bucket()
 	locale := h.resolveLocale(c.Query("locale"))
+	tenantID := middleware.GetTenantID(c)
 	log.Printf("[AttachUpload] Starting transaction")
 	err = h.withTx(func(tx *sqlx.Tx) error {
 		log.Printf("[AttachUpload] ensureNodeInstanceTx...")
-		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
+		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
 		if err != nil {
 			log.Printf("[AttachUpload] ensureNodeInstanceTx error: %v", err)
 			return err
@@ -362,7 +366,7 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		log.Printf("[AttachUpload] Slot: id=%s, multiplicity=%s", slot.ID, slot.Multiplicity)
 		
 		log.Printf("[AttachUpload] ensureDocumentForSlot...")
-		docID, err := h.ensureDocumentForSlot(tx, uid, nodeID, req.SlotKey)
+		docID, err := h.ensureDocumentForSlot(tx, tenantID, uid, nodeID, req.SlotKey)
 		if err != nil {
 			log.Printf("[AttachUpload] ensureDocumentForSlot error: %v", err)
 			return err
@@ -406,7 +410,7 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		
 		if inst.State == "active" {
 			log.Printf("[AttachUpload] Transitioning state to submitted...")
-			if err := h.transitionState(tx, inst, uid, role, "submitted"); err != nil {
+			if err := h.transitionState(tx, tenantID, inst, uid, role, "submitted"); err != nil {
 				log.Printf("[AttachUpload] Transition state error: %v", err)
 				return err
 			}
@@ -462,13 +466,14 @@ func (h *NodeSubmissionHandler) PatchState(c *gin.Context) {
 		return
 	}
 	locale := h.resolveLocale(c.Query("locale"))
+	tenantID := middleware.GetTenantID(c)
 	err := h.withTx(func(tx *sqlx.Tx) error {
-		inst, err := h.ensureNodeInstanceTx(tx, uid, nodeID, locale)
+		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
 		if err != nil {
 			return err
 		}
 		role := roleFromContext(c)
-		if err := h.transitionState(tx, inst, uid, role, req.State); err != nil {
+		if err := h.transitionState(tx, tenantID, inst, uid, role, req.State); err != nil {
 			return err
 		}
 		return nil
@@ -507,12 +512,12 @@ func (h *NodeSubmissionHandler) withTx(fn func(tx *sqlx.Tx) error) error {
 	return tx.Commit()
 }
 
-func (h *NodeSubmissionHandler) ensureNodeInstance(c *gin.Context, userID, nodeID, locale string) (*nodeInstanceRecord, error) {
+func (h *NodeSubmissionHandler) ensureNodeInstance(c *gin.Context, tenantID, userID, nodeID, locale string) (*nodeInstanceRecord, error) {
 	tx, err := h.db.Beginx()
 	if err != nil {
 		return nil, err
 	}
-	inst, err := h.ensureNodeInstanceTx(tx, userID, nodeID, locale)
+	inst, err := h.ensureNodeInstanceTx(tx, tenantID, userID, nodeID, locale)
 	if err != nil {
 		_ = tx.Rollback()
 		return nil, err
@@ -523,11 +528,11 @@ func (h *NodeSubmissionHandler) ensureNodeInstance(c *gin.Context, userID, nodeI
 	return inst, nil
 }
 
-func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID, locale string) (*nodeInstanceRecord, error) {
+func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, tenantID, userID, nodeID, locale string) (*nodeInstanceRecord, error) {
     inst, err := h.loadInstanceTx(tx, userID, nodeID)
     if err == nil {
         // Backfill missing upload slots if playbook now defines them
-        if err := h.ensureSlotsForInstance(tx, inst.ID, nodeID); err != nil {
+        if err := h.ensureSlotsForInstance(tx, tenantID, inst.ID, nodeID); err != nil {
             return nil, err
         }
         return inst, nil
@@ -541,9 +546,9 @@ func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID
 	}
 	var rec nodeInstanceRecord
 	log.Printf("[ensureNodeInstanceTx] Creating node instance: userID=%s nodeID=%s versionID=%s", userID, nodeID, h.pb.VersionID)
-	err = tx.QueryRowx(`INSERT INTO node_instances (user_id, playbook_version_id, node_id, state, locale)
-        VALUES ($1,$2,$3,'active',$4)
-        RETURNING id, node_id, state, current_rev, locale`, userID, h.pb.VersionID, nodeID, locale).Scan(&rec.ID, &rec.NodeID, &rec.State, &rec.CurrentRev, &rec.Locale)
+	err = tx.QueryRowx(`INSERT INTO node_instances (user_id, playbook_version_id, node_id, state, locale, tenant_id)
+        VALUES ($1,$2,$3,'active',$4, $5)
+        RETURNING id, node_id, state, current_rev, locale`, userID, h.pb.VersionID, nodeID, locale, tenantID).Scan(&rec.ID, &rec.NodeID, &rec.State, &rec.CurrentRev, &rec.Locale)
 	if err != nil {
 		log.Printf("[ensureNodeInstanceTx] INSERT failed: %v (versionID=%s)", err, h.pb.VersionID)
 		return nil, err
@@ -555,8 +560,8 @@ func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID
             if len(up.Mime) == 0 {
                 mime = pq.Array([]string{})
             }
-            _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist)
-                VALUES ($1,$2,$3,'single',$4)`, rec.ID, up.Key, req, mime)
+            _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist, tenant_id)
+                VALUES ($1,$2,$3,'single',$4, $5)`, rec.ID, up.Key, req, mime, tenantID)
             if err != nil {
                 return nil, err
             }
@@ -565,16 +570,16 @@ func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, userID, nodeID
 	if err := h.insertEvent(tx, rec.ID, "opened", userID, map[string]any{"locale": locale}); err != nil {
 		return nil, err
 	}
-	_, _ = tx.Exec(`INSERT INTO journey_states (user_id, node_id, state)
-        VALUES ($1,$2,'active')
-        ON CONFLICT (user_id, node_id) DO UPDATE SET state='active', updated_at=now()`, userID, nodeID)
+	_, _ = tx.Exec(`INSERT INTO journey_states (user_id, node_id, state, tenant_id)
+        VALUES ($1,$2,'active', $3)
+        ON CONFLICT (user_id, node_id) DO UPDATE SET state='active', updated_at=now()`, userID, nodeID, tenantID)
 	return &rec, nil
 }
 
 // ensureSlotsForInstance inserts any missing slot rows for an existing node instance
 // based on the current playbook definition (useful after adding requirements.uploads
 // to a node in a newer playbook version).
-func (h *NodeSubmissionHandler) ensureSlotsForInstance(tx *sqlx.Tx, instanceID, nodeID string) error {
+func (h *NodeSubmissionHandler) ensureSlotsForInstance(tx *sqlx.Tx, tenantID, instanceID, nodeID string) error {
     nodeDef, ok := h.pb.NodeDefinition(nodeID)
     if !ok || nodeDef.Requirements == nil || len(nodeDef.Requirements.Uploads) == 0 {
         return nil
@@ -597,8 +602,8 @@ func (h *NodeSubmissionHandler) ensureSlotsForInstance(tx *sqlx.Tx, instanceID, 
         if len(up.Mime) == 0 {
             mime = pq.Array([]string{})
         }
-        if _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist)
-            VALUES ($1,$2,$3,'single',$4)`, instanceID, up.Key, up.Required, mime); err != nil {
+        if _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist, tenant_id)
+            VALUES ($1,$2,$3,'single',$4, $5)`, instanceID, up.Key, up.Required, mime, tenantID); err != nil {
             return err
         }
     }
@@ -636,11 +641,11 @@ func (h *NodeSubmissionHandler) appendFormRevision(tx *sqlx.Tx, inst *nodeInstan
 	return h.insertEvent(tx, inst.ID, "draft_saved", userID, map[string]any{"rev": nextRev})
 }
 
-func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, userID string, data json.RawMessage) error {
-	_, err := tx.Exec(`INSERT INTO profile_submissions (user_id, form_data)
-        VALUES ($1, $2)
+func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, tenantID, userID string, data json.RawMessage) error {
+	_, err := tx.Exec(`INSERT INTO profile_submissions (user_id, form_data, tenant_id)
+        VALUES ($1, $2, $3)
         ON CONFLICT (user_id)
-        DO UPDATE SET form_data = EXCLUDED.form_data, updated_at = NOW()`, userID, data)
+        DO UPDATE SET form_data = EXCLUDED.form_data, updated_at = NOW()`, userID, data, tenantID)
 	if err != nil {
 		return err
 	}
@@ -671,7 +676,7 @@ func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, userID stri
 	return nil
 }
 
-func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, inst *nodeInstanceRecord, userID, role, newState string) error {
+func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, tenantID string, inst *nodeInstanceRecord, userID, role, newState string) error {
 	roles := []string{}
 
 	err := tx.QueryRowx(`SELECT allowed_roles FROM node_state_transitions WHERE from_state=$1 AND to_state=$2`, inst.State, newState).Scan(pq.Array(&roles))
@@ -710,8 +715,8 @@ func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, inst *nodeInstanceR
 	if _, err := tx.Exec(query, newState, inst.ID); err != nil {
 		return err
 	}
-	_, err = tx.Exec(`INSERT INTO journey_states (user_id,node_id,state) VALUES ($1,$2,$3)
-        ON CONFLICT (user_id,node_id) DO UPDATE SET state=$3, updated_at=now()`, userID, inst.NodeID, newState)
+	_, err = tx.Exec(`INSERT INTO journey_states (user_id,node_id,state,tenant_id) VALUES ($1,$2,$3,$4)
+        ON CONFLICT (user_id,node_id) DO UPDATE SET state=$3, updated_at=now()`, userID, inst.NodeID, newState, tenantID)
 	if err != nil {
 		return err
 	}
@@ -743,7 +748,7 @@ type slotRecord struct {
 	MimeWhitelist  []string
 }
 
-func (h *NodeSubmissionHandler) ensureDocumentForSlot(tx *sqlx.Tx, userID, nodeID, slotKey string) (string, error) {
+func (h *NodeSubmissionHandler) ensureDocumentForSlot(tx *sqlx.Tx, tenantID, userID, nodeID, slotKey string) (string, error) {
 	title := fmt.Sprintf("node:%s:%s", nodeID, slotKey)
 	var docID string
 	err := tx.QueryRowx(`SELECT id FROM documents WHERE user_id=$1 AND title=$2`, userID, title).Scan(&docID)
@@ -753,7 +758,7 @@ func (h *NodeSubmissionHandler) ensureDocumentForSlot(tx *sqlx.Tx, userID, nodeI
 	if !errors.Is(err, sql.ErrNoRows) {
 		return "", err
 	}
-	err = tx.QueryRowx(`INSERT INTO documents (user_id, kind, title) VALUES ($1,'node_slot',$2) RETURNING id`, userID, title).Scan(&docID)
+	err = tx.QueryRowx(`INSERT INTO documents (user_id, kind, title, tenant_id) VALUES ($1,'node_slot',$2, $3) RETURNING id`, userID, title, tenantID).Scan(&docID)
 	if err != nil {
 		return "", err
 	}

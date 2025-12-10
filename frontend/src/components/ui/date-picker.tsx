@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { enUS, ru, kk } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -35,24 +35,29 @@ export function DatePicker({
   className,
 }: DatePickerProps) {
   const { i18n } = useTranslation();
-  const [date, setDate] = React.useState<Date | undefined>(
-    value ? new Date(value) : undefined
-  );
+  const [date, setDate] = React.useState<Date | undefined>(() => {
+    if (!value) return undefined;
+    // Parse ISO date string (YYYY-MM-DD) as local date to avoid timezone shifts
+    const parsed = parse(value, "yyyy-MM-dd", new Date());
+    // Fallback if parsing fails (e.g. if value is full ISO string)
+    return isNaN(parsed.getTime()) ? new Date(value) : parsed;
+  });
 
   const locale = localeMap[i18n.language as keyof typeof localeMap] || enUS;
 
   React.useEffect(() => {
     if (value) {
-      setDate(new Date(value));
+      const parsed = parse(value, "yyyy-MM-dd", new Date());
+      setDate(isNaN(parsed.getTime()) ? new Date(value) : parsed);
     } else {
       setDate(undefined);
     }
   }, [value]);
 
   const handleSelect = (selectedDate: Date | undefined) => {
+    // When a date is selected from Calendar (local time), format it back to YYYY-MM-DD
     setDate(selectedDate);
     if (selectedDate) {
-      // Format as YYYY-MM-DD for compatibility with backend
       const formatted = format(selectedDate, "yyyy-MM-dd");
       onChange?.(formatted);
     } else {
@@ -64,6 +69,7 @@ export function DatePicker({
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          type="button" 
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",
@@ -76,7 +82,7 @@ export function DatePicker({
           {date ? format(date, "PPP", { locale }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent className="w-auto p-0 z-[100]">
         <Calendar
           mode="single"
           selected={date}
