@@ -1,0 +1,5 @@
+{
+  "name": "Clinical Answer Assessor",
+  "description": "A medical education platform for automated appraisal of free-text exam answers using LLMs and RAG clinical protocols.",
+  "requestFramePermissions": []
+}

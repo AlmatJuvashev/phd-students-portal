@@ -224,72 +224,71 @@ export function FormTaskDetails({
 
   return (
     <div className="flex flex-col h-full min-h-0" data-node-id={node.id}>
-      {/* Mobile: show templates above the form */}
-      <div className="lg:hidden mb-2">
-        <AssetsDownloads node={node} />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-1 min-h-0">
-        <div className="lg:col-span-3 flex flex-col min-h-0 min-w-0">
-          <Card className="p-4 flex flex-col flex-1 min-h-0">
-            {node.requirements?.notes && (
-              <p className="text-sm text-muted-foreground mb-4">
-                {node.requirements.notes}
-              </p>
-            )}
+      <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex flex-col min-h-0 min-w-0">
+          <Card className="p-4 flex flex-col flex-1 min-h-0 overflow-y-auto">
+            <div className="space-y-4">
+                {node.requirements?.notes && (
+                <p className="text-sm text-muted-foreground">
+                    {node.requirements.notes}
+                </p>
+                )}
 
-            <div className="space-y-3 pb-4 min-w-0">
-              {fields.map((f) => {
-                const visible = evalVisible((f as any).visible_when);
-                if (!visible) return null;
-                return (
-                  <FieldRenderer
-                    key={f.key}
-                    field={f as any}
-                    value={values[f.key]}
-                    onChange={(v) => setField(f.key, v)}
-                    setField={(k, v) => setField(k, v)}
-                    otherValue={values[`${f.key}_other`]}
-                    canEdit={canEdit}
-                    disabled={disabled}
-                    itemErrors={validationErrors?.[f.key]}
-                  />
-                );
-              })}
+                <div className="space-y-3 min-w-0">
+                {fields.map((f) => {
+                    const visible = evalVisible((f as any).visible_when);
+                    if (!visible) return null;
+                    return (
+                    <FieldRenderer
+                        key={f.key}
+                        field={f as any}
+                        value={values[f.key]}
+                        onChange={(v) => setField(f.key, v)}
+                        setField={(k, v) => setField(k, v)}
+                        otherValue={values[`${f.key}_other`]}
+                        canEdit={canEdit}
+                        disabled={disabled}
+                        itemErrors={validationErrors?.[f.key]}
+                    />
+                    );
+                })}
 
-              {!!node.requirements?.validations?.length && (
-                <>
-                  <Separator />
-                  <div>
-                    <div className="mb-2 font-medium">
-                      {T("forms.validations_title")}
+                {!!node.requirements?.validations?.length && (
+                    <>
+                    <Separator />
+                    <div>
+                        <div className="mb-2 font-medium">
+                        {T("forms.validations_title")}
+                        </div>
+                        <ul className="list-inside list-disc text-sm">
+                        {node.requirements.validations!.map((v, i) => (
+                            <li key={i}>
+                            {v.rule}
+                            {v.source ? ` @ ${v.source}` : ""}
+                            </li>
+                        ))}
+                        </ul>
                     </div>
-                    <ul className="list-inside list-disc text-sm">
-                      {node.requirements.validations!.map((v, i) => (
-                        <li key={i}>
-                          {v.rule}
-                          {v.source ? ` @ ${v.source}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              )}
+                    </>
+                )}
+                </div>
+
+                {canEdit && (
+                <div className="space-y-2 mt-4 form-actions">
+                    {renderActions
+                    ? renderActions(ctx)
+                    : node.id === "NK_package"
+                    ? nkActions
+                    : defaultActions}
+                </div>
+                )}
+
+                {/* Templates at the bottom */}
+                <div className="pt-6 mt-4">
+                    <AssetsDownloads node={node} />
+                </div>
             </div>
-
-            {canEdit && (
-              <div className="space-y-2 mt-4 form-actions">
-                {renderActions
-                  ? renderActions(ctx)
-                  : node.id === "NK_package"
-                  ? nkActions
-                  : defaultActions}
-              </div>
-            )}
           </Card>
-        </div>
-
-        <div className="hidden lg:block lg:col-span-2 border-l pl-4 min-w-0">
-          <AssetsDownloads node={node} />
         </div>
       </div>
     </div>
