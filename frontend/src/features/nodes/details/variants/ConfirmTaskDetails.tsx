@@ -15,7 +15,7 @@ import {
   supportsStudentDocTemplate,
 } from "@/features/docgen/student-template";
 import type { StudentTemplateData } from "@/features/docgen/student-template";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock } from "lucide-react";
 
 type ConfirmTaskDetailsProps = {
   node: NodeVM | any;
@@ -233,6 +233,23 @@ const ConfirmTaskDetails: React.FC<ConfirmTaskDetailsProps> = ({
           <p className="text-lg sm:text-xl font-semibold text-foreground leading-relaxed">
             {question}
           </p>
+        )}
+
+        {/* Submitted State Banner */}
+        {node?.state === 'submitted' && (
+            <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 flex items-center gap-3">
+                <div className="bg-orange-100 dark:bg-orange-900 p-2 rounded-full text-orange-600 dark:text-orange-400">
+                    <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                    <p className="font-semibold text-orange-800 dark:text-orange-300">
+                        {t({ru: "Отправлено на проверку", kz: "Тексеруге жіберілді", en: "Submitted for review"}, "Submitted")}
+                    </p>
+                    <p className="text-xs text-orange-700 dark:text-orange-400">
+                        {t({ru: "Ваш документ получен и ожидает проверки.", kz: "Сіздің құжатыңыз қабылданды және тексеруді күтуде.", en: "Your document has been received and is awaiting review."}, "Waiting for review.")}
+                    </p>
+                </div>
+            </div>
         )}
 
         {/* Inline guidance (no collapsible) */}
