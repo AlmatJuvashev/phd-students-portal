@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import type { NodeVM, FieldDef } from "@/lib/playbook";
 import { t } from "@/lib/playbook";
-import { Button } from "@/components/ui/button";
-import { ChecklistItem } from "@/components/ui/checklist-item";
 import { useTranslation } from "react-i18next";
-import { TemplatesPanel } from "@/features/forms/TemplatesPanel";
 import { ConfirmModal } from "@/features/forms/ConfirmModal";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export default function ChecklistDetails({
   node,
@@ -72,84 +77,131 @@ export default function ChecklistDetails({
   const nextOnComplete = getNextOnComplete();
 
   return (
-    <form className="h-full" onSubmit={(e) => e.preventDefault()}>
-      <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-6 space-y-6 lg:space-y-0 min-w-0">
-        <div className="space-y-4 min-w-0">
-          {Boolean((node as any)?.description) && (
-            <div className="text-sm text-muted-foreground mb-4 p-4 rounded-lg bg-muted/30 border-l-4 border-primary/50">
-              {t((node as any).description, "")}
+    <form className="h-full flex flex-col" onSubmit={(e) => e.preventDefault()}>
+      <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="space-y-6 p-1">
+            {Boolean((node as any)?.description) && (
+                <div className="prose prose-slate prose-sm max-w-none text-slate-600 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                <p>{t((node as any).description, "")}</p>
+                </div>
+            )}
+
+            {/* Checklist Items */}
+            <div className="space-y-3">
+                {bools.map((f) => {
+                const isChecked = !!values[f.key];
+
+                return (
+                    <motion.button
+                    key={f.key}
+                    type="button"
+                    onClick={() => {
+                        if (!readOnly) {
+                        setValues((s) => ({ ...s, [f.key]: !isChecked }));
+                        }
+                    }}
+                    disabled={disabled || readOnly}
+                    whileTap={!readOnly ? { scale: 0.98 } : undefined}
+                    initial={false}
+                    animate={{
+                        backgroundColor: isChecked ? "rgb(236 253 245)" : "rgba(255, 255, 255, 1)",
+                        borderColor: isChecked ? "rgb(167 243 208)" : "rgb(226 232 240)"
+                    }}
+                    className={cn(
+                        "w-full text-left p-4 rounded-xl border-2 transition-all flex items-start gap-4 group relative overflow-hidden",
+                        isChecked 
+                        ? "shadow-sm" 
+                        : "hover:border-primary-300 hover:shadow-md"
+                    )}
+                    >
+                    <div className={cn(
+                        "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors duration-200 flex-shrink-0 mt-0.5",
+                        isChecked
+                        ? "bg-emerald-500 border-emerald-500 text-white"
+                        : "bg-white border-slate-300 group-hover:border-primary-400"
+                    )}>
+                        {isChecked && <Check size={16} strokeWidth={4} />}
+                    </div>
+                    <span className={cn(
+                        "text-sm font-medium transition-colors",
+                        isChecked ? "text-emerald-800 line-through opacity-70" : "text-slate-700"
+                    )}>
+                        {t(f.label, f.key)}{f.required ? "*" : ""}
+                    </span>
+                    </motion.button>
+                );
+                })}
             </div>
-          )}
 
-          {/* Checklist items using ChecklistItem component */}
-          <div className="space-y-3 min-w-0 max-h-[60vh] overflow-y-auto pr-2">
-            {bools.map((f, index) => {
-              const isChecked = !!values[f.key];
-
-              return (
-                <ChecklistItem
-                  key={f.key}
-                  checked={isChecked}
-                  onChange={(checked) => {
-                    if (!readOnly) {
-                      setValues((s) => ({ ...s, [f.key]: checked }));
-                    }
-                  }}
-                  label={`${t(f.label, f.key)}${f.required ? "*" : ""}`}
-                  readOnly={readOnly}
-                  disabled={disabled}
-                />
-              );
-            })}
+            {/* Read-only status message */}
+            {readOnly && (
+                <div className="mt-3 text-sm text-slate-400 whitespace-pre-line px-2">
+                {t(
+                    {
+                    ru: `Если документы были сданы${
+                        submittedAt
+                        ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})`
+                        : ""
+                    }.`,
+                    kz: `Егер құжаттар тапсырылған болса${
+                        submittedAt
+                        ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})`
+                        : ""
+                    }.`,
+                    en: `If the documents were submitted${
+                        submittedAt
+                        ? ` (date: ${new Date(submittedAt).toLocaleDateString()})`
+                        : ""
+                    }.`,
+                    },
+                    ""
+                )}
+                </div>
+            )}
           </div>
+      </div>
 
-          {/* Action buttons */}
-          {!readOnly && (
-            <div className="flex gap-2 pt-4 border-t bg-background/80 backdrop-blur-sm sticky bottom-0 z-10">
-              <Button
-                onClick={() => setConfirmOpen(true)}
-                disabled={!ready}
-                aria-busy={disabled}
-              >
-                {T("forms.proceed_next")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => onSubmit?.({ ...values, __draft: true })}
-                aria-busy={disabled}
-              >
-                {T("forms.save_draft")}
-              </Button>
+      {/* Footer Actions - Fixed at bottom */}
+      <div className="mt-6 pt-4 border-t border-slate-100 flex-shrink-0 bg-white z-10">
+        {!readOnly ? (
+            <button 
+            onClick={() => setConfirmOpen(true)}
+            disabled={!ready || disabled}
+            className={cn(
+                "w-full py-4 font-bold text-lg rounded-2xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2",
+                ready 
+                ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20" 
+                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+            )}
+            >
+            {ready ? (
+                <>
+                {T("forms.proceed_next")} <Check size={20} />
+                </>
+            ) : (
+                <span className="flex items-center gap-2">
+                  <span className="text-xs uppercase tracking-wider font-extrabold">{values?.__draft ? "Save Draft" : "Complete All Items"}</span>
+                </span>
+            )}
+            </button>
+        ) : (
+             <div className="w-full py-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 font-medium text-center flex items-center justify-center gap-2">
+                <Check size={18} /> Completed
+             </div>
+        )}
+        
+        {!readOnly && (
+            <div className="mt-3 text-center">
+                 <button
+                    type="button"
+                    onClick={() => onSubmit?.({ ...values, __draft: true })}
+                    disabled={disabled}
+                    className="text-xs font-semibold text-slate-400 hover:text-slate-600 uppercase tracking-widest hover:underline"
+                >
+                    {T("forms.save_draft")}
+                </button>
             </div>
-          )}
-
-          {readOnly && (
-            <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
-              {t(
-                {
-                  ru: `Если документы были сданы${
-                    submittedAt
-                      ? ` (дата: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }.`,
-                  kz: `Егер құжаттар тапсырылған болса${
-                    submittedAt
-                      ? ` (күні: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }.`,
-                  en: `If the documents were submitted${
-                    submittedAt
-                      ? ` (date: ${new Date(submittedAt).toLocaleDateString()})`
-                      : ""
-                  }.`,
-                },
-                ""
-              )}
-            </div>
-          )}
-        </div>
-
-        <TemplatesPanel node={node} className="lg:border-l lg:pl-6" />
+        )}
       </div>
 
       <ConfirmModal
@@ -168,5 +220,6 @@ export default function ChecklistDetails({
         }}
       />
     </form>
+
   );
 }
