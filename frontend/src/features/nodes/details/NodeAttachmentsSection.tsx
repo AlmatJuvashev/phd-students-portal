@@ -532,9 +532,13 @@ export function NodeAttachmentsSection({
                                     {isNew && (
                                       <Badge
                                         variant="outline"
-                                        className="bg-rose-100 text-rose-700 border-rose-300 font-semibold animate-pulse"
+                                        className="bg-rose-100 text-rose-700 border-rose-300 font-semibold"
                                       >
-                                        NEW
+                                        {t({
+                                          ru: "НОВОЕ",
+                                          kz: "ЖАҢА",
+                                          en: "NEW",
+                                        }, "NEW")}
                                       </Badge>
                                     )}
                                     {statusClass &&

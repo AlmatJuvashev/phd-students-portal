@@ -89,7 +89,7 @@ export function NodeDetails({
                 {stateLabel(node)}
             </Badge>
             
-            {node.type === "form" &&
+            {["form", "confirmTask"].includes(node.type) &&
                 ["submitted", "done"].includes((submission as any)?.state as any) && (
                     <Button
                         variant="ghost"

@@ -375,9 +375,9 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		
 		log.Printf("[AttachUpload] Inserting document_version...")
 		var versionID string
-		err = tx.QueryRowx(`INSERT INTO document_versions (document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-			docID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, uid, nullableString(req.ETag)).Scan(&versionID)
+		err = tx.QueryRowx(`INSERT INTO document_versions (document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag, tenant_id)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9) RETURNING id`,
+			docID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, uid, nullableString(req.ETag), tenantID).Scan(&versionID)
 		if err != nil {
 			log.Printf("[AttachUpload] Insert document_version error: %v", err)
 			return err
