@@ -2,14 +2,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { WorldMap } from "@/components/map/WorldMap";
+import { JourneyMap } from "@/components/map/JourneyMap";
 import { ResetBar } from "@/features/journey/components/ResetBar";
 import { useJourneyState } from "@/features/journey/hooks";
 import type { Playbook } from "@/lib/playbook";
 import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 export function DoctoralJourney() {
-  const { t: T } = useTranslation("common");
+  const { t: T, i18n } = useTranslation("common");
   const { isLoading } = useRequireAuth()
   const { state = {}, refetch } = useJourneyState();
   const [playbook, setPlaybook] = useState<Playbook | null>(null);
@@ -43,10 +43,11 @@ export function DoctoralJourney() {
 
   return (
     <div>
-      <WorldMap
-        playbook={playbook as any}
+      <JourneyMap
+        playbook={playbook}
+        locale={i18n.language}
         stateByNodeId={state as any}
-        onStateChanged={() => refetch()}
+        onStateChanged={refetch}
       />
       <ResetBar />
     </div>
