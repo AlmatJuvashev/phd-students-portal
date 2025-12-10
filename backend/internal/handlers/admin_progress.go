@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/gin-gonic/gin"
@@ -1131,15 +1132,16 @@ func (h *AdminHandler) PatchStudentNodeState(c *gin.Context) {
 	// reuse node submission handler for transitions
 	nsh := NewNodeSubmissionHandler(h.db, h.cfg, h.pb)
 	locale := nsh.resolveLocale("")
+	tenantID := middleware.GetTenantID(c)
 	err := nsh.withTx(func(tx *sqlx.Tx) error {
-		inst, err := nsh.ensureNodeInstanceTx(tx, uid, nodeID, locale)
+		inst, err := nsh.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
 		if err != nil {
 			return err
 		}
 		if body.State == "" || body.State == inst.State {
 			return nil
 		}
-		return nsh.transitionState(tx, inst, uid, role, body.State)
+		return nsh.transitionState(tx, tenantID, inst, uid, role, body.State)
 	})
 	if err != nil {
 		handleNodeErr(c, err)

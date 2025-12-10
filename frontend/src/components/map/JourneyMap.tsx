@@ -159,20 +159,18 @@ export function JourneyMap({
 
     // Auto navigate logic - simplified for Modal
     if (nextId) {
-        // Find next node?
-        // For now, let's just close or keep it, relying on user to open next.
-        // Or if we want to be fancy, switch the selectedNode.
+        // Find next node
          const nextNode = nextId ? vm.worlds.flatMap(w => w.nodes).find(n => n.id === nextId) : null;
+         // Note: nextNode.state might be stale (locked) until refresh, so we might fail to switch immediately.
+         // In that case, we fall through and close the modal, which is correct behavior (return to map).
          if (nextNode && nextNode.state !== 'locked') {
              setSelectedNode(nextNode);
              return;
          }
     }
     
-    // Close if terminal
-     if (selectedNode && terminalNodeSet.has(selectedNode.id)) {
-        setSelectedNode(null);
-     }
+    // Close if terminal or if we couldn't auto-navigate
+    setSelectedNode(null);
   };
 
   return (

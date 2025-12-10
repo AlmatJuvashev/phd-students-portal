@@ -233,7 +233,10 @@ export function FloatingMenu() {
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-6 right-6 z-[60] flex items-center justify-center pointer-events-none">
+      <div className={cn(
+        "fixed right-6 z-[60] flex items-center justify-center pointer-events-none transition-all duration-300",
+        isChat ? "bottom-24" : "bottom-6"
+      )}>
         
         {/* Menu Items Container - pointer-events-auto for children */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none"> 
