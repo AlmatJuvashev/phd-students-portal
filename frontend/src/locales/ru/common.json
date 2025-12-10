@@ -227,7 +227,13 @@
     "reset_confirm_phrase": "сбросить карту",
     "reset_type_to_confirm": "Для подтверждения введите «{{phrase}}» ниже:",
     "reset_confirm_label": "Подтверждение",
-    "reset_confirm_button": "Сбросить мою карту"
+    "reset_confirm_button": "Сбросить мою карту",
+    "header_title": "PhD Путь",
+    "header_subtitle": "Портал докторанта КазНМУ",
+    "total_progress": "Общий прогресс",
+    "level": "Уровень",
+    "quest_complete": "КВЕСТ ЗАВЕРШЕН: СТЕПЕНЬ ПРИСУЖДЕНА",
+    "progress_label": "Прогресс"
   },
   "upload": {
     "not_supported": "Загрузка файлов будет доступна позже.",

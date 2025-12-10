@@ -191,8 +191,8 @@ export function JourneyMap({
                 <Rocket size={20} />
               </div>
               <div>
-                <h1 className="text-lg font-bold leading-none tracking-tight">PhD Adventure</h1>
-                <p className="text-xs text-slate-400 mt-1 font-medium">KazNMU Student Portal</p>
+                <h1 className="text-lg font-bold leading-none tracking-tight">{T('journey.header_title')}</h1>
+                <p className="text-xs text-slate-400 mt-1 font-medium">{T('journey.header_subtitle')}</p>
               </div>
             </div>
             
@@ -200,7 +200,7 @@ export function JourneyMap({
               <div className="text-2xl font-black tabular-nums leading-none">
                 {Math.round(globalStats.progress)}%
               </div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total Progress</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{T('journey.total_progress')}</div>
             </div>
           </div>
           
@@ -223,7 +223,7 @@ export function JourneyMap({
           
           {globalStats.progress === 100 && (
             <div className="mt-3 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 animate-pulse">
-              <Sparkles size={14} /> QUEST COMPLETE: DEGREE AWARDED
+              <Sparkles size={14} /> {T('journey.quest_complete')}
             </div>
           )}
         </div>
