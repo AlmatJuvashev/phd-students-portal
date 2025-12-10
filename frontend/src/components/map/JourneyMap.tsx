@@ -1,8 +1,7 @@
-// components/map/JourneyMap.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NodeVM, Playbook, toViewModel, t } from "@/lib/playbook";
-import { WorldContainer } from "./WorldContainer";
-import { Rocket, Sparkles, FileText, Check } from "lucide-react";
+import { WorldContainer } from './WorldContainer';
+import { Rocket, Sparkles, FileText, UploadCloud, Check, Map as MapIcon, Calendar, X, ListChecks } from 'lucide-react';
 import { api } from "@/api/client";
 import { patchJourneyState } from "@/features/journey/session";
 import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
@@ -315,6 +314,7 @@ export function JourneyMap({
       </AnimatePresence>
       
       <ConfettiBurst trigger={confetti} />
+      {(import.meta as any).env?.DEV && <DevBar />}
       {(import.meta as any).env?.DEV && <DevBar />}
     </div>
   );

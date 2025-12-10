@@ -8,7 +8,6 @@ import "./i18n";
 import { AuthProvider } from '@/contexts/AuthContext'
 import { TenantServicesProvider } from '@/contexts/TenantServicesContext';
 import { registerSW } from "virtual:pwa-register";
-import { ThemeCustomizer } from "@/components/dev/ThemeCustomizer";
 
 registerSW({ immediate: true });
 
@@ -32,7 +31,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <AuthProvider>
           <TenantServicesProvider>
             <RouterProvider router={router} />
-            <ThemeCustomizer />
           </TenantServicesProvider>
         </AuthProvider>
       </Suspense>
