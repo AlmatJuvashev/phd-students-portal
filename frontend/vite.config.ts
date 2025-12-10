@@ -76,7 +76,19 @@ export default defineConfig({
       },
     }),
   ],
-  server: { port: 5173 },
+  server: { 
+    port: 5173,
+    proxy: {
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/api': {
+         target: 'http://localhost:8080',
+         changeOrigin: true,
+      }
+    }
+  },
   resolve: {
     alias: {
       "@": "/src",
