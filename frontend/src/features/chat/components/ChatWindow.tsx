@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Paperclip, MoreHorizontal, Image as ImageIcon, FileText, Check, Clock, CloudDownload, Archive, Reply, Trash2, Edit2, Info, Share, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, MoreHorizontal, Image as ImageIcon, FileText, Check, Clock, CloudDownload, Archive, Reply, Trash2, Edit2, Info, Share, ExternalLink, X, CornerUpRight } from 'lucide-react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { archiveRoom, updateMessage, deleteMessage, createMessage, getRoomMembers } from "../api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -247,16 +247,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         )}
         
         <div className={cn(
-          "max-w-[80%] sm:max-w-[65%] rounded-2xl relative group",
+          "max-w-[85%] sm:max-w-[70%] min-w-[60px] rounded-2xl relative group",
           isMe 
-            ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-sm shadow-lg shadow-primary/20" 
-            : "bg-white dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-md"
+            ? "bg-primary text-primary-foreground rounded-br-sm shadow-sm" 
+            : "bg-surface-0 dark:bg-slate-800 text-foreground border border-border/40 rounded-bl-sm shadow-sm"
         )}>
           {/* Elegant Context Menu Trigger */}
-          <DropdownMenu trigger={
+          <DropdownMenu position={isMe ? "right" : "left"} trigger={
             <button 
               className={cn(
-                "absolute -right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110",
+                "absolute -right-1 top-1/2 -translate-y-1/2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110",
                 isMe 
                   ? "bg-white/20 hover:bg-white/30 text-white/80 hover:text-white" 
                   : "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-300 shadow-sm"
@@ -265,24 +265,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               <MoreHorizontal size={14} />
             </button>
           }>
-            <DropdownItem onClick={() => { setMessageToForward(msg); setForwardDialogOpen(true); }}>
-              <div className="flex items-center gap-2 py-0.5">
-                <Share className="h-4 w-4 text-slate-500" />
-                <span>{t('Forward')}</span>
-              </div>
-            </DropdownItem>
+              <DropdownItem onClick={() => { setMessageToForward(msg); setForwardDialogOpen(true); }}>
+                <div className="flex items-center gap-2 py-0.5">
+                  <CornerUpRight className="h-4 w-4 text-slate-500" />
+                  <span>{t('chat.forward', 'Forward')}</span>
+                </div>
+              </DropdownItem>
             {isMe && (
               <>
                 <DropdownItem onClick={() => handleEditMessage(msg)}>
                   <div className="flex items-center gap-2 py-0.5">
                     <Edit2 className="h-4 w-4 text-slate-500" />
-                    <span>{t('Edit')}</span>
+                    <span>{t('chat.edit', 'Edit')}</span>
                   </div>
                 </DropdownItem>
                 <DropdownItem onClick={() => { if(confirm("Delete this message?")) deleteMutation.mutate(msg.id) }}>
                   <div className="flex items-center gap-2 py-0.5 text-red-500">
                     <Trash2 className="h-4 w-4" />
-                    <span>{t('Delete')}</span>
+                    <span>{t('chat.delete', 'Delete')}</span>
                   </div>
                 </DropdownItem>
               </>
@@ -290,13 +290,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <DropdownItem onClick={() => handleInfo(msg)}>
               <div className="flex items-center gap-2 py-0.5">
                 <Info className="h-4 w-4 text-slate-500" />
-                <span>{t('Info')}</span>
+                <span>{t('chat.info', 'Info')}</span>
               </div>
             </DropdownItem>
           </DropdownMenu>
 
           {/* Message Content Container */}
-          <div className="px-3.5 py-2.5 sm:px-4 sm:py-3">
+          <div className={cn(
+            "px-2.5 pt-1.5 pb-2 sm:px-3 sm:pb-2.5",
+            !isMe && room.type !== 'private' && "pt-2"
+          )}>
             {/* Forwarded indicator */}
             {msg.meta?.forwarded_from && (
               <div className={cn(
@@ -330,16 +333,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     target="_blank" 
                     rel="noopener noreferrer"
                     className={cn(
-                      "flex items-center gap-2.5 p-2.5 rounded-xl transition-all hover:scale-[1.02]",
+                      "flex items-center gap-3 p-3 rounded-xl transition-all border",
                       isMe 
-                        ? "bg-white/10 hover:bg-white/20" 
-                        : "bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        ? "bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20" 
+                        : "bg-muted/50 border-border hover:bg-muted"
                     )}
                   >
-                    <div className={cn(
-                      "w-9 h-9 rounded-lg flex items-center justify-center",
-                      isMe ? "bg-white/20" : "bg-primary/10"
-                    )}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center">
                       {att.type?.includes('image') ? <ImageIcon size={18} className={isMe ? "text-white" : "text-primary"} /> : <FileText size={18} className={isMe ? "text-white" : "text-primary"} />}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -352,33 +352,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             )}
 
-            {/* Message Content */}
-            <div className="text-[14px] sm:text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+            {/* Message Content & Timestamp Combined */}
+            <div className="text-[14px] sm:text-[15px] leading-snug whitespace-pre-wrap break-words relative">
               {msg.content}
               {renderUrlPreview(msg.content)}
-            </div>
-
-            {/* Timestamp & Status */}
-            <div className={cn(
-              "flex items-center justify-end gap-1.5 mt-1 text-[10px]",
-              isMe ? "text-white/60" : "text-slate-400"
-            )}>
-              {msg.edited_at && (
-                <span className="italic">edited</span>
-              )}
-              <span>{formatMessageDate(msg.timestamp)}</span>
-              {isMe && (
-                <span className="flex items-center">
-                  {msg.status === 'sending' && <Clock size={11} className="animate-pulse" />}
-                  {msg.status === 'sent' && <Check size={11} />}
-                  {msg.status === 'read' && (
-                    <span className="flex text-blue-300">
-                      <Check size={11} />
-                      <Check size={11} className="-ml-1.5" />
-                    </span>
-                  )}
-                </span>
-              )}
+              
+              {/* Timestamp & Status - Floating */}
+              <span className={cn(
+                "float-right flex items-center gap-1 ml-2 mt-2 select-none text-[10px]",
+                isMe ? "text-white/70" : "text-slate-400 dark:text-slate-500"
+              )}>
+                {msg.edited_at && <span className="italic mr-0.5">edited</span>}
+                <span>{formatMessageDate(msg.timestamp)}</span>
+                {isMe && (
+                  <span className="flex items-center ml-0.5 inline-flex">
+                    {msg.status === 'sending' && <Clock size={10} className="opacity-70" />}
+                    {msg.status === 'sent' && <Check size={12} className="opacity-80" />}
+                    {msg.status === 'read' && (
+                      <div className="flex -space-x-1">
+                        <Check size={12} className="text-blue-200" />
+                        <Check size={12} className="text-blue-200" />
+                      </div>
+                    )}
+                  </span>
+                )}
+              </span>
             </div>
           </div>
         </div>
@@ -430,7 +428,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               <DropdownItem onClick={handleArchiveRoom}>
                  <div className="flex items-center text-red-500">
                    <Archive className="mr-2 h-4 w-4" />
-                   {t("chat.archive_room", "Archive Group")}
+                   {t("chat.archive_group", "Archive Group")}
                  </div>
               </DropdownItem>
             )}
@@ -546,14 +544,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Forward Dialog */}
       <Dialog open={forwardDialogOpen} onOpenChange={setForwardDialogOpen}>
           <DialogContent>
-              <DialogHeader><DialogTitle>Forward Message</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t("chat.forward_message", "Forward Message")}</DialogTitle></DialogHeader>
               <div className="py-4">
-                  <p className="mb-4 text-sm text-slate-500">Select group to forward to (Feature simplified: auto-forward to current for demo, or implement room select)</p>
+                  <p className="mb-4 text-sm text-slate-500">{t("chat.select_forward", "Select group to forward to")}</p>
                   {/* Implementing room select adds complexity. For now, prompt ID or just alert */}
                   <div className="space-y-2">
                        {/* In real app, list rooms here. For demo, we just forward to SAME room to test? Or user input? */}
                       <p className="text-xs text-yellow-600">Note: For this demo, clicking 'Forward' simulates forwarding to the same room.</p>
-                      <Button onClick={() => handleForward(room.id)}>Forward here</Button>
+                      <Button onClick={() => handleForward(room.id)}>{t("chat.forward_here", "Forward here")}</Button>
                   </div>
               </div>
           </DialogContent>
@@ -562,12 +560,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Info Dialog */}
       <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
           <DialogContent className="sm:max-w-md">
-               <DialogHeader>
-                 <DialogTitle className="flex items-center gap-2">
+                         <DialogHeader>
+                 <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                      <Info className="h-4 w-4 text-primary" />
                    </div>
-                   Message Details
+                   {t("chat.message_details", "Message Details")}
                  </DialogTitle>
                </DialogHeader>
                
@@ -585,7 +583,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                <div>
                  <div className="flex items-center gap-2 mb-3">
                    <Check className="h-4 w-4 text-primary" />
-                   <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Read by</h4>
+                   <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("chat.read_by", "Read by")}</h4>
                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                      {readers.length}
                    </span>
@@ -595,7 +593,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                    {readers.length === 0 ? (
                      <div className="flex flex-col items-center justify-center py-6 text-slate-400">
                        <Clock className="h-8 w-8 mb-2 opacity-50" />
-                       <p className="text-sm">No one has read this message yet</p>
+                       <p className="text-sm">{t("chat.no_read", "No one has read this message yet")}</p>
                      </div>
                    ) : (
                      readers.map((r: any) => (
