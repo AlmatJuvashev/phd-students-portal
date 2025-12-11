@@ -103,8 +103,8 @@ const ProfilePage = lazy(() =>
 const VerifyEmailPage = lazy(() =>
   import("@/pages/verify-email").then((m) => ({ default: m.VerifyEmailPage }))
 );
-const CalendarView = lazy(() =>
-  import("@/features/calendar").then((m) => ({ default: m.CalendarView }))
+const CalendarPage = lazy(() =>
+  import("@/features/calendar").then((m) => ({ default: m.CalendarPage }))
 );
 const AnalyticsDashboard = lazy(() =>
   import("@/features/analytics/AnalyticsDashboard").then((m) => ({ default: m.AnalyticsDashboard }))
@@ -236,7 +236,7 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ServiceProtectedRoute service="calendar">
-              {WithSuspense(<CalendarView />)}
+              {WithSuspense(<CalendarPage />)}
             </ServiceProtectedRoute>
           </ProtectedRoute>
         ),
@@ -349,7 +349,7 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             <ServiceProtectedRoute service="calendar">
-              {WithSuspense(<CalendarView />)}
+              {WithSuspense(<CalendarPage />)}
             </ServiceProtectedRoute>
           </ProtectedRoute>
         ),
