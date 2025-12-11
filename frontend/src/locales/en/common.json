@@ -14,6 +14,11 @@
     "profile": "Profile",
     "settings": "Settings"
   },
+  "search": {
+    "placeholder": "Search...",
+    "placeholder_long": "Type to search students, documents...",
+    "no_results": "No results found."
+  },
   "calendar": {
     "title": "Calendar",
     "subtitle": "Manage your deadlines and events",

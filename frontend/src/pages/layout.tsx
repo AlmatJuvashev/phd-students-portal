@@ -110,7 +110,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
             {authed && <GlobalSearch />}
           </div>
 
-          <nav className="flex items-center gap-2 text-sm shrink-0">
+          <nav className="flex items-center gap-3 text-sm shrink-0">
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-1 mr-2">
               <NavLinks />
