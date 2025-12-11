@@ -50,31 +50,7 @@
     "mark_all_read": "Барлығын оқылған деп белгілеу",
     "no_notifications": "Хабарламалар жоқ"
   },
-  "chat": {
-    "title": "Чат",
-    "subtitle": "Когорталар мен кеңесшілерге арналған бөлмелер. Хабарламалар қазір жіберіледі, live-стримді WebSocket арқылы қосамыз.",
-    "preview": "Бета",
-    "demo_notice": "API жұмыс істеп тұр; нақты уақыт режимін келесі қадамда қосамыз.",
-    "rooms_heading": "Бөлмелер",
-    "messages_heading": "Хабарламалар",
-    "room_members": "{{count}} қатысушы",
-    "input_placeholder": "Топқа жаңартуды жазыңыз…",
-    "send_disabled": "Бөлме архивте. Жіберу өшірілген.",
-    "empty_state": "Хабарламаларды көру үшін бөлмені таңдаңыз.",
-    "loading_rooms": "Бөлмелер жүктелуде…",
-    "loading_messages": "Хабарламалар жүктелуде…",
-    "send": "Жіберу",
-    "no_rooms": "Сіз әлі ешбір бөлмеге қосылмадыңыз.",
-    "archived": "Архив",
-    "live_hint": "Хабарламалар бірден сақталады; live-стрим жақында.",
-    "search_placeholder": "Чаттарды іздеу…",
-    "active_rooms": "Топтарым",
-    "types": {
-      "cohort": "Когорталық бөлме",
-      "advisory": "Кеңесші бөлмесі",
-      "admin": "Админ хабарламалары"
-    }
-  },
+
   "chat_admin": {
     "title": "Чаттар",
     "subtitle": "Когорталар мен кеңесшілер бөлмелерін жасап, қатысушыларды басқарыңыз.",
@@ -291,7 +267,50 @@
     "done_suffix": "Аяқталды",
     "congrats_title": "Құттықтаймыз!",
     "congrats_message": "Құттықтаймыз, {{name}}! Сіз диссертациялық жолды сәтті аяқтадыңыз.",
-    "student_fallback_name": "Студент"
+    "student_fallback_name": "Студент",
+    "details": "Толығырақ"
+  },
+  "chat": {
+    "title": "Хабарламалар",
+    "create_group": "Топ құру",
+    "input_placeholder": "Топқа жаңартуды жазыңыз…",
+    "send_disabled": "Бөлме архивте. Жіберу өшірілген.",
+    "empty_state": "Хабарламаларды көру үшін бөлмені таңдаңыз.",
+    "loading_messages": "Хабарламалар жүктелуде…",
+    "room_members": "{{count}} қатысушы",
+    "live_hint": "Хабарламалар бірден сақталады; live-стрим жақында.",
+    "active_rooms": "Топтарым",
+    "types": {
+      "cohort": "Когорталық бөлме",
+      "advisory": "Кеңесші бөлмесі",
+      "admin": "Админ хабарламалары"
+    },
+    "search_placeholder": "Чаттарды іздеу...",
+    "loading_rooms": "Жүктелуде...",
+    "no_rooms": "Чаттар табылмады",
+    "you": "Сіз",
+    "no_messages": "Әзірге хабарлама жоқ",
+    "room_details": "Топ туралы",
+    "participants": "қатысушылар",
+    "add_member": "Қатысушы қосу",
+    "archive_group": "Топты мұрағаттау",
+    "type_message": "Хабарлама жазыңыз...",
+    "edit_placeholder": "Хабарламаны өңдеу...",
+    "group_name": "Топ аты",
+    "group_name_placeholder": "мысалы, Диссертация талқылауы",
+    "group_type": "Түрі",
+    "type_group": "Топ (Жеке)",
+    "type_channel": "Арна (Хабар тарату)",
+    "edit": "Өзгерту",
+    "delete": "Жою",
+    "info": "Ақпарат",
+    "forward": "Жіберу",
+    "confirm_archive": "Бұл топты мұрағаттағыңыз келе ме?",
+    "read_by": "Оқылды",
+    "no_read": "Әлі ешкім оқыған жоқ",
+    "message_details": "Хабарлама мәліметтері",
+    "group": "Топ",
+    "demo_forward_note": "Ескертпе: Демонстрация үшін «Жіберу» хабарламаны сол бөлмеге қайта жібереді."
   },
   "fields": {
     "full_name": "Тегі Аты Әкесінің аты",
@@ -831,5 +850,33 @@
       "approved": "Қабылданды",
       "rejected": "Түзетуді қажет етеді"
     }
+  },
+  "monitor": {
+    "journey_map": "Жол картасы",
+    "current_stage_nodes": "Ағымдағы тапсырмалар",
+    "nodes_count": "{{count}} тапсырма",
+    "loading_nodes": "Жүктелуде...",
+    "no_nodes": "Тапсырмалар жоқ",
+    "docs_review": "Құжаттар",
+    "select_node_hint": "Тапсырманы таңдаңыз",
+    "select_node_empty": "Тапсырманы таңдаңыз",
+    "no_files": "{{id}} үшін файлдар жоқ",
+    "files_count": "{{count}} файл",
+    "no_details": "Детальдар жоқ",
+    "comments_notes": "Пікірлер",
+    "add_comment": "Пікір қосу...",
+    "attach_file": "Тіркеу",
+    "post_comment": "Жіберу",
+    "download": "Жүктеу",
+    "request_changes": "Түзету сұрау",
+    "approve": "Мақұлдау",
+    "approved": "Мақұлданды",
+    "changes_requested": "Түзетулер сұралды",
+    "review_pending": "Күтуде",
+    "mark_done_success": "Орындалды деп белгіленді",
+    "deadline_set_success": "Мерзім қойылды",
+    "doc_approved": "Құжат мақұлданды",
+    "change_req_success": "Түзетулер сұралды",
+    "action_failed": "Қате"
   }
 }

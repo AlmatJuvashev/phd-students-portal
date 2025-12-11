@@ -164,12 +164,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
   };
 
-  const handleForward = (roomTargetId: string) => {
+  const handleForward = async (roomTargetId: string) => {
       if (messageToForward) {
-          createMessage(roomTargetId, messageToForward.content, [], undefined, { forwarded_from: messageToForward.senderName });
-          setForwardDialogOpen(false);
-          setMessageToForward(null);
-          alert("Forwarded!");
+          try {
+            await createMessage(roomTargetId, messageToForward.content, [], undefined, { forwarded_from: messageToForward.senderName });
+            setForwardDialogOpen(false);
+            setMessageToForward(null);
+            alert("Forwarded!");
+          } catch (e) {
+            console.error("Failed to forward:", e);
+            alert("Failed to forward message.");
+          }
       }
   };
 
@@ -548,9 +553,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               <div className="py-4">
                   <p className="mb-4 text-sm text-slate-500">{t("chat.select_forward", "Select group to forward to")}</p>
                   {/* Implementing room select adds complexity. For now, prompt ID or just alert */}
-                  <div className="space-y-2">
+                   <div className="space-y-2">
                        {/* In real app, list rooms here. For demo, we just forward to SAME room to test? Or user input? */}
-                      <p className="text-xs text-yellow-600">Note: For this demo, clicking 'Forward' simulates forwarding to the same room.</p>
+                      <p className="text-xs text-yellow-600">{t('chat.demo_forward_note', "Note: For this demo, clicking 'Forward' simulates forwarding to the same room.")}</p>
                       <Button onClick={() => handleForward(room.id)}>{t("chat.forward_here", "Forward here")}</Button>
                   </div>
               </div>
