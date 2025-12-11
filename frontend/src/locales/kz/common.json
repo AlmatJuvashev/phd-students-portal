@@ -17,7 +17,10 @@
   "search": {
     "placeholder": "Іздеу...",
     "placeholder_long": "Студенттерді, құжаттарды іздеу...",
-    "no_results": "Нәтижелер табылмады."
+    "no_results": "Нәтижелер табылмады.",
+    "searching": "Іздеу...",
+    "students": "Студенттер",
+    "documents": "Құжаттар"
   },
   "calendar": {
     "title": "Күнтізбе",

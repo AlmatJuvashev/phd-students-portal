@@ -17,7 +17,10 @@
   "search": {
     "placeholder": "Поиск...",
     "placeholder_long": "Поиск студентов, документов...",
-    "no_results": "Результатов не найдено."
+    "no_results": "Результатов не найдено.",
+    "searching": "Поиск...",
+    "students": "Студенты",
+    "documents": "Документы"
   },
   "calendar": {
     "title": "Календарь",

@@ -17,7 +17,10 @@
   "search": {
     "placeholder": "Search...",
     "placeholder_long": "Type to search students, documents...",
-    "no_results": "No results found."
+    "no_results": "No results found.",
+    "searching": "Searching...",
+    "students": "Students",
+    "documents": "Documents"
   },
   "calendar": {
     "title": "Calendar",
