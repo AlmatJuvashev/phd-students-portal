@@ -27,7 +27,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
-import { NotificationCenter } from "@/components/NotificationCenter";
+import { AdminNotificationCenter } from "@/components/AdminNotificationCenter";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
@@ -307,7 +307,7 @@ export function AdminLayout() {
           <div className="flex items-center gap-3">
             <TenantSwitcher />
             <LanguageSwitcher />
-            <NotificationCenter />
+            <AdminNotificationCenter />
             <span className="text-xs px-2 py-1 rounded bg-muted">
               {user?.role}
             </span>
