@@ -50,31 +50,8 @@
     "mark_all_read": "Отметить все прочитанными",
     "no_notifications": "Нет уведомлений"
   },
-  "chat": {
-    "title": "Чат",
-    "subtitle": "Групповые комнаты для потоков и консультаций. Сообщения отправляются сейчас, live-стрим добавим через WebSocket.",
-    "preview": "Бета",
-    "demo_notice": "API уже работает; онлайн-доставку подключим следующей итерацией.",
-    "rooms_heading": "Комнаты",
-    "messages_heading": "Переписка",
-    "room_members": "{{count}} участников",
-    "input_placeholder": "Поделитесь обновлением с группой…",
-    "send_disabled": "Комната архивирована. Отправка выключена.",
-    "empty_state": "Выберите комнату, чтобы увидеть сообщения.",
-    "loading_rooms": "Загружаем комнаты…",
-    "loading_messages": "Загружаем сообщения…",
-    "send": "Отправить",
-    "no_rooms": "Вы пока не добавлены ни в одну комнату.",
-    "archived": "Архив",
-    "live_hint": "Сообщения сохраняются сразу; live-стрим скоро.",
-    "search_placeholder": "Поиск чатов…",
-    "active_rooms": "Мои группы",
-    "types": {
-      "cohort": "Комната потока",
-      "advisory": "Комната консультанта",
-      "admin": "Админ-объявления"
-    }
-  },
+
+
   "chat_admin": {
     "title": "Чаты",
     "subtitle": "Создавайте комнаты потоков и консультантов, управляйте доступом.",
@@ -291,7 +268,50 @@
     "done_suffix": "Выполнено",
     "congrats_title": "Поздравляем!",
     "congrats_message": "Поздравляем, {{name}}! Вы успешно завершили путь по защите диссертации.",
-    "student_fallback_name": "Студент"
+    "student_fallback_name": "Студент",
+    "details": "Подробнее"
+  },
+  "chat": {
+    "title": "Сообщения",
+    "create_group": "Создать группу",
+    "input_placeholder": "Поделитесь обновлением с группой…",
+    "send_disabled": "Комната архивирована. Отправка выключена.",
+    "empty_state": "Выберите комнату, чтобы увидеть сообщения.",
+    "loading_messages": "Загружаем сообщения…",
+    "room_members": "{{count}} участников",
+    "live_hint": "Сообщения сохраняются сразу; live-стрим скоро.",
+    "active_rooms": "Мои группы",
+    "types": {
+      "cohort": "Комната потока",
+      "advisory": "Комната консультанта",
+      "admin": "Админ-объявления"
+    },
+    "search_placeholder": "Поиск чатов...",
+    "loading_rooms": "Загрузка...",
+    "no_rooms": "Чаты не найдены",
+    "you": "Вы",
+    "no_messages": "Сообщений пока нет",
+    "room_details": "Информация о группе",
+    "participants": "участники",
+    "add_member": "Добавить участника",
+    "archive_group": "Архивировать группу",
+    "type_message": "Введите сообщение...",
+    "edit_placeholder": "Редактировать сообщение...",
+    "group_name": "Название группы",
+    "group_name_placeholder": "напр. Обсуждение диссертации",
+    "group_type": "Тип",
+    "type_group": "Группа (Приватная)",
+    "type_channel": "Канал (Вещание)",
+    "edit": "Изменить",
+    "delete": "Удалить",
+    "info": "Инфо",
+    "forward": "Переслать",
+    "confirm_archive": "Вы уверены, что хотите архивировать эту группу?",
+    "read_by": "Прочитано",
+    "no_read": "Ещё никто не прочитал",
+    "message_details": "Детали сообщения",
+    "group": "Группа",
+    "demo_forward_note": "Примечание: В демо-режиме «Переслать» отправляет сообщение в ту же комнату."
   },
   "fields": {
     "full_name": "ФИО",
@@ -833,7 +853,33 @@
       "approved": "Одобрено",
       "rejected": "Требует правок"
     }
+  },
+  "monitor": {
+    "journey_map": "Карта пути",
+    "current_stage_nodes": "Задачи тек. этапа",
+    "nodes_count": "{{count}} задач",
+    "loading_nodes": "Загрузка...",
+    "no_nodes": "Нет задач",
+    "docs_review": "Документы",
+    "select_node_hint": "Выберите задачу",
+    "select_node_empty": "Выберите задачу",
+    "no_files": "Нет файлов для {{id}}",
+    "files_count": "{{count}} файлов",
+    "no_details": "Нет деталей",
+    "comments_notes": "Комментарии",
+    "add_comment": "Добавить комментарий...",
+    "attach_file": "Прикрепить",
+    "post_comment": "Опубликовать",
+    "download": "Скачать",
+    "request_changes": "Запросить правки",
+    "approve": "Одобрить",
+    "approved": "Одобрено",
+    "changes_requested": "Запрошены правки",
+    "review_pending": "Ожидает",
+    "mark_done_success": "Отмечено готовым",
+    "deadline_set_success": "Дедлайн установлен",
+    "doc_approved": "Документ одобрен",
+    "change_req_success": "Правки запрошены",
+    "action_failed": "Ошибка"
   }
-
-
 }
