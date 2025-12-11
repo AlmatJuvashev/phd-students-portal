@@ -9,6 +9,7 @@ interface MonthViewProps {
   events: CalendarEvent[];
   onSelectEvent: (event: CalendarEvent) => void;
   onSelectSlot: (date: Date) => void;
+  onEventDrop: (event: CalendarEvent, newStart: Date) => void;
 }
 
 const TYPE_STYLES: Record<EventType, string> = {
@@ -20,7 +21,7 @@ const TYPE_STYLES: Record<EventType, string> = {
   deadline: 'bg-orange-100 text-orange-700 border-l-2 border-orange-500',
 };
 
-export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSelectEvent, onSelectSlot }) => {
+export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSelectEvent, onSelectSlot, onEventDrop }) => {
   const { t } = useTranslation();
   
   const monthStart = startOfMonth(currentDate);
@@ -39,6 +40,29 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
     t('calendar.days.sat', 'Sat'),
     t('calendar.days.sun', 'Sun'),
   ];
+
+  const handleDragStart = (e: React.DragEvent, event: CalendarEvent) => {
+    e.dataTransfer.setData('eventId', event.id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, date: Date) => {
+    e.preventDefault();
+    const eventId = e.dataTransfer.getData('eventId');
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+        // Preserve original time when dropping on a day in month view
+        const newStart = new Date(date);
+        const originalStart = new Date(event.start);
+        newStart.setHours(originalStart.getHours(), originalStart.getMinutes());
+        onEventDrop(event, newStart);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -61,6 +85,8 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
             <div 
               key={day.toISOString()}
               onClick={() => onSelectSlot(day)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, day)}
               className={cn(
                 "min-h-[100px] bg-white p-1 transition-colors relative group hover:bg-slate-50 cursor-pointer",
                 !isCurrentMonth && "bg-slate-50/50 text-slate-400"
@@ -81,19 +107,21 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
               {/* Events List */}
               <div className="flex flex-col gap-1 overflow-hidden max-h-[calc(100%-2rem)]">
                 {dayEvents.slice(0, 3).map(event => (
-                  <button
+                  <div
                     key={event.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, event)}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelectEvent(event);
                     }}
                     className={cn(
-                      "w-full text-left px-1.5 py-0.5 text-[10px] font-medium rounded-sm truncate transition-transform hover:scale-[1.02]",
+                      "w-full text-left px-1.5 py-0.5 text-[10px] font-medium rounded-sm truncate transition-transform hover:scale-[1.02] cursor-move",
                       TYPE_STYLES[event.type as EventType]
                     )}
                   >
                     {format(new Date(event.start), 'HH:mm')} {event.title}
-                  </button>
+                  </div>
                 ))}
                 {dayEvents.length > 3 && (
                   <span className="text-[10px] text-slate-400 font-medium pl-1">

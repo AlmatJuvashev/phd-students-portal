@@ -329,6 +329,7 @@ export const CalendarView: React.FC = () => {
                         events={filteredEvents}
                         onSelectEvent={handleSelectEvent}
                         onSelectSlot={handleSelectSlot}
+                        onEventDrop={handleEventDrop}
                      />
                  ) : (
                      <WeekDayView 
@@ -337,6 +338,7 @@ export const CalendarView: React.FC = () => {
                         events={filteredEvents}
                         onSelectEvent={handleSelectEvent}
                         onSelectSlot={handleSelectSlot}
+                        onEventDrop={handleEventDrop}
                      />
                  )}
             </motion.div>
