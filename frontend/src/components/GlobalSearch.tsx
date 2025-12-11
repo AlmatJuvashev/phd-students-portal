@@ -98,7 +98,7 @@ export function GlobalSearch() {
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Searching...
+                    {t("search.searching", { defaultValue: "Searching..." })}
                   </div>
                 ) : (
                   t("search.no_results", { defaultValue: "No results found." })
@@ -108,7 +108,7 @@ export function GlobalSearch() {
               {results.length > 0 && (
                 <>
                   {results.some(r => r.type === 'student') && (
-                    <Command.Group heading="Students">
+                    <Command.Group heading={t("search.students", { defaultValue: "Students" })}>
                       {results.filter(r => r.type === 'student').map((item) => (
                         <Command.Item
                           key={item.id}
@@ -127,7 +127,7 @@ export function GlobalSearch() {
                   )}
 
                   {results.some(r => r.type === 'document') && (
-                    <Command.Group heading="Documents">
+                    <Command.Group heading={t("search.documents", { defaultValue: "Documents" })}>
                       {results.filter(r => r.type === 'document').map((item) => (
                         <Command.Item
                           key={item.id}
