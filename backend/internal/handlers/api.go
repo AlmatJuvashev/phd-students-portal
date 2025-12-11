@@ -41,6 +41,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			if strings.HasPrefix(origin, "http://127.0.0.1:") || strings.HasPrefix(origin, "https://127.0.0.1:") {
 				return true
 			}
+			// Allow *.localhost for local multitenancy testing
+			if strings.Contains(origin, ".localhost:") {
+				return true
+			}
 			// Allow subdomain-based tenant URLs (e.g., kaznmu.phd-portal.kz)
 			// Parse configured frontend base to extract the main domain
 			if cleanedFrontendBase != "" {
