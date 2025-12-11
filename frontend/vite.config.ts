@@ -81,11 +81,11 @@ export default defineConfig({
     proxy: {
       '/uploads': {
         target: 'http://127.0.0.1:8280',
-        changeOrigin: true,
+        changeOrigin: false,
       },
       '/api': {
          target: 'http://127.0.0.1:8280',
-         changeOrigin: true,
+         changeOrigin: false,
       }
     }
   },
