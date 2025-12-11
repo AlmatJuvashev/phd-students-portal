@@ -850,13 +850,14 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		StudentID  string `db:"user_id"`
 		State      string `db:"state"`
 		TenantID   string `db:"tenant_id"`
+		Filename   string `db:"filename"`
 	}
-	err = tx.QueryRowx(`SELECT ni.id AS instance_id, s.id AS slot_id, s.slot_key, ni.node_id, ni.user_id, ni.state, ni.tenant_id
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, s.id AS slot_id, s.slot_key, ni.node_id, ni.user_id, ni.state, COALESCE(ni.tenant_id, a.tenant_id) as tenant_id, a.filename
 		FROM node_instance_slot_attachments a
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		JOIN node_instances ni ON ni.id=s.node_instance_id
 		WHERE a.id=$1 AND a.is_active=true`, attachmentID).
-		Scan(&meta.InstanceID, &meta.SlotID, &meta.SlotKey, &meta.NodeID, &meta.StudentID, &meta.State, &meta.TenantID)
+		Scan(&meta.InstanceID, &meta.SlotID, &meta.SlotKey, &meta.NodeID, &meta.StudentID, &meta.State, &meta.TenantID, &meta.Filename)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(404, gin.H{"error": "attachment not found"})
@@ -988,7 +989,6 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	
 	// If node is now done, activate next nodes in playbook
 	if newState == "done" && newState != meta.State {
 		log.Printf("[ReviewAttachment] Node %s is done, activating next nodes for tenant %s", meta.NodeID, meta.TenantID)
@@ -996,6 +996,34 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 			log.Printf("[ReviewAttachment] Failed to activate next nodes: %v", err)
 			// Don't fail the request, just log the error
 		}
+	}
+	
+	// Notify Student
+	title := "Document Reviewed: " + meta.Filename
+	msg := "Your document has been reviewed."
+	if body.Status == "approved" || body.Status == "approved_with_comments" {
+		msg = "Your document has been approved."
+	} else if body.Status == "rejected" {
+		msg = "Changes requested for your document."
+		if body.Note != "" { // Changed from body.Message to body.Note
+			msg += " Note: " + body.Note
+		}
+	}
+	
+	// Create notification if tenantID is available (should be from middleware)
+	if meta.TenantID != "" { // Using meta.TenantID
+		_, err = tx.Exec(`INSERT INTO notifications (id, user_id, title, message, link, type, tenant_id) 
+			VALUES (gen_random_uuid(), $1, $2, $3, '/journey', 'document_review', $4)`, 
+			meta.StudentID, title, msg, meta.TenantID) // Using meta.TenantID
+		if err != nil {
+			log.Printf("[ReviewAttachment] Failed to create notification: %v", err)
+			// Don't fail the transaction for notification failure
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 	
 	var resp struct {

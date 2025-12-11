@@ -16,6 +16,9 @@ import {
   patchStudentNodeState,
   fetchDeadlines,
   putDeadline,
+  fetchStudentNodeFiles,
+  type NodeFileRow,
+  reviewAttachment,
 } from "../api";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +26,6 @@ import {
   FileText,
   Mail,
   Copy,
-  Plus,
-  ExternalLink,
   CheckCircle2,
   Circle,
   Clock,
@@ -32,7 +33,14 @@ import {
   Lock,
   Send,
   FileSearch,
+  Paperclip,
+  Download,
+  ThumbsUp,
+  ThumbsDown,
+  Loader2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useToast } from "@/components/ui/use-toast";
 
 type NodeState =
   | "locked"
@@ -88,6 +96,7 @@ const STAGES = [
   { id: "W5", label: "Restoration" },
   { id: "W6", label: "After DC acceptance" },
   { id: "W7", label: "Defense & Post-defense" },
+  { id: "W7 (PhD)", label: "Defense & Post-defense" },
 ];
 
 export function StudentDetailDrawer({
@@ -110,13 +119,27 @@ export function StudentDetailDrawer({
     advisors?: { id: string; name: string }[];
   } | null;
 }) {
+  const { t } = useTranslation("common");
+  const { toast } = useToast();
   const [nodes, setNodes] = React.useState<JourneyNode[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [deadlines, setDeadlines] = React.useState<Record<string, string>>({});
   const [comment, setComment] = React.useState("");
+  
+  // Selection & Docs
+  const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null);
+  const [nodeFiles, setNodeFiles] = React.useState<NodeFileRow[]>([]);
+  const [loadingFiles, setLoadingFiles] = React.useState(false);
 
+  // When drawer opens or student changes, fetch journey
   React.useEffect(() => {
-    if (!open || !student) return;
+    if (!open || !student) {
+      setNodes([]);
+      setDeadlines({});
+      setSelectedNodeId(null);
+      setNodeFiles([]);
+      return;
+    }
     setLoading(true);
     Promise.all([
       fetchStudentJourney(student.id).then((d) => setNodes(d.nodes)),
@@ -132,59 +155,105 @@ export function StudentDetailDrawer({
     ]).finally(() => setLoading(false));
   }, [open, student?.id]);
 
+  // When selected node changes, fetch its files
+  React.useEffect(() => {
+    if (!student || !selectedNodeId) {
+      setNodeFiles([]);
+      return;
+    }
+    setLoadingFiles(true);
+    fetchStudentNodeFiles(student.id, selectedNodeId)
+      .then(setNodeFiles)
+      .catch((err) => {
+        console.error("Failed to fetch node files", err);
+        toast({ title: "Error", description: "Failed to load files", variant: "destructive" });
+      })
+      .finally(() => setLoadingFiles(false));
+  }, [student?.id, selectedNodeId]);
+
   async function confirm(nodeId: string) {
     if (!student) return;
     await patchStudentNodeState(student.id, nodeId, "done");
     const d = await fetchStudentJourney(student.id);
     setNodes(d.nodes);
+    toast({ title: "Success", description: "Node marked as done" });
   }
 
   async function setDue(nodeId: string, due: string) {
     if (!student) return;
     await putDeadline(student.id, nodeId, due);
     setDeadlines((prev) => ({ ...prev, [nodeId]: due }));
+    toast({ title: "Success", description: "Deadline set" });
+  }
+
+  async function handleReview(attachmentId: string, status: "approved" | "rejected") {
+    try {
+      if (!student || !selectedNodeId) return;
+      await reviewAttachment(attachmentId, { status });
+      toast({ title: "Success", description: status === "approved" ? "Document approved" : "Changes requested" });
+      // refresh files
+      const files = await fetchStudentNodeFiles(student.id, selectedNodeId);
+      setNodeFiles(files);
+      // refresh journey to update state if needed
+      const d = await fetchStudentJourney(student.id);
+      setNodes(d.nodes);
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "Action failed", variant: "destructive" });
+    }
   }
 
   if (!student) return null;
 
+  const selectedNode = nodes.find(n => n.node_id === selectedNodeId);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[600px] w-full overflow-y-auto">
-        <SheetHeader className="space-y-4">
+      <SheetContent className="sm:max-w-[700px] w-full overflow-y-auto p-0 gap-0 flex flex-col h-full bg-background/95 backdrop-blur-xl">
+        <SheetHeader className="px-6 py-6 border-b bg-muted/40 sticky top-0 z-10">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 border-2">
-                <AvatarFallback className="bg-primary/10 text-primary text-lg">
+              <Avatar className="h-16 w-16 border-2 ring-2 ring-background shadow-sm">
+                <AvatarFallback className="bg-primary/10 text-primary text-xl font-medium">
                   {student.name
-                    .split(" ")
+                    ?.split(" ")
                     .map((n) => n[0])
                     .join("")
-                    .slice(0, 2)}
+                    .slice(0, 2) || "??"}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <SheetTitle className="text-2xl">{student.name}</SheetTitle>
-                <SheetDescription className="text-base">
-                  {student.id}
-                </SheetDescription>
+                <SheetTitle className="text-2xl font-bold tracking-tight">{student.name}</SheetTitle>
+                <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                  <Badge variant="secondary" className="font-normal text-xs px-2 py-0.5 h-auto">
+                    {student.id}
+                  </Badge>
+                  {student.email && (
+                    <span className="text-sm flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      {student.email}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mt-4">
             {student.program && (
-              <Badge
-                variant="outline"
-                className="bg-primary/5 text-primary border-primary/20"
-              >
+              <Badge variant="outline" className="bg-background/50 backdrop-blur-sm">
                 {student.program}
               </Badge>
             )}
             {student.department && (
-              <Badge variant="outline">{student.department}</Badge>
+              <Badge variant="outline" className="bg-background/50 backdrop-blur-sm truncate max-w-[200px]" title={student.department}>
+                {student.department}
+              </Badge>
             )}
             {student.cohort && (
-              <Badge variant="outline">{student.cohort}</Badge>
+              <Badge variant="outline" className="bg-background/50 backdrop-blur-sm">
+                {student.cohort}
+              </Badge>
             )}
             {student.rp_required && (
               <Badge
@@ -195,64 +264,42 @@ export function StudentDetailDrawer({
               </Badge>
             )}
           </div>
-
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1 gap-2"
-              disabled
-            >
-              <Copy className="h-4 w-4" />
-              Copy Link
-            </Button>
-          </div>
-
-          <div className="text-sm space-y-1">
-            {student.email && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                {student.email}
-              </div>
-            )}
-          </div>
-
-          <Separator />
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* Journey Map */}
           <div>
-            <h3 className="text-sm font-medium mb-4">Journey Map</h3>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            <h3 className="text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">Journey Map</h3>
+            <div className="flex items-center gap-2 overflow-x-auto pb-4 px-1 -mx-1 snap-x">
               {STAGES.filter(
                 (stage) => stage.id !== "W3" || student.rp_required
               ).map((stage, idx, arr) => {
                 const currentStageIdx = STAGES.findIndex(
-                  (s) => s.id === student.current_stage
+                  (s) => s.id === (student.current_stage || "W1")
                 );
                 const thisStageIdx = STAGES.findIndex((s) => s.id === stage.id);
-                const isCurrent = stage.id === student.current_stage;
+                // Simple logic: if this index < current, it's done. if equal, active.
+                const isCurrent = student.current_stage === stage.id;
                 const isCompleted = currentStageIdx > thisStageIdx;
 
                 return (
                   <div
                     key={stage.id}
-                    className="flex items-center flex-shrink-0"
+                    className="flex items-center flex-shrink-0 snap-start"
                   >
                     <div
-                      className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
                         isCurrent
-                          ? "bg-primary text-primary-foreground shadow-md scale-105"
+                          ? "bg-primary text-primary-foreground border-primary shadow-md ring-2 ring-primary/20"
                           : isCompleted
-                          ? "bg-green-100 text-green-800"
-                          : "bg-muted text-muted-foreground"
+                          ? "bg-green-100 text-green-800 border-green-200"
+                          : "bg-muted/50 text-muted-foreground border-transparent"
                       }`}
                     >
                       {stage.label}
                     </div>
                     {idx < arr.length - 1 && (
-                      <div className="w-8 h-0.5 bg-border mx-1 flex-shrink-0" />
+                      <div className={`w-8 h-[2px] mx-1 flex-shrink-0 rounded-full ${isCompleted ? 'bg-green-200' : 'bg-border'}`} />
                     )}
                   </div>
                 );
@@ -262,27 +309,26 @@ export function StudentDetailDrawer({
 
           <Separator />
 
-          {/* Stage Checklist */}
+          {/* Stage Nodes */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium">
-                Current Stage:{" "}
-                {STAGES.find((s) => s.id === student.current_stage)?.label ||
-                  "—"}
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                Current Stage Nodes
               </h3>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="secondary" className="text-xs font-normal">
                 {nodes.length} nodes
               </Badge>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {loading ? (
-                <div className="text-center py-8 text-sm text-muted-foreground">
+                <div className="col-span-2 flex justify-center py-12 text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
                   Loading nodes...
                 </div>
               ) : nodes.length === 0 ? (
-                <div className="text-center py-8 text-sm text-muted-foreground">
-                  No nodes available
+                <div className="col-span-2 text-center py-12 text-sm text-muted-foreground border-2 border-dashed rounded-xl">
+                  No nodes available for this stage
                 </div>
               ) : (
                 nodes.map((node) => (
@@ -291,6 +337,9 @@ export function StudentDetailDrawer({
                     id={node.node_id}
                     state={node.state as NodeState}
                     dueDate={deadlines[node.node_id]}
+                    attachments={node.attachments || 0}
+                    selected={selectedNodeId === node.node_id}
+                    onSelect={() => setSelectedNodeId(node.node_id)}
                     onSetDue={(due) => setDue(node.node_id, due)}
                     onConfirm={() => confirm(node.node_id)}
                   />
@@ -301,11 +350,117 @@ export function StudentDetailDrawer({
 
           <Separator />
 
-          {/* Documents */}
-          <div>
-            <h3 className="text-sm font-medium mb-3">Documents & Templates</h3>
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              No documents uploaded yet
+          {/* Documents & Review */}
+          <div id="documents-section" className="scroll-mt-6">
+             <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Documents & Reviewing</h3>
+                <p className="text-xs text-muted-foreground">
+                  {selectedNodeId ? `Files for node ${selectedNodeId}` : "Select a node above to view files"}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-muted/30 border rounded-xl p-4 min-h-[150px]">
+              {!selectedNodeId ? (
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground/60 py-8">
+                  <FileSearch className="h-10 w-10 mb-2 opacity-50" />
+                  <p className="text-sm">Select a node from the list above to view uploaded documents</p>
+                </div>
+              ) : loadingFiles ? (
+                <div className="h-full flex items-center justify-center text-muted-foreground py-8">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Loading files...
+                </div>
+              ) : nodeFiles.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground py-8">
+                  <FileText className="h-10 w-10 mb-2 opacity-50" />
+                  <p className="text-sm">No files uploaded for {selectedNodeId}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {nodeFiles.map((file) => (
+                    <div key={file.attachment_id} className="bg-background border rounded-lg p-3 shadow-sm transition-all hover:shadow-md">
+                      <div className="flex items-start justify-between gap-3">
+                         <div className="flex items-center gap-3 overflow-hidden">
+                           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+                             <FileText className="h-5 w-5" />
+                           </div>
+                           <div className="min-w-0">
+                             <div className="text-sm font-medium truncate" title={file.filename}>
+                               {file.filename}
+                             </div>
+                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                               <span>{(file.size_bytes / 1024 / 1024).toFixed(2)} MB</span>
+                               <span>•</span>
+                               <span>{new Date(file.attached_at || "").toLocaleDateString()}</span>
+                               {file.uploaded_by && (
+                                 <>
+                                  <span>•</span>
+                                  <span>{file.uploaded_by}</span>
+                                 </>
+                               )}
+                             </div>
+                           </div>
+                         </div>
+                         
+                         <div className="flex-shrink-0">
+                            {file.status === "approved" ? (
+                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Approved
+                              </Badge>
+                            ) : file.status === "rejected" ? (
+                              <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Changes Requested
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Review Pending
+                              </Badge>
+                            )}
+                         </div>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between pt-3 border-t">
+                        <a 
+                          href={file.download_url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-xs flex items-center gap-1 text-primary hover:underline font-medium"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </a>
+                        
+                        {(file.status === "submitted" || file.status === "rejected") && (
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleReview(file.attachment_id, "rejected")}
+                            >
+                              <ThumbsDown className="h-3 w-3 mr-1" />
+                              Request Changes
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => handleReview(file.attachment_id, "approved")}
+                            >
+                              <ThumbsUp className="h-3 w-3 mr-1" />
+                              Approve
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -313,18 +468,17 @@ export function StudentDetailDrawer({
 
           {/* Comments */}
           <div>
-            <h3 className="text-sm font-medium mb-3">Comments & Notes</h3>
+            <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Comments & Notes</h3>
             <div className="space-y-2">
               <Textarea
                 placeholder="Add a comment... Use @ to mention advisors"
-                className="min-h-[80px]"
+                className="min-h-[80px] resize-none"
                 value={comment}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                  setComment(e.target.value)
-                }
+                onChange={(e) => setComment(e.target.value)}
               />
               <div className="flex justify-end gap-2">
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Paperclip className="h-3.5 w-3.5" />
                   Attach File
                 </Button>
                 <Button size="sm" disabled={!comment.trim()}>
@@ -333,8 +487,6 @@ export function StudentDetailDrawer({
               </div>
             </div>
           </div>
-
-
         </div>
       </SheetContent>
     </Sheet>
@@ -345,52 +497,94 @@ function NodeCard({
   id,
   state,
   dueDate,
+  attachments = 0,
+  selected = false,
+  onSelect,
   onSetDue,
   onConfirm,
 }: {
   id: string;
   state: NodeState;
   dueDate?: string;
+  attachments?: number;
+  selected?: boolean;
+  onSelect: () => void;
   onSetDue: (due: string) => void;
   onConfirm: () => void;
 }) {
-  const stateConfig = nodeStates[state];
-  const StateIcon = stateConfig.icon;
+  const stateConfig = nodeStates[state] || nodeStates.active;
+  const StateIcon = stateConfig?.icon || Circle;
+
+  // Visual hint: orange dot if pending review (submitted/under_review)
+  const isPendingReview = state === "submitted" || state === "under_review";
 
   return (
-    <div className="p-4 rounded-lg border hover:shadow-md transition-all">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <code className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+    <div 
+      className={`
+        p-4 rounded-xl border transition-all cursor-pointer relative group
+        ${selected 
+          ? "bg-primary/5 border-primary ring-1 ring-primary shadow-sm" 
+          : "bg-card hover:border-primary/50 hover:shadow-md"
+        }
+      `}
+      onClick={onSelect}
+    >
+      {/* Pending status dot */}
+      {isPendingReview && (
+        <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-white shadow-sm animate-pulse" title="Needs Review" />
+      )}
+
+      <div className="flex flex-col h-full justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <code className="text-[10px] font-mono font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
               {id}
             </code>
-            <Badge variant="outline" className={`text-xs ${stateConfig.color}`}>
+            <Badge variant="secondary" className={`text-[10px] font-medium px-1.5 py-0 border ${stateConfig.color}`}>
               <StateIcon className="h-3 w-3 mr-1" />
               {stateConfig.label}
             </Badge>
           </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-        {dueDate && (
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {new Date(dueDate).toLocaleString()}
+          
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+             {attachments > 0 && (
+               <div className="flex items-center gap-1 font-medium text-foreground">
+                 <Paperclip className="h-3 w-3" />
+                 {attachments} files
+               </div>
+             )}
+             {dueDate && (
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                {new Date(dueDate).toLocaleDateString()}
+              </div>
+             )}
+             {!attachments && !dueDate && (
+               <span className="text-muted-foreground/50 italic">No details</span>
+             )}
           </div>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <input
-          type="datetime-local"
-          aria-label="Set due date"
-          className="flex-1 border rounded-md px-3 py-2 text-sm"
-          value={dueDate ? dueDate.slice(0, 16) : ""}
-          onChange={(e) => onSetDue(e.target.value)}
-        />
-        <Button size="sm" variant="outline" onClick={onConfirm}>
-          Mark Done
-        </Button>
+        </div>
+
+        <div className="flex gap-2 pt-2 mt-auto border-t border-border/50" onClick={e => e.stopPropagation()}>
+          <div className="relative flex-1">
+             <input
+              type="date"
+              aria-label="Set due date"
+              className="w-full text-xs border rounded-md px-2 py-1.5 bg-background hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+              value={dueDate ? dueDate.slice(0, 10) : ""}
+              onChange={(e) => onSetDue(e.target.value)}
+            />
+          </div>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 px-2 text-xs hover:bg-green-50 hover:text-green-700"
+            onClick={onConfirm}
+            title="Mark as Done"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
