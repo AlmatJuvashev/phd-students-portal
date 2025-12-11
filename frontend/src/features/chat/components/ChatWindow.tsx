@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Paperclip, MoreHorizontal, Image as ImageIcon, FileText, Check, Clock, CloudDownload, Archive, Reply, Trash2, Edit2, Info, Share, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, MoreHorizontal, Image as ImageIcon, FileText, Check, Clock, CloudDownload, Archive, Reply, Trash2, Edit2, Info, Share, ExternalLink, X } from 'lucide-react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { archiveRoom, updateMessage, deleteMessage, createMessage, getRoomMembers } from "../api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -119,11 +119,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      if (editingMessage) {
+        handleUpdate();
+      } else {
+        handleSendMessage();
+      }
     }
   };
 
-      const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const cancelEdit = () => {
+    setEditingMessage(null);
+    setInputValue("");
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
           setSelectedFiles(prev => [...prev, ...Array.from(e.target.files || [])]);
       }
@@ -394,13 +403,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Input Area */}
       <div className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
          
+         {/* Editing Indicator */}
+         {editingMessage && (
+             <div className="flex items-center justify-between bg-primary/10 border-l-4 border-primary p-2 mb-2 rounded text-sm text-slate-700 dark:text-slate-300">
+                 <div className="flex flex-col">
+                     <span className="font-bold text-primary text-xs">Editing Message</span>
+                     <span className="truncate max-w-[200px] opacity-70">{editingMessage.content}</span>
+                 </div>
+                 <button onClick={cancelEdit} className="p-1 hover:bg-black/5 rounded-full">
+                     <X className="h-4 w-4" />
+                 </button>
+             </div>
+         )}
+
          {/* Selected files preview */}
          {selectedFiles.length > 0 && (
              <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
                  {selectedFiles.map((f, i) => (
                      <div key={i} className="bg-slate-100 dark:bg-slate-800 border rounded-lg p-2 text-xs flex items-center gap-2 whitespace-nowrap">
                          <Paperclip size={12} /> {f.name}
-                         <button onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><ArrowLeft size={12} className="rotate-45" /></button>
+                         <button onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><X size={12} /></button>
                      </div>
                  ))}
              </div>
@@ -425,7 +447,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t("chat.type_message", "Type a message...")}
+              placeholder={editingMessage ? t("chat.edit_placeholder", "Do changes...") : t("chat.type_message", "Type a message...")}
               rows={1}
               className="flex-1 bg-transparent border-none focus:ring-0 resize-none py-2 px-1 text-sm sm:text-base max-h-32 focus:outline-none dark:text-slate-200"
               style={{ minHeight: '40px' }}

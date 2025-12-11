@@ -104,7 +104,7 @@ export async function getRoomMembers(roomId: string) {
 
 export async function updateMessage(messageId: string, body: string) {
   const res = await api(`/chat/messages/${messageId}`, {
-    method: "PUT",
+    method: "PATCH",
     body: JSON.stringify({ body }),
   });
   return res.message;
