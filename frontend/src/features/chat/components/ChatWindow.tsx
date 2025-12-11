@@ -224,103 +224,162 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const renderBubble = (msg: ChatMessageDisplay, isMe: boolean) => {
     return (
-      <motion.div 
+      <motion.div
+        key={msg.id} 
         layout
-        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ 
-          opacity: { duration: 0.2 },
-          layout: { type: "spring", bounce: 0.4 },
-          type: "spring", stiffness: 400, damping: 25 
+          opacity: { duration: 0.15 },
+          layout: { type: "spring", bounce: 0.3 },
+          type: "spring", stiffness: 500, damping: 30 
         }}
         className={cn(
-          "flex w-full mb-4",
+          "flex w-full mb-3 px-2",
           isMe ? "justify-end" : "justify-start"
         )}
       >
+        {/* Avatar for others */}
+        {!isMe && room.type !== 'private' && (
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-xs font-bold text-primary mr-2 flex-shrink-0 mt-1">
+            {(msg.senderName?.charAt(0) || '?').toUpperCase()}
+          </div>
+        )}
+        
         <div className={cn(
-          "max-w-[85%] sm:max-w-[70%] rounded-2xl p-3 sm:p-4 relative shadow-sm text-sm sm:text-base group",
+          "max-w-[80%] sm:max-w-[65%] rounded-2xl relative group",
           isMe 
-            ? "bg-primary text-primary-foreground rounded-tr-none origin-bottom-right" 
-            : "bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-none origin-bottom-left"
+            ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-sm shadow-lg shadow-primary/20" 
+            : "bg-white dark:bg-slate-800/90 border border-slate-200/50 dark:border-slate-700/50 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-md"
         )}>
-          {/* Context Menu Hook (using Dropdown for simplicity) */}
+          {/* Elegant Context Menu Trigger */}
           <DropdownMenu trigger={
-              <button className="absolute top-2 right-2 p-1 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-black/50 rounded-full">
-                  <MoreHorizontal size={14} />
-              </button>
+            <button 
+              className={cn(
+                "absolute -right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110",
+                isMe 
+                  ? "bg-white/20 hover:bg-white/30 text-white/80 hover:text-white" 
+                  : "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-300 shadow-sm"
+              )}
+            >
+              <MoreHorizontal size={14} />
+            </button>
           }>
-               <DropdownItem onClick={() => { setMessageToForward(msg); setForwardDialogOpen(true); }}>
-                   <div className="flex items-center"><Share className="mr-2 h-3 w-3"/> {t('Forward')}</div>
-               </DropdownItem>
-               {isMe && (
-                   <>
-                       <DropdownItem onClick={() => handleEditMessage(msg)}>
-                           <div className="flex items-center"><Edit2 className="mr-2 h-3 w-3"/> {t('Edit')}</div>
-                       </DropdownItem>
-                       <DropdownItem onClick={() => { if(confirm("Delete?")) deleteMutation.mutate(msg.id) }}>
-                           <div className="flex items-center text-red-500"><Trash2 className="mr-2 h-3 w-3"/> {t('Delete')}</div>
-                       </DropdownItem>
-                   </>
-               )}
-               <DropdownItem onClick={() => handleInfo(msg)}>
-                   <div className="flex items-center"><Info className="mr-2 h-3 w-3"/> {t('Info')}</div>
-               </DropdownItem>
+            <DropdownItem onClick={() => { setMessageToForward(msg); setForwardDialogOpen(true); }}>
+              <div className="flex items-center gap-2 py-0.5">
+                <Share className="h-4 w-4 text-slate-500" />
+                <span>{t('Forward')}</span>
+              </div>
+            </DropdownItem>
+            {isMe && (
+              <>
+                <DropdownItem onClick={() => handleEditMessage(msg)}>
+                  <div className="flex items-center gap-2 py-0.5">
+                    <Edit2 className="h-4 w-4 text-slate-500" />
+                    <span>{t('Edit')}</span>
+                  </div>
+                </DropdownItem>
+                <DropdownItem onClick={() => { if(confirm("Delete this message?")) deleteMutation.mutate(msg.id) }}>
+                  <div className="flex items-center gap-2 py-0.5 text-red-500">
+                    <Trash2 className="h-4 w-4" />
+                    <span>{t('Delete')}</span>
+                  </div>
+                </DropdownItem>
+              </>
+            )}
+            <DropdownItem onClick={() => handleInfo(msg)}>
+              <div className="flex items-center gap-2 py-0.5">
+                <Info className="h-4 w-4 text-slate-500" />
+                <span>{t('Info')}</span>
+              </div>
+            </DropdownItem>
           </DropdownMenu>
 
-          {msg.meta?.forwarded_from && (
-             <div className="text-[10px] italic opacity-70 mb-1 flex items-center gap-1">
-                 <Reply size={10} className="-scale-x-100" /> Forwarded from {msg.meta.forwarded_from}
-             </div>
-          )}
-          {/* Sender Name for Group Chats (Not me) */}
-          {!isMe && room.type !== 'private' && (
-             <div className="text-xs font-bold text-primary mb-1 opacity-90">
-               {msg.senderName || 'Unknown'} <span className="text-[10px] font-normal opacity-70">({msg.senderRole})</span>
-             </div>
-          )}
+          {/* Message Content Container */}
+          <div className="px-3.5 py-2.5 sm:px-4 sm:py-3">
+            {/* Forwarded indicator */}
+            {msg.meta?.forwarded_from && (
+              <div className={cn(
+                "text-[11px] italic mb-1.5 flex items-center gap-1.5 pb-1.5 border-b",
+                isMe ? "border-white/20 text-white/70" : "border-slate-200 dark:border-slate-600 text-slate-500"
+              )}>
+                <Reply size={12} className="-scale-x-100" />
+                <span>Forwarded from {msg.meta.forwarded_from}</span>
+              </div>
+            )}
 
-          {/* Attachments */}
-          {msg.attachments && msg.attachments.length > 0 && (
-            <div className="mb-2 space-y-2">
-              {msg.attachments.map((att, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2 bg-black/5 dark:bg-white/10 rounded-lg">
-                  <div className="p-1.5 bg-white/20 rounded">
-                     {att.type?.includes('image') ? <ImageIcon size={16} /> : <FileText size={16} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="font-medium truncate text-xs hover:underline block">
-                        {att.name}
-                    </a>
-                  </div>
-                  <a href={att.url} download className="p-1 hover:bg-black/10 rounded-full">
-                      <CloudDownload size={14} />
+            {/* Sender Name for Group Chats */}
+            {!isMe && room.type !== 'private' && (
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs font-semibold text-primary">
+                  {msg.senderName || 'Unknown'}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                  {msg.senderRole}
+                </span>
+              </div>
+            )}
+
+            {/* Attachments */}
+            {msg.attachments && msg.attachments.length > 0 && (
+              <div className="mb-2 space-y-1.5">
+                {msg.attachments.map((att, idx) => (
+                  <a 
+                    key={idx} 
+                    href={att.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "flex items-center gap-2.5 p-2.5 rounded-xl transition-all hover:scale-[1.02]",
+                      isMe 
+                        ? "bg-white/10 hover:bg-white/20" 
+                        : "bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center",
+                      isMe ? "bg-white/20" : "bg-primary/10"
+                    )}>
+                      {att.type?.includes('image') ? <ImageIcon size={18} className={isMe ? "text-white" : "text-primary"} /> : <FileText size={18} className={isMe ? "text-white" : "text-primary"} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-xs truncate">{att.name}</p>
+                      <p className={cn("text-[10px]", isMe ? "text-white/60" : "text-slate-400")}>{att.size}</p>
+                    </div>
+                    <CloudDownload size={16} className={cn(isMe ? "text-white/60" : "text-slate-400")} />
                   </a>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
 
-          {/* Content */}
-          <div className="whitespace-pre-wrap leading-relaxed">
+            {/* Message Content */}
+            <div className="text-[14px] sm:text-[15px] leading-relaxed whitespace-pre-wrap break-words">
               {msg.content}
               {renderUrlPreview(msg.content)}
-          </div>
+            </div>
 
-          {/* Metadata */}
-          <div className={cn(
-            "flex items-center justify-end gap-1 mt-1.5 text-[10px] min-h-[14px]",
-            isMe ? "text-primary-foreground/70" : "text-slate-400"
-          )}>
-            <span>{formatMessageDate(msg.timestamp)}</span>
-            {msg.edited_at && <span>(edited)</span>}
-            {isMe && (
-              <span>
-                {msg.status === 'sending' && <Clock size={10} />}
-                {msg.status === 'sent' && <Check size={10} />}
-                {msg.status === 'read' && <div className="flex"><Check size={10}/><Check size={10} className="-ml-1" /></div>}
-              </span>
-            )}
+            {/* Timestamp & Status */}
+            <div className={cn(
+              "flex items-center justify-end gap-1.5 mt-1 text-[10px]",
+              isMe ? "text-white/60" : "text-slate-400"
+            )}>
+              {msg.edited_at && (
+                <span className="italic">edited</span>
+              )}
+              <span>{formatMessageDate(msg.timestamp)}</span>
+              {isMe && (
+                <span className="flex items-center">
+                  {msg.status === 'sending' && <Clock size={11} className="animate-pulse" />}
+                  {msg.status === 'sent' && <Check size={11} />}
+                  {msg.status === 'read' && (
+                    <span className="flex text-blue-300">
+                      <Check size={11} />
+                      <Check size={11} className="-ml-1.5" />
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -405,24 +464,35 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
          
          {/* Editing Indicator */}
          {editingMessage && (
-             <div className="flex items-center justify-between bg-primary/10 border-l-4 border-primary p-2 mb-2 rounded text-sm text-slate-700 dark:text-slate-300">
-                 <div className="flex flex-col">
-                     <span className="font-bold text-primary text-xs">Editing Message</span>
-                     <span className="truncate max-w-[200px] opacity-70">{editingMessage.content}</span>
+             <div className="flex items-center gap-3 bg-gradient-to-r from-primary/5 to-primary/10 border-l-4 border-primary px-3 py-2.5 mb-3 rounded-r-xl">
+                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                   <Edit2 className="h-4 w-4 text-primary" />
                  </div>
-                 <button onClick={cancelEdit} className="p-1 hover:bg-black/5 rounded-full">
-                     <X className="h-4 w-4" />
+                 <div className="flex-1 min-w-0">
+                     <span className="font-semibold text-primary text-xs block">Editing message</span>
+                     <span className="text-sm text-slate-600 dark:text-slate-300 truncate block">{editingMessage.content}</span>
+                 </div>
+                 <button onClick={cancelEdit} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors flex-shrink-0">
+                     <X className="h-4 w-4 text-slate-500" />
                  </button>
              </div>
          )}
 
          {/* Selected files preview */}
          {selectedFiles.length > 0 && (
-             <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+             <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-thin">
                  {selectedFiles.map((f, i) => (
-                     <div key={i} className="bg-slate-100 dark:bg-slate-800 border rounded-lg p-2 text-xs flex items-center gap-2 whitespace-nowrap">
-                         <Paperclip size={12} /> {f.name}
-                         <button onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><X size={12} /></button>
+                     <div key={i} className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-xs flex items-center gap-2 whitespace-nowrap shadow-sm hover:shadow transition-shadow">
+                         <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                           <Paperclip size={12} className="text-primary" />
+                         </div>
+                         <span className="font-medium text-slate-700 dark:text-slate-200 max-w-[120px] truncate">{f.name}</span>
+                         <button 
+                           onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))} 
+                           className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-600 hover:bg-red-100 dark:hover:bg-red-900/50 flex items-center justify-center transition-colors group"
+                         >
+                           <X size={10} className="text-slate-500 group-hover:text-red-500" />
+                         </button>
                      </div>
                  ))}
              </div>
@@ -491,18 +561,60 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {/* Info Dialog */}
       <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
-          <DialogContent>
-               <DialogHeader><DialogTitle>Message Info</DialogTitle></DialogHeader>
-               <div className="max-h-60 overflow-y-auto">
-                   <h4 className="text-sm font-bold mb-2">Read by:</h4>
-                   {readers.length === 0 ? <p className="text-sm text-slate-500">No one yet</p> : (
-                       readers.map((r: any) => (
-                           <div key={r.user_id} className="flex items-center justify-between py-2 border-b">
-                               <span className="text-sm">{r.first_name || r.email}</span>
-                               <span className="text-xs text-slate-400">{r.last_read_at ? format(new Date(r.last_read_at), 'HH:mm') : ''}</span>
-                           </div>
-                       ))
+          <DialogContent className="sm:max-w-md">
+               <DialogHeader>
+                 <DialogTitle className="flex items-center gap-2">
+                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                     <Info className="h-4 w-4 text-primary" />
+                   </div>
+                   Message Details
+                 </DialogTitle>
+               </DialogHeader>
+               
+               {/* Message Preview */}
+               {selectedMessageInfo && (
+                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 mb-4 border border-slate-200 dark:border-slate-700">
+                   <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{selectedMessageInfo.content}</p>
+                   <p className="text-xs text-slate-400 mt-1">
+                     {selectedMessageInfo.timestamp ? format(new Date(selectedMessageInfo.timestamp), 'MMM d, yyyy at HH:mm') : ''}
+                   </p>
+                 </div>
+               )}
+
+               {/* Read By Section */}
+               <div>
+                 <div className="flex items-center gap-2 mb-3">
+                   <Check className="h-4 w-4 text-primary" />
+                   <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Read by</h4>
+                   <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                     {readers.length}
+                   </span>
+                 </div>
+                 
+                 <div className="max-h-48 overflow-y-auto space-y-1">
+                   {readers.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                       <Clock className="h-8 w-8 mb-2 opacity-50" />
+                       <p className="text-sm">No one has read this message yet</p>
+                     </div>
+                   ) : (
+                     readers.map((r: any) => (
+                       <div key={r.user_id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+                           {(r.first_name?.charAt(0) || r.email?.charAt(0) || '?').toUpperCase()}
+                         </div>
+                         <div className="flex-1 min-w-0">
+                           <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+                             {r.first_name ? `${r.first_name} ${r.last_name || ''}`.trim() : r.email}
+                           </p>
+                         </div>
+                         <span className="text-xs text-slate-400 flex-shrink-0">
+                           {r.last_read_at ? format(new Date(r.last_read_at), 'HH:mm') : ''}
+                         </span>
+                       </div>
+                     ))
                    )}
+                 </div>
                </div>
           </DialogContent>
       </Dialog>
