@@ -33,7 +33,7 @@ type AppConfig struct {
 // MustLoad loads configuration from environment variables.
 func MustLoad() AppConfig {
 	cfg := AppConfig{
-		RedisURL:        get("REDIS_URL", "redis://localhost:6379"),
+		RedisURL:        get("REDIS_URL", "redis://127.0.0.1:6379"),
 		Port:            get("APP_PORT", "8080"),
 		Env:             get("APP_ENV", "development"),
 		JWTSecret:       get("JWT_SECRET", "change-me"),
