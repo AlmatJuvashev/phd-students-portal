@@ -29,7 +29,7 @@ export function DropdownMenu({
   }, [open]);
 
   return (
-    <div className="absolute right-0 top-0 z-10" ref={dropdownRef}>
+    <div className="relative z-10" ref={dropdownRef}>
       <div onClick={() => setOpen((o) => !o)}>{trigger}</div>
       {open && (
         <div className={`absolute ${position === "left" ? "left-0" : "right-0"} mt-2 min-w-[10rem] rounded-xl border border-border bg-card dark:bg-card text-slate-900 dark:text-slate-100 shadow-lg z-50 p-1 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200`}>
