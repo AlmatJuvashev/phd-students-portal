@@ -48,7 +48,9 @@ export function AddMemberDialog({ open, onOpenChange, roomId }: AddMemberDialogP
         // OR use the /search endpoint if it returns users.
         // The /search endpoint returns SearchResult[], we need UserResult.
         // Let's try /admin/users first as it returns full user objects.
-        const users = await api<UserResult[]>("/admin/users");
+        // The /admin/users endpoint returns { data: [], total: ... }
+        const res = await api<{ data: UserResult[] }>("/admin/users");
+        const users = res.data;
         const filtered = users.filter(u => 
           u.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
           u.email.toLowerCase().includes(debouncedQuery.toLowerCase())
@@ -86,7 +88,7 @@ export function AddMemberDialog({ open, onOpenChange, roomId }: AddMemberDialogP
         <DialogHeader className="px-4 py-2 border-b">
           <DialogTitle>{t("chat.add_member", { defaultValue: "Add Member" })}</DialogTitle>
         </DialogHeader>
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+        <Command shouldFilter={false} className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
           <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <Command.Input
@@ -115,6 +117,8 @@ export function AddMemberDialog({ open, onOpenChange, roomId }: AddMemberDialogP
                     key={user.id}
                     value={`${user.name} ${user.email}`}
                     onSelect={() => addMemberMutation.mutate(user.id)}
+                    // Force click handling for mouse users if cmdk onSelect is flaky
+                    onClick={() => addMemberMutation.mutate(user.id)}
                     className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                   >
                     <User className="mr-2 h-4 w-4" />

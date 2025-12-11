@@ -4,6 +4,7 @@ import { Search, MoreVertical, MessageSquarePlus, User, Users, Megaphone, Inbox 
 import { cn } from "@/lib/utils";
 import { useTranslation } from 'react-i18next';
 import { Badge } from "@/components/ui/badge";
+import { CreateRoomDialog } from "../CreateRoomDialog";
 
 // Interface definitions adjusted to match existing types or generic enough
 export interface ChatRoomDisplay {
@@ -24,7 +25,9 @@ interface ChatSidebarProps {
   selectedRoomId: string | null;
   onSelectRoom: (roomId: string) => void;
   className?: string;
+
   isLoading?: boolean;
+  currentUser?: { role: string };
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ 
@@ -32,10 +35,14 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     selectedRoomId, 
     onSelectRoom, 
     className,
-    isLoading = false 
+    isLoading = false,
+    currentUser
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { t } = useTranslation("common");
+
+  const canCreateGroup = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
 
   const filteredRooms = rooms.filter(room => 
     room.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -66,9 +73,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{t("chat.title", "Messages")}</h2>
           <div className="flex gap-2">
-            <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-              <MessageSquarePlus size={20} />
-            </button>
+            {canCreateGroup && (
+              <button 
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                title={t("chat.create_group", "Create Group")}
+              >
+                <MessageSquarePlus size={20} />
+              </button>
+            )}
             <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
               <MoreVertical size={20} />
             </button>
@@ -154,6 +167,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             ))
         )}
       </div>
+
+      <CreateRoomDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </div>
   );
 };

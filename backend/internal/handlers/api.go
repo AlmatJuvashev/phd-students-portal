@@ -229,14 +229,15 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	chatAdmin.Use(middleware.RequireRoles("admin", "superadmin"))
 	chatAdmin.GET("/rooms/all", chatHandler.ListAllRooms) // Admin-only: list ALL rooms for tenant
 	chatAdmin.POST("/rooms", chatHandler.CreateRoom)
+	chatAdmin.PUT("/rooms/:roomId", chatHandler.UpdateRoom)
 	chatAdmin.PATCH("/rooms/:roomId", chatHandler.UpdateRoom)
-	chatAdmin.GET("/rooms/:roomId/members", chatHandler.ListMembers)
 	chatAdmin.POST("/rooms/:roomId/members", chatHandler.AddMember)
 	chatAdmin.POST("/rooms/:roomId/members/batch", chatHandler.AddRoomMembersBatch)
 	chatAdmin.DELETE("/rooms/:roomId/members/batch", chatHandler.RemoveRoomMembersBatch)
 	chatAdmin.DELETE("/rooms/:roomId/members/:userId", chatHandler.RemoveMember)
 
 	chat.GET("/rooms", chatHandler.ListRooms)
+	chat.GET("/rooms/:roomId/members", chatHandler.GetRoomMembers)
 	chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
 	chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
 	chat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)

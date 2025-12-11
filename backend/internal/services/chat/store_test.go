@@ -172,12 +172,12 @@ func TestStore_CreateAndListMessages(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create messages
-	msg1, err := store.CreateMessage(ctx, room.ID, userID, "Hello!", nil, nil)
+	msg1, err := store.CreateMessage(ctx, room.ID, userID, "Hello!", nil, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, "Hello!", msg1.Body)
 	assert.Equal(t, userID, msg1.SenderID)
 
-	_, err = store.CreateMessage(ctx, room.ID, userID, "World!", nil, nil)
+	_, err = store.CreateMessage(ctx, room.ID, userID, "World!", nil, nil, nil)
 	require.NoError(t, err)
 
 	// List messages
@@ -197,7 +197,7 @@ func TestStore_UpdateMessage(t *testing.T) {
 	room, err := store.CreateRoom(ctx, "Edit Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
-	msg, err := store.CreateMessage(ctx, room.ID, userID, "Original", nil, nil)
+	msg, err := store.CreateMessage(ctx, room.ID, userID, "Original", nil, nil, nil)
 	require.NoError(t, err)
 
 	updated, err := store.UpdateMessage(ctx, msg.ID, userID, "Edited")
@@ -217,7 +217,7 @@ func TestStore_DeleteMessage(t *testing.T) {
 	room, err := store.CreateRoom(ctx, "Delete Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
-	msg, err := store.CreateMessage(ctx, room.ID, userID, "To be deleted", nil, nil)
+	msg, err := store.CreateMessage(ctx, room.ID, userID, "To be deleted", nil, nil, nil)
 	require.NoError(t, err)
 
 	err = store.DeleteMessage(ctx, msg.ID, userID)

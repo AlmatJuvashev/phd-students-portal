@@ -43,6 +43,8 @@ export type ChatMember = {
   last_name?: string;
   email?: string;
   role_in_room: string;
+  last_read_at?: string;
+  username?: string;
 };
 
 export async function listRooms(): Promise<ChatRoom[]> {
@@ -54,6 +56,21 @@ export async function listRoomMembers(roomId: string): Promise<ChatMember[]> {
   const res = await api(`/chat/rooms/${roomId}/members`);
   return res.members ?? [];
 }
+
+export const createRoom = async (name: string, type: "group" | "channel", meta?: any): Promise<ChatRoom> => {
+  const res = await api("/chat/rooms", {
+    method: "POST",
+    body: JSON.stringify({ name, type, meta: meta || {} }),
+  });
+  return res.room;
+};
+
+export const archiveRoom = async (roomId: string) => {
+  return api(`/chat/rooms/${roomId}`, {
+    method: "PUT",
+    body: JSON.stringify({ is_archived: true }),
+  });
+};
 
 export async function listMessages(params: {
   roomId: string;
@@ -72,12 +89,31 @@ export async function listMessages(params: {
   return res.messages ?? [];
 }
 
-export async function sendMessage(roomId: string, body: string, attachments?: ChatAttachment[], importance?: "alert" | "warning" | null) {
+export async function createMessage(roomId: string, body: string, attachments: any[] = [], importance?: string, meta?: any): Promise<ChatMessage> {
   const res = await api(`/chat/rooms/${roomId}/messages`, {
     method: "POST",
-    body: JSON.stringify({ body, attachments, importance }),
+    body: JSON.stringify({ body, attachments, importance, meta }),
   });
-  return res.message as ChatMessage;
+  return res.message;
+}
+
+export async function getRoomMembers(roomId: string) {
+  const res = await api(`/chat/rooms/${roomId}/members`);
+  return res.members;
+}
+
+export async function updateMessage(messageId: string, body: string) {
+  const res = await api(`/chat/messages/${messageId}`, {
+    method: "PUT",
+    body: JSON.stringify({ body }),
+  });
+  return res.message;
+}
+
+export async function deleteMessage(messageId: string) {
+  return api(`/chat/messages/${messageId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function uploadFile(roomId: string, file: File): Promise<ChatAttachment> {
@@ -109,19 +145,7 @@ export async function uploadFile(roomId: string, file: File): Promise<ChatAttach
   }
 }
 
-export async function updateMessage(messageId: string, body: string) {
-  const res = await api(`/chat/messages/${messageId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ body }),
-  });
-  return res.message as ChatMessage;
-}
 
-export async function deleteMessage(messageId: string) {
-  return api(`/chat/messages/${messageId}`, {
-    method: "DELETE",
-  });
-}
 
 export async function addMember(roomId: string, userId: string, role: string = "member") {
   return api(`/chat/rooms/${roomId}/members`, {

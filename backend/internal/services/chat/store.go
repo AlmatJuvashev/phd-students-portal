@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"strconv"
 	"time"
 
@@ -38,7 +39,7 @@ func (s *Store) CreateRoom(ctx context.Context, tenantID, name string, roomType 
 			ON CONFLICT (room_id, user_id) DO NOTHING
 		)
 		SELECT * FROM new_room
-	`, tenantID, name, roomType, createdBy, meta).StructScan(&room)
+	`, tenantID, name, roomType, createdBy, string(meta)).StructScan(&room)
 	if err != nil {
 		return nil, err
 	}
@@ -164,21 +165,28 @@ func (s *Store) RemoveMember(ctx context.Context, roomID, userID string) error {
 }
 
 type MemberWithUser struct {
+	TenantID   string                    `db:"tenant_id" json:"tenant_id"`
+	RoomID     string                    `db:"room_id" json:"room_id"`
 	UserID     string                    `db:"user_id" json:"user_id"`
 	RoleInRoom models.ChatRoomMemberRole `db:"role_in_room" json:"role_in_room"`
 	JoinedAt   time.Time                 `db:"joined_at" json:"joined_at"`
+	LastReadAt *time.Time                `db:"last_read_at" json:"last_read_at"`
 	Email      string                    `db:"email" json:"email"`
 	FirstName  string                    `db:"first_name" json:"first_name"`
 	LastName   string                    `db:"last_name" json:"last_name"`
+	Username   string                    `db:"username" json:"username"`
 }
 
 // ListMembers returns members for a room with basic user info.
 func (s *Store) ListMembers(ctx context.Context, roomID string) ([]MemberWithUser, error) {
 	var members []MemberWithUser
 	err := s.db.SelectContext(ctx, &members, `
-		SELECT m.user_id, m.role_in_room, m.joined_at, u.email, u.first_name, u.last_name
+		SELECT 
+			m.tenant_id, m.room_id, m.user_id, m.role_in_room, m.joined_at, rs.last_read_at,
+			u.first_name, u.last_name, u.email, u.username
 		FROM chat_room_members m
 		INNER JOIN users u ON u.id = m.user_id
+		LEFT JOIN chat_room_read_status rs ON rs.room_id = m.room_id AND rs.user_id = m.user_id
 		WHERE m.room_id = $1
 		ORDER BY m.joined_at ASC
 	`, roomID)
@@ -186,26 +194,38 @@ func (s *Store) ListMembers(ctx context.Context, roomID string) ([]MemberWithUse
 }
 
 // CreateMessage inserts a message and returns the stored record. Derives tenant_id from room.
-func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string) (*models.ChatMessage, error) {
-	if attachments == nil {
-		attachments = models.ChatAttachments{}
+func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string, meta json.RawMessage) (*models.ChatMessage, error) {
+	// Default meta to empty JSON object if nil/empty, otherwise Postgres errors with "invalid input syntax for type json"
+	if len(meta) == 0 {
+		meta = json.RawMessage("{}")
 	}
+
+	// Logging inputs for debugging
+	log.Printf("[CreateMessage] DBG: roomID=%s, senderID=%s", roomID, senderID)
+	log.Printf("[CreateMessage] DBG: meta string=%s", string(meta))
+	
+	attBytes, _ := json.Marshal(attachments)
+	log.Printf("[CreateMessage] DBG: attachments string=%s", string(attBytes))
+	
+	// Ensure importance is NULL if nil, usually sqlx handles this but let's be safe
+	// Using QueryRowxContext with string(meta) to ensure it is treated as text for jsonb
+	
 	var msg models.ChatMessage
 	err := s.db.QueryRowxContext(ctx, `
 		WITH room_tenant AS (
 			SELECT tenant_id FROM chat_rooms WHERE id = $1
 		), ins AS (
-			INSERT INTO chat_messages (tenant_id, room_id, sender_id, body, attachments, importance)
-			SELECT rt.tenant_id, $1, $2, $3, $4, $5 FROM room_tenant rt
-			RETURNING id, tenant_id, room_id, sender_id, body, attachments, importance, created_at, edited_at, deleted_at
+			INSERT INTO chat_messages (tenant_id, room_id, sender_id, body, attachments, importance, meta)
+			SELECT rt.tenant_id, $1, $2, $3, $4, $5, $6 FROM room_tenant rt
+			RETURNING id, tenant_id, room_id, sender_id, body, attachments, importance, meta, created_at, edited_at, deleted_at
 		)
 		SELECT 
-			i.id, i.tenant_id, i.room_id, i.sender_id, i.body, i.attachments, i.importance, i.created_at, i.edited_at, i.deleted_at,
+			i.id, i.tenant_id, i.room_id, i.sender_id, i.body, i.attachments, i.importance, i.meta, i.created_at, i.edited_at, i.deleted_at,
 			COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.email, u.username) AS sender_name,
 			u.role AS sender_role
 		FROM ins i
 		INNER JOIN users u ON u.id = i.sender_id
-	`, roomID, senderID, body, attachments, importance).StructScan(&msg)
+	`, roomID, senderID, body, attachments, importance, string(meta)).StructScan(&msg)
 	if err != nil {
 		return nil, err
 	}
@@ -226,6 +246,7 @@ func (s *Store) ListMessages(ctx context.Context, roomID string, limit int, befo
 			m.body,
 			m.attachments,
 			m.importance,
+			m.meta,
 			m.created_at,
 			m.edited_at,
 			m.deleted_at,
