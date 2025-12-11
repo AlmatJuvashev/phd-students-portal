@@ -7,7 +7,7 @@ MAILSERVER_COMPOSE := mailserver/docker-compose.yml
 ROOT_COMPOSE := docker-compose.yml
 
 # Ports to clean up
-PORTS := 8080 5173 5435 9000 9001 8025 1025
+PORTS := 8080 8280 5173 5435 9000 9001 8025 1025
 
 help:
 	@echo "KazNMU PhD Portal - Root Makefile"
