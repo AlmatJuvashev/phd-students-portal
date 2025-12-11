@@ -1,8 +1,8 @@
 import React from 'react';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, format, isToday } from 'date-fns';
-import { CalendarEvent, EventType } from '../types';
-import { cn } from '@/lib/utils';
-import { useTranslation } from 'react-i18next';
+import { CalendarEvent, EventType } from '../../types';
+import { cn } from '../../lib/utils';
+import { Clock } from 'lucide-react';
 
 interface MonthViewProps {
   currentDate: Date;
@@ -17,29 +17,16 @@ const TYPE_STYLES: Record<EventType, string> = {
   exam: 'bg-red-100 text-red-700 border-l-2 border-red-500',
   personal: 'bg-emerald-100 text-emerald-700 border-l-2 border-emerald-500',
   holiday: 'bg-purple-100 text-purple-700 border-l-2 border-purple-500',
-  meeting: 'bg-amber-100 text-amber-700 border-l-2 border-amber-500',
-  deadline: 'bg-orange-100 text-orange-700 border-l-2 border-orange-500',
 };
 
 export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSelectEvent, onSelectSlot, onEventDrop }) => {
-  const { t } = useTranslation();
-  
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday start
-  const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday start
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
-  
-  const weekDays = [
-    t('calendar.days.mon', 'Mon'),
-    t('calendar.days.tue', 'Tue'),
-    t('calendar.days.wed', 'Wed'),
-    t('calendar.days.thu', 'Thu'),
-    t('calendar.days.fri', 'Fri'),
-    t('calendar.days.sat', 'Sat'),
-    t('calendar.days.sun', 'Sun'),
-  ];
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const handleDragStart = (e: React.DragEvent, event: CalendarEvent) => {
     e.dataTransfer.setData('eventId', event.id);
@@ -70,7 +57,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
       <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
         {weekDays.map(day => (
           <div key={day} className="py-2 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">
-            {day} 
+            {day}
           </div>
         ))}
       </div>
@@ -97,7 +84,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
                 <span className={cn(
                   "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1",
                   isToday(day) 
-                    ? "bg-primary text-white shadow-md shadow-primary/30" 
+                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/30" 
                     : "text-slate-700"
                 )}>
                   {format(day, 'd')}

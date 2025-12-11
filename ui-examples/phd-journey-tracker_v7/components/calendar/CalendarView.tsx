@@ -1,29 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfMonth, endOfMonth } from 'date-fns';
-import { enUS, ru, kk } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarEvent, EventType } from '../types';
+import { CalendarEvent, EventType } from '../../types';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, List, Filter, Bell } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useTranslation } from 'react-i18next';
+import { cn } from '../../lib/utils';
 import { EventDialog } from './EventDialog';
-import { fetchEvents, createEvent, updateEvent, deleteEvent } from '../api';
+import { fetchEvents, createEvent, updateEvent, deleteEvent } from './api';
 import { MonthView } from './MonthView';
 import { WeekDayView } from './WeekDayView';
 import { AgendaView } from './AgendaView';
 
-const LOCALES: Record<string, any> = {
-  en: enUS,
-  ru: ru,
-  kz: kk,
-};
-
 type ViewType = 'month' | 'week' | 'day' | 'agenda';
 
 export const CalendarView: React.FC = () => {
-  const { t, i18n } = useTranslation();
-  const currentLocale = LOCALES[i18n.language] || enUS;
-
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<ViewType>('month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -66,9 +55,9 @@ export const CalendarView: React.FC = () => {
         // Notify if the event starts in 15 minutes or less (but hasn't started yet)
         if (diffMins > 0 && diffMins <= 15) {
           try {
-            new Notification(t('calendar.notifications.upcoming', { title: event.title }) as string, {
-              body: `${format(startTime, 'HH:mm')} - ${event.location || ''}`,
-              icon: '/favicon.ico', // Use a default icon
+            new Notification(`Upcoming: ${event.title}`, {
+              body: `${format(startTime, 'h:mm a')} - ${event.location || 'No location'}`,
+              icon: 'https://cdn-icons-png.flaticon.com/512/2693/2693507.png',
               tag: event.id // Prevent duplicate notifications for same event
             });
             
@@ -89,7 +78,7 @@ export const CalendarView: React.FC = () => {
     const intervalId = setInterval(checkUpcomingEvents, 60000);
 
     return () => clearInterval(intervalId);
-  }, [events, notifiedEvents, t]);
+  }, [events, notifiedEvents]);
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) return;
@@ -97,9 +86,9 @@ export const CalendarView: React.FC = () => {
       const result = await Notification.requestPermission();
       setPermission(result);
       if (result === 'granted') {
-         new Notification(t('calendar.notifications.enabled_title', 'Notifications Enabled') as string, {
-           body: t('calendar.notifications.enabled_msg', 'You will now be notified 15 minutes before your events.') as string,
-           icon: '/favicon.ico'
+         new Notification("Notifications Enabled", {
+           body: "You will now be notified 15 minutes before your events.",
+           icon: 'https://cdn-icons-png.flaticon.com/512/2693/2693507.png'
          });
       }
     } catch (e) {
@@ -204,21 +193,21 @@ export const CalendarView: React.FC = () => {
               <ChevronLeft size={20} />
             </button>
             <button onClick={() => handleNavigate('today')} className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-wider">
-              {t('calendar.today', 'Today')}
+              Today
             </button>
             <button onClick={() => handleNavigate('next')} className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-slate-500">
               <ChevronRight size={20} />
             </button>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-slate-800 tabular-nums text-center xl:hidden capitalize">
-            {format(currentDate, 'MMMM yyyy', { locale: currentLocale })}
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 tabular-nums text-center xl:hidden">
+            {format(currentDate, 'MMMM yyyy')}
           </h2>
         </div>
 
         {/* Center Title (Desktop) */}
-        <h2 className="hidden xl:block text-xl font-bold text-slate-800 tabular-nums text-center absolute left-1/2 -translate-x-1/2 capitalize">
-          {format(currentDate, 'MMMM yyyy', { locale: currentLocale })}
+        <h2 className="hidden xl:block text-xl font-bold text-slate-800 tabular-nums text-center absolute left-1/2 -translate-x-1/2">
+          {format(currentDate, 'MMMM yyyy')}
         </h2>
 
         {/* Controls Group */}
@@ -230,15 +219,13 @@ export const CalendarView: React.FC = () => {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as EventType | 'all')}
-                className="w-full sm:w-40 pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
+                className="w-full sm:w-40 pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-primary-100 appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
               >
-                <option value="all">{t('calendar.filters.all', 'All Events')}</option>
-                <option value="academic">{t('calendar.types.academic', 'Academic')}</option>
-                <option value="exam">{t('calendar.types.exam', 'Exams')}</option>
-                <option value="personal">{t('calendar.types.personal', 'Personal')}</option>
-                <option value="holiday">{t('calendar.types.holiday', 'Holidays')}</option>
-                <option value="meeting">{t('calendar.types.meeting', 'Meeting')}</option>
-                <option value="deadline">{t('calendar.types.deadline', 'Deadline')}</option>
+                <option value="all">All Events</option>
+                <option value="academic">Academic</option>
+                <option value="exam">Exams</option>
+                <option value="personal">Personal</option>
+                <option value="holiday">Holidays</option>
               </select>
             </div>
 
@@ -249,15 +236,14 @@ export const CalendarView: React.FC = () => {
               className={cn(
                 "p-2.5 rounded-xl border transition-all flex items-center justify-center gap-2",
                 permission === 'granted'
-                  ? "bg-primary/5 text-primary border-primary/20 shadow-sm opacity-100"
+                  ? "bg-primary-50 text-primary-600 border-primary-200 shadow-sm opacity-100"
                   : permission === 'denied'
                   ? "bg-slate-100 text-slate-400 border-slate-200 opacity-50 cursor-not-allowed"
                   : "bg-white text-slate-500 border-slate-200 hover:text-slate-700 hover:border-slate-300 hover:shadow-sm"
               )}
               title={
-                permission === 'granted' ? t('calendar.notifications.active', "Notifications Active") as string : 
-                permission === 'denied' ? t('calendar.notifications.blocked', "Notifications Blocked") as string : 
-                t('calendar.notifications.enable', "Enable Notifications") as string
+                permission === 'granted' ? "Notifications Active" : 
+                permission === 'denied' ? "Notifications Blocked" : "Enable Notifications"
               }
             >
                <Bell size={20} className={cn(permission === 'granted' && "fill-current")} />
@@ -265,19 +251,17 @@ export const CalendarView: React.FC = () => {
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="flex bg-slate-100 rounded-xl p-1 flex-1 sm:flex-none">
-                    {(['month', 'week', 'day', 'agenda'] as ViewType[]).map((v) => {
-                        const label = v === 'agenda' ? t('calendar.agenda.title', 'Agenda') : t(`calendar.${v}`, v);
-                        return (
+                    {(['month', 'week', 'day', 'agenda'] as ViewType[]).map((v) => (
                         <button
                             key={v}
                             onClick={() => setView(v)}
                             className={cn(
                                 "flex-1 sm:flex-none px-3 py-2 text-sm font-medium rounded-lg transition-all capitalize flex items-center justify-center gap-1",
                                 view === v 
-                                ? "bg-white text-primary shadow-sm font-bold" 
+                                ? "bg-white text-primary-600 shadow-sm font-bold" 
                                 : "text-slate-500 hover:text-slate-700"
                             )}
-                            title={label as string}
+                            title={v}
                         >
                             <span className="sm:hidden">
                                 {v === 'month' && <CalendarIcon size={16} />}
@@ -285,14 +269,14 @@ export const CalendarView: React.FC = () => {
                                 {v === 'day' && <span className="text-xs font-bold">Dy</span>}
                                 {v === 'agenda' && <List size={16} />}
                             </span>
-                            <span className="hidden sm:inline">{label}</span>
+                            <span className="hidden sm:inline">{v}</span>
                         </button>
-                    )})}
+                    ))}
                 </div>
                 <button 
                     onClick={() => handleSelectSlot(new Date())}
-                    className="p-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg shadow-primary/30 transition-all active:scale-95"
-                    title={t('calendar.new_event', 'Add Event')}
+                    className="p-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl shadow-lg shadow-primary-500/30 transition-all active:scale-95"
+                    title="Add Event"
                 >
                     <Plus size={20} />
                 </button>
@@ -304,7 +288,7 @@ export const CalendarView: React.FC = () => {
       <div className="flex-1 relative min-h-0 overflow-hidden">
          {loading && (
              <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-50 flex items-center justify-center rounded-2xl">
-                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
              </div>
          )}
          
