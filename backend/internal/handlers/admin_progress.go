@@ -991,8 +991,8 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	
 	// If node is now done, activate next nodes in playbook
 	if newState == "done" && newState != meta.State {
-		log.Printf("[ReviewAttachment] Node %s is done, activating next nodes", meta.NodeID)
-		if err := ActivateNextNodes(h.db, h.pb, meta.StudentID, meta.NodeID); err != nil {
+		log.Printf("[ReviewAttachment] Node %s is done, activating next nodes for tenant %s", meta.NodeID, meta.TenantID)
+		if err := ActivateNextNodesWithTenant(h.db, h.pb, meta.StudentID, meta.NodeID, meta.TenantID); err != nil {
 			log.Printf("[ReviewAttachment] Failed to activate next nodes: %v", err)
 			// Don't fail the request, just log the error
 		}
@@ -1147,6 +1147,15 @@ func (h *AdminHandler) PatchStudentNodeState(c *gin.Context) {
 		handleNodeErr(c, err)
 		return
 	}
+	
+	// If state is done, activate next nodes (same as student's PatchState)
+	if body.State == "done" {
+		if err := ActivateNextNodesWithTenant(h.db, h.pb, uid, nodeID, tenantID); err != nil {
+			log.Printf("[PatchStudentNodeState] Failed to activate next nodes: %v", err)
+			// Don't fail the request, just log
+		}
+	}
+	
 	c.JSON(200, gin.H{"ok": true})
 }
 

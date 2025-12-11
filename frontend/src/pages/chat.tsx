@@ -41,7 +41,7 @@ export function ChatPage() {
     queryKey: ["chat", "messages", activeRoomId],
     queryFn: () => listMessages({ roomId: activeRoomId }),
     enabled: !!activeRoomId,
-    refetchInterval: 3000, 
+    refetchInterval: 10000, // Poll every 10 seconds for new messages
   });
 
   const { data: roomMembers = [] } = useQuery<ChatMember[]>({
