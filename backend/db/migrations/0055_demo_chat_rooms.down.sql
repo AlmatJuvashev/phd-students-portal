@@ -1,0 +1,22 @@
+-- Down migration: Remove demo chat rooms and members
+
+-- Delete messages
+DELETE FROM chat_messages WHERE room_id IN (
+  'dd500001-0000-0000-0001-000000000001',
+  'dd500002-0000-0000-0002-000000000002',
+  'dd500003-0000-0000-0003-000000000003'
+);
+
+-- Delete room members
+DELETE FROM chat_room_members WHERE room_id IN (
+  'dd500001-0000-0000-0001-000000000001',
+  'dd500002-0000-0000-0002-000000000002',
+  'dd500003-0000-0000-0003-000000000003'
+);
+
+-- Delete rooms
+DELETE FROM chat_rooms WHERE id IN (
+  'dd500001-0000-0000-0001-000000000001',
+  'dd500002-0000-0000-0002-000000000002',
+  'dd500003-0000-0000-0003-000000000003'
+);
