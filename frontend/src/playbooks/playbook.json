@@ -395,6 +395,33 @@
                   "en": "Confirm upload"
                 },
                 "action": "confirm_completion",
+                "instructions": {
+                  "title": {
+                    "ru": "Инструкция по получению справки",
+                    "kz": "Анықтаманы алу нұсқаулығы",
+                    "en": "How to obtain the certificate"
+                  },
+                  "text": {
+                    "ru": [
+                      "Проверьте уникальность диссертации через систему StrikePlagiarism.",
+                      "Уникальность должна составлять не менее 75%.",
+                      "Получите справку с подписью ответственного лица и печатью.",
+                      "Загрузите скан справки в формате PDF или изображение."
+                    ],
+                    "kz": [
+                      "StrikePlagiarism жүйесі арқылы диссертацияның бірегейлігін тексеріңіз.",
+                      "Бірегейлік кемінде 75% болуы керек.",
+                      "Жауапты тұлғаның қолтаңбасы мен мөрі бар анықтаманы алыңыз.",
+                      "Анықтаманың сканін PDF форматында немесе сурет түрінде жүктеңіз."
+                    ],
+                    "en": [
+                      "Check your dissertation's uniqueness through the StrikePlagiarism system.",
+                      "Uniqueness should be at least 75%.",
+                      "Obtain a certificate with the responsible person's signature and stamp.",
+                      "Upload the scanned certificate in PDF format or as an image."
+                    ]
+                  }
+                },
                 "confirmation_text": {
                   "ru": "Вы уверены, что загрузили корректную справку?",
                   "kz": "Дұрыс анықтаманы жүктегеніңізге сенімдісіз бе?",
