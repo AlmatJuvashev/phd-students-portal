@@ -14,6 +14,52 @@
     "profile": "Profile",
     "settings": "Settings"
   },
+  "calendar": {
+    "title": "Schedule",
+    "subtitle": "Manage your deadlines and events",
+    "month": "Month",
+    "week": "Week",
+    "day": "Day",
+    "today": "Today",
+    "new_event": "New Event",
+    "edit_event": "Edit Event",
+    "form": {
+      "title": "Title",
+      "type": "Type",
+      "start": "Start",
+      "end": "End",
+      "location": "Location",
+      "description": "Description",
+      "save": "Save Event",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "placeholders": {
+        "title": "Enter event title",
+        "location": "e.g. Conference Hall B",
+        "description": "Add details about the event..."
+      }
+    },
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "types": {
+      "academic": "Academic",
+      "exam": "Exam",
+      "personal": "Personal",
+      "holiday": "Holiday"
+    },
+    "validation": {
+      "title_required": "Title is required",
+      "dates_required": "Start and End times are required",
+      "end_after_start": "End time must be after start time"
+    }
+  },
   "profile": {
     "title": "Profile",
     "subtitle": "Manage your personal information",
