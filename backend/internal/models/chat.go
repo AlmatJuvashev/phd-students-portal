@@ -12,6 +12,8 @@ const (
 	ChatRoomTypeCohort   ChatRoomType = "cohort"
 	ChatRoomTypeAdvisory ChatRoomType = "advisory"
 	ChatRoomTypeOther    ChatRoomType = "other"
+	ChatRoomTypeGroup    ChatRoomType = "group"
+	ChatRoomTypeChannel  ChatRoomType = "channel"
 )
 
 type ChatRoom struct {
@@ -42,6 +44,7 @@ type ChatRoomMember struct {
 	UserID     string             `db:"user_id" json:"user_id"`
 	RoleInRoom ChatRoomMemberRole `db:"role_in_room" json:"role_in_room"`
 	JoinedAt   time.Time          `db:"joined_at" json:"joined_at"`
+	LastReadAt *time.Time         `db:"last_read_at" json:"last_read_at"`
 }
 
 type ChatMessage struct {
@@ -54,6 +57,7 @@ type ChatMessage struct {
 	Body        string          `db:"body" json:"body"`
 	Attachments ChatAttachments `db:"attachments" json:"attachments,omitempty"`
 	Importance  *string         `db:"importance" json:"importance,omitempty"`
+	Meta        json.RawMessage `db:"meta" json:"meta,omitempty"`
 	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
 	EditedAt    *time.Time      `db:"edited_at" json:"edited_at,omitempty"`
 	DeletedAt   *time.Time      `db:"deleted_at" json:"deleted_at,omitempty"`
@@ -73,7 +77,11 @@ type ChatAttachment struct {
 type ChatAttachments []ChatAttachment
 
 func (a ChatAttachments) Value() (driver.Value, error) {
-	return json.Marshal(a)
+	b, err := json.Marshal(a)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }
 
 func (a *ChatAttachments) Scan(value interface{}) error {

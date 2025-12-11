@@ -13,7 +13,7 @@ import {
   listMessages,
   listRooms,
   listRoomMembers,
-  sendMessage,
+  createMessage,
   uploadFile,
   markAsRead,
 } from "@/features/chat/api";
@@ -100,7 +100,7 @@ export function ChatPage() {
   // Mutations
   const sendMutation = useMutation({
     mutationFn: (vars: { body: string; attachments: ChatAttachment[] }) =>
-      sendMessage(activeRoomId, vars.body, vars.attachments),
+      createMessage(activeRoomId, vars.body, vars.attachments), // Changed from sendMessage to createMessage
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["chat", "messages", activeRoomId] });
       // Invalidate rooms to update last message time/preview if we had it
@@ -162,6 +162,7 @@ export function ChatPage() {
               onSelectRoom={handleSelectRoom}
               isLoading={roomsLoading}
               className="w-full"
+              currentUser={me}
            />
         </div>
 
@@ -178,7 +179,7 @@ export function ChatPage() {
                         type: activeRoom.type,
                         participants: roomMembers
                     }}
-                    currentUser={{ id: me?.id || "" }}
+                    currentUser={me || { id: "", role: "" }}
                     messages={displayMessages}
                     onBack={handleBack}
                     onSendMessage={handleSendMessage}

@@ -156,6 +156,7 @@ func (h *ChatHandler) CreateMessage(c *gin.Context) {
 		Body        string                 `json:"body"`
 		Attachments models.ChatAttachments `json:"attachments"`
 		Importance  *string                `json:"importance"`
+		Meta        json.RawMessage        `json:"meta"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -180,25 +181,49 @@ func (h *ChatHandler) CreateMessage(c *gin.Context) {
 		}
 	}
 	
-	msg, err := h.store.CreateMessage(c.Request.Context(), roomID, uid, req.Body, req.Attachments, importance)
+	msg, err := h.store.CreateMessage(c.Request.Context(), roomID, uid, req.Body, req.Attachments, importance, req.Meta)
 	if err != nil {
+		log.Printf("Failed to create message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create message"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"message": msg})
 }
 
-// ListMembers (admin): list members for a room.
-func (h *ChatHandler) ListMembers(c *gin.Context) {
+// GetRoomMembers returns members for a room if the caller is a member OR an admin.
+func (h *ChatHandler) GetRoomMembers(c *gin.Context) {
 	roomID := c.Param("roomId")
+	uid := userIDFromClaims(c)
+	if uid == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	
+	// Check membership
+	isMember, err := h.store.IsMember(c.Request.Context(), roomID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "membership check failed"})
+		return
+	}
+	
+	// Allow if member OR admin
+	role := c.GetString("role")
+	isAdmin := role == "admin" || role == "superadmin"
+	
+	if !isMember && !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "not a member of this room"})
+		return
+	}
+	
 	members, err := h.store.ListMembers(c.Request.Context(), roomID)
 	if err != nil {
-		log.Printf("Failed to list members: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list members"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"members": members})
 }
+
+
 
 // AddMember (admin): add or update a member role in a room.
 func (h *ChatHandler) AddMember(c *gin.Context) {
@@ -695,7 +720,7 @@ func parseTimePtr(v string) (*time.Time, error) {
 
 func isValidRoomType(t models.ChatRoomType) bool {
 	switch t {
-	case models.ChatRoomTypeCohort, models.ChatRoomTypeAdvisory, models.ChatRoomTypeOther:
+	case models.ChatRoomTypeCohort, models.ChatRoomTypeAdvisory, models.ChatRoomTypeOther, models.ChatRoomTypeGroup, models.ChatRoomTypeChannel:
 		return true
 	default:
 		return false
