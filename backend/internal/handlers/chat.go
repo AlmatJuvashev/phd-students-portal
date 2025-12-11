@@ -113,6 +113,28 @@ func (h *ChatHandler) ListRooms(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"rooms": rooms})
 }
 
+// ListAllRooms (admin): returns ALL rooms for the current tenant for admin CRUD operations.
+// Unlike ListRooms, this does not require the admin to be a member of the rooms.
+func (h *ChatHandler) ListAllRooms(c *gin.Context) {
+	uid := userIDFromClaims(c)
+	if uid == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	tenantID := c.GetString("tenant_id")
+	if tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return
+	}
+	rooms, err := h.store.ListRoomsForTenant(c.Request.Context(), tenantID)
+	if err != nil {
+		log.Printf("[ListAllRooms] Failed to list rooms for tenant %s: %v", tenantID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list rooms"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"rooms": rooms})
+}
+
 // CreateMessage inserts a message into a room if the caller is a member.
 func (h *ChatHandler) CreateMessage(c *gin.Context) {
 	uid := userIDFromClaims(c)

@@ -2,7 +2,8 @@ import { api } from "@/api/client";
 import { ChatRoom } from "@/features/chat/api";
 
 export async function listAdminRooms(): Promise<ChatRoom[]> {
-  const res = await api("/chat/rooms");
+  // Use /chat/rooms/all to get ALL rooms for the tenant (not just ones admin is member of)
+  const res = await api("/chat/rooms/all");
   return res.rooms ?? [];
 }
 

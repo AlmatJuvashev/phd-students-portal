@@ -223,6 +223,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	chat.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	chatAdmin := chat.Group("")
 	chatAdmin.Use(middleware.RequireRoles("admin", "superadmin"))
+	chatAdmin.GET("/rooms/all", chatHandler.ListAllRooms) // Admin-only: list ALL rooms for tenant
 	chatAdmin.POST("/rooms", chatHandler.CreateRoom)
 	chatAdmin.PATCH("/rooms/:roomId", chatHandler.UpdateRoom)
 	chatAdmin.GET("/rooms/:roomId/members", chatHandler.ListMembers)

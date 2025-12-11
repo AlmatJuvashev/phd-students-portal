@@ -107,6 +107,32 @@ func (s *Store) ListRoomsForUser(ctx context.Context, userID string) ([]models.C
 	return rooms, err
 }
 
+// ListRoomsForTenant returns ALL rooms for a given tenant (for admin CRUD operations).
+// This does not require the admin to be a member of the rooms.
+func (s *Store) ListRoomsForTenant(ctx context.Context, tenantID string) ([]models.ChatRoom, error) {
+	var rooms []models.ChatRoom
+	err := s.db.SelectContext(ctx, &rooms, `
+		SELECT 
+			r.id, r.name, r.type, r.created_by, r.created_by_role, r.is_archived, r.meta, r.created_at,
+			COALESCE(member_count.count, 0) AS unread_count,
+			last_msg.last_message_at
+		FROM chat_rooms r
+		LEFT JOIN LATERAL (
+			SELECT MAX(cm.created_at) AS last_message_at
+			FROM chat_messages cm
+			WHERE cm.room_id = r.id AND cm.deleted_at IS NULL
+		) last_msg ON true
+		LEFT JOIN LATERAL (
+			SELECT COUNT(*) AS count
+			FROM chat_room_members m
+			WHERE m.room_id = r.id
+		) member_count ON true
+		WHERE r.tenant_id = $1
+		ORDER BY COALESCE(last_msg.last_message_at, r.created_at) DESC
+	`, tenantID)
+	return rooms, err
+}
+
 // IsMember returns true if the user is in the room.
 func (s *Store) IsMember(ctx context.Context, roomID, userID string) (bool, error) {
 	var exists bool
