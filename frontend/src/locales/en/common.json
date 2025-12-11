@@ -39,6 +39,22 @@
         "description": "Add details about the event..."
       }
     },
+    "filters": {
+      "all": "All Events"
+    },
+    "notifications": {
+      "enable": "Enable Notifications",
+      "active": "Notifications Active",
+      "blocked": "Notifications Blocked",
+      "enabled_title": "Notifications Enabled",
+      "enabled_msg": "You will now be notified 15 minutes before your events.",
+      "upcoming": "Upcoming: {{title}}"
+    },
+    "agenda": {
+      "title": "Agenda",
+      "empty_today": "No events scheduled for today",
+      "empty_range": "No dates to display"
+    },
     "days": {
       "mon": "Mon",
       "tue": "Tue",
@@ -49,6 +65,8 @@
       "sun": "Sun"
     },
     "types": {
+      "meeting": "Meeting",
+      "deadline": "Deadline",
       "academic": "Academic",
       "exam": "Exam",
       "personal": "Personal",

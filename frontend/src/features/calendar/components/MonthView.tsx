@@ -16,6 +16,8 @@ const TYPE_STYLES: Record<EventType, string> = {
   exam: 'bg-red-100 text-red-700 border-l-2 border-red-500',
   personal: 'bg-emerald-100 text-emerald-700 border-l-2 border-emerald-500',
   holiday: 'bg-purple-100 text-purple-700 border-l-2 border-purple-500',
+  meeting: 'bg-amber-100 text-amber-700 border-l-2 border-amber-500',
+  deadline: 'bg-orange-100 text-orange-700 border-l-2 border-orange-500',
 };
 
 export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSelectEvent, onSelectSlot }) => {

@@ -34,6 +34,8 @@ export const EventDialog: React.FC<EventDialogProps> = ({
     { value: 'exam', label: t('calendar.types.exam', 'Exam'), color: 'bg-red-100 text-red-700 border-red-200' },
     { value: 'personal', label: t('calendar.types.personal', 'Personal'), color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { value: 'holiday', label: t('calendar.types.holiday', 'Holiday'), color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    { value: 'meeting', label: t('calendar.types.meeting', 'Meeting'), color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    { value: 'deadline', label: t('calendar.types.deadline', 'Deadline'), color: 'bg-orange-100 text-orange-700 border-orange-200' },
   ];
 
   useEffect(() => {

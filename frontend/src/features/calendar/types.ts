@@ -1,5 +1,5 @@
 
-export type EventType = 'academic' | 'exam' | 'personal' | 'holiday';
+export type EventType = 'academic' | 'exam' | 'personal' | 'holiday' | 'meeting' | 'deadline';
 
 export interface CalendarEvent {
   id: string;

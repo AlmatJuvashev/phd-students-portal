@@ -25,6 +25,8 @@ const EVENT_COLORS: Record<EventType, string> = {
   exam: 'bg-red-500/10 text-red-700 border-l-4 border-red-500',
   personal: 'bg-emerald-500/10 text-emerald-700 border-l-4 border-emerald-500',
   holiday: 'bg-purple-500/10 text-purple-700 border-l-4 border-purple-500',
+  meeting: 'bg-amber-500/10 text-amber-700 border-l-4 border-amber-500',
+  deadline: 'bg-orange-500/10 text-orange-700 border-l-4 border-orange-500',
 };
 
 export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, events, view, onSelectEvent, onSelectSlot }) => {
