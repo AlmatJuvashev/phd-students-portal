@@ -179,6 +179,16 @@ func seedProgress(db *sqlx.DB, userID, versionID string, doneNodes []string, act
 		if err != nil {
 			log.Printf("Failed to set node %s done: %v", nodeID, err)
 		}
+		// Also sync to journey_states for frontend
+		_, err = db.Exec(`
+			INSERT INTO journey_states (tenant_id, user_id, node_id, state, updated_at)
+			VALUES ($1, $2, $3, 'done', NOW())
+			ON CONFLICT (user_id, node_id) 
+			DO UPDATE SET state = 'done', tenant_id = $1, updated_at = NOW()
+		`, DefaultTenantID, userID, nodeID)
+		if err != nil {
+			log.Printf("Failed to sync journey_state for node %s: %v", nodeID, err)
+		}
 	}
 
 	_, err := db.Exec(`
@@ -189,6 +199,16 @@ func seedProgress(db *sqlx.DB, userID, versionID string, doneNodes []string, act
 	`, userID, versionID, activeNode, DefaultTenantID)
 	if err != nil {
 		log.Printf("Failed to set node %s active: %v", activeNode, err)
+	}
+	// Also sync active node to journey_states
+	_, err = db.Exec(`
+		INSERT INTO journey_states (tenant_id, user_id, node_id, state, updated_at)
+		VALUES ($1, $2, $3, 'active', NOW())
+		ON CONFLICT (user_id, node_id) 
+		DO UPDATE SET state = 'active', tenant_id = $1, updated_at = NOW()
+	`, DefaultTenantID, userID, activeNode)
+	if err != nil {
+		log.Printf("Failed to sync journey_state for active node %s: %v", activeNode, err)
 	}
 }
 
