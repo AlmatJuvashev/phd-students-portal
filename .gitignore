@@ -16,7 +16,7 @@ mocks/credentials.txt
 mocks/*.txt
 
 # UI examples and prototypes
-# ui-examples/
+ui-examples/
 
 # OS/editor
 .DS_Store

@@ -33,7 +33,19 @@ export const CalendarView: React.FC = () => {
   
   // New State for Features
   const [filterType, setFilterType] = useState<EventType | 'all'>('all');
-  const [notifiedEvents, setNotifiedEvents] = useState<Set<string>>(new Set());
+  const [notifiedEvents, setNotifiedEvents] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('calendar_notified_events');
+      if (saved) {
+        try {
+          return new Set(JSON.parse(saved));
+        } catch (e) {
+          console.error('Failed to parse notified events:', e);
+        }
+      }
+    }
+    return new Set();
+  });
   const [permission, setPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
@@ -84,12 +96,18 @@ export const CalendarView: React.FC = () => {
       });
     };
 
+  
     // Check immediately and then every minute
     checkUpcomingEvents();
     const intervalId = setInterval(checkUpcomingEvents, 60000);
 
     return () => clearInterval(intervalId);
   }, [events, notifiedEvents, t]);
+
+  // Persist notified events
+  useEffect(() => {
+    localStorage.setItem('calendar_notified_events', JSON.stringify(Array.from(notifiedEvents)));
+  }, [notifiedEvents]);
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) return;
