@@ -294,18 +294,22 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Admin Write Access
 	dictAdminGroup := admin.Group("/dictionaries")
 	{
+		dictAdminGroup.GET("/programs", dictHandler.ListPrograms)
 		dictAdminGroup.POST("/programs", dictHandler.CreateProgram)
 		dictAdminGroup.PUT("/programs/:id", dictHandler.UpdateProgram)
 		dictAdminGroup.DELETE("/programs/:id", dictHandler.DeleteProgram)
 
+		dictAdminGroup.GET("/specialties", dictHandler.ListSpecialties)
 		dictAdminGroup.POST("/specialties", dictHandler.CreateSpecialty)
 		dictAdminGroup.PUT("/specialties/:id", dictHandler.UpdateSpecialty)
 		dictAdminGroup.DELETE("/specialties/:id", dictHandler.DeleteSpecialty)
 
+		dictAdminGroup.GET("/cohorts", dictHandler.ListCohorts)
 		dictAdminGroup.POST("/cohorts", dictHandler.CreateCohort)
 		dictAdminGroup.PUT("/cohorts/:id", dictHandler.UpdateCohort)
 		dictAdminGroup.DELETE("/cohorts/:id", dictHandler.DeleteCohort)
 
+		dictAdminGroup.GET("/departments", dictHandler.ListDepartments)
 		dictAdminGroup.POST("/departments", dictHandler.CreateDepartment)
 		dictAdminGroup.PUT("/departments/:id", dictHandler.UpdateDepartment)
 		dictAdminGroup.DELETE("/departments/:id", dictHandler.DeleteDepartment)
