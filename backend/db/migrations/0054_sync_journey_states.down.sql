@@ -1,0 +1,2 @@
+-- Down migration: Nothing to undo (data sync is idempotent)
+-- The journey_states data should remain in sync with node_instances
