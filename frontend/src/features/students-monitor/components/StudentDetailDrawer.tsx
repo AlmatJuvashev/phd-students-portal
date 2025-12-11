@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/components/ui/use-toast";
+import PlaybookData from "../../../playbooks/playbook.json";
+import { t as tPlaybook } from "@/lib/playbook";
 
 type NodeState =
   | "locked"
@@ -207,10 +209,20 @@ export function StudentDetailDrawer({
 
   const selectedNode = nodes.find(n => n.node_id === selectedNodeId);
 
+  const getNodeTitle = React.useCallback((nodeId: string) => {
+    // Find node in playbook
+    for (const world of PlaybookData.worlds) {
+      const n = world.nodes.find((nod) => nod.id === nodeId);
+      if (n) return tPlaybook(n.title as any);
+    }
+    return nodeId;
+  }, []);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-[700px] w-full overflow-y-auto p-0 gap-0 flex flex-col h-full bg-background/95 backdrop-blur-xl">
         <SheetHeader className="px-6 py-6 border-b bg-muted/40 sticky top-0 z-10">
+          {/* ... Header content ... */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border-2 ring-2 ring-background shadow-sm">
@@ -260,7 +272,7 @@ export function StudentDetailDrawer({
                 variant="outline"
                 className="bg-amber-50 text-amber-700 border-amber-200"
               >
-                RP Required
+                {t("monitor.filters.rp_only", "RP Required")}
               </Badge>
             )}
           </div>
@@ -269,7 +281,7 @@ export function StudentDetailDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
           {/* Journey Map */}
           <div>
-            <h3 className="text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">Journey Map</h3>
+            <h3 className="text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">{t("monitor.journey_map", "Journey Map")}</h3>
             <div className="flex items-center gap-2 overflow-x-auto pb-4 px-1 -mx-1 snap-x">
               {STAGES.filter(
                 (stage) => stage.id !== "W3" || student.rp_required
@@ -278,10 +290,15 @@ export function StudentDetailDrawer({
                   (s) => s.id === (student.current_stage || "W1")
                 );
                 const thisStageIdx = STAGES.findIndex((s) => s.id === stage.id);
-                // Simple logic: if this index < current, it's done. if equal, active.
                 const isCurrent = student.current_stage === stage.id;
                 const isCompleted = currentStageIdx > thisStageIdx;
 
+                // We should translate stage labels too if possible, but they are hardcoded in STAGES array above.
+                // Assuming we leave them or map them later. For now, keep as is or map if simple.
+                // STAGES array is hardcoded at top of file. I should probably move it inside component or translate it.
+                // Let's defer stage translation to keep complexity low, or replace STAGES constant usage with a translated version?
+                // The prompt asked for Node IDs/Names.
+                
                 return (
                   <div
                     key={stage.id}
@@ -313,10 +330,10 @@ export function StudentDetailDrawer({
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Current Stage Nodes
+                {t("monitor.current_stage_nodes", "Current Stage Nodes")}
               </h3>
               <Badge variant="secondary" className="text-xs font-normal">
-                {nodes.length} nodes
+                {t("monitor.nodes_count", { count: nodes.length, defaultValue: `${nodes.length} nodes` })}
               </Badge>
             </div>
 
@@ -324,17 +341,18 @@ export function StudentDetailDrawer({
               {loading ? (
                 <div className="col-span-2 flex justify-center py-12 text-muted-foreground">
                   <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  Loading nodes...
+                  {t("monitor.loading_nodes", "Loading nodes...")}
                 </div>
               ) : nodes.length === 0 ? (
                 <div className="col-span-2 text-center py-12 text-sm text-muted-foreground border-2 border-dashed rounded-xl">
-                  No nodes available for this stage
+                  {t("monitor.no_nodes", "No nodes available for this stage")}
                 </div>
               ) : (
                 nodes.map((node) => (
                   <NodeCard
                     key={node.node_id}
                     id={node.node_id}
+                    title={getNodeTitle(node.node_id)}
                     state={node.state as NodeState}
                     dueDate={deadlines[node.node_id]}
                     attachments={node.attachments || 0}
@@ -342,6 +360,7 @@ export function StudentDetailDrawer({
                     onSelect={() => setSelectedNodeId(node.node_id)}
                     onSetDue={(due) => setDue(node.node_id, due)}
                     onConfirm={() => confirm(node.node_id)}
+                    t={t}
                   />
                 ))
               )}
@@ -495,6 +514,7 @@ export function StudentDetailDrawer({
 
 function NodeCard({
   id,
+  title,
   state,
   dueDate,
   attachments = 0,
@@ -502,8 +522,10 @@ function NodeCard({
   onSelect,
   onSetDue,
   onConfirm,
+  t,
 }: {
   id: string;
+  title?: string;
   state: NodeState;
   dueDate?: string;
   attachments?: number;
@@ -511,12 +533,16 @@ function NodeCard({
   onSelect: () => void;
   onSetDue: (due: string) => void;
   onConfirm: () => void;
+  t: any;
 }) {
   const stateConfig = nodeStates[state] || nodeStates.active;
   const StateIcon = stateConfig?.icon || Circle;
 
   // Visual hint: orange dot if pending review (submitted/under_review)
   const isPendingReview = state === "submitted" || state === "under_review";
+  
+  // Translate state label
+  const stateLabel = t ? t(`admin.monitor.detail.node_states.${state}`, stateConfig.label) : stateConfig.label;
 
   return (
     <div 
@@ -540,9 +566,14 @@ function NodeCard({
             <code className="text-[10px] font-mono font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
               {id}
             </code>
+            {title && (
+              <span className="text-xs font-medium truncate flex-1" title={title}>
+                {title}
+              </span>
+            )}
             <Badge variant="secondary" className={`text-[10px] font-medium px-1.5 py-0 border ${stateConfig.color}`}>
               <StateIcon className="h-3 w-3 mr-1" />
-              {stateConfig.label}
+              {stateLabel}
             </Badge>
           </div>
           

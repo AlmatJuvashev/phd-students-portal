@@ -65,7 +65,7 @@ export const ChatRoomDetails: React.FC<ChatRoomDetailsProps> = ({
                         <div className="space-y-2">
                             {isAdmin && (
                                 <Button variant="outline" className="w-full justify-start text-primary" onClick={() => setAddMemberOpen(true)}>
-                                    <UserPlus className="mr-2 h-4 w-4" /> {t("chat.add_participants", "Add Participants")}
+                                    <UserPlus className="mr-2 h-4 w-4" /> {t("chat.add_member", "Add Participants")}
                                 </Button>
                             )}
                             {isAdmin && onArchive && (
@@ -95,7 +95,7 @@ export const ChatRoomDetails: React.FC<ChatRoomDetailsProps> = ({
                                                 <div>
                                                     <div className="text-sm font-medium">
                                                         {m.first_name ? `${m.first_name} ${m.last_name || ''}` : m.username || m.email}
-                                                        {m.user_id === currentUser.id && <span className="text-slate-400 font-normal ml-1">({t("common.you", "You")})</span>}
+                                                        {m.user_id === currentUser.id && <span className="text-slate-400 font-normal ml-1">({t("chat.you", "You")})</span>}
                                                     </div>
                                                     <div className="text-xs text-slate-500 capitalize">{m.role_in_room}</div>
                                                 </div>
