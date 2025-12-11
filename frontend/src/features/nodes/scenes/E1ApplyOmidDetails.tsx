@@ -9,6 +9,7 @@ import {
   FormTaskDetailsProps,
   FormTaskContext,
 } from "@/features/nodes/details/variants/FormTaskDetails";
+import { t as pbT } from "@/lib/playbook";
 
 const scrollToTemplates = () =>
   document
@@ -23,6 +24,31 @@ export function E1ApplyOmidDetails({
   const [open, setOpen] = useState(false);
   const assets = useMemo(() => assetsForNode(node), [node]);
   const lang = (i18n.language as "ru" | "kz" | "en") || "ru";
+
+  // Extract instructions from playbook (cast node to any for accessing screen property)
+  const primaryBtn = Array.isArray((node as any)?.screen?.buttons)
+    ? (node as any).screen.buttons[0]
+    : undefined;
+  const instructionsRaw = primaryBtn?.instructions?.text as
+    | string[]
+    | Record<string, string[]>
+    | undefined;
+  const instructions: string[] = Array.isArray(instructionsRaw)
+    ? instructionsRaw
+    : Array.isArray((instructionsRaw as any)?.[lang])
+    ? (instructionsRaw as any)[lang]
+    : [];
+  const accordionLabel = pbT(
+    primaryBtn?.label as any,
+    pbT(
+      {
+        ru: "Инструкция по прохождению",
+        kz: "Өту бойынша нұсқаулық",
+        en: "How to complete",
+      },
+      "Инструкция по прохождению"
+    )
+  );
 
   const openTemplate = useCallback(() => {
     const preferred =
@@ -93,7 +119,40 @@ export function E1ApplyOmidDetails({
     [T, open, openTemplate]
   );
 
-  return <FormTaskDetails node={node} {...rest} renderActions={renderActions} />;
+  return (
+    <div className="space-y-4">
+      {/* Inline guidance (always visible) */}
+      {instructions.length > 0 && (
+        <div className="space-y-3 p-5 sm:p-6 rounded-xl bg-muted/30 border-l-4 border-primary/40">
+          <div className="text-sm font-semibold text-primary flex items-center gap-2">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            {accordionLabel}
+          </div>
+          <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+            {instructions.map((line: string, idx: number) => (
+              <li key={idx} className="leading-relaxed">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <FormTaskDetails node={node} {...rest} renderActions={renderActions} />
+    </div>
+  );
 }
 
 export default E1ApplyOmidDetails;
+
