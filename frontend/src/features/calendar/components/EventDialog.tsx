@@ -132,7 +132,7 @@ export const EventDialog: React.FC<EventDialogProps> = ({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-medium text-slate-800"
-                  placeholder={t('calendar.placeholders.title', 'Enter event title')}
+                  placeholder={t('calendar.form.placeholders.title', 'Enter event title')}
                 />
               </div>
 
@@ -199,7 +199,7 @@ export const EventDialog: React.FC<EventDialogProps> = ({
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
-                    placeholder={t('calendar.placeholders.location', 'e.g. Conference Hall B')}
+                    placeholder={t('calendar.form.placeholders.location', 'e.g. Conference Hall B')}
                   />
                 </div>
               </div>
@@ -214,7 +214,7 @@ export const EventDialog: React.FC<EventDialogProps> = ({
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm resize-none"
-                  placeholder={t('calendar.placeholders.description', 'Add details about the event...')}
+                  placeholder={t('calendar.form.placeholders.description', 'Add details about the event...')}
                 />
               </div>
 

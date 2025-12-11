@@ -1,8 +1,16 @@
+
 import React, { useEffect, useRef } from 'react';
 import { format, addDays, startOfWeek, isSameDay, isToday, startOfDay, getHours, getMinutes, setHours, setMinutes } from 'date-fns';
+import { enUS, ru, kk } from 'date-fns/locale';
 import { CalendarEvent, EventType } from '../types';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+
+const LOCALES: Record<string, any> = {
+  en: enUS,
+  ru: ru,
+  kz: kk,
+};
 
 interface WeekDayViewProps {
   currentDate: Date;
@@ -19,8 +27,10 @@ const EVENT_COLORS: Record<EventType, string> = {
   holiday: 'bg-purple-500/10 text-purple-700 border-l-4 border-purple-500',
 };
 
-export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, view, events, onSelectEvent, onSelectSlot }) => {
+export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, events, view, onSelectEvent, onSelectSlot }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { t, i18n } = useTranslation();
+  const currentLocale = LOCALES[i18n.language] || enUS;
   
   // Generate columns
   const days = view === 'week' 
@@ -70,7 +80,9 @@ export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, view, eve
         <div className={cn("flex-1 grid", view === 'week' ? "grid-cols-7" : "grid-cols-1")}>
           {days.map(day => (
             <div key={day.toISOString()} className={cn("py-2 text-center border-r border-slate-200 last:border-0", isToday(day) && "bg-primary/5")}>
-              <div className="text-xs font-bold text-slate-500 uppercase">{format(day, 'EEE')}</div>
+              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+                {format(day, 'EEE', { locale: currentLocale })}
+              </div>
               <div className={cn(
                 "w-8 h-8 mx-auto mt-1 flex items-center justify-center rounded-full text-sm font-bold",
                 isToday(day) ? "bg-primary text-white shadow-md shadow-primary/30" : "text-slate-800"
