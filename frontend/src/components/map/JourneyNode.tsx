@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { 
   Check, 
@@ -116,6 +117,7 @@ const getStatusStyles = (state: NodeState) => {
 };
 
 export const JourneyNode: React.FC<JourneyNodeProps> = ({ node, isLast, index, onClick }) => {
+  const { t: tLabel } = useTranslation('common');
   const styles = getStatusStyles(node.state);
   const Icon = node.state === 'locked' ? Lock : getNodeIcon(node);
   const isInteractive = node.state !== 'locked';
@@ -236,7 +238,7 @@ export const JourneyNode: React.FC<JourneyNodeProps> = ({ node, isLast, index, o
                {isInteractive && (
                  <div className="hidden sm:flex flex-row items-center gap-2 transition-all">
                    <span className="text-xs font-bold text-primary opacity-0 -translate-x-3 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 transition-all duration-300 ease-out whitespace-nowrap">
-                     Details
+                     {tLabel('map.details')}
                    </span>
                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-400 group-hover/btn:bg-primary group-hover/btn:text-primary-foreground transition-all duration-300 shadow-sm group-hover/btn:shadow-md group-hover/btn:scale-110 dark:bg-slate-800">
                      <ChevronRight size={18} className="transition-transform duration-300 group-hover/btn:translate-x-0.5" />
