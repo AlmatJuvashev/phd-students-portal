@@ -41,6 +41,8 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
     t('calendar.days.sun', 'Sun'),
   ];
 
+  const [dragTarget, setDragTarget] = React.useState<string | null>(null);
+
   const handleDragStart = (e: React.DragEvent, event: CalendarEvent) => {
     e.dataTransfer.setData('eventId', event.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -50,9 +52,21 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
+  
+  const handleDragEnter = (e: React.DragEvent, dateStr: string) => {
+      e.preventDefault();
+      setDragTarget(dateStr);
+  };
+  
+  const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      // Only clear if we are actually leaving the container, not entering a child
+      // But simpler for now: layout handles it or we rely on Enter of next sibling
+  };
 
   const handleDrop = (e: React.DragEvent, date: Date) => {
     e.preventDefault();
+    setDragTarget(null);
     const eventId = e.dataTransfer.getData('eventId');
     const event = events.find(e => e.id === eventId);
     if (event) {
@@ -65,7 +79,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" onMouseLeave={() => setDragTarget(null)}>
       {/* Header Row */}
       <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
         {weekDays.map(day => (
@@ -78,34 +92,39 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
       {/* Days Grid */}
       <div className="flex-1 grid grid-cols-7 auto-rows-fr bg-slate-200 gap-px border-b border-slate-200">
         {calendarDays.map((day) => {
+          const dayStr = day.toISOString();
           const dayEvents = events.filter(e => isSameDay(new Date(e.start), day));
           const isCurrentMonth = isSameMonth(day, monthStart);
+          const isDragTarget = dragTarget === dayStr;
           
           return (
             <div 
-              key={day.toISOString()}
+              key={dayStr}
               onClick={() => onSelectSlot(day)}
               onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, dayStr)}
               onDrop={(e) => handleDrop(e, day)}
               className={cn(
-                "min-h-[100px] bg-white p-1 transition-colors relative group hover:bg-slate-50 cursor-pointer",
-                !isCurrentMonth && "bg-slate-50/50 text-slate-400"
+                "min-h-[100px] bg-white p-1 transition-colors relative group cursor-pointer",
+                isDragTarget ? "bg-primary/10 ring-2 ring-primary/20 z-10" : "hover:bg-slate-50",
+                !isCurrentMonth && !isDragTarget && "bg-slate-50/50 text-slate-400"
               )}
             >
               {/* Day Number */}
               <div className="flex justify-between items-start px-1">
                 <span className={cn(
-                  "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1",
+                  "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 transition-all",
                   isToday(day) 
-                    ? "bg-primary text-white shadow-md shadow-primary/30" 
-                    : "text-slate-700"
+                    ? "bg-primary text-white shadow-md shadow-primary/30 scale-110" 
+                    : "text-slate-700",
+                  isDragTarget && !isToday(day) && "bg-white text-primary shadow-sm"
                 )}>
                   {format(day, 'd')}
                 </span>
               </div>
 
               {/* Events List */}
-              <div className="flex flex-col gap-1 overflow-hidden max-h-[calc(100%-2rem)]">
+              <div className="flex flex-col gap-1.5 overflow-hidden max-h-[calc(100%-2rem)]">
                 {dayEvents.slice(0, 3).map(event => (
                   <div
                     key={event.id}
@@ -116,7 +135,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
                       onSelectEvent(event);
                     }}
                     className={cn(
-                      "w-full text-left px-1.5 py-0.5 text-[10px] font-medium rounded-sm truncate transition-transform hover:scale-[1.02] cursor-move",
+                      "w-full text-left px-2 py-1 text-[10px] font-semibold rounded-md truncate transition-all cursor-move shadow-sm border border-transparent hover:border-black/5 hover:shadow-md",
                       TYPE_STYLES[event.type as EventType]
                     )}
                   >
@@ -124,7 +143,7 @@ export const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, onSel
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
-                  <span className="text-[10px] text-slate-400 font-medium pl-1">
+                  <span className="text-[10px] text-slate-400 font-bold pl-1 hover:text-primary transition-colors">
                     +{dayEvents.length - 3} more
                   </span>
                 )}

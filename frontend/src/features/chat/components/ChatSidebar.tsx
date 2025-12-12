@@ -125,11 +125,21 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             >
                 {/* Avatar */}
                 <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm transition-colors",
-                room.type === 'channel' ? "bg-purple-500" : 
-                room.type === 'group' ? "bg-indigo-500" : "bg-emerald-500"
+                  "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm transition-all overflow-hidden border-2",
+                  selectedRoomId === room.id ? "border-primary/50" : "border-transparent",
+                  room.type === 'private' ? "bg-white" : 
+                  room.type === 'channel' ? "bg-purple-100 text-purple-600" : 
+                  "bg-indigo-100 text-indigo-600"
                 )}>
-                {room.type === 'private' ? getInitials(room.name) : getRoomIcon(room.type)}
+                  {room.type === 'private' ? (
+                     <img 
+                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${room.name}`} 
+                       alt={room.name}
+                       className="w-full h-full object-cover"
+                     />
+                  ) : (
+                     getRoomIcon(room.type)
+                  )}
                 </div>
 
                 {/* Content */}

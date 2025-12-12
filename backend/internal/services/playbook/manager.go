@@ -49,60 +49,19 @@ type Manager struct {
 	Checksum      string
 	Raw           json.RawMessage
 	Nodes         map[string]Node
+	NodeWorlds    map[string]string // map[nodeID]worldID
 	DefaultLocale string
 }
 
 func EnsureActive(db *sqlx.DB, path string) (*Manager, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read playbook: %w", err)
-	}
-	sum := sha256.Sum256(raw)
-	checksum := hex.EncodeToString(sum[:])
-
-	var versionID string
-	err = db.QueryRowx(`SELECT id FROM playbook_versions WHERE checksum=$1`, checksum).Scan(&versionID)
-	if err != nil {
-		var pb Playbook
-		if err := json.Unmarshal(raw, &pb); err != nil {
-			return nil, fmt.Errorf("parse playbook: %w", err)
-		}
-		err = db.QueryRowx(`INSERT INTO playbook_versions (version, checksum, raw_json, tenant_id)
-            VALUES ($1,$2,$3,$4) RETURNING id`, pb.Version, checksum, raw, DefaultTenantID).Scan(&versionID)
-		if err != nil {
-			return nil, fmt.Errorf("insert playbook version: %w", err)
-		}
-		_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id, tenant_id)
-            VALUES (TRUE,$1,$2)
-            ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, tenant_id=EXCLUDED.tenant_id, updated_at=now()`, versionID, DefaultTenantID)
-		if err != nil {
-			return nil, fmt.Errorf("set active playbook: %w", err)
-		}
-		nodes := indexNodes(pb)
-		return &Manager{VersionID: versionID, Version: pb.Version, Checksum: checksum, Raw: raw, Nodes: nodes, DefaultLocale: pb.LocaleDefault}, nil
-	}
-	_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id, tenant_id)
-        VALUES (TRUE,$1,$2)
-        ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, tenant_id=EXCLUDED.tenant_id, updated_at=now()`, versionID, DefaultTenantID)
-	if err != nil {
-		return nil, fmt.Errorf("update active playbook: %w", err)
-	}
-	var rawJSON []byte
-	var version string
-	err = db.QueryRowx(`SELECT version, raw_json FROM playbook_versions WHERE id=$1`, versionID).Scan(&version, &rawJSON)
-	if err != nil {
-		return nil, fmt.Errorf("load playbook raw: %w", err)
-	}
-	var pb Playbook
-	if err := json.Unmarshal(rawJSON, &pb); err != nil {
-		return nil, fmt.Errorf("parse playbook: %w", err)
-	}
-	nodes := indexNodes(pb)
-	return &Manager{VersionID: versionID, Version: version, Checksum: checksum, Raw: rawJSON, Nodes: nodes, DefaultLocale: pb.LocaleDefault}, nil
+	return ensureActiveCommon(db, path, DefaultTenantID)
 }
 
-// EnsureActiveForTenant works like EnsureActive but uses the specified tenant ID
 func EnsureActiveForTenant(db *sqlx.DB, path string, tenantID string) (*Manager, error) {
+	return ensureActiveCommon(db, path, tenantID)
+}
+
+func ensureActiveCommon(db *sqlx.DB, path string, tenantID string) (*Manager, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read playbook: %w", err)
@@ -122,9 +81,17 @@ func EnsureActiveForTenant(db *sqlx.DB, path string, tenantID string) (*Manager,
 		if err != nil {
 			return nil, fmt.Errorf("insert playbook version: %w", err)
 		}
-		nodes := indexNodes(pb)
-		return &Manager{VersionID: versionID, Version: pb.Version, Checksum: checksum, Raw: raw, Nodes: nodes, DefaultLocale: pb.LocaleDefault}, nil
+		nodes, nodeWorlds := indexNodes(pb)
+		return &Manager{VersionID: versionID, Version: pb.Version, Checksum: checksum, Raw: raw, Nodes: nodes, NodeWorlds: nodeWorlds, DefaultLocale: pb.LocaleDefault}, nil
 	}
+	// Existing version found
+	_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id, tenant_id)
+        VALUES (TRUE,$1,$2)
+        ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, tenant_id=EXCLUDED.tenant_id, updated_at=now()`, versionID, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("update active playbook: %w", err)
+	}
+
 	var rawJSON []byte
 	var version string
 	err = db.QueryRowx(`SELECT version, raw_json FROM playbook_versions WHERE id=$1`, versionID).Scan(&version, &rawJSON)
@@ -135,21 +102,27 @@ func EnsureActiveForTenant(db *sqlx.DB, path string, tenantID string) (*Manager,
 	if err := json.Unmarshal(rawJSON, &pb); err != nil {
 		return nil, fmt.Errorf("parse playbook: %w", err)
 	}
-	nodes := indexNodes(pb)
-	return &Manager{VersionID: versionID, Version: version, Checksum: checksum, Raw: rawJSON, Nodes: nodes, DefaultLocale: pb.LocaleDefault}, nil
+	nodes, nodeWorlds := indexNodes(pb)
+	return &Manager{VersionID: versionID, Version: version, Checksum: checksum, Raw: rawJSON, Nodes: nodes, NodeWorlds: nodeWorlds, DefaultLocale: pb.LocaleDefault}, nil
 }
 
-func indexNodes(pb Playbook) map[string]Node {
+func indexNodes(pb Playbook) (map[string]Node, map[string]string) {
 	nodes := make(map[string]Node)
+	nodeWorlds := make(map[string]string)
 	for _, w := range pb.Worlds {
 		for _, n := range w.Nodes {
 			nodes[n.ID] = n
+			nodeWorlds[n.ID] = w.ID
 		}
 	}
-	return nodes
+	return nodes, nodeWorlds
 }
 
 func (m *Manager) NodeDefinition(nodeID string) (Node, bool) {
 	n, ok := m.Nodes[nodeID]
 	return n, ok
+}
+
+func (m *Manager) NodeWorldID(nodeID string) string {
+	return m.NodeWorlds[nodeID]
 }

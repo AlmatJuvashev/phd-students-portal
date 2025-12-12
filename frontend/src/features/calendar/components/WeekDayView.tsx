@@ -51,6 +51,8 @@ export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, events, v
     }
   }, [view]);
 
+  const [dragTarget, setDragTarget] = React.useState<string | null>(null);
+
   const getEventStyle = (event: CalendarEvent) => {
     const start = new Date(event.start);
     const end = new Date(event.end);
@@ -85,9 +87,15 @@ export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, events, v
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
+  
+  const handleDragEnter = (e: React.DragEvent, dayIso: string, hour: number) => {
+      e.preventDefault();
+      setDragTarget(`${dayIso}-${hour}`);
+  };
 
   const handleDrop = (e: React.DragEvent, day: Date, hour: number) => {
     e.preventDefault();
+    setDragTarget(null);
     const eventId = e.dataTransfer.getData('eventId');
     const event = events.find(e => e.id === eventId);
     if (event) {
@@ -99,7 +107,7 @@ export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, events, v
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" onMouseLeave={() => setDragTarget(null)}>
       {/* Header */}
       <div className="flex border-b border-slate-200 bg-slate-50">
         <div className="w-16 flex-shrink-0 border-r border-slate-200" /> {/* Time gutter */}
@@ -145,19 +153,28 @@ export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, events, v
             </div>
 
             {/* Day Columns */}
-            {days.map(day => (
-              <div key={day.toISOString()} className="relative border-r border-slate-100 last:border-0 h-full group">
-                {/* Click Listeners for slots */}
-                {hours.map(hour => (
-                   <div 
-                      key={hour} 
-                      className="absolute w-full hover:bg-primary/5 transition-colors z-0"
-                      style={{ top: `${hour * CELL_HEIGHT}px`, height: `${CELL_HEIGHT}px` }}
-                      onClick={() => handleSlotClick(day, hour)}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, day, hour)}
-                   />
-                ))}
+            {days.map(day => {
+                const dayIso = day.toISOString();
+                return (
+                  <div key={dayIso} className="relative border-r border-slate-100 last:border-0 h-full group">
+                    {/* Click Listeners for slots */}
+                    {hours.map(hour => {
+                       const isTarget = dragTarget === `${dayIso}-${hour}`;
+                       return (
+                           <div 
+                              key={hour} 
+                              className={cn(
+                                "absolute w-full transition-colors z-0",
+                                isTarget ? "bg-primary/10 ring-inset ring-2 ring-primary/20" : "hover:bg-primary/5"
+                              )}
+                              style={{ top: `${hour * CELL_HEIGHT}px`, height: `${CELL_HEIGHT}px` }}
+                              onClick={() => handleSlotClick(day, hour)}
+                              onDragOver={handleDragOver}
+                              onDragEnter={(e) => handleDragEnter(e, dayIso, hour)}
+                              onDrop={(e) => handleDrop(e, day, hour)}
+                           />
+                       );
+                    })}
 
                 {/* Events */}
                 {events
@@ -194,7 +211,8 @@ export const WeekDayView: React.FC<WeekDayViewProps> = ({ currentDate, events, v
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </div>

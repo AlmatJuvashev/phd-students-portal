@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NodeVM, Playbook, toViewModel, t } from "@/lib/playbook";
 import { WorldContainer } from './WorldContainer';
-import { Rocket, Sparkles, FileText, UploadCloud, Check, Map as MapIcon, Calendar, X, ListChecks } from 'lucide-react';
+import { ScoreboardModal } from "@/features/journey/components/ScoreboardModal";
+import { NodeDetails } from "@/features/nodes/details/NodeDetails";
+import { Rocket, Sparkles, FileText, UploadCloud, Check, Map as MapIcon, Calendar, X, ListChecks, Trophy } from 'lucide-react';
 import { api } from "@/api/client";
 import { patchJourneyState } from "@/features/journey/session";
 import { ConfettiBurst } from "@/features/journey/components/ConfettiBurst";
@@ -12,8 +14,7 @@ import { useSubmission } from "@/features/journey/hooks";
 import { BackButton } from "@/components/ui/back-button";
 import DevBar from "@/features/journey/components/DevBar";
 import { detectTerminalNodeIds } from "@/features/journey/moduleGraph";
-import { useAuth } from '@/contexts/AuthContext'
-import { NodeDetails } from "@/features/nodes/details/NodeDetails"; // Import the inner content directly if possible, or wrap the Sheet content
+import { useAuth } from '@/contexts/AuthContext';
 
 // We want to use the existing NodeDetails logic but inside our own Modal.
 // The NodeDetailsSheet component wraps a Sheet. We might need to extract the inner content or 
@@ -128,15 +129,27 @@ export function JourneyMap({
     [vm.worlds, unlockAll, rp_required]
   );
 
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+
   const globalStats = useMemo(() => {
     let total = 0;
     let done = 0;
+    let totalXP = 0;
+    
     visibleWorlds.forEach(w => {
         total += w.nodes.length;
         done += w.nodes.filter(n => n.state === 'done').length;
+        
+        // Calculate XP
+        // Logic: 100XP per done node, except World 3
+        if (w.id !== "W3") {
+            const worldDoneCount = w.nodes.filter(n => n.state === 'done').length;
+            totalXP += worldDoneCount * 100;
+        }
     });
+
     const progress = total > 0 ? (done / total) * 100 : 0;
-    return { total, done, progress };
+    return { total, done, progress, totalXP };
   }, [visibleWorlds]);
 
 
@@ -193,11 +206,28 @@ export function JourneyMap({
               </div>
             </div>
             
-            <div className="text-right">
-              <div className="text-2xl font-black tabular-nums leading-none">
-                {Math.round(globalStats.progress)}%
-              </div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{T('journey.total_progress')}</div>
+            <div className="flex items-center gap-6 text-right">
+               {/* Leaderboard Trigger */}
+               <button 
+                  onClick={() => setIsLeaderboardOpen(true)}
+                  className="group flex flex-col items-end cursor-pointer focus:outline-none"
+                  title="View Leaderboard"
+               >
+                  <div className="text-2xl font-black tabular-nums leading-none text-amber-500 group-hover:scale-110 transition-transform flex items-center gap-1.5">
+                    <Trophy size={16} className="text-amber-500" />
+                    {globalStats.totalXP.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold group-hover:text-amber-500 transition-colors">
+                     Total XP
+                  </div>
+               </button>
+
+               <div>
+                 <div className="text-2xl font-black tabular-nums leading-none">
+                   {Math.round(globalStats.progress)}%
+                 </div>
+                 <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{T('journey.total_progress')}</div>
+               </div>
             </div>
           </div>
           
@@ -311,8 +341,15 @@ export function JourneyMap({
         )}
       </AnimatePresence>
       
+      <AnimatePresence>
+        {isLeaderboardOpen && (
+          <ScoreboardModal 
+            currentXP={globalStats.totalXP} 
+            onClose={() => setIsLeaderboardOpen(false)} 
+          />
+        )}
+      </AnimatePresence>
       <ConfettiBurst trigger={confetti} />
-      {(import.meta as any).env?.DEV && <DevBar />}
       {(import.meta as any).env?.DEV && <DevBar />}
     </div>
   );
