@@ -901,5 +901,31 @@
     "doc_approved": "Документ одобрен",
     "change_req_success": "Правки запрошены",
     "action_failed": "Ошибка"
+  },
+  "scoreboard": {
+    "title": "Рейтинг",
+    "year": "ГОД 25/26",
+    "your_position": "Ваша позиция",
+    "your_xp": "Ваш XP",
+    "top_percent": "Топ %",
+    "loading": "Загрузка баллов...",
+    "the_chase": "Погоня",
+    "no_contenders": "Пока нет других участников!",
+    "cohort_average": "Среднее по потоку",
+    "you": "ВЫ",
+    "badges": {
+      "streak": "Серия 3 дня",
+      "speed": "Быстрое прохождение",
+      "veteran": "Лучший результат"
+    }
+  },
+  "world": {
+    "level": "Уровень",
+    "stats_title": "Статистика уровня",
+    "ranked": "РЕЙТИНГОВЫЙ",
+    "unranked": "БЕЗ РЕЙТИНГА",
+    "progress": "Прогресс",
+    "xp_earned": "Заработано XP",
+    "nodes": "Этапы"
   }
 }

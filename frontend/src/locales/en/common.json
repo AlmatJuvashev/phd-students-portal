@@ -905,4 +905,31 @@
       "rejected": "Needs fixes"
     }
   }
+  ,
+  "scoreboard": {
+    "title": "Leaderboard",
+    "year": "YEAR 25/26",
+    "your_position": "Your Position",
+    "your_xp": "Your XP",
+    "top_percent": "Top %",
+    "loading": "Loading scores...",
+    "the_chase": "The Chase",
+    "no_contenders": "No other contenders yet!",
+    "cohort_average": "Cohort Average",
+    "you": "YOU",
+    "badges": {
+      "streak": "3 Day Streak",
+      "speed": "Fast Completion",
+      "veteran": "Top Performer"
+    }
+  },
+  "world": {
+    "level": "Level",
+    "stats_title": "Level Stats",
+    "ranked": "RANKED",
+    "unranked": "UNRANKED",
+    "progress": "Progress",
+    "xp_earned": "XP Earned",
+    "nodes": "Nodes"
+  }
 }

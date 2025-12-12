@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -112,4 +113,194 @@ func userIDFromClaims(c *gin.Context) string {
 	}
 	sub, _ := val.(jwt.MapClaims)["sub"].(string)
 	return sub
+}
+
+type ScoreboardEntry struct {
+	UserID     string `json:"user_id"`
+	Name       string `json:"name"`
+	Avatar     string `json:"avatar"`
+	TotalScore int    `json:"score"`
+	Rank       int    `json:"rank"`
+}
+
+type ScoreboardResponse struct {
+	Top5       []ScoreboardEntry `json:"top_5"`
+	Average    int               `json:"average_score"`
+	Me         *ScoreboardEntry  `json:"me"`
+	TotalUsers int               `json:"total_users"`
+}
+
+// GET /api/journey/scoreboard
+func (h *JourneyHandler) GetScoreboard(c *gin.Context) {
+	u := userIDFromClaims(c)
+	tenantID := middleware.GetTenantID(c)
+	if u == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	// 1. Fetch all 'done' states for this tenant
+	type doneNode struct {
+		UserID string `db:"user_id"`
+		NodeID string `db:"node_id"`
+	}
+	var doneNodes []doneNode
+	err := h.db.Select(&doneNodes, `SELECT user_id, node_id FROM journey_states WHERE state='done' AND tenant_id=$1`, tenantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+		return
+	}
+
+	// 2. Score Aggregation (Filter out W3)
+	userScores := make(map[string]int)
+	for _, dn := range doneNodes {
+		// Only count known nodes
+		if _, ok := h.pb.NodeDefinition(dn.NodeID); ok {
+			// Check World ID
+			worldID := h.pb.NodeWorldID(dn.NodeID)
+			// Conditional Logic: Nodes from W3 are 0XP
+			if worldID != "W3" {
+				userScores[dn.UserID] += 100
+			}
+		}
+	}
+
+    // 3. Collect User IDs participating
+    userIDs := make([]string, 0, len(userScores))
+    for uid := range userScores {
+        userIDs = append(userIDs, uid)
+    }
+
+    // 4. Fetch User Details for these IDs
+    type UserInfo struct {
+        ID        string  `db:"id"`
+        Email     *string `db:"email"`
+        FirstName *string `db:"first_name"`
+        LastName  *string `db:"last_name"`
+    }
+    userInfoMap := make(map[string]UserInfo)
+    if len(userIDs) > 0 {
+        log.Printf("[Scoreboard] Fetching details for %d users: %v", len(userIDs), userIDs)
+        query, args, err := sqlx.In(`SELECT id, email, first_name, last_name FROM users WHERE id IN (?)`, userIDs)
+        if err == nil {
+            query = h.db.Rebind(query)
+            var users []UserInfo
+            if err := h.db.Select(&users, query, args...); err == nil {
+                for _, usr := range users {
+                    userInfoMap[usr.ID] = usr
+                }
+            } else {
+                 log.Printf("[Scoreboard] DB Error fetching users: %v", err)
+            }
+        } else {
+             log.Printf("[Scoreboard] sqlx.In error: %v", err)
+        }
+    }
+
+    // 5. Flatten to list for sorting
+    var allEntries []ScoreboardEntry
+    totalSum := 0
+    for uid, score := range userScores {
+        uInfo, found := userInfoMap[uid]
+        var name string
+        if found {
+            f := ""; if uInfo.FirstName != nil { f = *uInfo.FirstName }
+            l := ""; if uInfo.LastName != nil { l = *uInfo.LastName }
+            name = f + " " + l
+            // Trim spaces
+            if len(name) > 0 && name[0] == ' ' { name = name[1:] }
+            if len(name) > 0 && name[len(name)-1] == ' ' { name = name[:len(name)-1] }
+            
+            if name == "" {
+                if uInfo.Email != nil {
+                    name = *uInfo.Email
+                } else {
+                    name = "Student" // Fallback
+                }
+            }
+        } else {
+            name = "Unknown"
+        }
+
+        allEntries = append(allEntries, ScoreboardEntry{
+            UserID:     uid,
+            Name:       name,
+            Avatar:     "", 
+            TotalScore: score,
+        })
+        totalSum += score
+    }
+
+    // 6. Sort Descending
+    for i := 0; i < len(allEntries); i++ {
+        for j := i + 1; j < len(allEntries); j++ {
+            if allEntries[j].TotalScore > allEntries[i].TotalScore {
+                allEntries[i], allEntries[j] = allEntries[j], allEntries[i]
+            }
+        }
+    }
+
+    // 7. Assign Ranks
+    for i := range allEntries {
+        allEntries[i].Rank = i + 1
+    }
+
+    // 8. Construct Response
+    var top5 []ScoreboardEntry
+    if len(allEntries) > 5 {
+        top5 = allEntries[:5]
+    } else {
+        top5 = allEntries
+    }
+    
+    avg := 0
+    if len(allEntries) > 0 {
+        avg = totalSum / len(allEntries)
+    }
+
+    var me *ScoreboardEntry
+    for _, e := range allEntries {
+        if e.UserID == u {
+            val := e
+            me = &val
+            break
+        }
+    }
+    
+    // If user has 0 score (no done nodes), they might not be in the list
+    if me == nil {
+        // Fetch valid user info even if score 0
+         var self UserInfo
+         _ = h.db.Get(&self, `SELECT id, email, first_name, last_name FROM users WHERE id=$1`, u)
+         
+         f := ""; if self.FirstName != nil { f = *self.FirstName }
+         l := ""; if self.LastName != nil { l = *self.LastName }
+         name := f + " " + l
+         // Trim
+         if len(name) > 0 && name[0] == ' ' { name = name[1:] }
+         if len(name) > 0 && name[len(name)-1] == ' ' { name = name[:len(name)-1] }
+
+         if name == "" {
+             if self.Email != nil {
+                 name = *self.Email
+             } else {
+                 name = "You"
+             }
+         }
+         
+         me = &ScoreboardEntry{
+             UserID: u,
+             Name: name,
+             Avatar: "",
+             TotalScore: 0,
+             Rank: len(allEntries) + 1,
+         }
+    }
+
+	c.JSON(http.StatusOK, ScoreboardResponse{
+		Top5:       top5,
+		Average:    avg,
+		Me:         me,
+		TotalUsers: len(allEntries),
+	})
 }
