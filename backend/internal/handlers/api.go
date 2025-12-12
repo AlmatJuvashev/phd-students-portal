@@ -213,6 +213,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	js.GET("/state", journey.GetState)
 	js.PUT("/state", journey.SetState)
 	js.POST("/reset", journey.Reset)
+	js.GET("/scoreboard", journey.GetScoreboard)
 	js.GET("/profile", nodeSubmission.GetProfile)
 
 	nodes := js.Group("/nodes")

@@ -173,7 +173,19 @@
     "forward_message": "Forward Message",
     "forward_here": "Forward here",
     "select_forward": "Select group to forward to",
-    "demo_forward_note": "Note: For this demo, clicking 'Forward' simulates forwarding to the same room."
+    "demo_forward_note": "Note: For this demo, clicking 'Forward' simulates forwarding to the same room.",
+    "welcome": "Welcome to Chat",
+    "select_room_prompt": "Select a conversation from the sidebar to start messaging.",
+    "message_placeholder": "Message",
+    "forwarded_from": "Forwarded from {{name}}",
+    "unknown_sender": "Unknown",
+    "private_room": "Private",
+    "participants_count": "{{count}} participants",
+    "forward_success": "Forwarded!",
+    "forward_error": "Failed to forward message.",
+    "archive_success": "Room archived.",
+    "archive_error": "Failed to archive room",
+    "delete_confirm": "Delete this message?"
   },
   "chat_admin": {
     "title": "Chat rooms",

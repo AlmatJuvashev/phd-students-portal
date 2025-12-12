@@ -64,7 +64,7 @@ export function ChatPage() {
         type: room.type,
         unreadCount: room.unread_count || 0,
         lastMessage: room.last_message_at ? {
-            content: "Message", // Backend doesn't provide preview yet
+            content: t("chat.message_placeholder", "Message"), // Backend doesn't provide preview yet
             timestamp: room.last_message_at,
             senderId: "unknown"
         } : undefined

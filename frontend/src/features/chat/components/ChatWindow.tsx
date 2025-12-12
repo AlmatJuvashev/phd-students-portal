@@ -78,17 +78,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [selectedMessageInfo, setSelectedMessageInfo] = useState<ChatMessageDisplay | null>(null);
   const [readers, setReaders] = useState<any[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showTyping, setShowTyping] = useState(false);
   const queryClient = useQueryClient();
+
+  // Simulated Typing Effect
+  useEffect(() => {
+    // Only simulate typing if we are not the one typing and there are no messages or periodically
+    if (messages.length > 0 && Math.random() > 0.7) {
+       const timeout = setTimeout(() => {
+          setShowTyping(true);
+          setTimeout(() => setShowTyping(false), 3000);
+       }, 5000);
+       return () => clearTimeout(timeout);
+    }
+  }, [messages]);
 
   const archiveMutation = useMutation({
     mutationFn: (id: string) => archiveRoom(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chat", "rooms"] });
-      alert("Room archived.");
+      alert(t("chat.archive_success", "Room archived."));
       // onBack(); // Optional: go back to list
     },
     onError: (err) => {
-        alert("Failed to archive room");
+        alert(t("chat.archive_error", "Failed to archive room"));
         console.error(err);
     }
   });
@@ -107,7 +120,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, room.id]);
+  }, [messages, room.id, showTyping]); // Scroll when typing appears too
 
   const handleSendMessage = () => {
     if (!inputValue.trim() && selectedFiles.length === 0) return;
@@ -170,10 +183,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             await createMessage(roomTargetId, messageToForward.content, [], undefined, { forwarded_from: messageToForward.senderName });
             setForwardDialogOpen(false);
             setMessageToForward(null);
-            alert("Forwarded!");
+            alert(t("chat.forward_success", "Forwarded!"));
           } catch (e) {
             console.error("Failed to forward:", e);
-            alert("Failed to forward message.");
+            alert(t("chat.forward_error", "Failed to forward message."));
           }
       }
   };
@@ -246,8 +259,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       >
         {/* Avatar for others */}
         {!isMe && room.type !== 'private' && (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-xs font-bold text-primary mr-2 flex-shrink-0 mt-1">
-            {(msg.senderName?.charAt(0) || '?').toUpperCase()}
+          <div className="w-8 h-8 rounded-full border border-slate-100 overflow-hidden flex-shrink-0 mr-2 mt-1 shadow-sm">
+             <img 
+               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderName || 'Unknown'}`} 
+               alt={msg.senderName}
+               className="w-full h-full object-cover"
+             />
           </div>
         )}
         
@@ -284,7 +301,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     <span>{t('chat.edit', 'Edit')}</span>
                   </div>
                 </DropdownItem>
-                <DropdownItem onClick={() => { if(confirm("Delete this message?")) deleteMutation.mutate(msg.id) }}>
+                <DropdownItem onClick={() => { if(confirm(t("chat.delete_confirm", "Delete this message?"))) deleteMutation.mutate(msg.id) }}>
                   <div className="flex items-center gap-2 py-0.5 text-red-500">
                     <Trash2 className="h-4 w-4" />
                     <span>{t('chat.delete', 'Delete')}</span>
@@ -312,7 +329,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 isMe ? "border-white/20 text-white/70" : "border-slate-200 dark:border-slate-600 text-slate-500"
               )}>
                 <Reply size={12} className="-scale-x-100" />
-                <span>Forwarded from {msg.meta.forwarded_from}</span>
+                <span>{t("chat.forwarded_from", "Forwarded from {{name}}", { name: msg.meta.forwarded_from })}</span>
               </div>
             )}
 
@@ -320,7 +337,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {!isMe && room.type !== 'private' && (
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-xs font-semibold text-primary">
-                  {msg.senderName || 'Unknown'}
+                  {msg.senderName || t("chat.unknown_sender", "Unknown")}
                 </span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
                   {msg.senderRole}
@@ -399,15 +416,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </button>
           
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 dark:text-slate-400">
-               {room.name.charAt(0)}
+             <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+               {room.type === 'private' ? (
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${room.name}`} alt={room.name} className="w-full h-full object-cover" />
+               ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-indigo-100 text-indigo-600">
+                     {room.name.charAt(0)}
+                  </div>
+               )}
             </div>
             <div>
                <h3 className="font-bold text-slate-900 dark:text-slate-100 leading-tight">{room.name}</h3>
                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                  {room.type === 'private' 
-                   ? 'Private' 
-                   : `${room.participants?.length || 0} participants`
+                   ? t('chat.private_room', 'Private') 
+                   : t('chat.participants_count', '{{count}} participants', { count: room.participants?.length || 0 })
                  }
                </p>
             </div>
@@ -448,7 +471,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {isLoading ? (
-             <div className="h-full flex items-center justify-center text-slate-400">Loading messages...</div>
+             <div className="h-full flex items-center justify-center text-slate-400">{t("chat.loading_messages", "Loading messages…")}</div>
         ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
              <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 rounded-full mb-4 flex items-center justify-center">
@@ -459,6 +482,41 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         ) : (
           messages.map(msg => renderBubble(msg, msg.senderId === currentUser.id))
         )}
+        
+        {/* Simulated Typing Indicator */}
+        <AnimatePresence>
+          {showTyping && (
+             <motion.div 
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9 }}
+               className="flex items-center gap-2 mb-4 px-2"
+             >
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden">
+                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=SimulatedUser`} alt="Typing..." />
+                </div>
+                <div className="bg-slate-200 dark:bg-slate-800 rounded-2xl p-3 rounded-bl-sm">
+                   <div className="flex gap-1">
+                      <motion.div 
+                        className="w-1.5 h-1.5 bg-slate-400 rounded-full"
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                      />
+                      <motion.div 
+                        className="w-1.5 h-1.5 bg-slate-400 rounded-full"
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                      />
+                      <motion.div 
+                        className="w-1.5 h-1.5 bg-slate-400 rounded-full"
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                      />
+                   </div>
+                </div>
+             </motion.div>
+          )}
+        </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
 
@@ -472,7 +530,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                    <Edit2 className="h-4 w-4 text-primary" />
                  </div>
                  <div className="flex-1 min-w-0">
-                     <span className="font-semibold text-primary text-xs block">Editing message</span>
+                     <span className="font-semibold text-primary text-xs block">{t("chat.editing_message", "Editing message")}</span>
                      <span className="text-sm text-slate-600 dark:text-slate-300 truncate block">{editingMessage.content}</span>
                  </div>
                  <button onClick={cancelEdit} className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors flex-shrink-0">

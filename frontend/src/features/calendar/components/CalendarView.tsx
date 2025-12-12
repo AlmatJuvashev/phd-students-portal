@@ -229,15 +229,10 @@ export const CalendarView: React.FC = () => {
             </button>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-slate-800 tabular-nums text-center xl:hidden capitalize">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 tabular-nums text-center capitalize">
             {format(currentDate, 'MMMM yyyy', { locale: currentLocale })}
           </h2>
         </div>
-
-        {/* Center Title (Desktop) */}
-        <h2 className="hidden xl:block text-xl font-bold text-slate-800 tabular-nums text-center absolute left-1/2 -translate-x-1/2 capitalize">
-          {format(currentDate, 'MMMM yyyy', { locale: currentLocale })}
-        </h2>
 
         {/* Controls Group */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
