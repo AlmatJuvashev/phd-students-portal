@@ -898,5 +898,31 @@
     "doc_approved": "Құжат мақұлданды",
     "change_req_success": "Түзетулер сұралды",
     "action_failed": "Қате"
+  },
+  "scoreboard": {
+    "title": "Рейтинг",
+    "year": "ЖЫЛ 25/26",
+    "your_position": "Сіздің орныңыз",
+    "your_xp": "Сіздің XP",
+    "top_percent": "Топ %",
+    "loading": "Ұпайлар жүктелуде...",
+    "the_chase": "Жарыс",
+    "no_contenders": "Әзірге басқа қатысушылар жоқ!",
+    "cohort_average": "Лег ағымының орташасы",
+    "you": "СІЗ",
+    "badges": {
+      "streak": "3 күндік серия",
+      "speed": "Жылдам аяқтау",
+      "veteran": "Үздік нәтиже"
+    }
+  },
+  "world": {
+    "level": "Деңгей",
+    "stats_title": "Деңгей статистикасы",
+    "ranked": "РЕЙТИНГТІ",
+    "unranked": "РЕЙТИНГСІЗ",
+    "progress": "Прогресс",
+    "xp_earned": "Жиналған XP",
+    "nodes": "Кезеңдер"
   }
 }
