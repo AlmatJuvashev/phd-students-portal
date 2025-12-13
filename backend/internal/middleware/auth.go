@@ -132,7 +132,7 @@ func HydrateUserFromClaims(c *gin.Context, dbx *sqlx.DB, rds interface{}) {
 	
 	log.Printf("[HydrateUser] Querying DB for sub=%s", sub)
 	var u UserLite
-	err := dbx.Get(&u, `SELECT id,username,email,first_name,last_name,role,COALESCE(is_superadmin, false) as is_superadmin FROM users WHERE id=$1`, sub)
+	err := dbx.Get(&u, `SELECT id,username,email,first_name,last_name,role,COALESCE(is_superadmin, false) as is_superadmin FROM users WHERE id=$1 AND is_active=true`, sub)
 	if err != nil {
 		log.Printf("[HydrateUser] user not found in DB: sub=%s, error=%v", sub, err)
 		return

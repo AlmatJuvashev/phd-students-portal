@@ -155,6 +155,11 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 	if req.Role == "student" {
 		h.syncUserToProfileSubmissions(id, req.Specialty, req.Department, req.Program, req.Cohort)
 	}
+
+	// Invalidate cache
+	if h.rds != nil {
+		h.rds.Del(c, "user:"+id).Err()
+	}
 	
 	c.JSON(200, gin.H{"ok": true})
 }
@@ -217,6 +222,11 @@ func (h *UsersHandler) ResetPasswordForUser(c *gin.Context) {
 		return
 	}
 
+	// Invalidate cache
+	if h.rds != nil {
+		h.rds.Del(c, "user:"+id).Err()
+	}
+
 	// Return the new credentials
 	c.JSON(200, gin.H{"username": username, "temp_password": tempPassword})
 }
@@ -238,6 +248,11 @@ func (h *UsersHandler) SetActive(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "update failed"})
 		return
 	}
+	// Invalidate cache
+	if h.rds != nil {
+		h.rds.Del(c, "user:"+id).Err()
+	}
+
 	c.JSON(200, gin.H{"ok": true})
 }
 
@@ -549,6 +564,14 @@ func (h *UsersHandler) UpdateMe(c *gin.Context) {
 	}
 
 	if !emailChanged {
+		// Invalidate cache
+		if h.rds != nil {
+			if err := h.rds.Del(c, "user:"+uid.(string)).Err(); err != nil {
+				log.Printf("[UpdateMe] Failed to invalidate cache for user %s after non-email update: %v", uid, err)
+			} else {
+				log.Printf("[UpdateMe] Cache invalidated for user %s after non-email update", uid)
+			}
+		}
 		c.JSON(200, gin.H{"message": "profile updated successfully"})
 		return
 	}

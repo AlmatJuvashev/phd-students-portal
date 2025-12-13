@@ -107,7 +107,7 @@ export default function ProfilePage() {
         <Card className="card-enhanced">
           <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
             <div className="relative group">
-              <Avatar className="h-32 w-32">
+              <Avatar className="h-32 w-32" key={user.avatar_url}>
                 <AvatarImage src={user.avatar_url} />
                 <AvatarFallback className="text-4xl">
                   {user.first_name?.[0]}

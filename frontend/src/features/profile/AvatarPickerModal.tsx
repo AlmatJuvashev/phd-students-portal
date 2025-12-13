@@ -36,7 +36,10 @@ export const AvatarPickerModal = ({ isOpen, onClose }: AvatarPickerModalProps) =
     setLoading(true);
     try {
       await updateAvatar(avatarUrl);
+      console.log("Avatar updated, invalidating cache...");
       await queryClient.invalidateQueries({ queryKey: ["me"] });
+      await queryClient.refetchQueries({ queryKey: ["me"] });
+      console.log("Cache invalidated and refetched.");
       toast({ title: t("profile.avatar_updated", "Avatar updated successfully") });
       onClose();
     } catch (error) {

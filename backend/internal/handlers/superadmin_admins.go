@@ -9,17 +9,19 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 )
 
 // SuperadminAdminsHandler handles admin CRUD operations for superadmins
 type SuperadminAdminsHandler struct {
 	db  *sqlx.DB
 	cfg config.AppConfig
+	rds *redis.Client
 }
 
 // NewSuperadminAdminsHandler creates a new superadmin admins handler
-func NewSuperadminAdminsHandler(db *sqlx.DB, cfg config.AppConfig) *SuperadminAdminsHandler {
-	return &SuperadminAdminsHandler{db: db, cfg: cfg}
+func NewSuperadminAdminsHandler(db *sqlx.DB, cfg config.AppConfig, rds *redis.Client) *SuperadminAdminsHandler {
+	return &SuperadminAdminsHandler{db: db, cfg: cfg, rds: rds}
 }
 
 // AdminResponse is the API response for an admin user
@@ -305,6 +307,11 @@ func (h *SuperadminAdminsHandler) UpdateAdmin(c *gin.Context) {
 	// Log activity
 	logActivity(h.db, c, "update", "admin", id, "Updated admin: "+username, nil)
 
+	// Invalidate cache
+	if h.rds != nil {
+		h.rds.Del(c, "user:"+id).Err()
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "admin updated successfully"})
 }
 
@@ -333,6 +340,11 @@ func (h *SuperadminAdminsHandler) DeleteAdmin(c *gin.Context) {
 
 	// Log activity
 	logActivity(h.db, c, "delete", "admin", id, "Deactivated admin: "+username, nil)
+
+	// Invalidate cache
+	if h.rds != nil {
+		h.rds.Del(c, "user:"+id).Err()
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "admin deactivated"})
 }
@@ -370,6 +382,11 @@ func (h *SuperadminAdminsHandler) ResetPassword(c *gin.Context) {
 
 	// Log activity
 	logActivity(h.db, c, "reset_password", "admin", id, "Reset password for: "+username, nil)
+
+	// Invalidate cache
+	if h.rds != nil {
+		h.rds.Del(c, "user:"+id).Err()
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "password reset successfully"})
 }

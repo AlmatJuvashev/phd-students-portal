@@ -14,16 +14,18 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 )
 
 type AuthHandler struct {
 	db    *sqlx.DB
 	cfg   config.AppConfig
 	email *services.EmailService
+	rds   *redis.Client
 }
 
-func NewAuthHandler(db *sqlx.DB, cfg config.AppConfig, email *services.EmailService) *AuthHandler {
-	return &AuthHandler{db: db, cfg: cfg, email: email}
+func NewAuthHandler(db *sqlx.DB, cfg config.AppConfig, email *services.EmailService, rds *redis.Client) *AuthHandler {
+	return &AuthHandler{db: db, cfg: cfg, email: email, rds: rds}
 }
 
 type loginReq struct {
@@ -228,6 +230,11 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	if err := tx.Commit(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "commit error"})
 		return
+	}
+
+	// Invalidate cache
+	if h.rds != nil {
+		h.rds.Del(c, "user:"+userID).Err()
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
