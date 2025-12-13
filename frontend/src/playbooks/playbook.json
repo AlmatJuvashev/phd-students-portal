@@ -550,6 +550,7 @@
                   {
                     "key": "format",
                     "type": "select",
+                    "required": true,
                     "icon": "lucide:layout",
                     "label": {
                       "ru": "📋 Формат публикации",
@@ -594,6 +595,7 @@
                   },
                   {
                     "key": "journal",
+                    "required": true,
                     "icon": "lucide:book",
                     "label": {
                       "ru": "📚 Журнал / издательство",
@@ -609,6 +611,7 @@
                   {
                     "key": "year",
                     "type": "number",
+                    "required": true,
                     "icon": "lucide:calendar",
                     "label": {
                       "ru": "📅 Год",
@@ -639,6 +642,7 @@
                   },
                   {
                     "key": "pages_or_sheets",
+                    "required": true,
                     "icon": "lucide:file-text",
                     "label": {
                       "ru": "📄 Кол-во печатных листов или страниц",
@@ -721,6 +725,7 @@
                   {
                     "key": "indexing",
                     "type": "select",
+                    "required": true,
                     "icon": "lucide:database",
                     "label": {
                       "ru": "🗂️ Индексирование",
@@ -816,6 +821,7 @@
                   {
                     "key": "format",
                     "type": "select",
+                    "required": true,
                     "icon": "lucide:layout",
                     "label": {
                       "ru": "📋 Формат публикации",
@@ -860,6 +866,7 @@
                   },
                   {
                     "key": "journal",
+                    "required": true,
                     "icon": "lucide:book",
                     "label": {
                       "ru": "📚 Журнал / издательство",
@@ -875,6 +882,7 @@
                   {
                     "key": "year",
                     "type": "number",
+                    "required": true,
                     "icon": "lucide:calendar",
                     "label": {
                       "ru": "📅 Год",
@@ -905,6 +913,7 @@
                   },
                   {
                     "key": "pages_or_sheets",
+                    "required": true,
                     "icon": "lucide:file-text",
                     "label": {
                       "ru": "📄 Кол-во печатных листов или страниц",
@@ -1010,6 +1019,7 @@
                   {
                     "key": "format",
                     "type": "select",
+                    "required": true,
                     "icon": "lucide:layout",
                     "label": {
                       "ru": "📋 Формат публикации",
@@ -1054,6 +1064,7 @@
                   },
                   {
                     "key": "journal",
+                    "required": true,
                     "icon": "lucide:book",
                     "label": {
                       "ru": "📚 Название конференции / сборника",
@@ -1069,6 +1080,7 @@
                   {
                     "key": "year",
                     "type": "number",
+                    "required": true,
                     "icon": "lucide:calendar",
                     "label": {
                       "ru": "📅 Год",
@@ -1094,6 +1106,7 @@
                   },
                   {
                     "key": "pages_or_sheets",
+                    "required": true,
                     "icon": "lucide:file-text",
                     "label": {
                       "ru": "📄 Страницы",
@@ -1166,6 +1179,7 @@
                   {
                     "key": "format",
                     "type": "select",
+                    "required": true,
                     "icon": "lucide:layout",
                     "label": {
                       "ru": "📋 Вид документа",
@@ -1218,6 +1232,7 @@
                   },
                   {
                     "key": "journal",
+                    "required": true,
                     "icon": "lucide:building",
                     "label": {
                       "ru": "🏢 Издательство / орган выдачи",
@@ -1233,6 +1248,7 @@
                   {
                     "key": "year",
                     "type": "number",
+                    "required": true,
                     "icon": "lucide:calendar",
                     "label": {
                       "ru": "📅 Год",
@@ -1258,6 +1274,7 @@
                   },
                   {
                     "key": "pages_or_sheets",
+                    "required": true,
                     "icon": "lucide:file-text",
                     "label": {
                       "ru": "📄 Объём (с. или п.л.)",
