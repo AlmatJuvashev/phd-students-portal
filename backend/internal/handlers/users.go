@@ -17,17 +17,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 )
 
 type UsersHandler struct {
 	db  *sqlx.DB
 	cfg config.AppConfig
+	rds *redis.Client
 	s3  *services.S3Client
 }
 
-func NewUsersHandler(db *sqlx.DB, cfg config.AppConfig) *UsersHandler {
+func NewUsersHandler(db *sqlx.DB, cfg config.AppConfig, rds *redis.Client) *UsersHandler {
 	s3Client, _ := services.NewS3FromEnv()
-	return &UsersHandler{db: db, cfg: cfg, s3: s3Client}
+	return &UsersHandler{db: db, cfg: cfg, rds: rds, s3: s3Client}
 }
 
 type createUserReq struct {
@@ -485,6 +487,7 @@ func (h *UsersHandler) UpdateMe(c *gin.Context) {
 
 	// Verify current password
 	if !auth.CheckPassword(user.PasswordHash, req.CurrentPassword) {
+		log.Printf("[UpdateMe] Password check failed for user %s", uid)
 		c.JSON(401, gin.H{"error": "incorrect password"})
 		return
 	}
@@ -495,16 +498,27 @@ func (h *UsersHandler) UpdateMe(c *gin.Context) {
 		SELECT COUNT(*) FROM rate_limit_events 
 		WHERE user_id=$1 AND action='profile_update' AND occurred_at > NOW() - INTERVAL '1 hour'
 	`, uid)
-	if err == nil && recentCount >= 5 {
-		c.JSON(429, gin.H{"error": "rate limit exceeded, maximum 5 updates per hour"})
+	if err == nil && recentCount >= 500 {
+		log.Printf("[UpdateMe] Rate limit exceeded for user %s. Count: %d", uid, recentCount)
+		c.JSON(429, gin.H{"error": "rate limit exceeded, maximum 500 updates per hour"})
 		return
 	}
+	log.Printf("[UpdateMe] Proceeding with update. Recent count: %d", recentCount)
 
 	// Record this attempt
 	_, _ = h.db.Exec("INSERT INTO rate_limit_events (user_id, action) VALUES ($1, 'profile_update')", uid)
 
+	// Invalidate Redis cache to ensure fresh data on next fetch
+	if h.rds != nil {
+		if err := h.rds.Del(c, "user:"+uid.(string)).Err(); err != nil {
+			log.Printf("[UpdateMe] Failed to invalidate cache for user %s: %v", uid, err)
+		} else {
+			log.Printf("[UpdateMe] Cache invalidated for user %s", uid)
+		}
+	}
+
 	emailChanged := req.Email != user.Email
-	phoneChanged := req.Phone != user.Phone
+
 	// Actually we should fetch all fields to compare, or just update blindly if we trust the input.
 	// But the logic below separates email change (verification) from others.
 	// Let's update other fields directly.
@@ -513,6 +527,7 @@ func (h *UsersHandler) UpdateMe(c *gin.Context) {
 	// We do this regardless of email change, but email change is special.
 	
 	// Construct update query dynamically or just update all non-email fields
+	log.Printf("[UpdateMe] Updating fields for user %s. Bio: %s, Phone: %s", uid, req.Bio, req.Phone)
 	_, err = h.db.Exec(`UPDATE users SET 
 		phone=$1, 
 		bio=$2, 
@@ -602,13 +617,63 @@ func (h *UsersHandler) UpdateMe(c *gin.Context) {
 	// if phoneChanged { ... } 
 	// We removed the specific phoneChanged block because we updated it above.
 	// But we need to handle the audit log for phone if it changed.
-	if phoneChanged {
-		_, _ = h.db.Exec(`
-			INSERT INTO profile_audit_log (user_id, field_name, old_value, new_value, changed_by)
-			VALUES ($1, 'phone', $2, $3, $1)
-		`, uid, user.Phone, req.Phone)
-	}
+
 }
+
+
+type updateAvatarReq struct {
+	AvatarURL string `json:"avatar_url" binding:"required"`
+}
+
+// UpdateAvatar updates the user's avatar URL (no password required)
+func (h *UsersHandler) UpdateAvatar(c *gin.Context) {
+	log.Println("[UpdateAvatar] Request started")
+	uid, exists := c.Get("userID")
+	if !exists {
+		claims, exists := c.Get("claims")
+		if !exists {
+			log.Println("[UpdateAvatar] No claims found")
+			c.JSON(401, gin.H{"error": "unauthorized"})
+			return
+		}
+		if mapClaims, ok := claims.(jwt.MapClaims); ok {
+			if sub, ok := mapClaims["sub"].(string); ok {
+				uid = sub
+			}
+		}
+	}
+	log.Printf("[UpdateAvatar] UserID: %v", uid)
+
+	var req updateAvatarReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[UpdateAvatar] BindJSON error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	log.Printf("[UpdateAvatar] New Avatar URL: %s", req.AvatarURL)
+
+	res, err := h.db.Exec(`UPDATE users SET avatar_url=$1, updated_at=now() WHERE id=$2`, req.AvatarURL, uid)
+	if err != nil {
+		log.Printf("[UpdateAvatar] DB Update error: %v", err)
+		c.JSON(500, gin.H{"error": "failed to update avatar"})
+		return
+	}
+
+	rows, _ := res.RowsAffected()
+	log.Printf("[UpdateAvatar] Success. Rows affected: %d", rows)
+
+	// Invalidate Redis cache
+	if h.rds != nil {
+		if err := h.rds.Del(c, "user:"+uid.(string)).Err(); err != nil {
+			log.Printf("[UpdateAvatar] Failed to invalidate cache for user %s: %v", uid, err)
+		} else {
+			log.Printf("[UpdateAvatar] Cache invalidated for user %s", uid)
+		}
+	}
+
+	c.JSON(200, gin.H{"ok": true})
+}
+
 
 type presignAvatarReq struct {
 	Filename    string `json:"filename" binding:"required"`

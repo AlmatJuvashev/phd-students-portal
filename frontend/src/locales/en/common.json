@@ -115,7 +115,12 @@
     "profile_updated": "Profile updated successfully",
     "update_failed": "Failed to update profile",
     "try_again": "Please try again later.",
-    "password_required": "Password is required to save changes"
+    "password_required": "Password is required to save changes",
+    "choose_avatar": "Choose Random Avatar",
+    "randomize": "Randomize", 
+    "save_avatar": "Use this Avatar",
+    "avatar_hint": "Click randomize to generate a new unique look.",
+    "generate_avatar": "Generate Avatar"
   },
   "notifications": {
     "title": "Notifications",
