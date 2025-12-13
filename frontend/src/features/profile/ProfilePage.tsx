@@ -3,8 +3,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditProfileForm } from "./EditProfileForm";
+import { AvatarPickerModal } from "./AvatarPickerModal";
 import { useState, useRef } from "react";
-import { presignAvatarUpload, updateProfile } from "@/api/user";
+import { presignAvatarUpload, updateAvatar } from "@/api/user";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Upload, AlertCircle } from "lucide-react";
@@ -19,7 +20,9 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
 
   const { data: pendingEmail } = useQuery({
     queryKey: ["me", "pending-email"],
@@ -61,7 +64,7 @@ export default function ProfilePage() {
       if (!uploadRes.ok) throw new Error("Upload failed");
 
       // 3. Update profile
-      await updateProfile({ avatar_url: public_url });
+      await updateAvatar(public_url);
 
       // 4. Refresh
       await queryClient.invalidateQueries({ queryKey: ["me"] });
@@ -134,9 +137,21 @@ export default function ProfilePage() {
                 {user.first_name} {user.last_name}
               </h2>
               <p className="text-sm text-muted-foreground">{user.role}</p>
+
+              
+              <div className="mt-4 flex gap-2 justify-center">
+                 <Button variant="outline" size="sm" onClick={() => setIsAvatarPickerOpen(true)}>
+                    {t("profile.generate_avatar", "Generate Avatar")}
+                 </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <AvatarPickerModal 
+            isOpen={isAvatarPickerOpen} 
+            onClose={() => setIsAvatarPickerOpen(false)} 
+        />
 
         <div className="space-y-6">
           {isEditing ? (

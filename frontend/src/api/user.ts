@@ -21,6 +21,10 @@ export async function updateProfile(data: Partial<UserProfile> & { current_passw
   return api.patch("/me", data);
 }
 
+export async function updateAvatar(url: string) {
+  return api.patch("/me/avatar", { avatar_url: url });
+}
+
 export async function presignAvatarUpload(filename: string, contentType: string, sizeBytes: number) {
   return api<{ upload_url: string; object_key: string; public_url: string }>("/me/avatar/presign", {
     method: "POST",

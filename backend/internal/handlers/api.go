@@ -114,7 +114,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	api.POST("/auth/forgot-password", auth.ForgotPassword)
 	api.POST("/auth/reset-password", auth.ResetPassword)
 
-	users := NewUsersHandler(db, cfg)
+	users := NewUsersHandler(db, cfg, rds)
 	journey := NewJourneyHandler(db, cfg, playbookManager)
 	nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
 	adminHandler := NewAdminHandler(db, cfg, playbookManager)
@@ -202,6 +202,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Self-service password change and profile update
 	api.PATCH("/me", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.UpdateMe)
+	api.PATCH("/me/avatar", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.UpdateAvatar)
 	api.POST("/me/avatar/presign", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.PresignAvatarUpload)
 	api.PATCH("/me/password", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.ChangeOwnPassword)
 	api.GET("/me/pending-email", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.GetPendingEmailVerification)
