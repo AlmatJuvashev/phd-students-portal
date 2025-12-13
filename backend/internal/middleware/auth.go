@@ -78,13 +78,22 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 }
 
 type UserLite struct {
-	ID           string `db:"id" json:"id"`
-	Username     string `db:"username" json:"username"`
-	Email        string `db:"email" json:"email"`
-	FirstName    string `db:"first_name" json:"first_name"`
-	LastName     string `db:"last_name" json:"last_name"`
-	Role         string `db:"role" json:"role"`
-	IsSuperadmin bool   `db:"is_superadmin" json:"is_superadmin"`
+	ID           string  `db:"id" json:"id"`
+	Username     string  `db:"username" json:"username"`
+	Email        string  `db:"email" json:"email"`
+	FirstName    string  `db:"first_name" json:"first_name"`
+	LastName     string  `db:"last_name" json:"last_name"`
+	Role         string  `db:"role" json:"role"`
+	IsSuperadmin bool    `db:"is_superadmin" json:"is_superadmin"`
+	AvatarURL    string  `db:"avatar_url" json:"avatar_url"`
+	Phone        *string `db:"phone" json:"phone"`
+	Bio          *string `db:"bio" json:"bio"`
+	Address      *string `db:"address" json:"address"`
+	DateOfBirth  *string `db:"date_of_birth" json:"date_of_birth"`
+	Program      *string `db:"program" json:"program"`
+	Specialty    *string `db:"specialty" json:"specialty"`
+	Department   *string `db:"department" json:"department"`
+	Cohort       *string `db:"cohort" json:"cohort"`
 }
 
 // HydrateUserFromClaims fetches user by sub (from DB with Redis cache) and stores in context.
@@ -132,7 +141,15 @@ func HydrateUserFromClaims(c *gin.Context, dbx *sqlx.DB, rds interface{}) {
 	
 	log.Printf("[HydrateUser] Querying DB for sub=%s", sub)
 	var u UserLite
-	err := dbx.Get(&u, `SELECT id,username,email,first_name,last_name,role,COALESCE(is_superadmin, false) as is_superadmin FROM users WHERE id=$1 AND is_active=true`, sub)
+	query := `SELECT 
+		id, username, email, first_name, last_name, role, 
+		COALESCE(is_superadmin, false) as is_superadmin, 
+		COALESCE(avatar_url, '') as avatar_url,
+		phone, bio, address, 
+		to_char(date_of_birth, 'YYYY-MM-DD') as date_of_birth,
+		program, specialty, department, cohort
+		FROM users WHERE id=$1 AND is_active=true`
+	err := dbx.Get(&u, query, sub)
 	if err != nil {
 		log.Printf("[HydrateUser] user not found in DB: sub=%s, error=%v", sub, err)
 		return
