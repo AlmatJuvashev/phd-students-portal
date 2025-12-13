@@ -109,7 +109,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	emailService := services.NewEmailService()
 
 	// Auth routes (login and password reset)
-	auth := NewAuthHandler(db, cfg, emailService)
+	auth := NewAuthHandler(db, cfg, emailService, rds)
 	api.POST("/auth/login", auth.Login)
 	api.POST("/auth/forgot-password", auth.ForgotPassword)
 	api.POST("/auth/reset-password", auth.ResetPassword)
@@ -322,7 +322,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// SUPERADMIN ROUTES (global platform admin)
 	// ===========================================
 	superadminTenantsHandler := NewSuperadminTenantsHandler(db, cfg)
-	superadminAdminsHandler := NewSuperadminAdminsHandler(db, cfg)
+	superadminAdminsHandler := NewSuperadminAdminsHandler(db, cfg, rds)
 	superadminLogsHandler := NewSuperadminLogsHandler(db, cfg)
 	superadminSettingsHandler := NewSuperadminSettingsHandler(db, cfg)
 
