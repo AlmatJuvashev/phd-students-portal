@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testTenantID = "00000000-0000-0000-0000-000000000001"
+
 func TestNewNotificationService(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
@@ -30,6 +32,7 @@ func TestNotificationService_CreateNotification(t *testing.T) {
 	ctx := context.Background()
 	notif := &models.Notification{
 		RecipientID: userID,
+		TenantID:    testTenantID,
 		ActorID:     &actorID,
 		Title:       "Test Notification",
 		Message:     "This is a test message",
@@ -54,6 +57,7 @@ func TestNotificationService_GetUnreadNotifications(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		notif := &models.Notification{
 			RecipientID: userID,
+			TenantID:    testTenantID,
 			Title:       "Notification",
 			Message:     "Message",
 			Type:        "info",
@@ -78,6 +82,7 @@ func TestNotificationService_MarkAsRead(t *testing.T) {
 	ctx := context.Background()
 	notif := &models.Notification{
 		RecipientID: userID,
+		TenantID:    testTenantID,
 		Title:       "Read Me",
 		Message:     "Important",
 		Type:        "info",
@@ -121,6 +126,7 @@ func TestNotificationService_MarkAllAsRead(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		notif := &models.Notification{
 			RecipientID: userID,
+			TenantID:    testTenantID,
 			Title:       "Bulk Notification",
 			Message:     "Message",
 			Type:        "info",
@@ -213,6 +219,7 @@ func TestCalendarService_CreateEvent(t *testing.T) {
 		EndTime:     time.Now().Add(26 * time.Hour),
 		EventType:   "meeting",
 		CreatorID:   userID,
+		TenantID:    testTenantID,
 	}
 
 	err := svc.CreateEvent(ctx, event, nil)
@@ -236,6 +243,7 @@ func TestCalendarService_CreateEventWithAttendees(t *testing.T) {
 		EndTime:     time.Now().Add(25 * time.Hour),
 		EventType:   "meeting",
 		CreatorID:   userID,
+		TenantID:    testTenantID,
 	}
 
 	err := svc.CreateEvent(ctx, event, []string{attendeeID})
@@ -260,11 +268,12 @@ func TestCalendarService_GetEvents(t *testing.T) {
 		EndTime:   now.Add(1 * time.Hour),
 		EventType: "meeting",
 		CreatorID: userID,
+		TenantID:  testTenantID,
 	}
 	svc.CreateEvent(ctx, event, nil)
 
 	// Get events in range
-	events, err := svc.GetEvents(ctx, userID, now.Add(-2*time.Hour), now.Add(2*time.Hour))
+	events, err := svc.GetEvents(ctx, userID, testTenantID, now.Add(-2*time.Hour), now.Add(2*time.Hour))
 	require.NoError(t, err)
 	assert.Len(t, events, 1)
 }
@@ -283,6 +292,7 @@ func TestCalendarService_GetEvent(t *testing.T) {
 		EndTime:   time.Now().Add(1 * time.Hour),
 		EventType: "meeting",
 		CreatorID: userID,
+		TenantID:  testTenantID,
 	}
 	svc.CreateEvent(ctx, event, nil)
 
@@ -307,6 +317,7 @@ func TestCalendarService_UpdateEvent(t *testing.T) {
 		EndTime:   time.Now().Add(1 * time.Hour),
 		EventType: "meeting",
 		CreatorID: userID,
+		TenantID:  testTenantID,
 	}
 	svc.CreateEvent(ctx, event, nil)
 
@@ -335,6 +346,7 @@ func TestCalendarService_UpdateEvent_Unauthorized(t *testing.T) {
 		EndTime:   time.Now().Add(1 * time.Hour),
 		EventType: "meeting",
 		CreatorID: userID,
+		TenantID:  testTenantID,
 	}
 	svc.CreateEvent(ctx, event, nil)
 
@@ -359,6 +371,7 @@ func TestCalendarService_DeleteEvent(t *testing.T) {
 		EndTime:   time.Now().Add(1 * time.Hour),
 		EventType: "meeting",
 		CreatorID: userID,
+		TenantID:  testTenantID,
 	}
 	svc.CreateEvent(ctx, event, nil)
 
@@ -386,6 +399,7 @@ func TestCalendarService_DeleteEvent_Unauthorized(t *testing.T) {
 		EndTime:   time.Now().Add(1 * time.Hour),
 		EventType: "meeting",
 		CreatorID: userID,
+		TenantID:  testTenantID,
 	}
 	svc.CreateEvent(ctx, event, nil)
 

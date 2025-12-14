@@ -35,7 +35,7 @@ func TestAuthHandler_Login(t *testing.T) {
 	// Setup handler
 	cfg := config.AppConfig{JWTSecret: "secret", JWTExpDays: 1}
 	// Login in test doesn't use email service
-	h := handlers.NewAuthHandler(db, cfg, services.NewEmailService())
+	h := handlers.NewAuthHandler(db, cfg, services.NewEmailService(), nil)
 
 	// Setup Gin
 	gin.SetMode(gin.TestMode)
@@ -111,7 +111,7 @@ func TestAuthHandler_PasswordReset(t *testing.T) {
 
 	cfg := config.AppConfig{JWTSecret: "secret"}
 	// Use real email service (will log skip if not configured)
-	h := handlers.NewAuthHandler(db, cfg, services.NewEmailService())
+	h := handlers.NewAuthHandler(db, cfg, services.NewEmailService(), nil)
 
 	r := gin.New()
 	r.POST("/forgot-password", h.ForgotPassword)

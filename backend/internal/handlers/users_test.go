@@ -22,7 +22,7 @@ func TestUsersHandler_CreateUser(t *testing.T) {
 	defer teardown()
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg)
+	h := handlers.NewUsersHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -69,7 +69,7 @@ func TestUsersHandler_ListUsers(t *testing.T) {
 	assert.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg)
+	h := handlers.NewUsersHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -124,7 +124,7 @@ func TestUsersHandler_UpdateMe_Extended(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg)
+	h := handlers.NewUsersHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -170,7 +170,7 @@ func TestUsersHandler_PresignAvatar(t *testing.T) {
 	cfg := config.AppConfig{
 		S3Bucket: "test-bucket",
 	}
-	h := handlers.NewUsersHandler(db, cfg)
+	h := handlers.NewUsersHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -219,7 +219,7 @@ func TestUsersHandler_VerifyEmailChange(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg)
+	h := handlers.NewUsersHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -250,7 +250,7 @@ func TestUsersHandler_SetActive(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg)
+	h := handlers.NewUsersHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

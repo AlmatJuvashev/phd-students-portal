@@ -51,7 +51,7 @@ func setupChatTest(t *testing.T) (*handlers.ChatHandler, *gin.Engine, string, *s
 	r.POST("/chat/rooms", h.CreateRoom)
 	r.PUT("/chat/rooms/:roomId", h.UpdateRoom)
 	r.GET("/chat/rooms", h.ListRooms)
-	r.GET("/chat/rooms/:roomId/members", h.ListMembers)
+	r.GET("/chat/rooms/:roomId/members", h.GetRoomMembers)
 	r.POST("/chat/rooms/:roomId/members", h.AddMember)
 	r.DELETE("/chat/rooms/:roomId/members/:userId", h.RemoveMember)
 	r.POST("/chat/rooms/:roomId/members/batch", h.AddRoomMembersBatch)

@@ -21,7 +21,12 @@ func TestDictionaryHandler_Programs(t *testing.T) {
 	h := handlers.NewDictionaryHandler(db)
 
 	gin.SetMode(gin.TestMode)
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.POST("/dictionaries/programs", h.CreateProgram)
 	r.GET("/dictionaries/programs", h.ListPrograms)
 	r.PATCH("/dictionaries/programs/:id", h.UpdateProgram)
@@ -106,7 +111,12 @@ func TestDictionaryHandler_Departments(t *testing.T) {
 	h := handlers.NewDictionaryHandler(db)
 
 	gin.SetMode(gin.TestMode)
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.POST("/dictionaries/departments", h.CreateDepartment)
 	r.GET("/dictionaries/departments", h.ListDepartments)
 	r.PATCH("/dictionaries/departments/:id", h.UpdateDepartment)
@@ -182,7 +192,12 @@ func TestDictionaryHandler_Cohorts(t *testing.T) {
 	h := handlers.NewDictionaryHandler(db)
 
 	gin.SetMode(gin.TestMode)
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.POST("/dictionaries/cohorts", h.CreateCohort)
 	r.GET("/dictionaries/cohorts", h.ListCohorts)
 	r.PATCH("/dictionaries/cohorts/:id", h.UpdateCohort)
@@ -261,11 +276,17 @@ func TestDictionaryHandler_Specialties(t *testing.T) {
 	h := handlers.NewDictionaryHandler(db)
 
 	gin.SetMode(gin.TestMode)
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.GET("/dictionaries/specialties", h.ListSpecialties)
 
 	// Seed specialty
-	_, err := db.Exec(`INSERT INTO specialties (id, name, code) VALUES ('10000000-0000-0000-0000-000000000001', 'Computer Science', 'CS101')`)
+	// Seed specialty
+	_, err := db.Exec(`INSERT INTO specialties (id, name, code, tenant_id) VALUES ('10000000-0000-0000-0000-000000000001', 'Computer Science', 'CS101', $1)`, tenantID)
 	require.NoError(t, err)
 
 	t.Run("List Specialties", func(t *testing.T) {
@@ -288,7 +309,12 @@ func TestDictionaryHandler_SpecialtyCRUD(t *testing.T) {
 	h := handlers.NewDictionaryHandler(db)
 
 	gin.SetMode(gin.TestMode)
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.POST("/dictionaries/specialties", h.CreateSpecialty)
 	r.PUT("/dictionaries/specialties/:id", h.UpdateSpecialty)
 	r.DELETE("/dictionaries/specialties/:id", h.DeleteSpecialty)

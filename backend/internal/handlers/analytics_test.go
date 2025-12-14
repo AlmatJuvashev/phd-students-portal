@@ -29,10 +29,14 @@ func TestAnalyticsHandler_GetStageStats(t *testing.T) {
 		($2, 's2', 's2@ex.com', 'S', '2', 'student', 'hash', true)`, s1, s2)
 	require.NoError(t, err)
 
-	// 2. Create journey states
-	_, err = db.Exec(`INSERT INTO journey_states (user_id, node_id, state) VALUES 
-		($1, 'node1', 'Stage 1'),
-		($2, 'node1', 'Stage 2')`, s1, s2)
+	// 2. Create tenant and journey states
+	tenantID := uuid.NewString()
+	_, err = db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, 'test-analytics', 'Test Analytics', 'university', true)`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO journey_states (user_id, node_id, state, tenant_id) VALUES 
+		($1, 'node1', 'Stage 1', $3),
+		($2, 'node1', 'Stage 2', $3)`, s1, s2, tenantID)
 	require.NoError(t, err)
 
 	svc := services.NewAnalyticsService(db)

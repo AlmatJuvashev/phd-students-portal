@@ -20,13 +20,14 @@ func TestCommentsHandler_CreateComment(t *testing.T) {
 	defer teardown()
 
 	userID := "10000000-0000-0000-0000-000000000001"
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student1', 's1@ex.com', 'Student', 'One', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
 	docID := "33333333-3333-3333-3333-333333333333"
-	_, err = db.Exec(`INSERT INTO documents (id, user_id, title, kind, created_at) 
-		VALUES ($1, $2, 'Test Doc', 'other', NOW())`, docID, userID)
+	_, err = db.Exec(`INSERT INTO documents (id, user_id, title, kind, created_at, tenant_id) 
+		VALUES ($1, $2, 'Test Doc', 'other', NOW(), $3)`, docID, userID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -58,13 +59,14 @@ func TestCommentsHandler_GetComments(t *testing.T) {
 	defer teardown()
 
 	userID := "10000000-0000-0000-0000-000000000001"
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student1', 's1@ex.com', 'Student', 'One', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
 	docID := "33333333-3333-3333-3333-333333333333"
-	_, err = db.Exec(`INSERT INTO documents (id, user_id, title, kind, created_at) 
-		VALUES ($1, $2, 'Test Doc', 'other', NOW())`, docID, userID)
+	_, err = db.Exec(`INSERT INTO documents (id, user_id, title, kind, created_at, tenant_id) 
+		VALUES ($1, $2, 'Test Doc', 'other', NOW(), $3)`, docID, userID, tenantID)
 	require.NoError(t, err)
 
 	_, err = db.Exec(`INSERT INTO comments (document_id, user_id, content) VALUES ($1, $2, 'Test comment')`, docID, userID)

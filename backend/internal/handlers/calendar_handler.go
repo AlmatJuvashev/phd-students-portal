@@ -97,8 +97,13 @@ func (h *CalendarHandler) CreateEvent(c *gin.Context) {
 
 func (h *CalendarHandler) GetEvents(c *gin.Context) {
 	userID := c.GetString("userID")
+	tenantID := c.GetString("tenant_id")
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	if tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
 		return
 	}
 	
@@ -121,7 +126,7 @@ func (h *CalendarHandler) GetEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := h.service.GetEvents(c.Request.Context(), userID, start, end)
+	events, err := h.service.GetEvents(c.Request.Context(), userID, tenantID, start, end)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

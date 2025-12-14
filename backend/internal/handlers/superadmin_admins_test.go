@@ -40,7 +40,7 @@ func TestSuperadminAdminsHandler_ListAdmins(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg)
+	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -91,7 +91,7 @@ func TestSuperadminAdminsHandler_GetAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg)
+	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -134,7 +134,7 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg)
+	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -219,7 +219,7 @@ func TestSuperadminAdminsHandler_DeleteAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg)
+	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
