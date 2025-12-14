@@ -39,7 +39,11 @@ type studentRow struct {
 func (h *AdminHandler) StudentProgress(c *gin.Context) {
 	// list all active students
 	stu := []studentRow{}
-	_ = h.db.Select(&stu, `SELECT id, (first_name||' '||last_name) AS name, email, role FROM users WHERE role='student' AND is_active=true ORDER BY last_name`)
+	tenantID := c.GetString("tenant_id")
+	_ = h.db.Select(&stu, `SELECT u.id, (u.first_name||' '||u.last_name) AS name, u.email, u.role 
+		FROM users u 
+		JOIN user_tenant_memberships utm ON utm.user_id=u.id 
+		WHERE u.role='student' AND u.is_active=true AND utm.tenant_id=$1 ORDER BY u.last_name`, tenantID)
 
 	totalNodes := len(h.pb.Nodes)
 	type progress struct {
@@ -107,20 +111,22 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 	limit := 200
 	// base selector - phone, program, department, cohort are in profile_submissions.form_data as JSONB
     base := `SELECT u.id, (u.first_name||' '||u.last_name) AS name, COALESCE(u.email,'') AS email,
-                    COALESCE(u.phone, (SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS phone,
-                    COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS program,
-                    COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS department,
-                    COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1), '') AS cohort
-             FROM users u`
-	where := " WHERE u.is_active=true AND u.role='student'"
-	args := []any{}
+                    COALESCE(u.phone, (SELECT form_data->>'phone' FROM profile_submissions ps WHERE ps.user_id=u.id ORDER BY ps.submitted_at DESC LIMIT 1), '') AS phone,
+                    COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions ps WHERE ps.user_id=u.id ORDER BY ps.submitted_at DESC LIMIT 1), '') AS program,
+                    COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions ps WHERE ps.user_id=u.id ORDER BY ps.submitted_at DESC LIMIT 1), '') AS department,
+                    COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions ps WHERE ps.user_id=u.id ORDER BY ps.submitted_at DESC LIMIT 1), '') AS cohort
+             FROM users u
+             JOIN user_tenant_memberships utm ON utm.user_id = u.id`
+	where := " WHERE u.is_active=true AND u.role='student' AND utm.tenant_id=$1"
+	tenantID := c.GetString("tenant_id")
+	args := []any{tenantID}
 
 	// Restrict advisors to their students only
 	role := roleFromContext(c)
 	callerID := userIDFromClaims(c)
 	if role == "advisor" && callerID != "" {
 		base += " JOIN student_advisors sa ON sa.student_id=u.id"
-		where += " AND sa.advisor_id=$1"
+		where += fmt.Sprintf(" AND sa.advisor_id=$%d", len(args)+1)
 		args = append(args, callerID)
 	}
 	if advisorID != "" {
@@ -132,19 +138,19 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 	}
 	// filters - use JSONB fields from profile_submissions
     if program != "" {
-        where += fmt.Sprintf(" AND COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1))=$%d", len(args)+1)
+        where += fmt.Sprintf(" AND COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1))=$%d", len(args)+1)
         args = append(args, program)
     }
     if department != "" {
-        where += fmt.Sprintf(" AND COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1))=$%d", len(args)+1)
+        where += fmt.Sprintf(" AND COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1))=$%d", len(args)+1)
         args = append(args, department)
     }
     if cohort != "" {
-        where += fmt.Sprintf(" AND COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1))=$%d", len(args)+1)
+        where += fmt.Sprintf(" AND COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1))=$%d", len(args)+1)
         args = append(args, cohort)
     }
 	if q != "" {
-		where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR ((SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY created_at DESC LIMIT 1) ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
+		where += fmt.Sprintf(" AND ((u.first_name ILIKE '%%' || $%d || '%%') OR (u.last_name ILIKE '%%' || $%d || '%%') OR (u.email ILIKE '%%' || $%d || '%%') OR ((SELECT form_data->>'phone' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1) ILIKE '%%' || $%d || '%%'))", len(args)+1, len(args)+1, len(args)+1, len(args)+1)
 		args = append(args, q)
 	}
 	order := " ORDER BY u.last_name, u.first_name"
@@ -357,15 +363,16 @@ func (h *AdminHandler) MonitorAnalytics(c *gin.Context) {
 	advisorID := strings.TrimSpace(c.Query("advisor_id"))
 	rpOnly := strings.TrimSpace(c.Query("rp_required")) == "1"
 
-	base := `SELECT u.id FROM users u`
-	where := " WHERE u.is_active=true AND u.role='student'"
-	args := []any{}
+	base := `SELECT u.id FROM users u JOIN user_tenant_memberships utm ON utm.user_id=u.id`
+	where := " WHERE u.is_active=true AND u.role='student' AND utm.tenant_id=$1"
+	tenantID := c.GetString("tenant_id")
+	args := []any{tenantID}
 
 	role := roleFromContext(c)
 	callerID := userIDFromClaims(c)
 	if role == "advisor" && callerID != "" {
 		base += " JOIN student_advisors sa ON sa.student_id=u.id"
-		where += " AND sa.advisor_id=$1"
+		where += fmt.Sprintf(" AND sa.advisor_id=$%d", len(args)+1)
 		args = append(args, callerID)
 	}
 	if advisorID != "" {
@@ -542,8 +549,10 @@ func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
                      COALESCE(ps.form_data->>'cohort','') AS cohort
               FROM users u
               LEFT JOIN profile_submissions ps ON ps.user_id = u.id
-              WHERE u.id=$1 AND u.role='student'`
-	if err := h.db.Get(&user, query, uid); err != nil {
+              JOIN user_tenant_memberships utm ON utm.user_id = u.id
+              WHERE u.id=$1 AND u.role='student' AND utm.tenant_id=$2`
+	tenantID := c.GetString("tenant_id")
+	if err := h.db.Get(&user, query, uid, tenantID); err != nil {
 		c.JSON(404, gin.H{"error": "not found"})
 		return
 	}
@@ -852,7 +861,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 		TenantID   string `db:"tenant_id"`
 		Filename   string `db:"filename"`
 	}
-	err = tx.QueryRowx(`SELECT ni.id AS instance_id, s.id AS slot_id, s.slot_key, ni.node_id, ni.user_id, ni.state, COALESCE(ni.tenant_id, a.tenant_id) as tenant_id, a.filename
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, s.id AS slot_id, s.slot_key, ni.node_id, ni.user_id, ni.state, ni.tenant_id as tenant_id, a.filename
 		FROM node_instance_slot_attachments a
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		JOIN node_instances ni ON ni.id=s.node_instance_id
@@ -985,19 +994,7 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 			ON CONFLICT (user_id,node_id) DO UPDATE SET state=$4, updated_at=now()`, meta.TenantID, meta.StudentID, meta.NodeID, newState)
 		_ = insertNodeEvent(tx, meta.InstanceID, "state_changed", actorID, map[string]any{"from": meta.State, "to": newState})
 	}
-	if err := tx.Commit(); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	// If node is now done, activate next nodes in playbook
-	if newState == "done" && newState != meta.State {
-		log.Printf("[ReviewAttachment] Node %s is done, activating next nodes for tenant %s", meta.NodeID, meta.TenantID)
-		if err := ActivateNextNodesWithTenant(h.db, h.pb, meta.StudentID, meta.NodeID, meta.TenantID); err != nil {
-			log.Printf("[ReviewAttachment] Failed to activate next nodes: %v", err)
-			// Don't fail the request, just log the error
-		}
-	}
-	
+
 	// Notify Student
 	title := "Document Reviewed: " + meta.Filename
 	msg := "Your document has been reviewed."
@@ -1011,10 +1008,10 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	}
 	
 	// Create notification if tenantID is available (should be from middleware)
-	if meta.TenantID != "" { // Using meta.TenantID
-		_, err = tx.Exec(`INSERT INTO notifications (id, user_id, title, message, link, type, tenant_id) 
+	if meta.TenantID != "" {
+		_, err = tx.Exec(`INSERT INTO notifications (id, recipient_id, title, message, link, type, tenant_id) 
 			VALUES (gen_random_uuid(), $1, $2, $3, '/journey', 'document_review', $4)`, 
-			meta.StudentID, title, msg, meta.TenantID) // Using meta.TenantID
+			meta.StudentID, title, msg, meta.TenantID)
 		if err != nil {
 			log.Printf("[ReviewAttachment] Failed to create notification: %v", err)
 			// Don't fail the transaction for notification failure
@@ -1024,6 +1021,14 @@ func (h *AdminHandler) ReviewAttachment(c *gin.Context) {
 	if err := tx.Commit(); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
+	}
+	// If node is now done, activate next nodes in playbook
+	if newState == "done" && newState != meta.State {
+		log.Printf("[ReviewAttachment] Node %s is done, activating next nodes for tenant %s", meta.NodeID, meta.TenantID)
+		if err := ActivateNextNodesWithTenant(h.db, h.pb, meta.StudentID, meta.NodeID, meta.TenantID); err != nil {
+			log.Printf("[ReviewAttachment] Failed to activate next nodes: %v", err)
+			// Don't fail the request, just log the error
+		}
 	}
 	
 	var resp struct {
@@ -1403,14 +1408,15 @@ func (h *AdminHandler) AttachReviewedDocument(c *gin.Context) {
 		StudentID  string `db:"user_id"`
 		NodeID     string `db:"node_id"`
 		DocumentID string `db:"document_id"`
+		TenantID   string `db:"tenant_id"`
 	}
-	err = tx.QueryRowx(`SELECT ni.id AS instance_id, ni.user_id, ni.node_id, dv.document_id
+	err = tx.QueryRowx(`SELECT ni.id AS instance_id, ni.user_id, ni.node_id, dv.document_id, dv.tenant_id
 		FROM node_instance_slot_attachments a
 		JOIN node_instance_slots s ON s.id=a.slot_id
 		JOIN node_instances ni ON ni.id=s.node_instance_id
 		JOIN document_versions dv ON dv.id=a.document_version_id
 		WHERE a.id=$1 AND a.is_active=true`, attachmentID).
-		Scan(&meta.InstanceID, &meta.StudentID, &meta.NodeID, &meta.DocumentID)
+		Scan(&meta.InstanceID, &meta.StudentID, &meta.NodeID, &meta.DocumentID, &meta.TenantID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(404, gin.H{"error": "attachment not found"})
@@ -1439,15 +1445,15 @@ func (h *AdminHandler) AttachReviewedDocument(c *gin.Context) {
 	}
 	bucket := s3c.Bucket()
 	
-	log.Printf("[AttachReviewedDocument] Creating version: doc_id=%s object_key=%s bucket=%s size=%d mime=%s", 
-		meta.DocumentID, req.ObjectKey, bucket, req.SizeBytes, req.ContentType)
+	log.Printf("[AttachReviewedDocument] Creating version: doc_id=%s object_key=%s bucket=%s size=%d mime=%s tenant_id=%s", 
+		meta.DocumentID, req.ObjectKey, bucket, req.SizeBytes, req.ContentType, meta.TenantID)
 	
 	// Create document version
 	var versionID string
 	err = tx.QueryRowx(`INSERT INTO document_versions (
-		document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-		meta.DocumentID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, actorID, nullableString(req.ETag)).
+		document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag, tenant_id
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+		meta.DocumentID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, actorID, nullableString(req.ETag), meta.TenantID).
 		Scan(&versionID)
 	if err != nil {
 		log.Printf("[AttachReviewedDocument] Failed to create version: %v", err)

@@ -25,8 +25,15 @@ func TestAdminHandler_StudentProgress(t *testing.T) {
 
 	// Seed data
 	studentID := "10000000-0000-0000-0000-000000000001"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student1', 's1@ex.com', 'Student', 'One', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
 	require.NoError(t, err)
 
 	// Mock Playbook Manager
@@ -39,13 +46,13 @@ func TestAdminHandler_StudentProgress(t *testing.T) {
 	}
 
 	// Seed playbook version to satisfy FK
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v1', 'sum', '{}', NOW())`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v1', 'sum', '{}', NOW(), $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed progress
-	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at) 
-		VALUES ('node1', $1, 'done', $2, NOW())`, studentID, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at, tenant_id) 
+		VALUES ('node1', $1, 'done', $2, NOW(), $3)`, studentID, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -53,6 +60,10 @@ func TestAdminHandler_StudentProgress(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.GET("/admin/student-progress", h.StudentProgress)
 
 	t.Run("List Student Progress", func(t *testing.T) {
@@ -88,19 +99,29 @@ func TestAdminHandler_MonitorStudents(t *testing.T) {
 	// Seed users
 	studentID := "10000000-0000-0000-0000-000000000002"
 	advisorID := "10000000-0000-0000-0000-000000000003"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES 
 		($1, 'student2', 's2@ex.com', 'Student', 'Two', 'student', 'hash', true),
 		($2, 'advisor1', 'a1@ex.com', 'Advisor', 'One', 'advisor', 'hash', true)`, studentID, advisorID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) 
+		VALUES 
+		($1, $3, 'student', true),
+		($2, $3, 'advisor', true)`, studentID, advisorID, tenantID)
+	require.NoError(t, err)
+
 	// Seed profile submission (for filters)
 	profileData := `{"program": "CS", "department": "Eng", "cohort": "2024"}`
-	_, err = db.Exec(`INSERT INTO profile_submissions (user_id, form_data) VALUES ($1, $2)`, studentID, profileData)
+	_, err = db.Exec(`INSERT INTO profile_submissions (user_id, form_data, tenant_id) VALUES ($1, $2, $3)`, studentID, profileData, tenantID)
 	require.NoError(t, err)
 
 	// Seed advisor relationship
-	_, err = db.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2)`, studentID, advisorID)
+	_, err = db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, studentID, advisorID, tenantID)
 	require.NoError(t, err)
 
 	// Mock Playbook Manager
@@ -116,6 +137,7 @@ func TestAdminHandler_MonitorStudents(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
 		// Mock auth
 		role := c.GetHeader("X-Role")
 		uid := c.GetHeader("X-User-ID")
@@ -198,8 +220,15 @@ func TestAdminHandler_GetStudentDetails(t *testing.T) {
 	defer teardown()
 
 	studentID := "10000000-0000-0000-0000-000000000004"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student3', 's3@ex.com', 'Student', 'Three', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
 	require.NoError(t, err)
 
 	// Mock Playbook Manager
@@ -214,6 +243,10 @@ func TestAdminHandler_GetStudentDetails(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.GET("/admin/students/:id", h.GetStudentDetails)
 
 	t.Run("Get Details Success", func(t *testing.T) {
@@ -242,8 +275,15 @@ func TestAdminHandler_StudentJourney(t *testing.T) {
 	defer teardown()
 
 	studentID := "10000000-0000-0000-0000-000000000005"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student4', 's4@ex.com', 'Student', 'Four', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
 	require.NoError(t, err)
 
 	// Mock Playbook Manager
@@ -254,13 +294,13 @@ func TestAdminHandler_StudentJourney(t *testing.T) {
 	}
 
 	// Seed playbook version
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v1', 'sum', '{}', NOW())`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v1', 'sum', '{}', NOW(), $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed progress
-	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at) 
-		VALUES ('node1', $1, 'done', $2, NOW())`, studentID, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at, tenant_id) 
+		VALUES ('node1', $1, 'done', $2, NOW(), $3)`, studentID, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -268,6 +308,10 @@ func TestAdminHandler_StudentJourney(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.GET("/admin/students/:id/journey", h.StudentJourney)
 
 	t.Run("Get Student Journey", func(t *testing.T) {
@@ -294,8 +338,15 @@ func TestAdminHandler_ListStudentNodeFiles(t *testing.T) {
 	defer teardown()
 
 	studentID := "10000000-0000-0000-0000-000000000006"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student5', 's5@ex.com', 'Student', 'Five', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
 	require.NoError(t, err)
 
 	pbm := &pb.Manager{
@@ -304,32 +355,32 @@ func TestAdminHandler_ListStudentNodeFiles(t *testing.T) {
 	}
 
 	// Seed playbook version
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v1', 'sum', '{}', NOW())`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v1', 'sum', '{}', NOW(), $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed node instance
 	var instanceID string
-	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at) 
-		VALUES ('node1', $1, 'done', $2, NOW()) RETURNING id`, studentID, pbm.VersionID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at, tenant_id) 
+		VALUES ('node1', $1, 'done', $2, NOW(), $3) RETURNING id`, studentID, pbm.VersionID, tenantID).Scan(&instanceID)
 	require.NoError(t, err)
 
 	// Seed slot
 	var slotID string
-	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key) 
-		VALUES ($1, 'slot1') RETURNING id`, instanceID).Scan(&slotID)
+	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) 
+		VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
 	require.NoError(t, err)
 
 	// Seed document
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, title, kind, created_at) 
-		VALUES ($1, 'Test Doc', 'other', NOW()) RETURNING id`, studentID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (user_id, title, kind, created_at, tenant_id) 
+		VALUES ($1, 'Test Doc', 'other', NOW(), $2) RETURNING id`, studentID, tenantID).Scan(&docID)
 	require.NoError(t, err)
 
 	// Seed document version
 	var docVerID string
-	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, created_at, uploaded_by) 
-		VALUES ($1, 'path/to/doc', 'application/pdf', 1024, NOW(), $2) RETURNING id`, docID, studentID).Scan(&docVerID)
+	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, created_at, uploaded_by, tenant_id) 
+		VALUES ($1, 'path/to/doc', 'application/pdf', 1024, NOW(), $2, $3) RETURNING id`, docID, studentID, tenantID).Scan(&docVerID)
 	require.NoError(t, err)
 
 	// Seed attachment
@@ -342,6 +393,10 @@ func TestAdminHandler_ListStudentNodeFiles(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.GET("/admin/students/:id/nodes/:nodeId/files", h.ListStudentNodeFiles)
 
 	t.Run("List Student Node Files", func(t *testing.T) {
@@ -402,9 +457,17 @@ func TestAdminHandler_MonitorAnalytics(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	// Seed users
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ('10000000-0000-0000-0000-000000000007', 'student6', 's6@ex.com', 'Student', 'Six', 'student', 'hash', true)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) 
+		VALUES ('10000000-0000-0000-0000-000000000007', $1, 'student', true)`, tenantID)
 	require.NoError(t, err)
 
 	pbm := &pb.Manager{
@@ -413,13 +476,13 @@ func TestAdminHandler_MonitorAnalytics(t *testing.T) {
 	}
 
 	// Seed playbook version
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v1', 'sum', '{}', NOW())`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v1', 'sum', '{}', NOW(), $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed progress
-	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at) 
-		VALUES ('node1', '10000000-0000-0000-0000-000000000007', 'done', $1, NOW())`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at, tenant_id) 
+		VALUES ('node1', '10000000-0000-0000-0000-000000000007', 'done', $1, NOW(), $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -427,6 +490,10 @@ func TestAdminHandler_MonitorAnalytics(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.GET("/admin/analytics", h.MonitorAnalytics)
 
 	t.Run("Get Analytics", func(t *testing.T) {
@@ -463,15 +530,25 @@ func TestAdminHandler_ReviewAttachment(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	studentID := "10000000-0000-0000-0000-000000000008"
 	adminID := "99999999-9999-9999-9999-999999999999"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, adminID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, adminID, tenantID)
 	require.NoError(t, err)
 
 	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES 
 		($1, 'student7', 's7@ex.com', 'Student', 'Seven', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
 	require.NoError(t, err)
 
 	pbm := &pb.Manager{
@@ -480,32 +557,32 @@ func TestAdminHandler_ReviewAttachment(t *testing.T) {
 	}
 
 	// Seed playbook version
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v1', 'sum', '{}', NOW())`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v1', 'sum', '{}', NOW(), $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed node instance
 	var instanceID string
-	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at) 
-		VALUES ('node1', $1, 'done', $2, NOW()) RETURNING id`, studentID, pbm.VersionID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at, tenant_id) 
+		VALUES ('node1', $1, 'done', $2, NOW(), $3) RETURNING id`, studentID, pbm.VersionID, tenantID).Scan(&instanceID)
 	require.NoError(t, err)
 
 	// Seed slot
 	var slotID string
-	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key) 
-		VALUES ($1, 'slot1') RETURNING id`, instanceID).Scan(&slotID)
+	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) 
+		VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
 	require.NoError(t, err)
 
 	// Seed document
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, title, kind, created_at) 
-		VALUES ($1, 'Test Doc', 'other', NOW()) RETURNING id`, studentID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (user_id, title, kind, created_at, tenant_id) 
+		VALUES ($1, 'Test Doc', 'other', NOW(), $2) RETURNING id`, studentID, tenantID).Scan(&docID)
 	require.NoError(t, err)
 
 	// Seed document version
 	var docVerID string
-	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, created_at, uploaded_by) 
-		VALUES ($1, 'path/to/doc', 'application/pdf', 1024, NOW(), $2) RETURNING id`, docID, studentID).Scan(&docVerID)
+	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, created_at, uploaded_by, tenant_id) 
+		VALUES ($1, 'path/to/doc', 'application/pdf', 1024, NOW(), $2, $3) RETURNING id`, docID, studentID, tenantID).Scan(&docVerID)
 	require.NoError(t, err)
 
 	// Seed attachment
@@ -520,6 +597,7 @@ func TestAdminHandler_ReviewAttachment(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
 		c.Set("userID", adminID)
 		c.Set("claims", jwt.MapClaims{"role": "admin", "sub": adminID})
 		c.Next()
@@ -548,10 +626,17 @@ func TestAdminHandler_ListStudentProgress(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	// Seed student
 	studentID := "11111111-1111-1111-1111-111111111111"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student1', 's1@ex.com', 'Student', 'One', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
 	require.NoError(t, err)
 
 	// Seed playbook version
@@ -561,13 +646,13 @@ func TestAdminHandler_ListStudentProgress(t *testing.T) {
 			"node1": {ID: "node1", Title: map[string]string{"en": "Node 1"}},
 		},
 	}
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed instance
-	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at) 
-		VALUES ('node1', $1, 'done', $2, NOW())`, studentID, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at, tenant_id) 
+		VALUES ('node1', $1, 'done', $2, NOW(), $3)`, studentID, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -575,6 +660,10 @@ func TestAdminHandler_ListStudentProgress(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.GET("/admin/students/:studentId/progress", h.StudentProgress)
 
 	t.Run("List Student Progress", func(t *testing.T) {
@@ -600,9 +689,16 @@ func TestAdminHandler_UploadReviewedDocument(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	adminID := "10000000-0000-0000-0000-000000000000"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, adminID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, adminID, tenantID)
 	require.NoError(t, err)
 
 	studentID := "20000000-0000-0000-0000-000000000000"
@@ -610,38 +706,41 @@ func TestAdminHandler_UploadReviewedDocument(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'User', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
+	require.NoError(t, err)
+
 	// Seed playbook version
 	versionID := "30000000-0000-0000-0000-000000000000"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', $2)`, versionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed node instance
 	var instanceID string
-	err = db.QueryRow(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id) 
-		VALUES ($1, 'node1', 'submitted', $2) RETURNING id`, studentID, versionID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id, tenant_id) 
+		VALUES ($1, 'node1', 'submitted', $2, $3) RETURNING id`, studentID, versionID, tenantID).Scan(&instanceID)
 	require.NoError(t, err)
 
 	// Seed slot
 	var slotID string
-	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key) 
-		VALUES ($1, 'slot1') RETURNING id`, instanceID).Scan(&slotID)
+	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) 
+		VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
 	require.NoError(t, err)
 
 	// Seed document version for review
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Review Doc') RETURNING id`, adminID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title, tenant_id) VALUES ($1, 'other', 'Review Doc', $2) RETURNING id`, adminID, tenantID).Scan(&docID)
 	require.NoError(t, err)
 
 	var reviewVerID string
-	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by) 
-		VALUES ($1, 'path/to/review.pdf', 'application/pdf', 1024, $2) RETURNING id`, docID, adminID).Scan(&reviewVerID)
+	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by, tenant_id) 
+		VALUES ($1, 'path/to/review.pdf', 'application/pdf', 1024, $2, $3) RETURNING id`, docID, adminID, tenantID).Scan(&reviewVerID)
 	require.NoError(t, err)
 
 	// Seed attachment
 	var attachmentID string
 	err = db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, attached_by, filename, size_bytes) 
-		VALUES ($1, $2, true, $3, 'review.pdf', 1024) RETURNING id`, slotID, reviewVerID, studentID).Scan(&attachmentID)
+		VALUES ($1, $2, true, $3, 'test.pdf', 1024) RETURNING id`, slotID, reviewVerID, studentID).Scan(&attachmentID)
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{}
@@ -651,6 +750,7 @@ func TestAdminHandler_UploadReviewedDocument(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
 		c.Set("claims", jwt.MapClaims{"sub": adminID, "role": "admin"})
 		c.Set("userRole", "admin")
 		c.Next()
@@ -681,9 +781,16 @@ func TestAdminHandler_PatchStudentNodeState(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	adminID := "40000000-0000-0000-0000-000000000000"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin2', 'admin2@ex.com', 'Admin', 'Two', 'admin', 'hash', true)`, adminID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, adminID, tenantID)
 	require.NoError(t, err)
 
 	studentID := "50000000-0000-0000-0000-000000000000"
@@ -691,15 +798,18 @@ func TestAdminHandler_PatchStudentNodeState(t *testing.T) {
 		VALUES ($1, 'student2', 'student2@ex.com', 'Student', 'Two', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
+	require.NoError(t, err)
+
 	// Seed playbook version
 	versionID := "60000000-0000-0000-0000-000000000000"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', $2)`, versionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed node instance
-	_, err = db.Exec(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id) 
-		VALUES ($1, 'node1', 'active', $2)`, studentID, versionID)
+	_, err = db.Exec(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id, tenant_id) 
+		VALUES ($1, 'node1', 'active', $2, $3)`, studentID, versionID, tenantID)
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{
@@ -714,6 +824,7 @@ func TestAdminHandler_PatchStudentNodeState(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
 		c.Set("claims", jwt.MapClaims{"sub": adminID, "role": "admin"})
 		c.Set("userRole", "admin")
 		c.Next()
@@ -755,38 +866,48 @@ func TestAdminHandler_PresignReviewedDocumentUpload(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	userID := uuid.NewString()
 	studentID := uuid.NewString()
 	
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, userID, tenantID)
 	require.NoError(t, err)
 	
 	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'One', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
+	require.NoError(t, err)
+
 	// Seed node instance and attachment
 	versionID := uuid.NewString()
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) VALUES ($1, 'v1', 'sum', '{}')`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) VALUES ($1, 'v1', 'sum', '{}', $2)`, versionID, tenantID)
 	require.NoError(t, err)
 
 	var instanceID string
-	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at) 
-		VALUES ('node1', $1, 'done', $2, NOW()) RETURNING id`, studentID, versionID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, updated_at, tenant_id) 
+		VALUES ('node1', $1, 'done', $2, NOW(), $3) RETURNING id`, studentID, versionID, tenantID).Scan(&instanceID)
 	require.NoError(t, err)
 
 	var slotID string
-	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key) VALUES ($1, 'slot1') RETURNING id`, instanceID).Scan(&slotID)
+	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Doc') RETURNING id`, studentID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title, tenant_id) VALUES ($1, 'other', 'Doc', $2) RETURNING id`, studentID, tenantID).Scan(&docID)
 	require.NoError(t, err)
 
 	var docVerID string
-	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by) 
-		VALUES ($1, 'path', 'pdf', 1024, $2) RETURNING id`, docID, studentID).Scan(&docVerID)
+	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by, tenant_id) 
+		VALUES ($1, 'path', 'pdf', 1024, $2, $3) RETURNING id`, docID, studentID, tenantID).Scan(&docVerID)
 	require.NoError(t, err)
 
 	var attID string
@@ -850,29 +971,38 @@ func TestAdminHandler_AttachReviewedDocument(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	studentID := uuid.NewString()
 	adminID := uuid.NewString()
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student8', 's8@ex.com', 'Student', 'Eight', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
+	require.NoError(t, err)
+
 	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin2', 'admin2@ex.com', 'Admin', 'Two', 'admin', 'hash', true)`, adminID)
 	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, adminID, tenantID)
+	require.NoError(t, err)
 
 	pbm := &pb.Manager{VersionID: uuid.NewString()}
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) VALUES ($1, 'v1', 'sum', '{}')`, pbm.VersionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) VALUES ($1, 'v1', 'sum', '{}', $2)`, pbm.VersionID, tenantID)
 	require.NoError(t, err)
 
 	var instanceID string
-	db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id) VALUES ('node1', $1, 'done', $2) RETURNING id`, studentID, pbm.VersionID).Scan(&instanceID)
+	db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, tenant_id) VALUES ('node1', $1, 'done', $2, $3) RETURNING id`, studentID, pbm.VersionID, tenantID).Scan(&instanceID)
 
 	var slotID string
-	db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key) VALUES ($1, 'slot1') RETURNING id`, instanceID).Scan(&slotID)
+	db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
 
 	var docID string
-	db.QueryRow(`INSERT INTO documents (user_id, title, kind) VALUES ($1, 'Doc', 'other') RETURNING id`, studentID).Scan(&docID)
+	db.QueryRow(`INSERT INTO documents (user_id, title, kind, tenant_id) VALUES ($1, 'Doc', 'other', $2) RETURNING id`, studentID, tenantID).Scan(&docID)
 	var docVerID string
-	db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by) VALUES ($1, 'path', 'pdf', 100, $2) RETURNING id`, docID, studentID).Scan(&docVerID)
+	db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by, tenant_id) VALUES ($1, 'path', 'pdf', 100, $2, $3) RETURNING id`, docID, studentID, tenantID).Scan(&docVerID)
 
 	var attID string
 	db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, size_bytes, attached_by) 
@@ -965,9 +1095,16 @@ func TestAdminHandler_UploadReviewedDocument_Forbidden(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	advisorID := uuid.NewString()
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'advisor', 'advisor@ex.com', 'Advisor', 'One', 'advisor', 'hash', true)`, advisorID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'advisor', true)`, advisorID, tenantID)
 	require.NoError(t, err)
 
 	studentID := uuid.NewString()
@@ -975,19 +1112,34 @@ func TestAdminHandler_UploadReviewedDocument_Forbidden(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'One', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
+	require.NoError(t, err)
+
 	// Seed attachment
 	versionID := uuid.NewString()
-	db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) VALUES ($1, 'v1', 'sum', '{}')`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) VALUES ($1, 'v1', 'sum', '{}', $2)`, versionID, tenantID)
+	require.NoError(t, err)
 	
 	var instanceID string
-	db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id) VALUES ('node1', $1, 'done', $2) RETURNING id`, studentID, versionID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, tenant_id) VALUES ('node1', $1, 'done', $2, $3) RETURNING id`, studentID, versionID, tenantID).Scan(&instanceID)
+	require.NoError(t, err)
 
 	var slotID string
-	db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key) VALUES ($1, 'slot1') RETURNING id`, instanceID).Scan(&slotID)
+	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
+	require.NoError(t, err)
+
+	var docID string
+	err = db.QueryRow(`INSERT INTO documents (user_id, title, kind, tenant_id) VALUES ($1, 'Test', 'other', $2) RETURNING id`, studentID, tenantID).Scan(&docID)
+	require.NoError(t, err)
+
+	var docVerID string
+	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by, tenant_id) VALUES ($1, 'path', 'application/pdf', 100, $2, $3) RETURNING id`, docID, studentID, tenantID).Scan(&docVerID)
+	require.NoError(t, err)
 
 	var attID string
-	db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, is_active, status, filename, size_bytes, attached_by) 
-		VALUES ($1, true, 'submitted', 'file.pdf', 100, $2) RETURNING id`, slotID, studentID).Scan(&attID)
+	err = db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, size_bytes, attached_by) 
+		VALUES ($1, $2, true, 'submitted', 'file.pdf', 100, $3) RETURNING id`, slotID, docVerID, studentID).Scan(&attID)
+	require.NoError(t, err)
 
 	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
 
@@ -995,13 +1147,18 @@ func TestAdminHandler_UploadReviewedDocument_Forbidden(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": advisorID, "role": "advisor"})
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.POST("/admin/attachments/:attachmentId/review/upload", h.UploadReviewedDocument)
 
 	t.Run("Upload Reviewed Document Forbidden", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"document_version_id": uuid.NewString(),
+			"document_version_id": uuid.NewString(), // Doesn't exist, but forbidden check happens before? No.
+			// Handler order: 
+			// 1. Verify attachment exists (OK)
+			// 2. Check permissions (Forbidden if not assigned)
+			// So it should return 403 BEFORE checking document_version_id
 		}
 		body, _ := json.Marshal(reqBody)
 		req, _ := http.NewRequest("POST", "/admin/attachments/"+attID+"/review/upload", bytes.NewBuffer(body))
@@ -1021,9 +1178,16 @@ func TestAdminHandler_PostReminders_Extended(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	userID := uuid.NewString()
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, userID, tenantID)
 	require.NoError(t, err)
 
 	studentID := uuid.NewString()
@@ -1031,11 +1195,15 @@ func TestAdminHandler_PostReminders_Extended(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'One', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
+	require.NoError(t, err)
+
 	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "admin"})
 		c.Next()
 	})
@@ -1098,9 +1266,16 @@ func TestAdminHandler_ReviewAttachment_Failures(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	userID := uuid.NewString()
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, userID, tenantID)
 	require.NoError(t, err)
 
 	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
@@ -1108,6 +1283,7 @@ func TestAdminHandler_ReviewAttachment_Failures(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "admin"})
 		c.Next()
 	})
@@ -1144,16 +1320,26 @@ func TestAdminHandler_PostReminders(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
 	userID := "123e4567-e89b-12d3-a456-426614174000"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)
 		ON CONFLICT (id) DO NOTHING`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true) ON CONFLICT DO NOTHING`, userID, tenantID)
 	require.NoError(t, err)
 
 	studentID := "11111111-1111-1111-1111-111111111111"
 	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'One', 'student', 'hash', true)
 		ON CONFLICT (id) DO NOTHING`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true) ON CONFLICT DO NOTHING`, studentID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -1163,6 +1349,7 @@ func TestAdminHandler_PostReminders(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "admin"})
 		c.Next()
 	})
@@ -1176,8 +1363,6 @@ func TestAdminHandler_PostReminders(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
-
-
 
 	t.Run("Post Reminder Success", func(t *testing.T) {
 		reqBody := map[string]interface{}{
