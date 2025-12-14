@@ -165,7 +165,7 @@ func TestIndexNodes(t *testing.T) {
 		},
 	}
 
-	nodes := indexNodes(pb)
+	nodes, _ := indexNodes(pb)
 	assert.Len(t, nodes, 3)
 	assert.Equal(t, "form", nodes["node1"].Type)
 	assert.Equal(t, "info", nodes["node2"].Type)
@@ -196,7 +196,7 @@ func TestNodeWithRequirements(t *testing.T) {
 	err := json.Unmarshal([]byte(playbookJSON), &pb)
 	require.NoError(t, err)
 
-	nodes := indexNodes(pb)
+	nodes, _ := indexNodes(pb)
 	node := nodes["upload_node"]
 	require.NotNil(t, node.Requirements)
 	assert.Len(t, node.Requirements.Uploads, 1)

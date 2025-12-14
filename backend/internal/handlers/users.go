@@ -91,7 +91,10 @@ func (h *UsersHandler) CreateUser(c *gin.Context) {
 	
 	// Sync to profile_submissions for students (pre-fill S1_profile node)
 	if req.Role == "student" {
-		h.syncUserToProfileSubmissions(userID, req.Specialty, req.Department, req.Program, req.Cohort)
+		tenantID := c.GetString("tenant_id")
+		if tenantID != "" {
+			h.syncUserToProfileSubmissions(userID, req.Specialty, req.Department, req.Program, req.Cohort, tenantID)
+		}
 	}
 	
 	c.JSON(http.StatusOK, gin.H{"username": username, "temp_password": temp})
@@ -153,7 +156,10 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 	
 	// Sync to profile_submissions for students (keep S1_profile in sync)
 	if req.Role == "student" {
-		h.syncUserToProfileSubmissions(id, req.Specialty, req.Department, req.Program, req.Cohort)
+		tenantID := c.GetString("tenant_id")
+		if tenantID != "" {
+			h.syncUserToProfileSubmissions(id, req.Specialty, req.Department, req.Program, req.Cohort, tenantID)
+		}
 	}
 
 	// Invalidate cache
@@ -858,7 +864,7 @@ func generateToken() (string, error) {
 
 // syncUserToProfileSubmissions syncs admin-entered student fields to profile_submissions
 // This allows the S1_profile node to be pre-filled with data from student creation
-func (h *UsersHandler) syncUserToProfileSubmissions(userID, specialty, department, program, cohort string) {
+func (h *UsersHandler) syncUserToProfileSubmissions(userID, specialty, department, program, cohort, tenantID string) {
 	// Build form_data JSON with non-empty fields
 	formData := make(map[string]string)
 	if specialty != "" {
@@ -886,11 +892,11 @@ func (h *UsersHandler) syncUserToProfileSubmissions(userID, specialty, departmen
 	}
 	
 	// Upsert into profile_submissions
-	_, err = h.db.Exec(`INSERT INTO profile_submissions (user_id, form_data)
-        VALUES ($1, $2)
+	_, err = h.db.Exec(`INSERT INTO profile_submissions (user_id, form_data, tenant_id)
+        VALUES ($1, $2, $3)
         ON CONFLICT (user_id)
         DO UPDATE SET form_data = profile_submissions.form_data || $2::jsonb, updated_at = NOW()`, 
-		userID, jsonBytes)
+		userID, jsonBytes, tenantID)
 	if err != nil {
 		log.Printf("[syncUserToProfileSubmissions] upsert failed: %v", err)
 	}

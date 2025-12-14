@@ -78,7 +78,7 @@ func (s *Store) GetRoom(ctx context.Context, roomID string) (*models.ChatRoom, e
 }
 
 // ListRoomsForUser returns rooms where the user is a member, including unread count and last message time.
-func (s *Store) ListRoomsForUser(ctx context.Context, userID string) ([]models.ChatRoom, error) {
+func (s *Store) ListRoomsForUser(ctx context.Context, userID, tenantID string) ([]models.ChatRoom, error) {
 	var rooms []models.ChatRoom
 	err := s.db.SelectContext(ctx, &rooms, `
 		SELECT 
@@ -102,9 +102,9 @@ func (s *Store) ListRoomsForUser(ctx context.Context, userID string) ([]models.C
 					'1970-01-01'::timestamptz
 				)
 		) unread ON true
-		WHERE m.user_id = $1
+		WHERE m.user_id = $1 AND r.tenant_id = $2
 		ORDER BY COALESCE(last_msg.last_message_at, r.created_at) DESC
-	`, userID)
+	`, userID, tenantID)
 	return rooms, err
 }
 

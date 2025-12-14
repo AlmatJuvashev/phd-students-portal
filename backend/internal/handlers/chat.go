@@ -105,7 +105,12 @@ func (h *ChatHandler) ListRooms(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	rooms, err := h.store.ListRoomsForUser(c.Request.Context(), uid)
+	tenantID := c.GetString("tenant_id")
+	if tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return
+	}
+	rooms, err := h.store.ListRoomsForUser(c.Request.Context(), uid, tenantID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list rooms"})
 		return

@@ -18,8 +18,8 @@ func NewNotificationService(db *sqlx.DB) *NotificationService {
 
 func (s *NotificationService) CreateNotification(ctx context.Context, notif *models.Notification) error {
 	query := `
-		INSERT INTO notifications (recipient_id, actor_id, title, message, link, type)
-		VALUES (:recipient_id, :actor_id, :title, :message, :link, :type)
+		INSERT INTO notifications (recipient_id, actor_id, title, message, link, type, tenant_id)
+		VALUES (:recipient_id, :actor_id, :title, :message, :link, :type, :tenant_id)
 		RETURNING id, created_at, updated_at`
 
 	rows, err := s.db.NamedQueryContext(ctx, query, notif)

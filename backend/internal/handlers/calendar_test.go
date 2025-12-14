@@ -98,6 +98,7 @@ func TestCalendarHandler_GetEvents(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.GET("/calendar/events", h.GetEvents)
@@ -159,6 +160,7 @@ func TestCalendarHandler_UpdateDelete(t *testing.T) {
 		// If handler panics on MustGet("current_user"), we must set it.
 		// It seems to expect a user struct or similar.
 		c.Set("current_user", models.User{ID: userID, Role: "student"})
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.PUT("/calendar/events/:id", h.UpdateEvent)

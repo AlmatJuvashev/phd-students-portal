@@ -82,15 +82,19 @@ func ensureActiveCommon(db *sqlx.DB, path string, tenantID string) (*Manager, er
 			return nil, fmt.Errorf("insert playbook version: %w", err)
 		}
 		nodes, nodeWorlds := indexNodes(pb)
+        
+        // Mark as active
+        if err := setActiveVersion(db, versionID, tenantID); err != nil {
+             return nil, err
+        }
+
 		return &Manager{VersionID: versionID, Version: pb.Version, Checksum: checksum, Raw: raw, Nodes: nodes, NodeWorlds: nodeWorlds, DefaultLocale: pb.LocaleDefault}, nil
 	}
-	// Existing version found
-	_, err = db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id, tenant_id)
-        VALUES (TRUE,$1,$2)
-        ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, tenant_id=EXCLUDED.tenant_id, updated_at=now()`, versionID, tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("update active playbook: %w", err)
-	}
+	
+    // Existing version found - ensure it is active
+    if err := setActiveVersion(db, versionID, tenantID); err != nil {
+         return nil, err
+    }
 
 	var rawJSON []byte
 	var version string
@@ -104,6 +108,16 @@ func ensureActiveCommon(db *sqlx.DB, path string, tenantID string) (*Manager, er
 	}
 	nodes, nodeWorlds := indexNodes(pb)
 	return &Manager{VersionID: versionID, Version: version, Checksum: checksum, Raw: rawJSON, Nodes: nodes, NodeWorlds: nodeWorlds, DefaultLocale: pb.LocaleDefault}, nil
+}
+
+func setActiveVersion(db *sqlx.DB, versionID, tenantID string) error {
+	_, err := db.Exec(`INSERT INTO playbook_active_version (id, playbook_version_id, tenant_id)
+        VALUES (TRUE,$1,$2)
+        ON CONFLICT (id) DO UPDATE SET playbook_version_id=EXCLUDED.playbook_version_id, tenant_id=EXCLUDED.tenant_id, updated_at=now()`, versionID, tenantID)
+	if err != nil {
+		return fmt.Errorf("update active playbook: %w", err)
+	}
+    return nil
 }
 
 func indexNodes(pb Playbook) (map[string]Node, map[string]string) {

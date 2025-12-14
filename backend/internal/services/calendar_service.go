@@ -42,11 +42,11 @@ func (s *CalendarService) CreateEvent(ctx context.Context, event *models.Event, 
 	// Insert attendees
 	if len(attendees) > 0 {
 		attendeeQuery := `
-			INSERT INTO event_attendees (event_id, user_id, status)
-			VALUES ($1, $2, $3)`
+			INSERT INTO event_attendees (event_id, tenant_id, user_id, status)
+			VALUES ($1, $2, $3, $4)`
 		
 		for _, userID := range attendees {
-			_, err := tx.ExecContext(ctx, attendeeQuery, event.ID, userID, models.EventAttendeeStatusPending)
+			_, err := tx.ExecContext(ctx, attendeeQuery, event.ID, event.TenantID, userID, models.EventAttendeeStatusPending)
 			if err != nil {
 				return err
 			}
@@ -56,16 +56,17 @@ func (s *CalendarService) CreateEvent(ctx context.Context, event *models.Event, 
 	return tx.Commit()
 }
 
-func (s *CalendarService) GetEvents(ctx context.Context, userID string, start, end time.Time) ([]models.Event, error) {
+func (s *CalendarService) GetEvents(ctx context.Context, userID, tenantID string, start, end time.Time) ([]models.Event, error) {
 	query := `
 		SELECT e.* FROM events e
 		LEFT JOIN event_attendees ea ON e.id = ea.event_id
 		WHERE (e.creator_id = $1 OR ea.user_id = $1)
-		AND e.start_time >= $2 AND e.end_time <= $3
+		AND e.tenant_id = $2
+		AND e.start_time >= $3 AND e.end_time <= $4
 		ORDER BY e.start_time ASC`
 	
 	var events []models.Event
-	err := s.db.SelectContext(ctx, &events, query, userID, start, end)
+	err := s.db.SelectContext(ctx, &events, query, userID, tenantID, start, end)
 	if err != nil {
 		return nil, err
 	}

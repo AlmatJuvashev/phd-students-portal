@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testTenantID = "00000000-0000-0000-0000-000000000001"
+
 func TestStore_CreateRoom(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
@@ -20,7 +22,7 @@ func TestStore_CreateRoom(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest1", "student")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Test Room", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Test Room", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 	assert.NotEmpty(t, room.ID)
 	assert.Equal(t, "Test Room", room.Name)
@@ -37,7 +39,7 @@ func TestStore_CreateRoomWithMeta(t *testing.T) {
 
 	ctx := context.Background()
 	meta := json.RawMessage(`{"topic": "Research Discussion"}`)
-	room, err := store.CreateRoom(ctx, "Meta Room", models.ChatRoomTypeAdvisory, userID, meta)
+	room, err := store.CreateRoom(ctx, testTenantID, "Meta Room", models.ChatRoomTypeAdvisory, userID, meta)
 	require.NoError(t, err)
 	assert.NotEmpty(t, room.ID)
 	assert.Contains(t, string(room.Meta), "Research Discussion")
@@ -51,7 +53,7 @@ func TestStore_GetRoom(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest3", "student")
 
 	ctx := context.Background()
-	created, err := store.CreateRoom(ctx, "Get Room Test", models.ChatRoomTypeCohort, userID, nil)
+	created, err := store.CreateRoom(ctx, testTenantID, "Get Room Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	fetched, err := store.GetRoom(ctx, created.ID)
@@ -68,7 +70,7 @@ func TestStore_UpdateRoom(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest4", "student")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Original Name", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Original Name", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	// Update name
@@ -93,7 +95,7 @@ func TestStore_AddMemberAndIsMember(t *testing.T) {
 	memberID := testutils.CreateTestUser(t, db, "chattest6", "advisor")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Member Test", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Member Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	// Creator should be a member
@@ -125,7 +127,7 @@ func TestStore_RemoveMember(t *testing.T) {
 	memberID := testutils.CreateTestUser(t, db, "chattest8", "advisor")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Remove Member Test", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Remove Member Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	// Add and then remove member
@@ -149,7 +151,7 @@ func TestStore_ListMembers(t *testing.T) {
 	memberID := testutils.CreateTestUser(t, db, "chattest10", "advisor")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "List Members Test", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "List Members Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	err = store.AddMember(ctx, room.ID, memberID, models.ChatRoomMemberRoleMember)
@@ -168,7 +170,7 @@ func TestStore_CreateAndListMessages(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest11", "student")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Message Test", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Message Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	// Create messages
@@ -194,7 +196,7 @@ func TestStore_UpdateMessage(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest12", "student")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Edit Test", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Edit Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	msg, err := store.CreateMessage(ctx, room.ID, userID, "Original", nil, nil, nil)
@@ -214,7 +216,7 @@ func TestStore_DeleteMessage(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest13", "student")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Delete Test", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Delete Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	msg, err := store.CreateMessage(ctx, room.ID, userID, "To be deleted", nil, nil, nil)
@@ -238,7 +240,7 @@ func TestStore_MarkRoomAsRead(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest14", "student")
 
 	ctx := context.Background()
-	room, err := store.CreateRoom(ctx, "Read Status Test", models.ChatRoomTypeCohort, userID, nil)
+	room, err := store.CreateRoom(ctx, testTenantID, "Read Status Test", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
 
 	// Mark as read (should not error)
@@ -258,12 +260,12 @@ func TestStore_ListRoomsForUser(t *testing.T) {
 	userID := testutils.CreateTestUser(t, db, "chattest15", "student")
 
 	ctx := context.Background()
-	_, err := store.CreateRoom(ctx, "Room 1", models.ChatRoomTypeCohort, userID, nil)
+	_, err := store.CreateRoom(ctx, testTenantID, "Room 1", models.ChatRoomTypeCohort, userID, nil)
 	require.NoError(t, err)
-	_, err = store.CreateRoom(ctx, "Room 2", models.ChatRoomTypeAdvisory, userID, nil)
+	_, err = store.CreateRoom(ctx, testTenantID, "Room 2", models.ChatRoomTypeAdvisory, userID, nil)
 	require.NoError(t, err)
 
-	rooms, err := store.ListRoomsForUser(ctx, userID)
+	rooms, err := store.ListRoomsForUser(ctx, userID, testTenantID)
 	require.NoError(t, err)
 	assert.Len(t, rooms, 2)
 }

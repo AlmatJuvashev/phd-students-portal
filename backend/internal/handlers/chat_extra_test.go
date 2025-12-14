@@ -21,13 +21,14 @@ func TestChatHandler_RoomManagement(t *testing.T) {
 	defer teardown()
 
 	userID := "88888888-8888-8888-8888-888888888888"
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'chatadmin', 'admin@ex.com', 'Chat', 'Admin', 'admin', 'hash', true)`, userID)
 	require.NoError(t, err)
 
 	// Create a room to update
 	var roomID string
-	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role) VALUES ('Old Name', 'cohort', $1, 'admin') RETURNING id`, userID).Scan(&roomID)
+	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES ('Old Name', 'cohort', $1, 'admin', $2) RETURNING id`, userID, tenantID).Scan(&roomID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -37,6 +38,7 @@ func TestChatHandler_RoomManagement(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.PATCH("/chat/rooms/:roomId", h.UpdateRoom)
@@ -85,14 +87,17 @@ func TestChatHandler_Members(t *testing.T) {
 
 	adminID := "99999999-9999-9999-9999-999999999999"
 	userID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active)   
 		VALUES 
 		($1, 'chatadmin2', 'admin2@ex.com', 'Chat', 'Admin', 'admin', 'hash', true),
 		($2, 'chatuser', 'user@ex.com', 'Chat', 'User', 'student', 'hash', true)`, adminID, userID)
 	require.NoError(t, err)
 
 	var roomID string
-	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role) VALUES ('Member Room', 'cohort', $1, 'admin') RETURNING id`, adminID).Scan(&roomID)
+	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES ('Member Room', 'cohort', $1, 'admin', $2) RETURNING id`, adminID, tenantID).Scan(&roomID)
+	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id) VALUES ($1, $2, 'owner', $3)`, roomID, adminID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -100,9 +105,29 @@ func TestChatHandler_Members(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("userID", userID) // Set as default user, but AddMember uses body user_id? No, requester.
+		// Wait, AddMember logic: Check if requester is admin or creator.
+		// In test setup: adminID created the room.
+		// To test "Add Member", who is calling? 
+		// If we want success, we probably need adminID to be the caller.
+		// The test doesn't specify caller in request setup?
+		// Re-reading logic:
+		// Line 110: t.Run("Add Member", ...)
+		// It doesn't set X-User-ID header or anything. It relies on context.
+		// But before my change, context was empty! How did it work?
+		// If context empty, GetString("userID") is "".
+		// Maybe auth middleware was skipped in tests?
+		// But new handler logic might rely on it.
+		// Let's set it to adminID for "Add Member" success.
+		c.Set("claims", jwt.MapClaims{"sub": adminID})
+		c.Set("userID", adminID)
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 	r.POST("/chat/rooms/:roomId/members", h.AddMember)
 	r.DELETE("/chat/rooms/:roomId/members/:userId", h.RemoveMember)
-	r.GET("/chat/rooms/:roomId/members", h.ListMembers)
+	r.GET("/chat/rooms/:roomId/members", h.GetRoomMembers)
 
 	t.Run("Add Member", func(t *testing.T) {
 		reqBody := map[string]interface{}{
@@ -151,19 +176,20 @@ func TestChatHandler_MessageOperations(t *testing.T) {
 	defer teardown()
 
 	userID := "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'msguser', 'msg@ex.com', 'Msg', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
 	var roomID string
-	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role) VALUES ('Msg Room', 'cohort', $1, 'student') RETURNING id`, userID).Scan(&roomID)
+	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES ('Msg Room', 'cohort', $1, 'student', $2) RETURNING id`, userID, tenantID).Scan(&roomID)
 	require.NoError(t, err)
-	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room) VALUES ($1, $2, 'member')`, roomID, userID)
+	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id) VALUES ($1, $2, 'member', $3)`, roomID, userID, tenantID)
 	require.NoError(t, err)
 
 	// Create a message
 	var msgID string
-	err = db.QueryRow(`INSERT INTO chat_messages (room_id, sender_id, body) VALUES ($1, $2, 'Original') RETURNING id`, roomID, userID).Scan(&msgID)
+	err = db.QueryRow(`INSERT INTO chat_messages (room_id, sender_id, body, tenant_id) VALUES ($1, $2, 'Original', $3) RETURNING id`, roomID, userID, tenantID).Scan(&msgID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -228,14 +254,15 @@ func TestChatHandler_MessageCreation(t *testing.T) {
 	defer teardown()
 
 	userID := "dddddddd-dddd-dddd-dddd-dddddddddddd"
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'sender', 'sender@ex.com', 'Sender', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
 	var roomID string
-	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role) VALUES ('Msg Room', 'cohort', $1, 'student') RETURNING id`, userID).Scan(&roomID)
+	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES ('Msg Room', 'cohort', $1, 'student', $2) RETURNING id`, userID, tenantID).Scan(&roomID)
 	require.NoError(t, err)
-	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room) VALUES ($1, $2, 'member')`, roomID, userID)
+	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id) VALUES ($1, $2, 'member', $3)`, roomID, userID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}

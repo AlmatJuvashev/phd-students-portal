@@ -71,6 +71,7 @@ type Event struct {
 
 type EventAttendee struct {
 	EventID   string              `db:"event_id" json:"event_id"`
+	TenantID  string              `db:"tenant_id" json:"tenant_id"` // Added for multitenancy
 	UserID    string              `db:"user_id" json:"user_id"`
 	Status    EventAttendeeStatus `db:"status" json:"status"`
 	CreatedAt time.Time           `db:"created_at" json:"created_at"`
