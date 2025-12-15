@@ -15,6 +15,7 @@ type EmailService struct {
 	from     string
 	enabled  bool
 	frontend string
+	sender   func(addr string, a smtp.Auth, from string, to []string, msg []byte) error
 }
 
 func NewEmailService() *EmailService {
@@ -42,6 +43,7 @@ func NewEmailService() *EmailService {
 		from:     from,
 		enabled:  enabled,
 		frontend: frontend,
+		sender:   smtp.SendMail,
 	}
 }
 
@@ -147,7 +149,7 @@ func (e *EmailService) sendEmail(to, subject, body string) error {
 	auth := smtp.PlainAuth("", e.user, e.pass, e.host)
 	addr := fmt.Sprintf("%s:%s", e.host, e.port)
 
-	err := smtp.SendMail(addr, auth, from, []string{to}, msg)
+	err := e.sender(addr, auth, from, []string{to}, msg)
 	if err != nil {
 		log.Printf("[EMAIL] Failed to send email to %s: %v", to, err)
 		return err
