@@ -59,6 +59,28 @@ func main() {
 	}
 	log.Printf("Playbook Version: %s", versionID)
 
+	// 1.5 Ensure Default Tenant
+	defaultTenantID := "00000000-0000-0000-0000-000000000001"
+	_, err = conn.Exec(`
+		INSERT INTO tenants (id, slug, name, tenant_type, is_active, enabled_services, primary_color, secondary_color, app_name)
+		VALUES ($1, 'kaznmu', 'KazNMU', 'university', true, ARRAY['chat'], '#0055A5', '#FFD700', 'KazNMU Portal')
+		ON CONFLICT (id) DO UPDATE SET is_active = true, slug = 'kaznmu'
+	`, defaultTenantID)
+	if err != nil {
+		log.Printf("Failed to seed Default Tenant: %v", err)
+	}
+
+	// 1.6 Ensure Demo Tenant (for demo.localhost)
+	demoTenantID := "00000000-0000-0000-0000-000000000099"
+	_, err = conn.Exec(`
+		INSERT INTO tenants (id, slug, name, tenant_type, is_active, enabled_services, primary_color, secondary_color, app_name)
+		VALUES ($1, 'demo', 'Demo University', 'university', true, ARRAY['chat'], '#009900', '#004400', 'Demo Portal')
+		ON CONFLICT (id) DO UPDATE SET is_active = true, slug = 'demo'
+	`, demoTenantID)
+	if err != nil {
+		log.Printf("Failed to seed Demo Tenant: %v", err)
+	}
+
 
 	// 2. Passwords & Users
 	demoPass := os.Getenv("DEMO_PASSWORD")
@@ -139,12 +161,19 @@ func ensureUser(db *sqlx.DB, username, email, first, last, role, hash string) st
 			log.Fatalf("Failed to ensure user %s: %v", username, err)
 		}
 	}
-	// Ensure tenant membership
 	_, err = db.Exec(`
-		INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_active)
-		VALUES ($1, $2, $3, true)
-		ON CONFLICT (user_id, tenant_id) DO NOTHING
+		INSERT INTO user_tenant_memberships (user_id, tenant_id, role)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = $3
 	`, id, DefaultTenantID, role)
+
+	// Also add to Demo Tenant
+	demoTenantID := "00000000-0000-0000-0000-000000000099"
+	_, err = db.Exec(`
+		INSERT INTO user_tenant_memberships (user_id, tenant_id, role)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = $3
+	`, id, demoTenantID, role)
 	
 	fmt.Printf("User %s (%s) ensured.\n", username, role)
 	return id
