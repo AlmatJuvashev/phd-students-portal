@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -107,6 +108,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Services
 	emailService := services.NewEmailService()
+	
+	// Repositories & Domain Services
+	userRepo := repository.NewSQLUserRepository(db)
+	userService := services.NewUserService(userRepo, rds)
 
 	// Auth routes (login and password reset)
 	auth := NewAuthHandler(db, cfg, emailService, rds)
@@ -115,7 +120,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	api.POST("/auth/forgot-password", auth.ForgotPassword)
 	api.POST("/auth/reset-password", auth.ResetPassword)
 
-	users := NewUsersHandler(db, cfg, rds)
+	users := NewUsersHandler(userService, db, cfg, rds) // TEMPORARY: Keeping db/rds for gradual migration if needed, but primary is userService
 	journey := NewJourneyHandler(db, cfg, playbookManager)
 	nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
 	adminHandler := NewAdminHandler(db, cfg, playbookManager)

@@ -11,6 +11,8 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository" // Added
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"   // Added
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -29,7 +31,9 @@ func TestUsersHandler_UpdateMe_ProfileFields(t *testing.T) {
 		VALUES ($1, 'profile', 'profile@ex.com', 'Pro', 'File', 'student', $2, true)`, userID, hash)
 	require.NoError(t, err)
 
-	h := handlers.NewUsersHandler(db, config.AppConfig{}, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, config.AppConfig{}, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -82,7 +86,9 @@ func TestUsersHandler_UpdateAvatar(t *testing.T) {
 		VALUES ($1, 'avatar', 'avt@ex.com', 'Ava', 'Tar', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
-	h := handlers.NewUsersHandler(db, config.AppConfig{}, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, config.AppConfig{}, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -129,7 +135,9 @@ func TestUsersHandler_RateLimiting(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	h := handlers.NewUsersHandler(db, config.AppConfig{}, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, config.AppConfig{}, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

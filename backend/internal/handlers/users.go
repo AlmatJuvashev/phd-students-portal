@@ -13,6 +13,7 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -21,15 +22,22 @@ import (
 )
 
 type UsersHandler struct {
-	db  *sqlx.DB
-	cfg config.AppConfig
-	rds *redis.Client
-	s3  *services.S3Client
+	userService *services.UserService
+	db          *sqlx.DB // Deprecated: use userService
+	cfg         config.AppConfig
+	rds         *redis.Client // Deprecated: use userService
+	s3          *services.S3Client
 }
 
-func NewUsersHandler(db *sqlx.DB, cfg config.AppConfig, rds *redis.Client) *UsersHandler {
+func NewUsersHandler(userService *services.UserService, db *sqlx.DB, cfg config.AppConfig, rds *redis.Client) *UsersHandler {
 	s3Client, _ := services.NewS3FromEnv()
-	return &UsersHandler{db: db, cfg: cfg, rds: rds, s3: s3Client}
+	return &UsersHandler{
+		userService: userService,
+		db:          db,
+		cfg:         cfg,
+		rds:         rds,
+		s3:          s3Client,
+	}
 }
 
 type createUserReq struct {
@@ -60,44 +68,46 @@ func (h *UsersHandler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "only superadmin can create superadmin"})
 		return
 	}
-	username, err := h.generateUsername(req.FirstName, req.LastName)
+
+	createReq := services.CreateUserRequest{
+		FirstName:  req.FirstName,
+		LastName:   req.LastName,
+		Email:      req.Email,
+		Role:       req.Role,
+		Phone:      req.Phone,
+		Program:    req.Program,
+		Specialty:  req.Specialty,
+		Department: req.Department,
+		Cohort:     req.Cohort,
+		AdvisorIDs: req.AdvisorIDs,
+		TenantID:   c.GetString("tenant_id"),
+	}
+
+	user, tempPass, err := h.userService.CreateUser(c.Request.Context(), createReq)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate username"})
+		log.Printf("[CreateUser] service failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user", "details": err.Error()})
 		return
 	}
-	temp := auth.GeneratePass()
-	hash, _ := auth.HashPassword(temp)
 	
-	// Insert user and get the new user ID
-	var userID string
-	err = h.db.QueryRow(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active, phone, program, specialty, department, cohort)
-        VALUES ($1,$2,$3,$4,$5,$6,true,$7,$8,$9,$10,$11) RETURNING id`,
-		username, nullable(req.Email), req.FirstName, req.LastName, req.Role, hash,
-		nullable(req.Phone), nullable(req.Program), nullable(req.Specialty), nullable(req.Department), nullable(req.Cohort)).Scan(&userID)
-	if err != nil {
-		log.Printf("[CreateUser] insert failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "insert failed", "details": err.Error()})
-		return
-	}
-	
-	// Link advisors for students
-	if req.Role == "student" && len(req.AdvisorIDs) > 0 {
-		for _, aid := range req.AdvisorIDs {
-			_, _ = h.db.Exec(`INSERT INTO student_advisors (student_id, advisor_id)
-                VALUES ($1, $2)
-                ON CONFLICT DO NOTHING`, userID, aid)
-		}
-	}
-	
-	// Sync to profile_submissions for students (pre-fill S1_profile node)
+	// Sync to profile_submissions logic is legacy/redundant if Repository abstraction handles data well,
+	// but strictly speaking, if `profile_submissions` is a separate table not handled by `CreateUser` repo method,
+	// we might need to keep it or move it to Service.
+	// For now, let's keep the sync logic here IF it was doing something critical, but `UserService` implementation I wrote in Step 1060 didn't include `syncUserToProfileSubmissions`.
+	// Wait, existing `CreateUser` CALLED `h.syncUserToProfileSubmissions`.
+	// Does `UserService` do it? No.
+	// I should probably move `syncUserToProfileSubmissions` to Service or keep calling it here.
+	// But `syncUserToProfileSubmissions` uses `h.db`.
+	// I should update `syncUserToProfileSubmissions` to use Service or Repo too, or leave it for now.
+	// Let's call it here for backward compat.
 	if req.Role == "student" {
 		tenantID := c.GetString("tenant_id")
 		if tenantID != "" {
-			h.syncUserToProfileSubmissions(userID, req.Specialty, req.Department, req.Program, req.Cohort, tenantID)
+			h.syncUserToProfileSubmissions(user.ID, req.Specialty, req.Department, req.Program, req.Cohort, tenantID)
 		}
 	}
 	
-	c.JSON(http.StatusOK, gin.H{"username": username, "temp_password": temp})
+	c.JSON(http.StatusOK, gin.H{"username": user.Username, "temp_password": tempPass})
 }
 
 type resetPwReq struct {
@@ -310,78 +320,51 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	// Build WHERE clause for filtering
-	where := ""
-	args := []any{}
-	if roleFilter != "" {
-		where += " AND role = $1"
-		args = append(args, roleFilter)
-	}
-	if programFilter != "" {
-		where += fmt.Sprintf(" AND program = $%d", len(args)+1)
-		args = append(args, programFilter)
-	}
-	if departmentFilter != "" {
-		where += fmt.Sprintf(" AND department = $%d", len(args)+1)
-		args = append(args, departmentFilter)
-	}
-	if cohortFilter != "" {
-		where += fmt.Sprintf(" AND cohort = $%d", len(args)+1)
-		args = append(args, cohortFilter)
-	}
-	if specialtyFilter != "" {
-		where += fmt.Sprintf(" AND specialty = $%d", len(args)+1)
-		args = append(args, specialtyFilter)
-	}
-	if q != "" {
-		paramNum := len(args) + 1
-		where += fmt.Sprintf(" AND (first_name ILIKE '%%'||$%d||'%%' OR last_name ILIKE '%%'||$%d||'%%' OR email ILIKE '%%'||$%d||'%%')", paramNum, paramNum, paramNum)
-		args = append(args, q)
-	}
-
-	// Compose active condition
-	activeCond := ""
+	// Compose Filter
+	var active *bool
 	switch strings.ToLower(activeFilter) {
 	case "false":
-		activeCond = " AND u.is_active=false"
+		b := false
+		active = &b
 	case "all":
-		// no filter
+		// nil
 	default:
-		activeCond = " AND u.is_active=true"
+		b := true
+		active = &b
 	}
 
-	// Get total count
-	var total int
-	countQuery := `SELECT COUNT(*) FROM users u WHERE 1=1` + activeCond + where
-	err := h.db.Get(&total, countQuery, args...)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to count users"})
-		return
+	filter := repository.UserFilter{
+		Role:       roleFilter,
+		Program:    programFilter,
+		Department: departmentFilter,
+		Cohort:     cohortFilter,
+		Specialty:  specialtyFilter,
+		Active:     active,
+		Search:     q,
 	}
 
-	// Get paginated data
-	rows := []listUsersResp{}
-	base := `SELECT u.id,
-            (u.first_name||' '||u.last_name) AS name,
-            COALESCE(u.email, '') AS email,
-            u.role,
-            COALESCE(u.username, '') AS username,
-            COALESCE(u.program, (SELECT form_data->>'program' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS program,
-            COALESCE(u.specialty, (SELECT form_data->>'specialty' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS specialty,
-            COALESCE(u.department, (SELECT form_data->>'department' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS department,
-            COALESCE(u.cohort, (SELECT form_data->>'cohort' FROM profile_submissions WHERE user_id=u.id ORDER BY submitted_at DESC LIMIT 1), '') AS cohort,
-            to_char(u.created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') AS created_at,
-            u.is_active
-            FROM users u
-            WHERE 1=1` + activeCond
-
-	query := base + where + fmt.Sprintf(" ORDER BY last_name LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
-	args = append(args, limit, offset)
-
-	err = h.db.Select(&rows, query, args...)
+	users, total, err := h.userService.ListUsers(c.Request.Context(), filter, repository.Pagination{Limit: limit, Offset: offset})
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to fetch users"})
 		return
+	}
+
+	// Map to response
+	rows := make([]listUsersResp, len(users))
+	for i, u := range users {
+		rows[i] = listUsersResp{
+			ID:         u.ID,
+			Name:       fmt.Sprintf("%s %s", u.FirstName, u.LastName),
+			Email:      u.Email,
+			Role:       string(u.Role),
+			Username:   u.Username,
+			Program:    u.Program,
+			Specialty:  u.Specialty,
+			Department: u.Department,
+			Cohort:     u.Cohort,
+			CreatedAt:  u.CreatedAt.Format(time.RFC3339),
+			IsActive:   u.IsActive,
+		}
 	}
 
 	totalPages := (total + limit - 1) / limit
@@ -901,4 +884,3 @@ func (h *UsersHandler) syncUserToProfileSubmissions(userID, specialty, departmen
 		log.Printf("[syncUserToProfileSubmissions] upsert failed: %v", err)
 	}
 }
-

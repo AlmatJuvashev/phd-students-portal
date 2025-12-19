@@ -55,12 +55,26 @@ func TestAuthHandler_Login(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		t.Logf("Response body: %s", w.Body.String())
-
+		
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
-		assert.NotEmpty(t, resp["token"])
+		// Token is now in HttpOnly cookie, not body
+		// assert.NotEmpty(t, resp["token"]) 
 		assert.Equal(t, "student", resp["role"])
+
+		// Verify Cookie
+		result := w.Result()
+		cookies := result.Cookies()
+		var tokenCookie *http.Cookie
+		for _, c := range cookies {
+			if c.Name == "jwt_token" {
+				tokenCookie = c
+				break
+			}
+		}
+		assert.NotNil(t, tokenCookie, "jwt_token cookie should be set")
+		assert.NotEmpty(t, tokenCookie.Value)
 	})
 
 	t.Run("Invalid Password", func(t *testing.T) {
