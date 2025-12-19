@@ -22,6 +22,10 @@ func TestMeHandler_Me(t *testing.T) {
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'meuser', 'me@ex.com', 'Me', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
+	// Membership
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES
+		($1, '00000000-0000-0000-0000-000000000001', 'student', true)`, userID)
+	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
 	// Pass nil for redis client
@@ -31,6 +35,7 @@ func TestMeHandler_Me(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", map[string]interface{}{"sub": userID})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/auth/me", h.Me)
@@ -95,6 +100,7 @@ func TestMeHandler_MyTenants(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", map[string]interface{}{"sub": userID})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/me/tenants", h.MyTenants)
@@ -128,6 +134,8 @@ func TestMeHandler_MyTenants(t *testing.T) {
 		r2 := gin.New()
 		r2.Use(func(c *gin.Context) {
 			c.Set("claims", map[string]interface{}{"sub": noMemberUserID})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 			c.Next()
 		})
 		r2.GET("/me/tenants", h.MyTenants)

@@ -1,18 +1,27 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 // Tenant represents an organization (university) in the multi-tenant system
 type Tenant struct {
-	ID        string    `db:"id" json:"id"`
-	Slug      string    `db:"slug" json:"slug"`           // e.g., 'kaznmu', 'knu'
-	Name      string    `db:"name" json:"name"`           // 'Kazakh National Medical University'
-	Domain    *string   `db:"domain" json:"domain"`       // Optional custom domain
-	LogoURL   *string   `db:"logo_url" json:"logo_url"`   // Tenant logo
-	Settings  string    `db:"settings" json:"settings"`   // JSON settings
-	IsActive  bool      `db:"is_active" json:"is_active"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	ID             string         `db:"id" json:"id"`
+	Slug           string         `db:"slug" json:"slug"`
+	Name           string         `db:"name" json:"name"`
+	TenantType     string         `db:"tenant_type" json:"tenant_type"`
+	Domain         *string        `db:"domain" json:"domain"`
+	LogoURL        *string        `db:"logo_url" json:"logo_url"`
+	AppName        *string        `db:"app_name" json:"app_name"`
+	PrimaryColor   *string        `db:"primary_color" json:"primary_color"`
+	SecondaryColor *string        `db:"secondary_color" json:"secondary_color"`
+	EnabledServices pq.StringArray `db:"enabled_services" json:"enabled_services"`
+	Settings       string         `db:"settings" json:"settings"`
+	IsActive       bool           `db:"is_active" json:"is_active"`
+	CreatedAt      time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 // UserTenantMembership represents a user's membership in a tenant with a specific role

@@ -31,7 +31,7 @@ func TestGetProfile(t *testing.T) {
 		"phone":   "1234567890",
 	}
 	dataBytes, _ := json.Marshal(profileData)
-	_, err = db.Exec(`INSERT INTO profile_submissions (user_id, form_data) VALUES ($1, $2)`, userID, string(dataBytes))
+	_, err = db.Exec(`INSERT INTO profile_submissions (tenant_id, user_id, form_data) VALUES ('00000000-0000-0000-0000-000000000001', $1, $2)`, userID, string(dataBytes))
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{}
@@ -42,6 +42,7 @@ func TestGetProfile(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/profile", h.GetProfile)
@@ -74,6 +75,7 @@ func TestGetProfile_NotFound(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/profile", h.GetProfile)

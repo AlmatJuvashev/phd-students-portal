@@ -116,6 +116,7 @@ export function LoginPage() {
             )}
           </div>
           <Button
+            type="submit"
             className="w-full h-11"
             disabled={isSubmitting}
             aria-busy={isSubmitting}

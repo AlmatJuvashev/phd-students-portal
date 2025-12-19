@@ -193,7 +193,7 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 	
 	// If state is done, activate next nodes
 	if inst.State == "done" {
-		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID); err != nil {
+		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID, tenantID); err != nil {
 			log.Printf("[PutSubmission] Failed to activate next nodes: %v", err)
 			// Don't fail the request
 		}
@@ -486,7 +486,7 @@ func (h *NodeSubmissionHandler) PatchState(c *gin.Context) {
 	
 	// If state is done, activate next nodes
 	if inst.State == "done" {
-		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID); err != nil {
+		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID, tenantID); err != nil {
 			log.Printf("[PatchState] Failed to activate next nodes: %v", err)
 		}
 	}

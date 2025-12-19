@@ -31,27 +31,28 @@ func TestSearchHandler_GlobalSearch(t *testing.T) {
 	// Seed document (needs node instance structure)
 	// 1. Create playbook version
 	var pvID string
-	err = db.QueryRow(`INSERT INTO playbook_versions (version, checksum, raw_json, created_at) VALUES ('v1', 'sum', '{}', NOW()) RETURNING id`).Scan(&pvID)
+	defaultTenantID := "00000000-0000-0000-0000-000000000001"
+	err = db.QueryRow(`INSERT INTO playbook_versions (version, checksum, raw_json, created_at, tenant_id) VALUES ('v1', 'sum', '{}', NOW(), $1) RETURNING id`, defaultTenantID).Scan(&pvID)
 	require.NoError(t, err)
 
 	// 2. Create node instance
 	var instanceID string
-	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id) VALUES ('node1', $1, 'active', $2) RETURNING id`, studentID, pvID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, tenant_id) VALUES ('node1', $1, 'active', $2, $3) RETURNING id`, studentID, pvID, defaultTenantID).Scan(&instanceID)
 	require.NoError(t, err)
 
 	// 2. Create slot
 	var slotID string
-	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key) VALUES ($1, 'slot1') RETURNING id`, instanceID).Scan(&slotID)
+	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, defaultTenantID).Scan(&slotID)
 	require.NoError(t, err)
 
 	// 3. Create document and version
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Thesis_Draft.pdf') RETURNING id`, studentID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title, tenant_id) VALUES ($1, 'other', 'Thesis_Draft.pdf', $2) RETURNING id`, studentID, defaultTenantID).Scan(&docID)
 	require.NoError(t, err)
 
 	var verID string
-	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by) 
-		VALUES ($1, 'path/to/file', 'application/pdf', 100, $2) RETURNING id`, docID, studentID).Scan(&verID)
+	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by, tenant_id) 
+		VALUES ($1, 'path/to/file', 'application/pdf', 100, $2, $3) RETURNING id`, docID, studentID, defaultTenantID).Scan(&verID)
 	require.NoError(t, err)
 
 	// 4. Create attachment

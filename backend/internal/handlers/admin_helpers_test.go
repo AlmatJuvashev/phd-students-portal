@@ -85,8 +85,8 @@ func TestAdminHelpers_ActivateNextNodes(t *testing.T) {
 
 	versionID := "20000000-0000-0000-0000-000000000001"
 	rawJSON := `{"worlds":[{"nodes":[{"id":"node1","next":["node2"]},{"id":"node2"}]}]}`
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v1', 'sum', $2, NOW())`, versionID, rawJSON)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v1', 'sum', $2, NOW(), '00000000-0000-0000-0000-000000000001')`, versionID, rawJSON)
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{
@@ -96,7 +96,7 @@ func TestAdminHelpers_ActivateNextNodes(t *testing.T) {
 
 
 	// Activate next nodes for node1
-	err = ActivateNextNodes(db, pb, userID, "node1")
+	err = ActivateNextNodes(db, pb, userID, "node1", "00000000-0000-0000-0000-000000000001")
 	assert.NoError(t, err)
 
 	// Verify node2 instance created

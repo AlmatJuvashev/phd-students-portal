@@ -5,10 +5,13 @@ test.describe('Leaderboard Feature', () => {
     // Login as student
     // Assuming standard login flow or mock
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'student@example.com'); // Adjust credential as needed for test env
-    await page.fill('input[type="password"]', 'password');
+    await page.fill('input[name="username"]', 'demo.student1');
+    await page.fill('input[type="password"]', 'demopassword123!');
     await page.click('button[type="submit"]');
-    await page.waitForURL('**/map');
+    await page.waitForURL((url) => url.pathname === '/' || url.pathname === '/journey');
+    
+    // Navigate to journey for leaderboard test
+    await page.goto('/journey');
   });
 
   test('should open leaderboard modal and display data', async ({ page }) => {
@@ -35,7 +38,7 @@ test.describe('Leaderboard Feature', () => {
 
     // Verify at least one entry (Me) is there
     // We look for the "You" badge
-    await expect(page.locator('text=YOU')).toBeVisible();
+    await expect(page.getByText('YOU', { exact: true })).toBeVisible();
 
     // Close Modal
     await page.click('button:has(svg.lucide-x)'); // specific close button

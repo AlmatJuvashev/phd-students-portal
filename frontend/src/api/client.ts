@@ -7,14 +7,13 @@ export async function api<T = any>(
   path: string,
   opts: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem("token");
+  // Token is managed via HttpOnly cookies
 
   // Debug logging for auth issues
   if (path === "/notifications" || path.includes("/notifications")) {
     console.log("[API Debug] Notifications request:", {
       path,
-      hasToken: !!token,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : "null",
+      // Token is hidden in HttpOnly cookie
     });
   }
 
@@ -23,19 +22,21 @@ export async function api<T = any>(
     console.log("[API Debug] FormData request:", {
       path,
       method: opts.method || "GET",
-      hasToken: !!token,
     });
   }
 
   const headers: Record<string, string> = {
     ...((opts.headers as Record<string, string>) || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // Token is now in HttpOnly cookie, so we don't send Authorization header
     ...getTenantHeaders(), // Add X-Tenant-Slug header
   };
 
   if (!headers["Content-Type"] && !(opts.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
+
+  // Ensure cookies are sent
+  opts.credentials = 'include';
   
   console.log("[API Debug] Request details:", {
     url: `${API_URL}${path}`,
@@ -58,7 +59,6 @@ export async function api<T = any>(
     if (res.status === 401) {
       console.error("[API 401 Error]", {
         path,
-        hasToken: !!token,
         response: t,
       });
     }

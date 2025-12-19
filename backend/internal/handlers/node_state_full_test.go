@@ -28,8 +28,8 @@ func TestLockedState_CantSubmit(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -51,6 +51,7 @@ func TestLockedState_CantSubmit(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -95,8 +96,8 @@ func TestWaitingState_CantAdvance(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "dddddddd-dddd-dddd-dddd-dddddddddddd"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -118,6 +119,7 @@ func TestWaitingState_CantAdvance(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -159,8 +161,8 @@ func TestFullStateFlow(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "ffffffff-ffff-ffff-ffff-ffffffffffff"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -182,6 +184,7 @@ func TestFullStateFlow(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -237,8 +240,8 @@ func TestNeedsFixes_Resubmit(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "99998888-7777-6666-5555-444433332222"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -260,6 +263,7 @@ func TestNeedsFixes_Resubmit(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)

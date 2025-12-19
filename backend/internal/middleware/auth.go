@@ -17,22 +17,27 @@ import (
 
 // validateJWT validates JWT token and returns claims or aborts with error
 func validateJWT(c *gin.Context, secret []byte) (jwt.MapClaims, bool) {
-	h := c.GetHeader("Authorization")
-	if !strings.HasPrefix(h, "Bearer ") {
-		if h == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header", "details": "No Authorization header provided"})
-		} else {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization format", "details": "Authorization header must start with 'Bearer '"})
+	var tokStr string
+
+	// 1. Try Cookie first
+	cookie, err := c.Cookie("jwt_token")
+	if err == nil && cookie != "" {
+		tokStr = cookie
+	} else {
+		// 2. Fallback to Header
+		h := c.GetHeader("Authorization")
+		if strings.HasPrefix(h, "Bearer ") {
+			tokStr = strings.TrimPrefix(h, "Bearer ")
 		}
+	}
+
+	if tokStr == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token", "details": "No token found in cookie or Authorization header"})
 		return nil, false
 	}
-	tokStr := strings.TrimPrefix(h, "Bearer ")
-	if tokStr == "" || tokStr == "null" || tokStr == "undefined" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "empty or invalid token", "details": "Token value is empty, null, or undefined"})
-		return nil, false
-	}
+
 	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(tokStr, claims, func(token *jwt.Token) (interface{}, error) {
+	_, err = jwt.ParseWithClaims(tokStr, claims, func(token *jwt.Token) (interface{}, error) {
 		return secret, nil
 	})
 	if err != nil {

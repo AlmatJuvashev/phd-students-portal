@@ -3,9 +3,11 @@ package handlers_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
@@ -115,22 +117,27 @@ func TestSuperadminSettingsHandler_UpdateSetting(t *testing.T) {
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminSettingsHandler(db, cfg)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_update_setting", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "a1a1a1a1-0000-0000-0000-000000000001")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.PUT("/superadmin/settings/:key", h.UpdateSetting)
 
 	t.Run("Create New Setting", func(t *testing.T) {
+		randKey := fmt.Sprintf("test.newsetting.%d", time.Now().UnixNano())
 		body := map[string]interface{}{
 			"value":       "newvalue",
 			"description": "A new test setting",
 			"category":    "test",
 		}
 		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest("PUT", "/superadmin/settings/test.newsetting", bytes.NewBuffer(jsonBody))
+		req, _ := http.NewRequest("PUT", "/superadmin/settings/"+randKey, bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
@@ -140,7 +147,7 @@ func TestSuperadminSettingsHandler_UpdateSetting(t *testing.T) {
 		var setting map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &setting)
 
-		assert.Equal(t, "test.newsetting", setting["key"])
+		assert.Equal(t, randKey, setting["key"])
 		assert.Equal(t, "test", setting["category"])
 	})
 
@@ -194,10 +201,14 @@ func TestSuperadminSettingsHandler_DeleteSetting(t *testing.T) {
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminSettingsHandler(db, cfg)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_delete_setting", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "b2b2b2b2-0000-0000-0000-000000000002")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.DELETE("/superadmin/settings/:key", h.DeleteSetting)
@@ -263,10 +274,14 @@ func TestSuperadminSettingsHandler_BulkUpdate(t *testing.T) {
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminSettingsHandler(db, cfg)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_bulk_setting", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "c3c3c3c3-0000-0000-0000-000000000003")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.POST("/superadmin/settings/bulk", h.BulkUpdate)

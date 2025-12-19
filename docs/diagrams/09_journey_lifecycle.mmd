@@ -1,0 +1,21 @@
+stateDiagram-v2
+    [*] --> Locked: Dependencies Not Met
+    Locked --> Todo: Helper Activates (Prereqs Met)
+    
+    Todo --> InProgress: User Views/Starts
+    Todo --> Submitted: User Uploads Required Doc
+    InProgress --> Submitted: User Completes Form
+    
+    Submitted --> Reviewing: Advisor Views
+    
+    state Reviewing {
+        [*] --> Pending
+        Pending --> ChangesRequested: Reject
+        Pending --> Approved: Accept
+    }
+    
+    Reviewing --> NeedsChanges: If Rejected
+    Reviewing --> Done: If Approved
+    
+    NeedsChanges --> Submitted: User Re-uploads
+    Done --> [*]: Next Nodes Unlock

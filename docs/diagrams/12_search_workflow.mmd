@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant H as SearchHandler
+    participant DB as Database
+
+    U->>FE: Types "John" in global search
+    FE->>H: GET /search?q=John
+    
+    note right of H: Role Check (RBAC)
+
+    alt is Student
+        H->>DB: Search Documents (Owner = Me)
+    else is Advisor
+        H->>DB: Search Students (Assigned to Me)
+        H->>DB: Search Documents (Owner in Assigned Students)
+    else is Admin
+        H->>DB: Search All Users (Name/Email ILIKE %John%)
+        H->>DB: Search All Documents (Filename ILIKE %John%)
+    end
+    
+    DB-->>H: Return Rows
+    H->>H: Format as SearchResult (Link, Title, Subtitle)
+    H-->>FE: JSON [ {type: "student", id: "...", ...} ]
+    FE->>U: Display Autocomplete Dropdown

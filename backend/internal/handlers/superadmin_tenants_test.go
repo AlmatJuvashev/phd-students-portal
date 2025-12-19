@@ -3,9 +3,11 @@ package handlers_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
@@ -22,7 +24,8 @@ func TestSuperadminTenantsHandler_ListTenants(t *testing.T) {
 	// Create test tenants
 	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active, enabled_services) VALUES 
 		('a1000000-1111-1111-1111-111111111111', 'testtenant1', 'Test Tenant One', 'university', true, ARRAY['chat', 'calendar']),
-		('a2000000-2222-2222-2222-222222222222', 'testtenant2', 'Test Tenant Two', 'college', true, ARRAY['chat'])`)
+		('a2000000-2222-2222-2222-222222222222', 'testtenant2', 'Test Tenant Two', 'college', true, ARRAY['chat'])
+		ON CONFLICT (id) DO NOTHING`)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -66,7 +69,8 @@ func TestSuperadminTenantsHandler_GetTenant(t *testing.T) {
 	// Create test tenant
 	tenantID := "b1000000-3333-3333-3333-333333333333"
 	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active, enabled_services, primary_color) 
-		VALUES ($1, 'gettenant', 'Get Me Tenant', 'vocational', true, ARRAY['calendar'], '#123456')`, tenantID)
+		VALUES ($1, 'gettenant', 'Get Me Tenant', 'vocational', true, ARRAY['calendar'], '#123456')
+		ON CONFLICT (id) DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -114,17 +118,22 @@ func TestSuperadminTenantsHandler_CreateTenant(t *testing.T) {
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminTenantsHandler(db, cfg)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_create_tenant", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "test-admin-id")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.POST("/superadmin/tenants", h.CreateTenant)
 
 	t.Run("Create Tenant Success", func(t *testing.T) {
+		randSlug := fmt.Sprintf("tenant-%d", time.Now().UnixNano())
 		body := map[string]interface{}{
-			"slug":           "newtenant",
+			"slug":           randSlug,
 			"name":           "New Tenant",
 			"tenant_type":    "school",
 			"primary_color":  "#abcdef",
@@ -136,12 +145,15 @@ func TestSuperadminTenantsHandler_CreateTenant(t *testing.T) {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
+		if w.Code != http.StatusCreated {
+			t.Logf("CreateTenant failed. Status: %d, Body: %s", w.Code, w.Body.String())
+		}
 		assert.Equal(t, http.StatusCreated, w.Code)
 		
 		var tenant map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &tenant)
 		
-		assert.Equal(t, "newtenant", tenant["slug"])
+		assert.Equal(t, randSlug, tenant["slug"])
 		assert.Equal(t, "New Tenant", tenant["name"])
 		assert.Equal(t, "school", tenant["tenant_type"])
 	})
@@ -216,10 +228,14 @@ func TestSuperadminTenantsHandler_UpdateTenantServices(t *testing.T) {
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminTenantsHandler(db, cfg)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_update_services", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "test-admin-id")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.PUT("/superadmin/tenants/:id/services", h.UpdateTenantServices)
@@ -384,16 +400,21 @@ func TestSuperadminTenantsHandler_DeleteTenant(t *testing.T) {
 	// Create test tenant
 	tenantID := "d1000000-5555-5555-5555-555555555555"
 	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, is_active) 
-		VALUES ($1, 'deletetenant', 'Delete Me Tenant', true)`, tenantID)
+		VALUES ($1, 'deletetenant', 'Delete Me Tenant', true)
+		ON CONFLICT (id) DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminTenantsHandler(db, cfg)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_delete_tenant", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "test-admin-id")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.DELETE("/superadmin/tenants/:id", h.DeleteTenant)

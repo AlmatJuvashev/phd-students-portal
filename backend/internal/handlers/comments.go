@@ -30,9 +30,10 @@ func (h *CommentsHandler) CreateComment(c *gin.Context) {
 		return
 	}
 
+	tenantID := c.GetString("tenant_id")
 	var commentID string
-	err := h.db.QueryRowx(`INSERT INTO comments (document_id, user_id, content, parent_id) VALUES ($1, $2, $3, $4) RETURNING id`,
-		docId, userId, r.Content, r.ParentID).Scan(&commentID)
+	err := h.db.QueryRowx(`INSERT INTO comments (tenant_id, document_id, user_id, content, parent_id) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		tenantID, docId, userId, r.Content, r.ParentID).Scan(&commentID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "insert failed"})
 		return

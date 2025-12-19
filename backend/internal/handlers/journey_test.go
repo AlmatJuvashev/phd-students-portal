@@ -27,7 +27,7 @@ func TestJourneyHandler_GetState(t *testing.T) {
 	require.NoError(t, err)
 
 	// Seed journey state
-	_, err = db.Exec(`INSERT INTO journey_states (user_id, node_id, state) VALUES ($1, 'node1', 'done')`, userID)
+	_, err = db.Exec(`INSERT INTO journey_states (tenant_id, user_id, node_id, state) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'node1', 'done')`, userID)
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{}
@@ -38,6 +38,7 @@ func TestJourneyHandler_GetState(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/journey/state", h.GetState)
@@ -71,6 +72,7 @@ func TestJourneyHandler_SetState(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.PUT("/journey/state", h.SetState)
@@ -120,9 +122,9 @@ func TestJourneyHandler_Reset(t *testing.T) {
 	require.NoError(t, err)
 
 	// Seed some state
-	_, err = db.Exec(`INSERT INTO journey_states (user_id, node_id, state) VALUES ($1, 'node1', 'done')`, userID)
+	_, err = db.Exec(`INSERT INTO journey_states (tenant_id, user_id, node_id, state) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'node1', 'done')`, userID)
 	require.NoError(t, err)
-	_, err = db.Exec(`INSERT INTO journey_states (user_id, node_id, state) VALUES ($1, 'S1_profile', 'done')`, userID)
+	_, err = db.Exec(`INSERT INTO journey_states (tenant_id, user_id, node_id, state) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'S1_profile', 'done')`, userID)
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{}
@@ -133,6 +135,7 @@ func TestJourneyHandler_Reset(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.POST("/journey/reset", h.Reset)

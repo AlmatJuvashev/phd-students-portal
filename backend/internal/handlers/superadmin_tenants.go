@@ -155,7 +155,7 @@ func (h *SuperadminTenantsHandler) CreateTenant(c *gin.Context) {
 	query := `
 		INSERT INTO tenants (slug, name, tenant_type, domain, app_name, primary_color, secondary_color)
 		VALUES ($1, $2, $3, $4, $5, COALESCE($6, '#3b82f6'), COALESCE($7, '#1e40af'))
-		RETURNING id, slug, name, tenant_type, domain, logo_url, app_name, primary_color, secondary_color, is_active, created_at, updated_at
+		RETURNING id, slug, name, tenant_type, domain, logo_url, app_name, primary_color, secondary_color, is_active, enabled_services, created_at, updated_at
 	`
 
 	var tenant models.Tenant
@@ -165,7 +165,7 @@ func (h *SuperadminTenantsHandler) CreateTenant(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "tenant with this slug already exists"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create tenant"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create tenant: " + err.Error()})
 		return
 	}
 

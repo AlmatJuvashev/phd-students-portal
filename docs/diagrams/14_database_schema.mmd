@@ -1,0 +1,64 @@
+erDiagram
+    %% Core Users & Tenants
+    TENANTS ||--|{ USERS : "has members"
+    TENANTS {
+        uuid id PK
+        string name
+        string slug
+        string type
+    }
+    USERS ||--o{ USER_TENANT_MEMBERSHIPS : "belongs to"
+    USERS {
+        uuid id PK
+        string email
+        string role "student|advisor|admin"
+        boolean is_active
+    }
+    USER_TENANT_MEMBERSHIPS {
+        uuid user_id FK
+        uuid tenant_id FK
+        string role
+    }
+
+    %% Academic Hierarchy
+    TENANTS ||--|{ FACULTIES : "has"
+    FACULTIES ||--|{ DEPARTMENTS : "has"
+    DEPARTMENTS ||--|{ SPECIALTIES : "has"
+    SPECIALTIES ||--|{ PROGRAMS : "offers"
+    PROGRAMS ||--|{ COHORTS : "groups students"
+    COHORTS ||--o{ USERS : "contains students"
+
+    %% Journey & Progress
+    TENANTS ||--|{ PLAYBOOKS : "defines curriculum"
+    PLAYBOOKS ||--|{ PLAYBOOK_VERSIONS : "has versions"
+    PLAYBOOK_VERSIONS ||--|{ NODE_INSTANCES : "instantiates nodes"
+    USERS ||--|{ NODE_INSTANCES : "tracks progress"
+    NODE_INSTANCES ||--|{ NODE_INSTANCE_SLOTS : "contains slots"
+    NODE_INSTANCE_SLOTS ||--o{ NODE_INSTANCE_SLOT_ATTACHMENTS : "has attachments"
+    
+    NODE_INSTANCES {
+        uuid id PK
+        string node_id
+        string state "todo|submitted|done"
+    }
+
+    %% Documents
+    USERS ||--|{ DOCUMENTS : "owns"
+    DOCUMENTS ||--|{ DOCUMENT_VERSIONS : "has history"
+    DOCUMENT_VERSIONS ||--o{ NODE_INSTANCE_SLOT_ATTACHMENTS : "linked to slot"
+    
+    DOCUMENTS {
+        uuid id PK
+        string kind
+        string title
+    }
+
+    %% Chat
+    TENANTS ||--|{ CHAT_ROOMS : "hosts"
+    CHAT_ROOMS ||--|{ CHAT_ROOM_MEMBERS : "has participants"
+    CHAT_ROOMS ||--|{ CHAT_MESSAGES : "contains messages"
+    USERS ||--|{ CHAT_MESSAGES : "sends"
+
+    %% Relationships
+    USERS ||--o{ STUDENT_ADVISORS : "is advised by"
+    USERS ||--o{ STUDENT_ADVISORS : "advises"

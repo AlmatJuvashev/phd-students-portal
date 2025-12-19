@@ -61,46 +61,56 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		log.Printf("Migrate db close error: %v", dbErr)
 	}
 
+	// Clean DB on start to ensure clean slate
+	cleanupDB(db)
+
 	return db, func() {
-		// Cleanup logic
-		// For now, we might want to truncate tables or drop the DB.
-		// Truncating is faster.
-		// We can get all table names and truncate them.
-		tables := []string{
-			"users",
-			"programs", "specialties", "cohorts", "departments", "specialty_programs",
-			"node_instances", "node_instance_form_revisions", "node_instance_slots", "node_instance_slot_attachments", "node_outcomes", "node_events",
-			"chat_rooms", "chat_room_members", "chat_messages",
-			"notifications",
-			"events", "event_attendees",
-			"checklist_modules", "checklist_steps", "student_steps",
-			"documents", "document_versions", "comments",
-			"playbook_versions", "playbook_active_version",
-			"contacts",
-			"journey_states", "student_advisors", "node_deadlines",
-		}
-		for _, table := range tables {
-			_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
-			if err != nil {
-				// Log but don't fail, maybe table doesn't exist yet
-				log.Printf("Failed to truncate table %s: %v", table, err)
-			}
-		}
-		// Truncate node_state_transitions and admin_notifications
-		db.Exec("TRUNCATE TABLE node_state_transitions CASCADE")
-		db.Exec("TRUNCATE TABLE admin_notifications CASCADE")
-
-		// Seed default transitions (from migration 0006)
-		db.Exec(`INSERT INTO node_state_transitions(from_state, to_state, allowed_roles) VALUES
-			('active','submitted', ARRAY['student']),
-			('submitted','needs_fixes', ARRAY['advisor','secretary','chair','admin']),
-			('submitted','done', ARRAY['advisor','secretary','chair','admin']),
-			('needs_fixes','submitted', ARRAY['student']),
-			('done','submitted', ARRAY['admin'])
-			ON CONFLICT DO NOTHING`)
-
+		cleanupDB(db)
 		db.Close()
 	}
+}
+
+func cleanupDB(db *sqlx.DB) {
+	// Cleanup logic
+	// Truncating tables.
+	tables := []string{
+		"users", "tenants", "user_tenant_memberships",
+		"programs", "specialties", "cohorts", "departments", "specialty_programs",
+		"node_instances", "node_instance_form_revisions", "node_instance_slots", "node_instance_slot_attachments", "node_outcomes", "node_events",
+		"chat_rooms", "chat_room_members", "chat_messages", "chat_room_read_status",
+		"notifications",
+		"events", "event_attendees",
+		"checklist_modules", "checklist_steps", "student_steps",
+		"documents", "document_versions", "comments",
+		"playbook_versions", "playbook_active_version",
+		"contacts",
+		"journey_states", "student_advisors", "node_deadlines",
+		"profile_submissions", "profile_audit_log", "email_verification_tokens", "rate_limit_events",
+	}
+	for _, table := range tables {
+		_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
+		if err != nil {
+			// Log but don't fail, maybe table doesn't exist yet
+			log.Printf("Failed to truncate table %s: %v", table, err)
+		}
+	}
+	// Truncate node_state_transitions and admin_notifications
+	db.Exec("TRUNCATE TABLE node_state_transitions CASCADE")
+	db.Exec("TRUNCATE TABLE admin_notifications CASCADE")
+
+	// Seed default transitions (from migration 0006)
+	db.Exec(`INSERT INTO node_state_transitions(from_state, to_state, allowed_roles) VALUES
+		('active','submitted', ARRAY['student']),
+		('submitted','needs_fixes', ARRAY['advisor','secretary','chair','admin']),
+		('submitted','done', ARRAY['advisor','secretary','chair','admin']),
+		('needs_fixes','submitted', ARRAY['student']),
+		('done','submitted', ARRAY['admin'])
+		ON CONFLICT DO NOTHING`)
+
+	// Seed default tenant for tests
+	db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ('00000000-0000-0000-0000-000000000001', 'default-test', 'Default Test Tenant', 'university', true)
+		ON CONFLICT DO NOTHING`)
 }
 
 func GetTestConfig() config.AppConfig {
@@ -118,6 +128,7 @@ func GetTestConfig() config.AppConfig {
 		FrontendBase:    "http://localhost:3000",
 		S3Endpoint:      "http://localhost:9000",
 		S3Bucket:        "test-bucket",
+		ServerURL:       "http://localhost:8080",
 	}
 }
 

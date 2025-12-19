@@ -19,11 +19,14 @@ func TestActivateNextNodes_SingleNext(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'One', 'student', 'hash', true)
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
+	
+	_, err = db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ('00000000-0000-0000-0000-000000000001', 'Default Tenant', 'default') ON CONFLICT (id) DO NOTHING`)
+	require.NoError(t, err)
 
 	versionID := "30000000-0000-0000-0000-000000000001"
 	rawJSON := `{"worlds":[{"id":"W1","nodes":[{"id":"node1","next":["node2"]},{"id":"node2","next":[]}]}]}`
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v1', 'sum1', $2, NOW())
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v1', 'sum1', $2, NOW(), '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID, rawJSON)
 	require.NoError(t, err)
 
@@ -33,7 +36,7 @@ func TestActivateNextNodes_SingleNext(t *testing.T) {
 	}
 
 	// Activate next nodes for node1
-	err = ActivateNextNodes(db, pb, userID, "node1")
+	err = ActivateNextNodes(db, pb, userID, "node1", "00000000-0000-0000-0000-000000000001")
 	assert.NoError(t, err)
 
 	// Verify node2 instance created
@@ -64,10 +67,13 @@ func TestActivateNextNodes_MultipleNext(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ('00000000-0000-0000-0000-000000000001', 'Default Tenant', 'default') ON CONFLICT (id) DO NOTHING`)
+	require.NoError(t, err)
+
 	versionID := "30000000-0000-0000-0000-000000000002"
 	rawJSON := `{"worlds":[{"id":"W1","nodes":[{"id":"fork","next":["branch_a","branch_b"]},{"id":"branch_a"},{"id":"branch_b"}]}]}`
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v2', 'sum2', $2, NOW())
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v2', 'sum2', $2, NOW(), '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID, rawJSON)
 	require.NoError(t, err)
 
@@ -77,7 +83,7 @@ func TestActivateNextNodes_MultipleNext(t *testing.T) {
 	}
 
 	// Activate next nodes for fork
-	err = ActivateNextNodes(db, pb, userID, "fork")
+	err = ActivateNextNodes(db, pb, userID, "fork", "00000000-0000-0000-0000-000000000001")
 	assert.NoError(t, err)
 
 	// Verify both branches created
@@ -97,10 +103,13 @@ func TestActivateNextNodes_NoNext(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ('00000000-0000-0000-0000-000000000001', 'Default Tenant', 'default') ON CONFLICT (id) DO NOTHING`)
+	require.NoError(t, err)
+
 	versionID := "30000000-0000-0000-0000-000000000003"
 	rawJSON := `{"worlds":[{"id":"W1","nodes":[{"id":"terminal_node","next":[]}]}]}`
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v3', 'sum3', $2, NOW())
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v3', 'sum3', $2, NOW(), '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID, rawJSON)
 	require.NoError(t, err)
 
@@ -110,7 +119,7 @@ func TestActivateNextNodes_NoNext(t *testing.T) {
 	}
 
 	// Activate next nodes for terminal node (no next)
-	err = ActivateNextNodes(db, pb, userID, "terminal_node")
+	err = ActivateNextNodes(db, pb, userID, "terminal_node", "00000000-0000-0000-0000-000000000001")
 	assert.NoError(t, err)
 
 	// No new instances should be created
@@ -130,10 +139,13 @@ func TestActivateNextNodes_AlreadyExists(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ('00000000-0000-0000-0000-000000000001', 'Default Tenant', 'default') ON CONFLICT (id) DO NOTHING`)
+	require.NoError(t, err)
+
 	versionID := "30000000-0000-0000-0000-000000000004"
 	rawJSON := `{"worlds":[{"id":"W1","nodes":[{"id":"node1","next":["node2"]},{"id":"node2"}]}]}`
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v4', 'sum4', $2, NOW())
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v4', 'sum4', $2, NOW(), '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID, rawJSON)
 	require.NoError(t, err)
 
@@ -148,7 +160,7 @@ func TestActivateNextNodes_AlreadyExists(t *testing.T) {
 	}
 
 	// Activate next nodes for node1
-	err = ActivateNextNodes(db, pb, userID, "node1")
+	err = ActivateNextNodes(db, pb, userID, "node1", "00000000-0000-0000-0000-000000000001")
 	assert.NoError(t, err)
 
 	// Verify node2 instance is now active (not locked)
@@ -173,7 +185,7 @@ func TestActivateNextNodes_InvalidPlaybookJSON(t *testing.T) {
 		Raw:       json.RawMessage(`{invalid json`),
 	}
 
-	err := ActivateNextNodes(db, pb, "user1", "node1")
+	err := ActivateNextNodes(db, pb, "user1", "node1", "00000000-0000-0000-0000-000000000001")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "parse playbook")
 }
@@ -188,10 +200,13 @@ func TestActivateNextNodes_NodeNotFound(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ('00000000-0000-0000-0000-000000000001', 'Default Tenant', 'default') ON CONFLICT (id) DO NOTHING`)
+	require.NoError(t, err)
+
 	versionID := "30000000-0000-0000-0000-000000000005"
 	rawJSON := `{"worlds":[{"id":"W1","nodes":[{"id":"other_node","next":["node2"]}]}]}`
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at) 
-		VALUES ($1, 'v5', 'sum5', $2, NOW())
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, created_at, tenant_id) 
+		VALUES ($1, 'v5', 'sum5', $2, NOW(), '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID, rawJSON)
 	require.NoError(t, err)
 
@@ -201,7 +216,7 @@ func TestActivateNextNodes_NodeNotFound(t *testing.T) {
 	}
 
 	// Try to activate next for a node that doesn't exist in playbook
-	err = ActivateNextNodes(db, pb, userID, "nonexistent_node")
+	err = ActivateNextNodes(db, pb, userID, "nonexistent_node", "00000000-0000-0000-0000-000000000001")
 	assert.NoError(t, err) // Should not error, just do nothing
 
 	// No instances created

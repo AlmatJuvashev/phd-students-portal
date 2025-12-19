@@ -97,7 +97,7 @@ func TestChatHandler_Members(t *testing.T) {
 	var roomID string
 	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES ('Member Room', 'cohort', $1, 'admin', $2) RETURNING id`, adminID, tenantID).Scan(&roomID)
 	require.NoError(t, err)
-	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id) VALUES ($1, $2, 'owner', $3)`, roomID, adminID, tenantID)
+	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id) VALUES ($1, $2, 'admin', $3)`, roomID, adminID, tenantID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -153,8 +153,15 @@ func TestChatHandler_Members(t *testing.T) {
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		members := resp["members"].([]interface{})
-		assert.Len(t, members, 1)
-		assert.Equal(t, userID, members[0].(map[string]interface{})["user_id"])
+		assert.Len(t, members, 2)
+		found := false
+		for _, m := range members {
+			if m.(map[string]interface{})["user_id"] == userID {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "List should contain the added user")
 	})
 
 	t.Run("Remove Member", func(t *testing.T) {

@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant C as Client
+    participant H as DocHandler
+    participant S3 as S3 Client
+    participant DB as Database
+
+    C->>H: POST /documents/presign
+    note right of C: Body: { filename: "thesis.pdf", mime: "application/pdf" }
+    
+    H->>H: Validate MIME type allowlist
+    H->>H: Generate random Object Key (UUID/timestamp)
+    
+    H->>S3: PresignPutObject(Bucket, Key, Expire=15m)
+    S3-->>H: SignedURL
+    
+    H-->>C: { url, key, headers }
+    
+    C->>S3: PUT /<key>?Signature... (File Payload)
+    S3-->>C: 200 OK
+    
+    C->>H: POST /documents
+    note right of C: Body: { object_key, size, mime_type }
+    
+    H->>S3: HeadObject(Key) (Verify existence & size)
+    S3-->>H: Metadata
+    
+    H->>DB: INSERT INTO document_versions
+    H-->>C: Document Created
