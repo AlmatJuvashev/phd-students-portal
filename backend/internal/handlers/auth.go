@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
@@ -18,14 +20,16 @@ import (
 )
 
 type AuthHandler struct {
-	db    *sqlx.DB
-	cfg   config.AppConfig
-	email *services.EmailService
-	rds   *redis.Client
+	db          *sqlx.DB
+	cfg         config.AppConfig
+	email       *services.EmailService
+	rds         *redis.Client
+	rateLimiter *middleware.LoginRateLimiter
 }
 
 func NewAuthHandler(db *sqlx.DB, cfg config.AppConfig, email *services.EmailService, rds *redis.Client) *AuthHandler {
-	return &AuthHandler{db: db, cfg: cfg, email: email, rds: rds}
+	rl := middleware.NewLoginRateLimiter(rds)
+	return &AuthHandler{db: db, cfg: cfg, email: email, rds: rds, rateLimiter: rl}
 }
 
 type loginReq struct {
@@ -42,21 +46,38 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Rate Limit Check
+	allowed, ttl, err := h.rateLimiter.CheckAllowed(c.Request.Context(), req.Username)
+	if err != nil {
+		log.Printf("Rate limit error: %v", err) // Proceed on error (fail open)
+	}
+	if !allowed {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error": fmt.Sprintf("Too many failed attempts. Try again in %d minutes.", int(ttl.Minutes())),
+		})
+		return
+	}
+
 	// Get tenant from middleware context
 	tenantID := middleware.GetTenantID(c)
 	tenant := middleware.GetTenant(c)
 
 	var id, hash, role string
 	var isSuperadmin bool
-	err := h.db.QueryRowx(`SELECT id, password_hash, role, COALESCE(is_superadmin, false) FROM users WHERE username=$1 AND is_active=true`, req.Username).Scan(&id, &hash, &role, &isSuperadmin)
+	err = h.db.QueryRowx(`SELECT id, password_hash, role, COALESCE(is_superadmin, false) FROM users WHERE username=$1 AND is_active=true`, req.Username).Scan(&id, &hash, &role, &isSuperadmin)
 	if err != nil {
+		h.rateLimiter.RecordFailure(c.Request.Context(), req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не найден"})
 		return
 	}
 	if !auth.CheckPassword(hash, req.Password) {
+		h.rateLimiter.RecordFailure(c.Request.Context(), req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный пароль"})
 		return
 	}
+
+	// Reset rate limit on success
+	h.rateLimiter.Reset(c.Request.Context(), req.Username)
 
 	// Verify user has access to this tenant (unless superadmin)
 	if !isSuperadmin && tenantID != "" {
@@ -81,9 +102,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Build response with tenant info
+	// Set HttpOnly Cookie
+	// MaxAge is in seconds.
+	maxAge := h.cfg.JWTExpDays * 24 * 60 * 60
+	isSecure := strings.HasPrefix(h.cfg.ServerURL, "https")
+	// SameSiteMode: 
+	// - Lax is safer for general navigation, strict might break if linking from external sites?
+	// - In DEVELOPMENT, we often have cross-origin (demo.localhost -> localhost), so we need None.
+	sameSite := http.SameSiteLaxMode
+	if h.cfg.Env == "development" {
+		sameSite = http.SameSiteNoneMode
+		isSecure = true // Chrome requires Secure for SameSite=None, and allows it on localhost
+	}
+
+	c.SetSameSite(sameSite)
+	c.SetCookie("jwt_token", jwt, maxAge, "/", "", isSecure, true)
+
+	// Build response with tenant info but WITHOUT token in body (optional, or keep for transition?)
+	// To be secure, we should REMOVE it. BUT this breaks frontend immediately if not updated.
+	// The plan said "Remove logic that stores token".
+	// I will remove it from JSON to enforce cookie usage.
+	// Build response with tenant info but WITHOUT token in body
 	response := gin.H{
-		"token":         jwt,
+		"message":       "Login successful",
 		"role":          role,
 		"is_superadmin": isSuperadmin,
 	}
@@ -238,5 +279,18 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+}
+
+// Logout clears the http-only cookie
+func (h *AuthHandler) Logout(c *gin.Context) {
+	isSecure := strings.HasPrefix(h.cfg.ServerURL, "https")
+	if h.cfg.Env == "development" {
+		isSecure = true
+		c.SetSameSite(http.SameSiteNoneMode)
+	} else {
+		c.SetSameSite(http.SameSiteLaxMode)
+	}
+	c.SetCookie("jwt_token", "", -1, "/", "", isSecure, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 

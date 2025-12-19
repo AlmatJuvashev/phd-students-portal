@@ -44,12 +44,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     retry: 0,
   })
 
-  const token = localStorage.getItem('token');
-
   const value = useMemo<AuthContextType>(() => ({
     user: (data as User) ?? null,
     isLoading,
-    token,
+    token: null, // Token is handled via cookies
     login: async (credentials) => {
       const res = await api('/auth/login', {
         method: 'POST',
@@ -58,18 +56,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password: credentials.password,
         }),
       })
-      localStorage.setItem('token', res.token)
+      // Token is set in cookie by server
       // Refresh user info
       await qc.invalidateQueries({ queryKey: ['me'] })
       return { role: res.role, is_superadmin: res.is_superadmin }
     },
-    logout: () => {
-      localStorage.removeItem('token')
+    logout: async () => {
+      try {
+        await api.post('/auth/logout')
+      } catch (e) {
+        console.error("Logout failed:", e)
+      }
       qc.removeQueries({ queryKey: ['me'] })
       // Soft reload to reset app state
       window.location.href = '/login'
     },
-  }), [data, isLoading, qc, token])
+  }), [data, isLoading, qc])
 
   return (
     <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -145,7 +145,7 @@ func (h *ContactsHandler) Update(c *gin.Context) {
 	setParts := []string{"updated_at = now()"}
 	args := []interface{}{}
 
-	if req.Name != nil && len(req.Name) > 0 {
+	if len(req.Name) > 0 {
 		setParts = append(setParts, "name = $"+strconv.Itoa(len(args)+1))
 		args = append(args, toJSON(req.Name))
 	}
@@ -209,7 +209,7 @@ func contactNullablePtr(v *string) interface{} {
 }
 
 func toJSON(m map[string]string) interface{} {
-	if m == nil || len(m) == 0 {
+	if len(m) == 0 {
 		return nil
 	}
 	b, err := json.Marshal(m)

@@ -13,6 +13,7 @@ function envFor(role: Role, key: "user" | "pass") {
   ) || process.env[`E2E_${suffix}_${key === "user" ? "USERNAME" : "PASSWORD"}`];
 }
 
+// Returns the cookie value or state
 export async function getAuthToken(role: Role, baseURL: string): Promise<string> {
   const username = envFor(role, "user");
   const password = envFor(role, "pass");
@@ -24,11 +25,20 @@ export async function getAuthToken(role: Role, baseURL: string): Promise<string>
     data: { username, password },
   });
   expect(res.ok()).toBeTruthy();
-  const body = await res.json();
-  if (!body?.token) {
-    throw new Error(`Login failed for ${role}: no token in response`);
+  
+  // Extract set-cookie header
+  const setCookie = res.headers()["set-cookie"];
+  if (!setCookie) {
+    throw new Error(`Login failed for ${role}: no set-cookie header`);
   }
-  return body.token as string;
+  
+  // Simple parse for jwt_token
+  const match = setCookie.match(/jwt_token=([^;]+)/);
+  if (!match) {
+    throw new Error(`Login failed for ${role}: jwt_token cookie not found`);
+  }
+  
+  return match[1];
 }
 
 export async function loginViaUI(page: Page, username: string, password: string) {

@@ -1,0 +1,29 @@
+flowchart TD
+    Login[User Login Request] --> Lookup{Find User by Email}
+    Lookup -- Not Found --> 401[401 Unauthorized]
+    Lookup -- Found --> HashCheck{Verify Password Hash}
+    HashCheck -- Invalid --> 401
+    HashCheck -- Valid --> JWT[Generate JWT Access Token]
+    
+    subgraph Token Content
+    Claims[Claims: <br/>- sub: UserID<br/>- role: student/admin<br/>- tenant_id: UUID]
+    end
+    
+    JWT -->|Embeds| Claims
+    JWT --> Response[Return Token to Client]
+    
+    Request[Authenticated API Request] --> Middleware[Auth Middleware]
+    Middleware --> Parse[Parse & Validate JWT]
+    Parse -- Invalid/Expired --> 401
+    Parse -- Valid --> Context[Set Context Variables]
+    
+    Context --> RBAC{Check Permission}
+    subgraph "RBAC Policy"
+    Admin[Admin Role] --> AllAccess
+    Advisor[Advisor Role] --> AssignedStudentsOnly
+    Student[Student Role] --> OwnDataOnly
+    end
+    
+    Context --> Policy[Apply Policy]
+    Policy -- Allowed --> Handler[Execute Handler]
+    Policy -- Denied --> 403[403 Forbidden]

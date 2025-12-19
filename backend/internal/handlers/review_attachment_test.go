@@ -70,8 +70,8 @@ func setupReviewFixtures(t *testing.T, db interface {
 	require.NoError(t, err)
 
 	// Assign advisor to student
-	_, err = testDB.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2)
-		ON CONFLICT DO NOTHING`, f.StudentID, f.AdvisorID)
+	_, err = testDB.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)
+		ON CONFLICT DO NOTHING`, f.StudentID, f.AdvisorID, f.TenantID)
 	require.NoError(t, err)
 
 	// Create playbook version
@@ -135,7 +135,7 @@ func TestReviewAttachment_AdvisorApproves(t *testing.T) {
 		($2, 'adv', 'a@t.com', 'A', 'D', 'advisor', 'h', true)`, f.StudentID, f.AdvisorID)
 	require.NoError(t, err)
 
-	_, err = db.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2)`, f.StudentID, f.AdvisorID)
+	_, err = db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, f.StudentID, f.AdvisorID, f.TenantID)
 	require.NoError(t, err)
 
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, tenant_id, version, checksum, raw_json) VALUES ($1, $2, 'v1', 'c', '{}')`, f.PVVersionID, f.TenantID)
@@ -205,7 +205,7 @@ func TestReviewAttachment_AdvisorApprovesWithComments(t *testing.T) {
 	tenantSlug := "awc-" + f.TenantID[:8]
 	db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, $2, 'T', 'university', true)`, f.TenantID, tenantSlug)
 	db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) VALUES ($1, 'stu', 's@t.com', 'S', 'T', 'student', 'h', true), ($2, 'adv', 'a@t.com', 'A', 'D', 'advisor', 'h', true)`, f.StudentID, f.AdvisorID)
-	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2)`, f.StudentID, f.AdvisorID)
+	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, f.StudentID, f.AdvisorID, f.TenantID)
 	db.Exec(`INSERT INTO playbook_versions (id, tenant_id, version, checksum, raw_json) VALUES ($1, $2, 'v1', 'c', '{}')`, f.PVVersionID, f.TenantID)
 	db.Exec(`INSERT INTO node_instances (id, tenant_id, node_id, user_id, state, playbook_version_id) VALUES ($1, $2, 'n', $3, 'submitted', $4)`, f.NodeInstID, f.TenantID, f.StudentID, f.PVVersionID)
 	db.Exec(`INSERT INTO node_instance_slots (id, tenant_id, node_instance_id, slot_key) VALUES ($1, $2, $3, 'doc')`, f.SlotID, f.TenantID, f.NodeInstID)
@@ -259,7 +259,7 @@ func TestReviewAttachment_AdvisorUnassignedStudent_Forbidden(t *testing.T) {
 	db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, $2, 'T', 'university', true)`, f.TenantID, tenantSlug)
 	db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) VALUES ($1, 'stu', 's@t.com', 'S', 'T', 'student', 'h', true), ($2, 'adv1', 'a1@t.com', 'A1', 'D', 'advisor', 'h', true), ($3, 'adv2', 'a2@t.com', 'A2', 'D', 'advisor', 'h', true)`, f.StudentID, f.AdvisorID, otherAdvisorID)
 	// Only assign otherAdvisorID, NOT f.AdvisorID
-	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2)`, f.StudentID, otherAdvisorID)
+	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, f.StudentID, otherAdvisorID, f.TenantID)
 	db.Exec(`INSERT INTO playbook_versions (id, tenant_id, version, checksum, raw_json) VALUES ($1, $2, 'v1', 'c', '{}')`, f.PVVersionID, f.TenantID)
 	db.Exec(`INSERT INTO node_instances (id, tenant_id, node_id, user_id, state, playbook_version_id) VALUES ($1, $2, 'n', $3, 'submitted', $4)`, f.NodeInstID, f.TenantID, f.StudentID, f.PVVersionID)
 	db.Exec(`INSERT INTO node_instance_slots (id, tenant_id, node_instance_id, slot_key) VALUES ($1, $2, $3, 'doc')`, f.SlotID, f.TenantID, f.NodeInstID)
@@ -357,7 +357,7 @@ func TestNotifyAdvisorsOnSubmission(t *testing.T) {
 		($3, 'a2', 'a2@t.com', 'A2', 'D', 'advisor', 'h', true)`, studentID, advisor1ID, advisor2ID)
 
 	// Assign BOTH advisors to the student
-	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2), ($1, $3)`, studentID, advisor1ID, advisor2ID)
+	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3), ($1, $4, $3)`, studentID, advisor1ID, tenantID, advisor2ID)
 
 	pvID := uuid.New().String()
 	db.Exec(`INSERT INTO playbook_versions (id, tenant_id, version, checksum, raw_json) VALUES ($1, $2, 'v1', 'c', '{}')`, pvID, tenantID)
@@ -394,7 +394,9 @@ func TestGetAdvisorsForStudent(t *testing.T) {
 		($2, 'a1', 'a1@t.com', 'A1', 'D', 'advisor', 'h', true),
 		($3, 'a2', 'a2@t.com', 'A2', 'D', 'advisor', 'h', true)`, studentID, advisor1ID, advisor2ID)
 
-	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2), ($1, $3)`, studentID, advisor1ID, advisor2ID)
+	tenantID := uuid.New().String()
+	db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, 'slug-'+$1, 'T', 'university', true)`, tenantID)
+	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3), ($1, $4, $3)`, studentID, advisor1ID, tenantID, advisor2ID)
 
 	advisors, err := services.GetAdvisorsForStudent(db, studentID)
 	require.NoError(t, err)
@@ -416,7 +418,9 @@ func TestHasAdvisors(t *testing.T) {
 		($2, 's2', 's2@t.com', 'S2', 'T', 'student', 'h', true),
 		($3, 'a', 'a@t.com', 'A', 'D', 'advisor', 'h', true)`, studentWithAdvisor, studentWithoutAdvisor, advisorID)
 
-	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id) VALUES ($1, $2)`, studentWithAdvisor, advisorID)
+	tenantID := uuid.New().String()
+	db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, 'slug-'+$1, 'T', 'university', true)`, tenantID)
+	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, studentWithAdvisor, advisorID, tenantID)
 
 	// Student with advisor
 	has, err := services.HasAdvisors(db, studentWithAdvisor)

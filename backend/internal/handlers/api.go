@@ -111,6 +111,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Auth routes (login and password reset)
 	auth := NewAuthHandler(db, cfg, emailService, rds)
 	api.POST("/auth/login", auth.Login)
+	api.POST("/auth/logout", auth.Logout) // Added logout
 	api.POST("/auth/forgot-password", auth.ForgotPassword)
 	api.POST("/auth/reset-password", auth.ResetPassword)
 

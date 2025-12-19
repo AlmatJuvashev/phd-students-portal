@@ -186,7 +186,7 @@ func (h *SuperadminAdminsHandler) CreateAdmin(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "user with this username or email already exists"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create admin"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create admin: " + err.Error()})
 		return
 	}
 

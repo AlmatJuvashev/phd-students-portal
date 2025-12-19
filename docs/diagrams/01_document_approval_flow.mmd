@@ -1,0 +1,43 @@
+sequenceDiagram
+    autonumber
+    participant S as Student
+    participant API as Backend API
+    participant S3 as MinIO/S3
+    participant DB as Database
+    participant A as Advisor
+
+    note over S, API: Phase 1: Upload
+    S->>API: POST /documents/presign (filename, size)
+    API->>S3: Generate Presigned PUT URL
+    S3-->>API: URL + Expiry
+    API-->>S: Return Upload URL
+
+    S->>S3: PUT file binary to URL
+    S3-->>S: 200 OK
+
+    S->>API: POST /node-slots/:slotId/attach (docVersionId)
+    API->>DB: Link Document to Node Slot
+    API->>DB: Update Node Status -> "submitted"
+    API->>DB: Create Notification for Advisor
+    API-->>S: 200 OK (State: Submitted)
+
+    note over API, A: Phase 2: Review
+    A->>API: GET /notifications
+    API-->>A: "Student X submitted Task Y"
+    
+    A->>API: GET /admin/attachments/:id/review
+    A->>S3: Download Document
+    A->>A: Reviews content
+    
+    alt Approve
+        A->>API: PATCH /review (status: approved)
+        API->>DB: Update Attachment -> Approved
+        API->>DB: Update Node -> Done
+        API->>DB: Unlock Next Nodes
+        API-->>S: Notification "Task Accepted"
+    else Request Changes
+        A->>API: PATCH /review (status: changes_requested, comment: "Fix X")
+        API->>DB: Update Attachment -> Rejected
+        API->>DB: Update Node -> Needs Changes
+        API-->>S: Notification "Please fix X"
+    end

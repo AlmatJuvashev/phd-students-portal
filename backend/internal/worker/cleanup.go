@@ -9,13 +9,19 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// S3ClientInterface abstracts S3 operations for testing
+type S3ClientInterface interface {
+	DeleteObject(ctx context.Context, params *s3.DeleteObjectInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectOutput, error)
+	ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error)
+}
+
 type CleanupWorker struct {
 	db       *sqlx.DB
-	s3Client *s3.Client
+	s3Client S3ClientInterface
 	bucket   string
 }
 
-func NewCleanupWorker(db *sqlx.DB, s3Client *s3.Client, bucket string) *CleanupWorker {
+func NewCleanupWorker(db *sqlx.DB, s3Client S3ClientInterface, bucket string) *CleanupWorker {
 	return &CleanupWorker{
 		db:       db,
 		s3Client: s3Client,
@@ -69,22 +75,29 @@ func (w *CleanupWorker) runCleanup(ctx context.Context) {
 	log.Printf("[CleanupWorker] Found %d files in database", len(dbKeys))
 
 	// List all objects in S3 bucket
-	paginator := s3.NewListObjectsV2Paginator(w.s3Client, &s3.ListObjectsV2Input{
+	// Note: Using ListObjectsV2 directly instead of Paginator for interface simplicity compatibility
+	// In a full production mock, we might want to stick to Paginator but it requires more complex mocking.
+	// For simplicity in this worker refactor, we'll iterate manually or assume a single page for the interface constraint,
+	// OR better: keep Using paginator but we need to ensure our interface covers what paginator expects?
+	// Paginator takes *s3.Client. It doesn't take an interface effortlessly without a wrapper.
+	// To keep it testable, we'll manually loop with ContinuationToken which is what Paginator does.
+	
+	input := &s3.ListObjectsV2Input{
 		Bucket: &w.bucket,
-	})
+	}
 
 	orphanCount := 0
 	deletedCount := 0
 	cutoffTime := time.Now().Add(-24 * time.Hour)
 
-	for paginator.HasMorePages() {
-		page, err := paginator.NextPage(ctx)
+	for {
+		output, err := w.s3Client.ListObjectsV2(ctx, input)
 		if err != nil {
 			log.Printf("[CleanupWorker] Error listing objects: %v", err)
 			break
 		}
 
-		for _, object := range page.Contents {
+		for _, object := range output.Contents {
 			if object.Key == nil {
 				continue
 			}
@@ -110,6 +123,12 @@ func (w *CleanupWorker) runCleanup(ctx context.Context) {
 					log.Printf("[CleanupWorker] Found recent orphan (< 24h), keeping: %s", *object.Key)
 				}
 			}
+		}
+
+		if output.IsTruncated != nil && *output.IsTruncated {
+			input.ContinuationToken = output.NextContinuationToken
+		} else {
+			break
 		}
 	}
 

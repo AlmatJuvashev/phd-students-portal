@@ -30,7 +30,14 @@ func NotifyAdvisorsOnSubmission(db *sqlx.DB, studentID, nodeID, nodeInstanceID, 
 		return err
 	}
 
+	log.Printf("[NotifyAdvisors] Found %d advisors for student %s", len(advisors), studentID)
+
 	if len(advisors) == 0 {
+		// Log detailed student info to debug
+		var exists bool
+		db.Get(&exists, "SELECT EXISTS(SELECT 1 FROM student_advisors WHERE student_id=$1)", studentID)
+		log.Printf("[NotifyAdvisors] Double check existence: %v", exists)
+		
 		log.Printf("[NotifyAdvisors] No advisors assigned to student %s, skipping notification", studentID)
 		return nil
 	}

@@ -37,6 +37,7 @@ func TestCommentsHandler_CreateComment(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.POST("/documents/:docId/comments", h.CreateComment)
@@ -69,7 +70,7 @@ func TestCommentsHandler_GetComments(t *testing.T) {
 		VALUES ($1, $2, 'Test Doc', 'other', NOW(), $3)`, docID, userID, tenantID)
 	require.NoError(t, err)
 
-	_, err = db.Exec(`INSERT INTO comments (document_id, user_id, content) VALUES ($1, $2, 'Test comment')`, docID, userID)
+	_, err = db.Exec(`INSERT INTO comments (tenant_id, document_id, user_id, content) VALUES ($1, $2, $3, 'Test comment')`, tenantID, docID, userID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}

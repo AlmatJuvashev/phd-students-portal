@@ -38,8 +38,9 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	tenantID := c.GetString("tenant_id")
 	var docID string
-	err := h.db.QueryRowx(`INSERT INTO documents (user_id,kind,title) VALUES ($1,$2,$3) RETURNING id`, uid, r.Kind, r.Title).Scan(&docID)
+	err := h.db.QueryRowx(`INSERT INTO documents (tenant_id,user_id,kind,title) VALUES ($1,$2,$3,$4) RETURNING id`, tenantID, uid, r.Kind, r.Title).Scan(&docID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "insert failed"})
 		return
@@ -68,10 +69,11 @@ func (h *DocumentsHandler) UploadVersion(c *gin.Context) {
 		return
 	}
 	// Insert version row (uploaded_by omitted in starter)
+	tenantID := c.GetString("tenant_id")
 	var verID string
-	err = h.db.QueryRowx(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by)
-		VALUES ($1,$2,$3,$4,(SELECT id FROM users ORDER BY created_at LIMIT 1)) RETURNING id`,
-		docId, dest, file.Header.Get("Content-Type"), file.Size).Scan(&verID)
+	err = h.db.QueryRowx(`INSERT INTO document_versions (tenant_id, document_id, storage_path, mime_type, size_bytes, uploaded_by)
+		VALUES ($1,$2,$3,$4,$5,(SELECT id FROM users ORDER BY created_at LIMIT 1)) RETURNING id`,
+		tenantID, docId, dest, file.Header.Get("Content-Type"), file.Size).Scan(&verID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "insert version failed"})
 		return

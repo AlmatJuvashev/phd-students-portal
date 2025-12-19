@@ -28,6 +28,7 @@ type AppConfig struct {
 	PlaybookPath    string
 	S3Endpoint      string
 	S3Bucket        string
+	ServerURL       string
 }
 
 // MustLoad loads configuration from environment variables.
@@ -52,6 +53,7 @@ func MustLoad() AppConfig {
 		PlaybookPath:    get("PLAYBOOK_PATH", "../frontend/src/playbooks/playbook.json"),
 		S3Endpoint:      get("S3_ENDPOINT", ""),
 		S3Bucket:        get("S3_BUCKET", ""),
+		ServerURL:       get("SERVER_URL", "http://localhost:8080"),
 	}
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")
@@ -59,7 +61,7 @@ func MustLoad() AppConfig {
 	_ = os.MkdirAll(cfg.UploadDir, 0755)
 
 	// Log important config values at startup
-	log.Printf("Config loaded: Port=%s, Env=%s, FrontendBase=%s", cfg.Port, cfg.Env, cfg.FrontendBase)
+	log.Printf("Config loaded: Port=%s, Env=%s, FrontendBase=%s, ServerURL=%s", cfg.Port, cfg.Env, cfg.FrontendBase, cfg.ServerURL)
 
 	return cfg
 }

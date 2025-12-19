@@ -1,0 +1,22 @@
+graph LR
+    Req[Incoming Request] -->|Header: X-Tenant-ID| Middle[Tenant Middleware]
+    
+    Middle -->|Resolve & Validate| Ctx[Gin Context]
+    note[Context stores: <br/>- Current Tenant ID<br/>- User Memberships]
+    Ctx -.-> note
+    
+    Ctx --> Service[Service Layer]
+    
+    Service -->|Insert/Select| DB[(Postgres Database)]
+    
+    subgraph "Database Isolation Strategy"
+    Row[Row Level: tenant_id column]
+    FK[Foreign Key Constraint]
+    Index[Index on tenant_id]
+    end
+    
+    DB --> Row
+    Row -->|Enforced by| Service
+    
+    note2[Every Query MUST include <br/>WHERE tenant_id = $ctx.tenant_id]
+    Service -.-> note2

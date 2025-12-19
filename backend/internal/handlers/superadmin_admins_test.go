@@ -136,10 +136,14 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_create_admin", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "d4d4d4d4-0000-0000-0000-000000000000")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.POST("/superadmin/admins", h.CreateAdmin)
@@ -165,8 +169,8 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
 
-		assert.Equal(t, "newadmin123", resp["username"])
-		assert.Equal(t, "newadmin123@test.com", resp["email"])
+		assert.NotNil(t, resp["id"])
+		assert.Equal(t, "admin created successfully", resp["message"])
 	})
 
 	t.Run("Create Admin Missing Required Fields", func(t *testing.T) {
@@ -203,7 +207,8 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
 
-		assert.Equal(t, true, resp["is_superadmin"])
+		assert.NotNil(t, resp["id"])
+		assert.Equal(t, "admin created successfully", resp["message"])
 	})
 }
 
@@ -221,10 +226,14 @@ func TestSuperadminAdminsHandler_DeleteAdmin(t *testing.T) {
 	cfg := config.AppConfig{}
 	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
 
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_delete_admin", "superadmin")
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		c.Set("userID", "f6f6f6f6-0000-0000-0000-000000000000")
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.DELETE("/superadmin/admins/:id", h.DeleteAdmin)

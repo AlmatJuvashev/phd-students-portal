@@ -60,7 +60,7 @@ func TestJourneyHandler_GetScoreboard(t *testing.T) {
 			// GetScoreboard uses tenant_id from context?
 			// Check handlers/journey.go: `tenantID := middleware.GetTenantID(c)`
 			// We need to set it.
-			c.Set("tenant_id", "44444444-4444-4444-4444-444444444444")
+			c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 			c.Next()
 		})
 		r.GET("/scoreboard", h.GetScoreboard)
@@ -109,6 +109,6 @@ func setupJourneyState(t *testing.T, db *sqlx.DB, userID, nodeID, state string) 
     // DB schema likely has tenant_id.
     // Insert with test tenant.
     _, err := db.Exec(`INSERT INTO journey_states (tenant_id, user_id, node_id, state) VALUES ($1, $2, $3, $4)`, 
-        "44444444-4444-4444-4444-444444444444", userID, nodeID, state)
+        "00000000-0000-0000-0000-000000000001", userID, nodeID, state)
     require.NoError(t, err)
 }

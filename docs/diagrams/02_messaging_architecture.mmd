@@ -1,0 +1,32 @@
+graph TD
+    subgraph "Clients"
+        Web[Web Client]
+        Mobile[Mobile App]
+    end
+
+    subgraph "API Layer"
+        WS[WebSocket / HTTP Handler]
+        Auth[Auth Middleware]
+    end
+
+    subgraph "Data Storage"
+        Rooms[Chat Rooms Table]
+        Members[Room Members Table]
+        Msgs[Messages Table]
+        Read[Read Status Table]
+    end
+
+    Web -->|POST /messages| WS
+    Web -->|GET /messages| WS
+    
+    WS -->|Verify Token| Auth
+    
+    WS -->|1. Check Membership| Members
+    WS -->|2. Store Message| Msgs
+    WS -->|3. Update Read Status| Read
+    
+    Msgs -->|Belongs to| Rooms
+    Members -->|Linked to| Rooms
+    
+    note["Types of Rooms: <br/>1. Cohort - Public to group<br/>2. Private - Direct Message<br/>3. Topic - Global"]
+    Rooms -.-> note

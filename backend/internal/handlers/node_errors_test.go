@@ -28,8 +28,8 @@ func TestInvalidNodeID(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "88888888-aaaa-8888-8888-888888888888"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -52,6 +52,7 @@ func TestInvalidNodeID(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -72,8 +73,8 @@ func TestUnauthorizedUser(t *testing.T) {
 	defer teardown()
 
 	versionID := "99999999-aaaa-9999-9999-999999999999"
-	_, err := db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err := db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -115,8 +116,8 @@ func TestMalformedJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "bbbbbbbb-cccc-bbbb-bbbb-bbbbbbbbbbbb"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -138,6 +139,7 @@ func TestMalformedJSON(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -171,8 +173,8 @@ func TestInvalidStateTransition(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "dddddddd-eeee-dddd-dddd-dddddddddddd"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -194,6 +196,7 @@ func TestInvalidStateTransition(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)

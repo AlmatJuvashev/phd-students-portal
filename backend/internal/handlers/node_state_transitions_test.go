@@ -27,8 +27,8 @@ func setupTestEnvironment(t *testing.T, userRole string) (*handlers.NodeSubmissi
 	require.NoError(t, err)
 
 	versionID := "22222222-2222-2222-2222-222222222222"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -49,6 +49,7 @@ func setupTestEnvironment(t *testing.T, userRole string) (*handlers.NodeSubmissi
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": userRole})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -112,7 +113,7 @@ func TestNodeStateTransitions_StudentCannotDirectlyApprove(t *testing.T) {
 	if w.Code == http.StatusOK {
 		assert.Equal(t, "done", resp["state"])
 	} else {
-		assert.Contains(t, string(w.Body.Bytes()), "error")
+		assert.Contains(t, w.Body.String(), "error")
 	}
 }
 
@@ -132,8 +133,8 @@ func TestNodeStateTransitions_AdminApprovesNode(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "22222222-2222-2222-2222-222222222222"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -152,6 +153,7 @@ func TestNodeStateTransitions_AdminApprovesNode(t *testing.T) {
 	studentRouter := gin.New()
 	studentRouter.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": studentID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	studentRouter.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -183,6 +185,7 @@ func TestNodeStateTransitions_AdminApprovesNode(t *testing.T) {
 	adminRouter := gin.New()
 	adminRouter.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": adminID, "role": "admin"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	adminRouter.PATCH("/nodes/:nodeId/state", h.PatchState)
@@ -209,8 +212,8 @@ func TestNodeStateTransitions_AdvisorRequestsFixes(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "33333333-3333-3333-3333-333333333333"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -229,6 +232,7 @@ func TestNodeStateTransitions_AdvisorRequestsFixes(t *testing.T) {
 	studentRouter := gin.New()
 	studentRouter.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": studentID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	studentRouter.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -273,8 +277,8 @@ func TestNodeStateTransitions_StudentResubmitsAfterFixes(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "55555555-5555-5555-5555-555555555555"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -293,6 +297,7 @@ func TestNodeStateTransitions_StudentResubmitsAfterFixes(t *testing.T) {
 	studentRouter := gin.New()
 	studentRouter.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": studentID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	studentRouter.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -363,8 +368,8 @@ func TestNodeStateTransitions_EventsLogged(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "22222222-2222-2222-2222-222222222222"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
 		ON CONFLICT (id) DO NOTHING`, versionID)
 	require.NoError(t, err)
 
@@ -381,6 +386,7 @@ func TestNodeStateTransitions_EventsLogged(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)

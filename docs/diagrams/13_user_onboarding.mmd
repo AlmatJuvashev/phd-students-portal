@@ -1,0 +1,20 @@
+stateDiagram-v2
+    [*] --> Invited: Admin creates User
+    Invited --> Active: User confirms email & sets password
+    
+    state "Profile Setup" as Setup {
+        Active --> IncompleteProfile: First Login
+        IncompleteProfile --> FillingData: User enters Bio/Phone
+        FillingData --> ProfileSubmitted: Save Changes
+    }
+
+    ProfileSubmitted --> StudentActive: Assign to Cohort/Advisor
+    
+    state "Student Journey" as Journey {
+        StudentActive --> InProgress: Starts Tasks
+        InProgress --> Graduated: All Tasks Done
+        InProgress --> DroppedOut: Admin Deactivates
+    }
+
+    Graduated --> Alumni: Final Status
+    DroppedOut --> [*]

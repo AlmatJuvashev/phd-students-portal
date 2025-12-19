@@ -27,8 +27,8 @@ func TestNodeSubmissionHandler_GetSubmission(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "20000000-bbbb-2000-2000-200000000000"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')`, versionID)
 	require.NoError(t, err)
 
 	var instanceID string
@@ -82,8 +82,8 @@ func TestNodeSubmissionHandler_SubmitNode(t *testing.T) {
 	require.NoError(t, err)
 
 	versionID := "40000000-bbbb-4000-4000-400000000000"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')`, versionID)
 	require.NoError(t, err)
 
 	_, err = db.Exec(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id) 
@@ -147,8 +147,8 @@ func TestNodeSubmissionHandler_SubmitProfile(t *testing.T) {
 
 	// Seed playbook version
 	versionID := "80000000-0000-0000-0000-000000000000"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json) 
-		VALUES ($1, 'v1', 'checksum', '{}')`, versionID)
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')`, versionID)
 	require.NoError(t, err)
 
 	// Seed S1_profile node instance

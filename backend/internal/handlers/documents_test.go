@@ -29,7 +29,7 @@ func TestDocumentsHandler_List(t *testing.T) {
 
 	// Seed document
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Test Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Test Doc') RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -39,6 +39,7 @@ func TestDocumentsHandler_List(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	// ListDocuments expects :id param (user id) based on handler code: uid := c.Param("id")
@@ -68,7 +69,7 @@ func TestDocumentsHandler_Upload(t *testing.T) {
 
 	// Create document first
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Upload Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Upload Doc') RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{
@@ -81,6 +82,7 @@ func TestDocumentsHandler_Upload(t *testing.T) {
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
 		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	// UploadVersion expects :docId
@@ -118,7 +120,7 @@ func TestDocumentsHandler_Delete(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'To Delete') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'To Delete') RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -128,6 +130,7 @@ func TestDocumentsHandler_Delete(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	// DeleteDocument expects :docId
@@ -157,7 +160,7 @@ func TestDocumentsHandler_Get(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Get Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Get Doc') RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
@@ -167,6 +170,7 @@ func TestDocumentsHandler_Get(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/documents/:docId", h.GetDocument)
@@ -216,6 +220,7 @@ func TestDocumentsHandler_Create(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.POST("/documents", h.CreateDocument)
@@ -253,8 +258,8 @@ func TestDocumentsHandler_UploadVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, title, kind, created_at) 
-		VALUES ($1, 'Doc for Upload', 'other', NOW()) RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, title, kind, created_at) 
+		VALUES ('00000000-0000-0000-0000-000000000001', $1, 'Doc for Upload', 'other', NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{
@@ -266,6 +271,7 @@ func TestDocumentsHandler_UploadVersion(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.POST("/documents/:docId/versions", h.UploadVersion)
@@ -300,7 +306,7 @@ func TestDocumentsHandler_PresignUpload(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Presign Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Presign Doc') RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
@@ -348,12 +354,12 @@ func TestDocumentsHandler_PresignGetLatest(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'Latest Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Latest Doc') RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	// Seed version
-	_, err = db.Exec(`INSERT INTO document_versions (document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by) 
-		VALUES ($1, 'path', 'key', 'bucket', 'application/pdf', 100, $2)`, docID, userID)
+	_, err = db.Exec(`INSERT INTO document_versions (tenant_id, document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by) 
+		VALUES ('00000000-0000-0000-0000-000000000001', $1, 'path', 'key', 'bucket', 'application/pdf', 100, $2)`, docID, userID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
@@ -363,6 +369,7 @@ func TestDocumentsHandler_PresignGetLatest(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/documents/:docId/latest/presign", h.PresignGetLatest)
@@ -393,12 +400,12 @@ func TestDocumentsHandler_DownloadVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title) VALUES ($1, 'other', 'DL Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'DL Doc') RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	var verID string
-	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by) 
-		VALUES ($1, 'path', 'key', 'bucket', 'application/pdf', 100, $2) RETURNING id`, docID, userID).Scan(&verID)
+	err = db.QueryRow(`INSERT INTO document_versions (tenant_id, document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by) 
+		VALUES ('00000000-0000-0000-0000-000000000001', $1, 'path', 'key', 'bucket', 'application/pdf', 100, $2) RETURNING id`, docID, userID).Scan(&verID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
@@ -408,6 +415,7 @@ func TestDocumentsHandler_DownloadVersion(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", userID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/documents/versions/:versionId/download", h.DownloadVersion)

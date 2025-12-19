@@ -25,7 +25,7 @@ func TestAdminHandler_StudentProgress(t *testing.T) {
 
 	// Seed data
 	studentID := "10000000-0000-0000-0000-000000000001"
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "10000000-0000-0000-0000-000000000001"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -99,7 +99,7 @@ func TestAdminHandler_MonitorStudents(t *testing.T) {
 	// Seed users
 	studentID := "10000000-0000-0000-0000-000000000002"
 	advisorID := "10000000-0000-0000-0000-000000000003"
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "20000000-0000-0000-0000-000000000002"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -220,7 +220,7 @@ func TestAdminHandler_GetStudentDetails(t *testing.T) {
 	defer teardown()
 
 	studentID := "10000000-0000-0000-0000-000000000004"
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "30000000-0000-0000-0000-000000000003"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -275,7 +275,7 @@ func TestAdminHandler_StudentJourney(t *testing.T) {
 	defer teardown()
 
 	studentID := "10000000-0000-0000-0000-000000000005"
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "40000000-0000-0000-0000-000000000004"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -338,7 +338,7 @@ func TestAdminHandler_ListStudentNodeFiles(t *testing.T) {
 	defer teardown()
 
 	studentID := "10000000-0000-0000-0000-000000000006"
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "50000000-0000-0000-0000-000000000005"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -457,7 +457,7 @@ func TestAdminHandler_MonitorAnalytics(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "60000000-0000-0000-0000-000000000006"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -530,7 +530,7 @@ func TestAdminHandler_ReviewAttachment(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "70000000-0000-0000-0000-000000000007"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -626,7 +626,7 @@ func TestAdminHandler_ListStudentProgress(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "80000000-0000-0000-0000-000000000008"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -689,7 +689,7 @@ func TestAdminHandler_UploadReviewedDocument(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "90000000-0000-0000-0000-000000000009"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
@@ -781,7 +781,7 @@ func TestAdminHandler_PatchStudentNodeState(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	tenantID := "00000000-0000-0000-0000-000000000001"
+	tenantID := "a0000000-0000-0000-0000-00000000000a"
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-tenant') ON CONFLICT DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
