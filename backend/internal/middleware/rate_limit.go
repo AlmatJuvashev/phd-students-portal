@@ -21,6 +21,9 @@ func NewLoginRateLimiter(rds *redis.Client) *LoginRateLimiter {
 // Returns active=true if allowed, false if locked.
 // Also returns time until unlock (0 if allowed).
 func (rl *LoginRateLimiter) CheckAllowed(ctx context.Context, identifier string) (bool, time.Duration, error) {
+	if rl.rds == nil {
+		return true, 0, nil
+	}
 	key := fmt.Sprintf("rate_limit:login:%s", identifier)
 	
 	val, err := rl.rds.Get(ctx, key).Int()
@@ -45,6 +48,9 @@ func (rl *LoginRateLimiter) CheckAllowed(ctx context.Context, identifier string)
 // RecordFailure increments the failure count for this identifier.
 // On 1st failure, sets expiry to 30 mins.
 func (rl *LoginRateLimiter) RecordFailure(ctx context.Context, identifier string) error {
+	if rl.rds == nil {
+		return nil
+	}
 	key := fmt.Sprintf("rate_limit:login:%s", identifier)
 	
 	// Increment
@@ -63,6 +69,9 @@ func (rl *LoginRateLimiter) RecordFailure(ctx context.Context, identifier string
 
 // Reset clears the failure count (e.g. on successful login)
 func (rl *LoginRateLimiter) Reset(ctx context.Context, identifier string) {
+	if rl.rds == nil {
+		return
+	}
 	key := fmt.Sprintf("rate_limit:login:%s", identifier)
 	rl.rds.Del(ctx, key)
 }

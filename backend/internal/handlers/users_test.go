@@ -10,6 +10,8 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -22,7 +24,10 @@ func TestUsersHandler_CreateUser(t *testing.T) {
 	defer teardown()
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg, nil)
+	
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -69,7 +74,9 @@ func TestUsersHandler_ListUsers(t *testing.T) {
 	assert.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -124,7 +131,9 @@ func TestUsersHandler_UpdateMe_Extended(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -170,7 +179,9 @@ func TestUsersHandler_PresignAvatar(t *testing.T) {
 	cfg := config.AppConfig{
 		S3Bucket: "test-bucket",
 	}
-	h := handlers.NewUsersHandler(db, cfg, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -219,7 +230,9 @@ func TestUsersHandler_VerifyEmailChange(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -250,7 +263,9 @@ func TestUsersHandler_SetActive(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewUsersHandler(db, cfg, nil)
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil)
+	h := handlers.NewUsersHandler(svc, db, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
