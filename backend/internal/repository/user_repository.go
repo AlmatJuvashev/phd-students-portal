@@ -35,7 +35,7 @@ type UserRepository interface {
 	GetTenantRole(ctx context.Context, userID, tenantID string) (string, error)
 
 	// Student specific
-	LinkAdvisor(ctx context.Context, studentID, advisorID string) error
+	LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error
 
 	// Security & Audit
 	CheckRateLimit(ctx context.Context, userID, action string, window time.Duration) (int, error)
@@ -190,11 +190,11 @@ func (r *SQLUserRepository) EmailExists(ctx context.Context, email string, exclu
 	return count > 0, err
 }
 
-func (r *SQLUserRepository) LinkAdvisor(ctx context.Context, studentID, advisorID string) error {
+func (r *SQLUserRepository) LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO student_advisors (student_id, advisor_id)
-		VALUES ($1, $2)
-		ON CONFLICT DO NOTHING`, studentID, advisorID)
+		INSERT INTO student_advisors (student_id, advisor_id, tenant_id)
+		VALUES ($1, $2, $3)
+		ON CONFLICT DO NOTHING`, studentID, advisorID, tenantID)
 	return err
 }
 

@@ -12,6 +12,8 @@ type NodeInstance struct {
 	State             string     `db:"state" json:"state"` // todo, in_progress, done, waiting, needs_fixes, locked
 	StartedAt         *time.Time `db:"started_at" json:"started_at,omitempty"`
 	CompletedAt       *time.Time `db:"completed_at" json:"completed_at,omitempty"`
+	SubmittedAt       *time.Time `db:"submitted_at" json:"submitted_at,omitempty"`
+	OpenedAt          time.Time  `db:"opened_at" json:"opened_at"`
 	UpdatedAt         time.Time  `db:"updated_at" json:"updated_at"`
 	CurrentRev        int            `db:"current_rev" json:"current_rev"`
 	Locale            *string        `db:"locale" json:"locale,omitempty"`

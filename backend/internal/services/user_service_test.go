@@ -87,8 +87,8 @@ func (m *MockUserRepository) EmailExists(ctx context.Context, email string, excl
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockUserRepository) LinkAdvisor(ctx context.Context, studentID, advisorID string) error {
-	args := m.Called(ctx, studentID, advisorID)
+func (m *MockUserRepository) LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error {
+	args := m.Called(ctx, studentID, advisorID, tenantID)
 	return args.Error(0)
 }
 
