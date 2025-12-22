@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +29,9 @@ func TestContactsHandler_CRUD(t *testing.T) {
 		t.Fatalf("Failed to create test tenant: %v", err)
 	}
 
-	h := handlers.NewContactsHandler(db)
+	repo := repository.NewSQLContactRepository(db)
+	svc := services.NewContactService(repo)
+	h := handlers.NewContactsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -123,8 +128,6 @@ func TestContactsHandler_CRUD(t *testing.T) {
 		assert.Len(t, resp, 0)
 	})
 
-
-
 	t.Run("Create Contact Missing Name", func(t *testing.T) {
 		reqBody := map[string]interface{}{
 			"title": map[string]string{"en": "Manager"},
@@ -150,27 +153,18 @@ func TestContactsHandler_CRUD(t *testing.T) {
 	})
 
 	t.Run("LocalizedMap Value", func(t *testing.T) {
-		m := handlers.LocalizedMap{"en": "test"}
+		m := models.LocalizedMap{"en": "test"}
 		v, err := m.Value()
 		assert.NoError(t, err)
 		assert.JSONEq(t, `{"en":"test"}`, string(v.([]byte)))
 
-		m = handlers.LocalizedMap{}
+		m = models.LocalizedMap{}
 		v, err = m.Value()
 		assert.NoError(t, err)
 		assert.Nil(t, v)
 	})
 
 	t.Run("Helpers", func(t *testing.T) {
-		// Since helpers are private, we can't test them directly from handlers_test package 
-		// unless we export them or move test to handlers package.
-		// However, we can test their effects via handlers or if they are used in exported methods.
-		// But wait, contacts_test.go is in handlers_test package.
-		// I cannot access private functions.
-		// I should check if I can move the test to handlers package or just test via public methods.
-		// Moving to handlers package might cause cycle if testutils is used.
-		// Let's stick to testing via handlers or just add more edge cases to handlers.
-		
-		// Actually, I can create a file contacts_internal_test.go in handlers package to test private functions.
+		// Helpers are now in repository, which are private.
 	})
 }

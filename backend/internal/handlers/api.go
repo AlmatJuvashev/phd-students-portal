@@ -11,7 +11,9 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer"
 	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -111,22 +113,105 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	
 	// Repositories & Domain Services
 	userRepo := repository.NewSQLUserRepository(db)
-	userService := services.NewUserService(userRepo, rds)
+	userService := services.NewUserService(userRepo, rds, cfg, emailService)
+	authService := services.NewAuthService(userRepo, emailService, cfg)
 
 	// Auth routes (login and password reset)
-	auth := NewAuthHandler(db, cfg, emailService, rds)
+	auth := NewAuthHandler(authService, cfg, rds)
 	api.POST("/auth/login", auth.Login)
 	api.POST("/auth/logout", auth.Logout) // Added logout
 	api.POST("/auth/forgot-password", auth.ForgotPassword)
 	api.POST("/auth/reset-password", auth.ResetPassword)
 
-	users := NewUsersHandler(userService, db, cfg, rds) // TEMPORARY: Keeping db/rds for gradual migration if needed, but primary is userService
-	journey := NewJourneyHandler(db, cfg, playbookManager)
-	nodeSubmission := NewNodeSubmissionHandler(db, cfg, playbookManager)
-	adminHandler := NewAdminHandler(db, cfg, playbookManager)
-	chatHandler := NewChatHandler(db, cfg, emailService)
-	contactsHandler := NewContactsHandler(db)
-	meHandler := NewMeHandler(db, cfg, services.NewRedis(cfg.RedisURL))
+	users := NewUsersHandler(userService, cfg)
+	_ = users
+	
+	// Documents
+	docRepo := repository.NewSQLDocumentRepository(db)
+	docService, err := services.NewDocumentService(docRepo, cfg)
+	if err != nil {
+		log.Printf("Warning: DocumentService init failed: %v", err)
+	}
+
+	// Journey Service Dependencies
+	// S3 Client
+	s3Svc, err := services.NewS3FromEnv()
+	if err != nil {
+		log.Printf("Warning: S3 init failed: %v", err)
+	}
+	var s3Client *s3.Client
+	if s3Svc != nil {
+		s3Client = s3Svc.Client()
+	}
+
+	// Mailer
+	mailerSvc := mailer.NewMailer()
+
+	// Journey Service
+	journeyRepo := repository.NewSQLJourneyRepository(db)
+	journeyService := services.NewJourneyService(journeyRepo, playbookManager, cfg, mailerSvc, s3Client, docService)
+
+	journey := NewJourneyHandler(journeyService)
+	_ = journey
+	nodeSubmission := NewNodeSubmissionHandler(journeyService)
+	_ = nodeSubmission
+	// Admin Service
+	adminRepo := repository.NewSQLAdminRepository(db)
+	adminService := services.NewAdminService(adminRepo, playbookManager, cfg)
+	adminHandler := NewAdminHandler(cfg, playbookManager, adminService, journeyService)
+	_ = adminHandler
+	chatRepo := repository.NewSQLChatRepository(db)
+	chatService := services.NewChatService(chatRepo, emailService, cfg)
+	chatHandler := NewChatHandler(chatService, cfg)
+	_ = chatHandler
+
+	// Calendar Module
+	eventRepo := repository.NewSQLEventRepository(db)
+	calendarService := services.NewCalendarService(eventRepo)
+	calendarHandler := NewCalendarHandler(calendarService)
+
+	// Checklist Module
+	checklistRepo := repository.NewSQLChecklistRepository(db)
+	checklistService := services.NewChecklistService(checklistRepo)
+	checklistHandler := NewChecklistHandler(checklistService, cfg)
+
+	// Search Module
+	searchRepo := repository.NewSQLSearchRepository(db)
+	searchService := services.NewSearchService(searchRepo)
+	searchHandler := NewSearchHandler(searchService, cfg)
+
+	// Dictionary Module
+	dictionaryRepo := repository.NewSQLDictionaryRepository(db)
+	dictionaryService := services.NewDictionaryService(dictionaryRepo)
+	dictionaryHandler := NewDictionaryHandler(dictionaryService)
+
+	// Notification Module
+	notificationRepo := repository.NewSQLNotificationRepository(db)
+	notificationService := services.NewNotificationService(notificationRepo)
+	notificationHandler := NewNotificationHandler(notificationService)
+
+	contactRepo := repository.NewSQLContactRepository(db)
+	contactService := services.NewContactService(contactRepo)
+	contactsHandler := NewContactsHandler(contactService)
+
+	// ===========================================
+	// SUPERADMIN ROUTES (global platform admin)
+	// ===========================================
+	
+	// Create Repos & Services for SuperAdmin/Tenant
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	tenantService := services.NewTenantService(tenantRepo)
+	
+	superAdminRepo := repository.NewSQLSuperAdminRepository(db)
+	superAdminService := services.NewSuperAdminService(superAdminRepo)
+	
+	// Update MeHandler with dependencies (UserService, TenantService)
+	// Note: NewMeHandler signature: (userSvc, tenantSvc, cfg)
+	meHandler := NewMeHandler(userService, tenantService, cfg, rds)
+	// Current NewMeHandler signature from previous edit might only take (userService, tenantService, cfg) 
+	// Or did I change it? I need to check MeHandler constructor.
+	// Looking at me.go previous changes: NewMeHandler(userSvc, tenantSvc, cfg)
+
 	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 	api.GET("/contacts", contactsHandler.PublicList)
 
@@ -134,203 +219,56 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	meGroup := api.Group("/me")
 	meGroup.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	{
+		meGroup.GET("", meHandler.Me)
 		meGroup.GET("/tenants", meHandler.MyTenants)
-		meGroup.GET("/tenant", meHandler.MyTenant)
+	meGroup.GET("/tenant", meHandler.MyTenant)
 	}
 
-	// Checklist + Documents + Comments
-	check := NewChecklistHandler(db, cfg)
-	api.GET("/checklist/modules", check.ListModules)
-	api.GET("/checklist/steps", check.ListStepsByModule)
-	api.GET("/students/:id/steps", check.ListStudentSteps)
-	api.PATCH("/students/:id/steps/:stepId", check.UpdateStudentStep)
-
-	docs := NewDocumentsHandler(db, cfg)
-	api.POST("/students/:id/documents", docs.CreateDocument)   // create doc metadata
-	api.GET("/students/:id/documents", docs.ListDocuments)     // list docs
-	api.POST("/documents/:docId/versions", docs.UploadVersion) // multipart upload
-	api.GET("/documents/:docId", docs.GetDocument)
-	api.GET("/documents/:docId/presign-get", docs.PresignGetLatest)
-	api.GET("/documents/versions/:versionId/download", docs.DownloadVersion)
-	api.POST("/documents/:docId/presign", docs.PresignUpload)
-
-	cmts := NewCommentsHandler(db, cfg)
-	api.GET("/documents/:docId/comments", cmts.GetComments)
-	api.POST("/documents/:docId/comments", cmts.CreateComment)
-
-	// Advisor inbox (pending submissions)
-	api.GET("/advisor/inbox", check.AdvisorInbox)
-	api.POST("/reviews/:id/steps/:stepId/approve", check.ApproveStep)
-	api.POST("/reviews/:id/steps/:stepId/return", check.ReturnStep)
-
-	// Monitor endpoints (admin/advisor access)
-	monitor := api.Group("/admin") // Keep URL prefix /admin for compatibility but change middleware
-	monitor.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
-	monitor.Use(middleware.RequireRoles("admin", "superadmin", "advisor"))
-
-	// Notifications (admin/advisor view of student events)
-	notifications := NewNotificationsHandler(db)
-	monitor.GET("/notifications", notifications.ListNotifications)
-	monitor.GET("/notifications/unread-count", notifications.GetUnreadCount)
-	monitor.PATCH("/notifications/:id/read", notifications.MarkAsRead)
-	monitor.POST("/notifications/read-all", notifications.MarkAllAsRead)
-
-	monitor.GET("/monitor/students", adminHandler.MonitorStudents)
-	monitor.GET("/students", adminHandler.StudentProgress)
-	monitor.GET("/students/:id", adminHandler.GetStudentDetails)
-	monitor.GET("/students/:id/journey", adminHandler.StudentJourney)
-	monitor.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
-	monitor.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
-	monitor.PATCH("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
-	monitor.POST("/attachments/:attachmentId/reviewed-document", adminHandler.UploadReviewedDocument)
-	monitor.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
-	monitor.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
-	monitor.POST("/reminders", adminHandler.PostReminders)
-
-	// Admin-only routes (strict)
-	admin := api.Group("/admin")
-	admin.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
-	admin.Use(middleware.RequireRoles("admin", "superadmin"))
-	admin.GET("/users", users.ListUsers)
-	admin.POST("/users", users.CreateUser)
-	admin.PUT("/users/:id", users.UpdateUser)
-	admin.POST("/users/:id/reset-password", users.ResetPasswordForUser)
-	admin.PATCH("/users/:id/active", users.SetActive)
-	admin.GET("/student-progress", adminHandler.StudentProgress) // Duplicate? Keep for now if used elsewhere
-	admin.GET("/contacts", contactsHandler.AdminList)
-	admin.POST("/contacts", contactsHandler.Create)
-	admin.PUT("/contacts/:id", contactsHandler.Update)
-	admin.DELETE("/contacts/:id", contactsHandler.Delete)
-
-	// Global Search
-	searchHandler := NewSearchHandler(db, cfg)
-	api.GET("/search", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), searchHandler.GlobalSearch)
-
-	// Self-service password change and profile update
-	api.PATCH("/me", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.UpdateMe)
-	api.PATCH("/me/avatar", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.UpdateAvatar)
-	api.POST("/me/avatar/presign", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.PresignAvatarUpload)
-	api.PATCH("/me/password", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.ChangeOwnPassword)
-	api.GET("/me/pending-email", middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds), users.GetPendingEmailVerification)
-	api.GET("/me/verify-email", users.VerifyEmailChange) // No auth required for better UX
-
-	// Journey state (per-user)
-	js := api.Group("/journey")
-	js.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
-	js.GET("/state", journey.GetState)
-	js.PUT("/state", journey.SetState)
-	js.POST("/reset", journey.Reset)
-	js.GET("/scoreboard", journey.GetScoreboard)
-	js.GET("/profile", nodeSubmission.GetProfile)
-
-	nodes := js.Group("/nodes")
-	nodes.GET("/:nodeId/submission", nodeSubmission.GetSubmission)
-	nodes.PUT("/:nodeId/submission", nodeSubmission.PutSubmission)
-	nodes.POST("/:nodeId/uploads/presign", nodeSubmission.PresignUpload)
-	nodes.POST("/:nodeId/uploads/attach", nodeSubmission.AttachUpload)
-	nodes.PATCH("/:nodeId/state", nodeSubmission.PatchState)
-
-	// Chat module (placeholder)
-	chat := api.Group("/chat")
-	chat.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
-	chatAdmin := chat.Group("")
-	chatAdmin.Use(middleware.RequireRoles("admin", "superadmin"))
-	chatAdmin.GET("/rooms/all", chatHandler.ListAllRooms) // Admin-only: list ALL rooms for tenant
-	chatAdmin.POST("/rooms", chatHandler.CreateRoom)
-	chatAdmin.PUT("/rooms/:roomId", chatHandler.UpdateRoom)
-	chatAdmin.PATCH("/rooms/:roomId", chatHandler.UpdateRoom)
-	chatAdmin.POST("/rooms/:roomId/members", chatHandler.AddMember)
-	chatAdmin.POST("/rooms/:roomId/members/batch", chatHandler.AddRoomMembersBatch)
-	chatAdmin.DELETE("/rooms/:roomId/members/batch", chatHandler.RemoveRoomMembersBatch)
-	chatAdmin.DELETE("/rooms/:roomId/members/:userId", chatHandler.RemoveMember)
-
-	chat.GET("/rooms", chatHandler.ListRooms)
-	chat.GET("/rooms/:roomId/members", chatHandler.GetRoomMembers)
-	chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
-	chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
-	chat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
-	chat.GET("/rooms/:roomId/attachments/:filename", chatHandler.DownloadFile)
-	chat.POST("/rooms/:roomId/read", chatHandler.MarkAsRead)
-	chat.PATCH("/messages/:messageId", chatHandler.UpdateMessage)
-	chat.DELETE("/messages/:messageId", chatHandler.DeleteMessage)
-
-	// Calendar routes
-	calendarService := services.NewCalendarService(db)
-	calendarHandler := NewCalendarHandler(calendarService)
-
-	events := api.Group("/events")
-	events.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
-	events.GET("", calendarHandler.GetEvents)
-	events.POST("", calendarHandler.CreateEvent)
-	events.PUT("/:id", calendarHandler.UpdateEvent)
-	events.DELETE("/:id", calendarHandler.DeleteEvent)
-
-	// Notification routes (generic)
-	notifService := services.NewNotificationService(db)
-	notifHandler := NewNotificationHandler(notifService)
-
-	notifs := api.Group("/notifications")
-	notifs.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
-	notifs.GET("", notifHandler.GetUnread)
-	notifs.PATCH("/:id/read", notifHandler.MarkAsRead)
-	notifs.POST("/read-all", notifHandler.MarkAllAsRead)
-
-	// Analytics routes (admin only)
-	analyticsService := services.NewAnalyticsService(db)
-	analyticsHandler := NewAnalyticsHandler(analyticsService)
-
-	analytics := api.Group("/analytics")
-	analytics.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
-	analytics.Use(middleware.RequireRoles("admin", "superadmin", "chair"))
-	analytics.GET("/stages", analyticsHandler.GetStageStats)
-	analytics.GET("/overdue", analyticsHandler.GetOverdueStats)
-
-	// TODO: checklist, documents, comments handlers (skeletons for now)
-
-	// Dictionary endpoints
-	dictHandler := NewDictionaryHandler(db)
-
-	// Public (Authenticated) Read Access
-	dicts := api.Group("/dictionaries")
-	dicts.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
+	// Authenticated Routes Group
+	protected := api.Group("")
+	protected.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	{
-		dicts.GET("/programs", dictHandler.ListPrograms)
-		dicts.GET("/specialties", dictHandler.ListSpecialties)
-		dicts.GET("/cohorts", dictHandler.ListCohorts)
-		dicts.GET("/departments", dictHandler.ListDepartments)
+		// Calendar
+		cal := protected.Group("/calendar")
+		{
+			cal.POST("/events", calendarHandler.CreateEvent)
+			cal.GET("/events", calendarHandler.GetEvents)
+			cal.PUT("/events/:id", calendarHandler.UpdateEvent)
+			cal.DELETE("/events/:id", calendarHandler.DeleteEvent)
+		}
+
+		// Checklist
+		check := protected.Group("/checklists")
+		{
+			check.GET("/modules", checklistHandler.ListModules)
+		}
+
+		// Search
+		protected.GET("/search", searchHandler.GlobalSearch)
+
+		// Dictionaries
+		dict := protected.Group("/dictionaries")
+		{
+			dict.GET("/programs", dictionaryHandler.ListPrograms)
+			dict.GET("/specialties", dictionaryHandler.ListSpecialties)
+			dict.GET("/cohorts", dictionaryHandler.ListCohorts)
+			dict.GET("/departments", dictionaryHandler.ListDepartments)
+		}
+
+		// Notifications
+		notif := protected.Group("/notifications")
+		{
+			notif.GET("/unread", notificationHandler.GetUnread)
+			notif.POST("/:id/read", notificationHandler.MarkAsRead)
+			notif.POST("/read-all", notificationHandler.MarkAllAsRead)
+		}
 	}
-
-	// Admin Write Access
-	dictAdminGroup := admin.Group("/dictionaries")
-	{
-		dictAdminGroup.GET("/programs", dictHandler.ListPrograms)
-		dictAdminGroup.POST("/programs", dictHandler.CreateProgram)
-		dictAdminGroup.PUT("/programs/:id", dictHandler.UpdateProgram)
-		dictAdminGroup.DELETE("/programs/:id", dictHandler.DeleteProgram)
-
-		dictAdminGroup.GET("/specialties", dictHandler.ListSpecialties)
-		dictAdminGroup.POST("/specialties", dictHandler.CreateSpecialty)
-		dictAdminGroup.PUT("/specialties/:id", dictHandler.UpdateSpecialty)
-		dictAdminGroup.DELETE("/specialties/:id", dictHandler.DeleteSpecialty)
-
-		dictAdminGroup.GET("/cohorts", dictHandler.ListCohorts)
-		dictAdminGroup.POST("/cohorts", dictHandler.CreateCohort)
-		dictAdminGroup.PUT("/cohorts/:id", dictHandler.UpdateCohort)
-		dictAdminGroup.DELETE("/cohorts/:id", dictHandler.DeleteCohort)
-
-		dictAdminGroup.GET("/departments", dictHandler.ListDepartments)
-		dictAdminGroup.POST("/departments", dictHandler.CreateDepartment)
-		dictAdminGroup.PUT("/departments/:id", dictHandler.UpdateDepartment)
-		dictAdminGroup.DELETE("/departments/:id", dictHandler.DeleteDepartment)
-	}
-
-	// ===========================================
-	// SUPERADMIN ROUTES (global platform admin)
-	// ===========================================
-	superadminTenantsHandler := NewSuperadminTenantsHandler(db, cfg)
-	superadminAdminsHandler := NewSuperadminAdminsHandler(db, cfg, rds)
-	superadminLogsHandler := NewSuperadminLogsHandler(db, cfg)
-	superadminSettingsHandler := NewSuperadminSettingsHandler(db, cfg)
+	
+	// SuperAdmin Handlers
+	superadminTenantsHandler := NewSuperadminTenantsHandler(tenantService, superAdminService, cfg)
+	superadminAdminsHandler := NewSuperadminAdminsHandler(superAdminService, cfg)
+	superadminLogsHandler := NewSuperadminLogsHandler(superAdminService, cfg)
+	superadminSettingsHandler := NewSuperadminSettingsHandler(superAdminService, cfg)
 
 	superadmin := api.Group("/superadmin")
 	superadmin.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))

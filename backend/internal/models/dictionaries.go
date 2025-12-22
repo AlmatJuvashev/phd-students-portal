@@ -1,0 +1,39 @@
+package models
+
+type Program struct {
+	ID        string `db:"id" json:"id"`
+	Name      string `db:"name" json:"name"`
+	Code      string `db:"code" json:"code"`
+	IsActive  bool   `db:"is_active" json:"is_active"`
+	CreatedAt string `db:"created_at" json:"created_at"`
+	UpdatedAt string `db:"updated_at" json:"updated_at"`
+}
+
+type Specialty struct {
+	ID         string   `db:"id" json:"id"`
+	Name       string   `db:"name" json:"name"`
+	Code       string   `db:"code" json:"code"`
+	ProgramIDs []string `json:"program_ids"` // Multiple programs
+	IsActive   bool     `db:"is_active" json:"is_active"`
+	CreatedAt  string   `db:"created_at" json:"created_at"`
+	UpdatedAt  string   `db:"updated_at" json:"updated_at"`
+}
+
+type Cohort struct {
+	ID        string `db:"id" json:"id"`
+	Name      string `db:"name" json:"name"`
+	StartDate string `db:"start_date" json:"start_date"`
+	EndDate   string `db:"end_date" json:"end_date"`
+	IsActive  bool   `db:"is_active" json:"is_active"`
+	CreatedAt string `db:"created_at" json:"created_at"`
+	UpdatedAt string `db:"updated_at" json:"updated_at"`
+}
+
+type Department struct {
+	ID        string `db:"id" json:"id"`
+	Name      string `db:"name" json:"name"`
+	Code      string `db:"code" json:"code"`
+	IsActive  bool   `db:"is_active" json:"is_active"`
+	CreatedAt string `db:"created_at" json:"created_at"`
+	UpdatedAt string `db:"updated_at" json:"updated_at"`
+}

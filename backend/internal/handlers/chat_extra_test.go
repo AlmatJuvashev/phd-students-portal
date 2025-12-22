@@ -9,6 +9,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -32,7 +34,9 @@ func TestChatHandler_RoomManagement(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChatHandler(db, cfg, nil)
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, nil, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -101,7 +105,9 @@ func TestChatHandler_Members(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChatHandler(db, cfg, nil)
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, nil, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -200,7 +206,9 @@ func TestChatHandler_MessageOperations(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChatHandler(db, cfg, nil)
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, nil, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -273,7 +281,9 @@ func TestChatHandler_MessageCreation(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChatHandler(db, cfg, nil)
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, nil, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

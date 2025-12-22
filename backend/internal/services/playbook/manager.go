@@ -140,3 +140,13 @@ func (m *Manager) NodeDefinition(nodeID string) (Node, bool) {
 func (m *Manager) NodeWorldID(nodeID string) string {
 	return m.NodeWorlds[nodeID]
 }
+
+func (m *Manager) GetNodesByWorld(worldID string) []string {
+	var nodes []string
+	for nid, wid := range m.NodeWorlds {
+		if wid == worldID {
+			nodes = append(nodes, nid)
+		}
+	}
+	return nodes
+}

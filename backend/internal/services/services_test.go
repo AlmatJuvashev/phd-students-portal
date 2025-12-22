@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,8 @@ func TestNewNotificationService(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := NewNotificationService(repo)
 	assert.NotNil(t, svc)
 }
 
@@ -34,7 +36,8 @@ func TestNotificationService_CreateNotification(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := NewNotificationService(repo)
 	userID := testutils.CreateTestUser(t, db, "notifuser1", "student")
 	actorID := testutils.CreateTestUser(t, db, "notifactor1", "advisor")
 
@@ -58,7 +61,8 @@ func TestNotificationService_GetUnreadNotifications(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := NewNotificationService(repo)
 	userID := testutils.CreateTestUser(t, db, "notifuser2", "student")
 
 	ctx := context.Background()
@@ -87,7 +91,8 @@ func TestNotificationService_MarkAsRead(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := NewNotificationService(repo)
 	userID := testutils.CreateTestUser(t, db, "notifuser3", "student")
 
 	ctx := context.Background()
@@ -116,7 +121,8 @@ func TestNotificationService_MarkAsRead_NotFound(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := NewNotificationService(repo)
 	userID := testutils.CreateTestUser(t, db, "notifuser4", "student")
 
 	ctx := context.Background()
@@ -130,7 +136,8 @@ func TestNotificationService_MarkAllAsRead(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := NewNotificationService(repo)
 	userID := testutils.CreateTestUser(t, db, "notifuser5", "student")
 
 	ctx := context.Background()
@@ -163,7 +170,8 @@ func TestNewAnalyticsService(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := NewAnalyticsService(db)
+	repo := repository.NewSQLAnalyticsRepository(db)
+	svc := NewAnalyticsService(repo)
 	assert.NotNil(t, svc)
 }
 
@@ -171,7 +179,8 @@ func TestAnalyticsService_GetStudentsByStage(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := NewAnalyticsService(db)
+	repo := repository.NewSQLAnalyticsRepository(db)
+	svc := NewAnalyticsService(repo)
 	testutils.CreateTestUser(t, db, "analyticsstudent1", "student")
 
 	ctx := context.Background()
@@ -185,7 +194,8 @@ func TestAnalyticsService_GetAdvisorLoad(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := NewAnalyticsService(db)
+	repo := repository.NewSQLAnalyticsRepository(db)
+	svc := NewAnalyticsService(repo)
 
 	ctx := context.Background()
 	stats, err := svc.GetAdvisorLoad(ctx)
@@ -198,7 +208,8 @@ func TestAnalyticsService_GetOverdueTasks(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := NewAnalyticsService(db)
+	repo := repository.NewSQLAnalyticsRepository(db)
+	svc := NewAnalyticsService(repo)
 
 	ctx := context.Background()
 	stats, err := svc.GetOverdueTasks(ctx)
@@ -213,7 +224,8 @@ func TestNewCalendarService(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := NewCalendarService(db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	assert.NotNil(t, svc)
 }
 
@@ -222,7 +234,9 @@ func TestCalendarService_CreateEvent(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	ensureDefaultTenant(t, db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator1", "student")
 
 	ctx := context.Background()
@@ -246,7 +260,8 @@ func TestCalendarService_CreateEventWithAttendees(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator2", "student")
 	attendeeID := testutils.CreateTestUser(t, db, "calendarattendee1", "advisor")
 
@@ -271,7 +286,9 @@ func TestCalendarService_GetEvents(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	ensureDefaultTenant(t, db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator3", "student")
 
 	ctx := context.Background()
@@ -299,7 +316,9 @@ func TestCalendarService_GetEvent(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	ensureDefaultTenant(t, db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator4", "student")
 
 	ctx := context.Background()
@@ -325,7 +344,9 @@ func TestCalendarService_UpdateEvent(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	ensureDefaultTenant(t, db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator5", "student")
 
 	ctx := context.Background()
@@ -354,7 +375,9 @@ func TestCalendarService_UpdateEvent_Unauthorized(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	ensureDefaultTenant(t, db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator6", "student")
 	otherID := testutils.CreateTestUser(t, db, "calendarother1", "student")
 
@@ -381,7 +404,9 @@ func TestCalendarService_DeleteEvent(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	ensureDefaultTenant(t, db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator7", "student")
 
 	ctx := context.Background()
@@ -409,7 +434,9 @@ func TestCalendarService_DeleteEvent_Unauthorized(t *testing.T) {
 	defer teardown()
 
 	ensureDefaultTenant(t, db)
-	svc := NewCalendarService(db)
+	ensureDefaultTenant(t, db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := NewCalendarService(repo)
 	userID := testutils.CreateTestUser(t, db, "calendarcreator8", "student")
 	otherID := testutils.CreateTestUser(t, db, "calendarother2", "student")
 

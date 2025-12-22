@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -35,7 +36,8 @@ func TestNotificationHandler_GetUnread(t *testing.T) {
 		VALUES ($1, $2, 'Test Notif', 'Hello', 'info', false)`, tenantID, userID)
 	assert.NoError(t, err)
 
-	svc := services.NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := services.NewNotificationService(repo)
 	h := handlers.NewNotificationHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -81,8 +83,10 @@ func TestNotificationHandler_MarkAsRead(t *testing.T) {
 		VALUES ($1, $2, 'Test Notif', 'Hello', 'info', false) RETURNING id`, tenantID, userID).Scan(&notifID)
 	assert.NoError(t, err)
 
-	svc := services.NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := services.NewNotificationService(repo)
 	h := handlers.NewNotificationHandler(svc)
+
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -129,7 +133,8 @@ func TestNotificationHandler_MarkAllAsRead(t *testing.T) {
 		VALUES ($1, $2, 'Notif 1', 'Msg 1', 'info', false), ($1, $2, 'Notif 2', 'Msg 2', 'info', false)`, tenantID, userID)
 	assert.NoError(t, err)
 
-	svc := services.NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := services.NewNotificationService(repo)
 	h := handlers.NewNotificationHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -159,7 +164,8 @@ func TestNotificationHandler_Unauthorized(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := services.NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := services.NewNotificationService(repo)
 	h := handlers.NewNotificationHandler(svc)
 
 	gin.SetMode(gin.TestMode)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -39,7 +40,8 @@ func TestAnalyticsHandler_GetStageStats(t *testing.T) {
 		($2, 'node1', 'Stage 2', $3)`, s1, s2, tenantID)
 	require.NoError(t, err)
 
-	svc := services.NewAnalyticsService(db)
+	repo := repository.NewSQLAnalyticsRepository(db)
+	svc := services.NewAnalyticsService(repo)
 	h := handlers.NewAnalyticsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -80,7 +82,8 @@ func TestAnalyticsHandler_GetOverdueStats(t *testing.T) {
 	// WHERE ... (ni.state IS NULL OR ni.state != 'done')
 	// So if no instance, it counts.
 
-	svc := services.NewAnalyticsService(db)
+	repo := repository.NewSQLAnalyticsRepository(db)
+	svc := services.NewAnalyticsService(repo)
 	h := handlers.NewAnalyticsHandler(svc)
 
 	gin.SetMode(gin.TestMode)

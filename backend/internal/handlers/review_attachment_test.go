@@ -9,6 +9,7 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
@@ -158,7 +159,11 @@ func TestReviewAttachment_AdvisorApproves(t *testing.T) {
 
 	// Setup handler
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"confirm_task": {}}}
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -214,7 +219,11 @@ func TestReviewAttachment_AdvisorApprovesWithComments(t *testing.T) {
 	db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, size_bytes, attached_by) VALUES ($1, $2, true, 'submitted', 't.pdf', 100, $3) RETURNING id`, f.SlotID, f.DocVersionID, f.StudentID).Scan(&f.AttachmentID)
 
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"n": {}}}
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)
 
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
@@ -268,7 +277,11 @@ func TestReviewAttachment_AdvisorUnassignedStudent_Forbidden(t *testing.T) {
 	db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, size_bytes, attached_by) VALUES ($1, $2, true, 'submitted', 't.pdf', 100, $3) RETURNING id`, f.SlotID, f.DocVersionID, f.StudentID).Scan(&f.AttachmentID)
 
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"n": {}}}
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)
 
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
@@ -314,7 +327,11 @@ func TestReviewAttachment_AdminApprovesAnyStudent(t *testing.T) {
 	db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, size_bytes, attached_by) VALUES ($1, $2, true, 'submitted', 't.pdf', 100, $3) RETURNING id`, f.SlotID, f.DocVersionID, f.StudentID).Scan(&f.AttachmentID)
 
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"n": {}}}
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)
 
 	r := gin.New()
 	r.Use(func(c *gin.Context) {

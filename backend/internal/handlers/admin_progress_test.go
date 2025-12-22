@@ -9,6 +9,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
@@ -56,7 +58,11 @@ func TestAdminHandler_StudentProgress(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -132,7 +138,11 @@ func TestAdminHandler_MonitorStudents(t *testing.T) {
 	}
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -180,7 +190,7 @@ func TestAdminHandler_MonitorStudents(t *testing.T) {
 	t.Run("Advisor List Unassigned (Empty)", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/admin/monitor", nil)
 		req.Header.Set("X-Role", "advisor")
-		req.Header.Set("X-User-ID", "other-advisor-id")
+		req.Header.Set("X-User-ID", "00000000-0000-0000-0000-000000009999")
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
@@ -239,7 +249,11 @@ func TestAdminHandler_GetStudentDetails(t *testing.T) {
 	}
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -262,7 +276,7 @@ func TestAdminHandler_GetStudentDetails(t *testing.T) {
 	})
 
 	t.Run("Get Details Not Found", func(t *testing.T) {
-		req, _ := http.NewRequest("GET", "/admin/students/invalid-id", nil)
+		req, _ := http.NewRequest("GET", "/admin/students/00000000-0000-0000-0000-000000009999", nil)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
@@ -304,7 +318,11 @@ func TestAdminHandler_StudentJourney(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -389,7 +407,11 @@ func TestAdminHandler_ListStudentNodeFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -406,8 +428,9 @@ func TestAdminHandler_ListStudentNodeFiles(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp []map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
-		assert.Len(t, resp, 1)
+		err := json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err, "Failed to unmarshal response: %s", w.Body.String())
+		require.Len(t, resp, 1, "Expected 1 file, got %d. Body: %s", len(resp), w.Body.String())
 		assert.Equal(t, "slot1", resp[0]["slot_key"])
 	})
 
@@ -434,7 +457,11 @@ func TestAdminHandler_ListStudentNodeFiles_Forbidden(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'One', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -486,7 +513,11 @@ func TestAdminHandler_MonitorAnalytics(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -592,7 +623,11 @@ func TestAdminHandler_ReviewAttachment(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -656,7 +691,11 @@ func TestAdminHandler_ListStudentProgress(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -745,7 +784,11 @@ func TestAdminHandler_UploadReviewedDocument(t *testing.T) {
 
 	pb := &playbook.Manager{}
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pb)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pb, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pb, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pb, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -819,7 +862,11 @@ func TestAdminHandler_PatchStudentNodeState(t *testing.T) {
 		},
 	}
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pb)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pb, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pb, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pb, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -915,7 +962,11 @@ func TestAdminHandler_PresignReviewedDocumentUpload(t *testing.T) {
 		VALUES ($1, $2, true, 'submitted', 'file.pdf', 1024, $3) RETURNING id`, slotID, docVerID, studentID).Scan(&attID)
 	require.NoError(t, err)
 
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -994,28 +1045,39 @@ func TestAdminHandler_AttachReviewedDocument(t *testing.T) {
 	require.NoError(t, err)
 
 	var instanceID string
-	db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, tenant_id) VALUES ('node1', $1, 'done', $2, $3) RETURNING id`, studentID, pbm.VersionID, tenantID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (node_id, user_id, state, playbook_version_id, tenant_id) VALUES ('node1', $1, 'done', $2, $3) RETURNING id`, studentID, pbm.VersionID, tenantID).Scan(&instanceID)
+	require.NoError(t, err)
 
 	var slotID string
-	db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
+	err = db.QueryRow(`INSERT INTO node_instance_slots (node_instance_id, slot_key, tenant_id) VALUES ($1, 'slot1', $2) RETURNING id`, instanceID, tenantID).Scan(&slotID)
+	require.NoError(t, err)
 
 	var docID string
-	db.QueryRow(`INSERT INTO documents (user_id, title, kind, tenant_id) VALUES ($1, 'Doc', 'other', $2) RETURNING id`, studentID, tenantID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (user_id, title, kind, tenant_id) VALUES ($1, 'Doc', 'other', $2) RETURNING id`, studentID, tenantID).Scan(&docID)
+	require.NoError(t, err)
+
 	var docVerID string
-	db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by, tenant_id) VALUES ($1, 'path', 'pdf', 100, $2, $3) RETURNING id`, docID, studentID, tenantID).Scan(&docVerID)
+	err = db.QueryRow(`INSERT INTO document_versions (document_id, storage_path, mime_type, size_bytes, uploaded_by, tenant_id) VALUES ($1, 'path', 'pdf', 100, $2, $3) RETURNING id`, docID, studentID, tenantID).Scan(&docVerID)
+	require.NoError(t, err)
 
 	var attID string
-	db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, size_bytes, attached_by) 
+	err = db.QueryRow(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, size_bytes, attached_by) 
 		VALUES ($1, $2, true, 'submitted', 'file.pdf', 100, $3) RETURNING id`, slotID, docVerID, studentID).Scan(&attID)
+	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewAdminHandler(db, cfg, pbm)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("userID", adminID)
 		c.Set("claims", jwt.MapClaims{"role": "admin", "sub": adminID})
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.POST("/admin/attachments/:attachmentId/review/attach", h.AttachReviewedDocument)
@@ -1058,7 +1120,11 @@ func TestAdminHandler_UploadReviewedDocument_Failures(t *testing.T) {
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, userID)
 	require.NoError(t, err)
 
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -1141,7 +1207,11 @@ func TestAdminHandler_UploadReviewedDocument_Forbidden(t *testing.T) {
 		VALUES ($1, $2, true, 'submitted', 'file.pdf', 100, $3) RETURNING id`, slotID, docVerID, studentID).Scan(&attID)
 	require.NoError(t, err)
 
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -1198,7 +1268,11 @@ func TestAdminHandler_PostReminders_Extended(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
 	require.NoError(t, err)
 
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -1235,7 +1309,11 @@ func TestAdminHandler_PostReminders_Failures(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -1278,7 +1356,11 @@ func TestAdminHandler_ReviewAttachment_Failures(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, userID, tenantID)
 	require.NoError(t, err)
 
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &pb.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -1344,7 +1426,11 @@ func TestAdminHandler_PostReminders(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	pb := &pb.Manager{}
-	h := handlers.NewAdminHandler(db, cfg, pb)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pb, cfg)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pb, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pb, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

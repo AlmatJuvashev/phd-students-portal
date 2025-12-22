@@ -8,6 +8,9 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -40,7 +43,10 @@ func TestJourneyHandler_GetScoreboard(t *testing.T) {
 		},
 	}
 
-	h := handlers.NewJourneyHandler(db, config.AppConfig{}, pbManager)
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pbManager, cfg, nil, nil, nil)
+	h := handlers.NewJourneyHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	
@@ -75,7 +81,7 @@ func TestJourneyHandler_GetScoreboard(t *testing.T) {
 		}
 		assert.Equal(t, http.StatusOK, w.Code)
 		
-		var resp handlers.ScoreboardResponse
+		var resp models.ScoreboardResponse
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
 

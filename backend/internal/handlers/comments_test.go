@@ -9,6 +9,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +33,10 @@ func TestCommentsHandler_CreateComment(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewCommentsHandler(db, cfg)
+	
+	repo := repository.NewSQLCommentRepository(db)
+	svc := services.NewCommentService(repo)
+	h := handlers.NewCommentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -74,10 +79,17 @@ func TestCommentsHandler_GetComments(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewCommentsHandler(db, cfg)
+	
+	repo := repository.NewSQLCommentRepository(db)
+	svc := services.NewCommentService(repo)
+	h := handlers.NewCommentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID) // Need middleware for tenant_id in GetComments now
+		c.Next()
+	})
 	r.GET("/documents/:docId/comments", h.GetComments)
 
 	req, _ := http.NewRequest("GET", "/documents/"+docID+"/comments", nil)
@@ -90,3 +102,4 @@ func TestCommentsHandler_GetComments(t *testing.T) {
 	assert.Len(t, resp, 1)
 	assert.Equal(t, "Test comment", resp[0]["content"])
 }
+

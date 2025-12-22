@@ -6,7 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
+	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +33,9 @@ func TestNotificationsHandler_ListNotifications(t *testing.T) {
 		VALUES ($1, 'Admin Msg 2', true, 'info', 'node1')`, userID)
 	require.NoError(t, err)
 
-	h := handlers.NewNotificationsHandler(db)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -72,7 +78,9 @@ func TestNotificationsHandler_GetUnreadCount(t *testing.T) {
 		VALUES ($1, 'Msg 1', false, 'info', 'node1')`, userID)
 	require.NoError(t, err)
 
-	h := handlers.NewNotificationsHandler(db)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -104,7 +112,9 @@ func TestNotificationsHandler_MarkAsRead(t *testing.T) {
 		VALUES ($1, 'Msg', false, 'info', 'node1') RETURNING id`, userID).Scan(&notifID)
 	require.NoError(t, err)
 
-	h := handlers.NewNotificationsHandler(db)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -136,7 +146,9 @@ func TestNotificationsHandler_MarkAllAsRead(t *testing.T) {
 		VALUES ($1, 'Msg 1', false, 'info', 'node1')`, userID)
 	require.NoError(t, err)
 
-	h := handlers.NewNotificationsHandler(db)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

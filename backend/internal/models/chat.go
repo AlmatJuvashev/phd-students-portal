@@ -47,6 +47,27 @@ type ChatRoomMember struct {
 	LastReadAt *time.Time         `db:"last_read_at" json:"last_read_at"`
 }
 
+type MemberWithUser struct {
+	TenantID   string             `db:"tenant_id" json:"tenant_id"`
+	RoomID     string             `db:"room_id" json:"room_id"`
+	UserID     string             `db:"user_id" json:"user_id"`
+	RoleInRoom ChatRoomMemberRole `db:"role_in_room" json:"role_in_room"`
+	JoinedAt   time.Time          `db:"joined_at" json:"joined_at"`
+	LastReadAt *time.Time         `db:"last_read_at" json:"last_read_at"`
+	FirstName  string             `db:"first_name" json:"first_name"`
+	LastName   string             `db:"last_name" json:"last_name"`
+	Email      string             `db:"email" json:"email"`
+	Username   string             `db:"username" json:"username"`
+}
+
+// UserInfo holds partial user details for notifications/displays.
+type UserInfo struct {
+	ID        string `db:"id" json:"id"`
+	Email     string `db:"email" json:"email"`
+	FirstName string `db:"first_name" json:"first_name"`
+	LastName  string `db:"last_name" json:"last_name"`
+}
+
 type ChatMessage struct {
 	ID          string          `db:"id" json:"id"`
 	TenantID    string          `db:"tenant_id" json:"tenant_id"` // Added for multitenancy

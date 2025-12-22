@@ -2,66 +2,31 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
-	"github.com/jmoiron/sqlx"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 )
 
 type NotificationService struct {
-	db *sqlx.DB
+	repo repository.NotificationRepository
 }
 
-func NewNotificationService(db *sqlx.DB) *NotificationService {
-	return &NotificationService{db: db}
+func NewNotificationService(repo repository.NotificationRepository) *NotificationService {
+	return &NotificationService{repo: repo}
 }
 
 func (s *NotificationService) CreateNotification(ctx context.Context, notif *models.Notification) error {
-	query := `
-		INSERT INTO notifications (recipient_id, actor_id, title, message, link, type, tenant_id)
-		VALUES (:recipient_id, :actor_id, :title, :message, :link, :type, :tenant_id)
-		RETURNING id, created_at, updated_at`
-
-	rows, err := s.db.NamedQueryContext(ctx, query, notif)
-	if err != nil {
-		return err
-	}
-	if rows.Next() {
-		rows.Scan(&notif.ID, &notif.CreatedAt, &notif.UpdatedAt)
-	}
-	rows.Close()
-	return nil
+	return s.repo.Create(ctx, notif)
 }
 
 func (s *NotificationService) GetUnreadNotifications(ctx context.Context, userID string) ([]models.Notification, error) {
-	query := `
-		SELECT * FROM notifications 
-		WHERE recipient_id = $1 AND is_read = FALSE 
-		ORDER BY created_at DESC`
-
-	var notifs []models.Notification
-	err := s.db.SelectContext(ctx, &notifs, query, userID)
-	if err != nil {
-		return nil, err
-	}
-	return notifs, nil
+	return s.repo.GetUnread(ctx, userID)
 }
 
 func (s *NotificationService) MarkAsRead(ctx context.Context, notificationID, userID string) error {
-	query := `UPDATE notifications SET is_read = TRUE WHERE id = $1 AND recipient_id = $2`
-	res, err := s.db.ExecContext(ctx, query, notificationID, userID)
-	if err != nil {
-		return err
-	}
-	affected, _ := res.RowsAffected()
-	if affected == 0 {
-		return fmt.Errorf("notification not found or not owned by user")
-	}
-	return nil
+	return s.repo.MarkAsRead(ctx, notificationID, userID)
 }
 
 func (s *NotificationService) MarkAllAsRead(ctx context.Context, userID string) error {
-	query := `UPDATE notifications SET is_read = TRUE WHERE recipient_id = $1`
-	_, err := s.db.ExecContext(ctx, query, userID)
-	return err
+	return s.repo.MarkAllAsRead(ctx, userID)
 }

@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +20,9 @@ func TestDictionaryHandler_Programs(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	h := handlers.NewDictionaryHandler(db)
+	repo := repository.NewSQLDictionaryRepository(db)
+	svc := services.NewDictionaryService(repo)
+	h := handlers.NewDictionaryHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	tenantID := "00000000-0000-0000-0000-000000000001"
@@ -108,7 +112,9 @@ func TestDictionaryHandler_Departments(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	h := handlers.NewDictionaryHandler(db)
+	repo := repository.NewSQLDictionaryRepository(db)
+	svc := services.NewDictionaryService(repo)
+	h := handlers.NewDictionaryHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	tenantID := "00000000-0000-0000-0000-000000000001"
@@ -189,7 +195,9 @@ func TestDictionaryHandler_Cohorts(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	h := handlers.NewDictionaryHandler(db)
+	repo := repository.NewSQLDictionaryRepository(db)
+	svc := services.NewDictionaryService(repo)
+	h := handlers.NewDictionaryHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	tenantID := "00000000-0000-0000-0000-000000000001"
@@ -273,7 +281,9 @@ func TestDictionaryHandler_Specialties(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	h := handlers.NewDictionaryHandler(db)
+	repo := repository.NewSQLDictionaryRepository(db)
+	svc := services.NewDictionaryService(repo)
+	h := handlers.NewDictionaryHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	tenantID := "00000000-0000-0000-0000-000000000001"
@@ -306,7 +316,9 @@ func TestDictionaryHandler_SpecialtyCRUD(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	h := handlers.NewDictionaryHandler(db)
+	repo := repository.NewSQLDictionaryRepository(db)
+	svc := services.NewDictionaryService(repo)
+	h := handlers.NewDictionaryHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	tenantID := "00000000-0000-0000-0000-000000000001"

@@ -9,6 +9,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -39,8 +41,12 @@ func TestSuperadminAdminsHandler_ListAdmins(t *testing.T) {
 		ON CONFLICT DO NOTHING`, userID, tenantID)
 	require.NoError(t, err)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
+	h := handlers.NewSuperadminAdminsHandler(adminSvc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -90,8 +96,12 @@ func TestSuperadminAdminsHandler_GetAdmin(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
+	h := handlers.NewSuperadminAdminsHandler(adminSvc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -133,8 +143,12 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
+	h := handlers.NewSuperadminAdminsHandler(adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_create_admin", "superadmin")
@@ -170,7 +184,7 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &resp)
 
 		assert.NotNil(t, resp["id"])
-		assert.Equal(t, "admin created successfully", resp["message"])
+		assert.Equal(t, "admin created", resp["message"])
 	})
 
 	t.Run("Create Admin Missing Required Fields", func(t *testing.T) {
@@ -208,7 +222,7 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &resp)
 
 		assert.NotNil(t, resp["id"])
-		assert.Equal(t, "admin created successfully", resp["message"])
+		assert.Equal(t, "admin created", resp["message"])
 	})
 }
 
@@ -223,8 +237,12 @@ func TestSuperadminAdminsHandler_DeleteAdmin(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminAdminsHandler(db, cfg, nil)
+	h := handlers.NewSuperadminAdminsHandler(adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_delete_admin", "superadmin")

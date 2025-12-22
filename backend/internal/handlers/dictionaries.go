@@ -2,33 +2,23 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 )
 
 // DictionaryHandler handles CRUD for Programs and Specialties
 type DictionaryHandler struct {
-	db *sqlx.DB
+	svc *services.DictionaryService
 }
 
-func NewDictionaryHandler(db *sqlx.DB) *DictionaryHandler {
-	return &DictionaryHandler{db: db}
+func NewDictionaryHandler(svc *services.DictionaryService) *DictionaryHandler {
+	return &DictionaryHandler{svc: svc}
 }
 
 // --- Programs ---
-
-type Program struct {
-	ID        string `db:"id" json:"id"`
-	Name      string `db:"name" json:"name"`
-	Code      string `db:"code" json:"code"`
-	IsActive  bool   `db:"is_active" json:"is_active"`
-	CreatedAt string `db:"created_at" json:"created_at"`
-	UpdatedAt string `db:"updated_at" json:"updated_at"`
-}
 
 type createProgramReq struct {
 	Name string `json:"name" binding:"required"`
@@ -44,24 +34,11 @@ type updateProgramReq struct {
 func (h *DictionaryHandler) ListPrograms(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	activeOnly := c.Query("active") == "true"
-	query := `SELECT id, name, COALESCE(code, '') as code, is_active, 
-              to_char(created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as created_at,
-              to_char(updated_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as updated_at 
-              FROM programs WHERE tenant_id = $1`
-	args := []interface{}{tenantID}
 	
-	if activeOnly {
-		query += ` AND is_active = true`
-	}
-	query += ` ORDER BY name`
-
-	var programs []Program
-	if err := h.db.Select(&programs, query, args...); err != nil {
+	programs, err := h.svc.ListPrograms(c.Request.Context(), tenantID, activeOnly)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-	if programs == nil {
-		programs = []Program{}
 	}
 	c.JSON(http.StatusOK, programs)
 }
@@ -74,8 +51,7 @@ func (h *DictionaryHandler) CreateProgram(c *gin.Context) {
 		return
 	}
 
-	var id string
-	err := h.db.QueryRow(`INSERT INTO programs (name, code, tenant_id) VALUES ($1, $2, $3) RETURNING id`, req.Name, nullable(req.Code), tenantID).Scan(&id)
+	id, err := h.svc.CreateProgram(c.Request.Context(), tenantID, req.Name, req.Code)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Program with this name already exists"})
@@ -96,31 +72,7 @@ func (h *DictionaryHandler) UpdateProgram(c *gin.Context) {
 		return
 	}
 
-	// Build dynamic update query
-	setParts := []string{"updated_at = now()"}
-	args := []interface{}{}
-	argId := 1
-
-	if req.Name != "" {
-		setParts = append(setParts, "name = $"+itoa(argId))
-		args = append(args, req.Name)
-		argId++
-	}
-	if req.Code != "" {
-		setParts = append(setParts, "code = $"+itoa(argId))
-		args = append(args, req.Code)
-		argId++
-	}
-	if req.IsActive != nil {
-		setParts = append(setParts, "is_active = $"+itoa(argId))
-		args = append(args, *req.IsActive)
-		argId++
-	}
-
-	args = append(args, id, tenantID)
-	query := "UPDATE programs SET " + strings.Join(setParts, ", ") + " WHERE id = $" + itoa(argId) + " AND tenant_id = $" + itoa(argId+1)
-
-	_, err := h.db.Exec(query, args...)
+	err := h.svc.UpdateProgram(c.Request.Context(), tenantID, id, req.Name, req.Code, req.IsActive)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Program with this name already exists"})
@@ -135,8 +87,8 @@ func (h *DictionaryHandler) UpdateProgram(c *gin.Context) {
 func (h *DictionaryHandler) DeleteProgram(c *gin.Context) {
 	id := c.Param("id")
 	tenantID := middleware.GetTenantID(c)
-	// Soft delete
-	_, err := h.db.Exec(`UPDATE programs SET is_active = false, updated_at = now() WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	
+	err := h.svc.DeleteProgram(c.Request.Context(), tenantID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -145,16 +97,6 @@ func (h *DictionaryHandler) DeleteProgram(c *gin.Context) {
 }
 
 // --- Specialties ---
-
-type Specialty struct {
-	ID         string   `db:"id" json:"id"`
-	Name       string   `db:"name" json:"name"`
-	Code       string   `db:"code" json:"code"`
-	ProgramIDs []string `json:"program_ids"` // Multiple programs
-	IsActive   bool     `db:"is_active" json:"is_active"`
-	CreatedAt  string   `db:"created_at" json:"created_at"`
-	UpdatedAt  string   `db:"updated_at" json:"updated_at"`
-}
 
 type createSpecialtyReq struct {
 	Name       string   `json:"name" binding:"required"`
@@ -174,62 +116,11 @@ func (h *DictionaryHandler) ListSpecialties(c *gin.Context) {
 	programID := c.Query("program_id")
 	tenantID := middleware.GetTenantID(c)
 
-	// Get base specialty data
-	query := `SELECT id, name, COALESCE(code, '') as code, is_active, 
-              to_char(created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as created_at,
-              to_char(updated_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as updated_at 
-              FROM specialties WHERE tenant_id = $1`
-	
-	args := []interface{}{tenantID}
-	nextArg := 2
-
-	if activeOnly {
-		query += ` AND is_active = true`
-	}
-	if programID != "" {
-		query += ` AND EXISTS (SELECT 1 FROM specialty_programs WHERE specialty_id = specialties.id AND program_id = $` + itoa(nextArg) + `)`
-		args = append(args, programID)
-		nextArg++
-	}
-	query += ` ORDER BY name`
-
-	type dbSpecialty struct {
-		ID        string `db:"id"`
-		Name      string `db:"name"`
-		Code      string `db:"code"`
-		IsActive  bool   `db:"is_active"`
-		CreatedAt string `db:"created_at"`
-		UpdatedAt string `db:"updated_at"`
-	}
-
-	var dbSpecialties []dbSpecialty
-
-	if err := h.db.Select(&dbSpecialties, query, args...); err != nil {
+	specialties, err := h.svc.ListSpecialties(c.Request.Context(), tenantID, activeOnly, programID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// For each specialty, fetch its program IDs
-	specialties := make([]Specialty, len(dbSpecialties))
-	for i, s := range dbSpecialties {
-		var programIDs []string
-		err := h.db.Select(&programIDs, `SELECT program_id FROM specialty_programs WHERE specialty_id = $1`, s.ID)
-		if err != nil {
-			programIDs = []string{}
-		}
-
-		specialties[i] = Specialty{
-			ID:         s.ID,
-			Name:       s.Name,
-			Code:       s.Code,
-			ProgramIDs: programIDs,
-			IsActive:   s.IsActive,
-			CreatedAt:  s.CreatedAt,
-			UpdatedAt:  s.UpdatedAt,
-		}
-	}
-
-
 	c.JSON(http.StatusOK, specialties)
 }
 
@@ -241,10 +132,7 @@ func (h *DictionaryHandler) CreateSpecialty(c *gin.Context) {
 		return
 	}
 
-	// Create specialty
-	var id string
-	err := h.db.QueryRow(`INSERT INTO specialties (name, code, tenant_id) VALUES ($1, $2, $3) RETURNING id`, 
-		req.Name, nullable(req.Code), tenantID).Scan(&id)
+	id, err := h.svc.CreateSpecialty(c.Request.Context(), tenantID, req.Name, req.Code, req.ProgramIDs)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Specialty with this name already exists"})
@@ -253,18 +141,6 @@ func (h *DictionaryHandler) CreateSpecialty(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Link to programs if provided
-	for _, programID := range req.ProgramIDs {
-		if programID != "" && programID != "no_program" {
-			_, err := h.db.Exec(`INSERT INTO specialty_programs (specialty_id, program_id) VALUES ($1, $2)`, id, programID)
-			if err != nil {
-				// Log error but don't fail the creation
-				continue
-			}
-		}
-	}
-
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
@@ -277,63 +153,22 @@ func (h *DictionaryHandler) UpdateSpecialty(c *gin.Context) {
 		return
 	}
 
-	setParts := []string{"updated_at = now()"}
-	args := []interface{}{}
-	argId := 1
-
-	if req.Name != "" {
-		setParts = append(setParts, "name = $"+itoa(argId))
-		args = append(args, req.Name)
-		argId++
-	}
-	if req.Code != "" {
-		setParts = append(setParts, "code = $"+itoa(argId))
-		args = append(args, req.Code)
-		argId++
-	}
-	if req.IsActive != nil {
-		setParts = append(setParts, "is_active = $"+itoa(argId))
-		args = append(args, *req.IsActive)
-		argId++
-	}
-
-	// Update specialty basic data
-	if len(setParts) > 1 { // More than just updated_at
-		args = append(args, id, tenantID)
-		query := "UPDATE specialties SET " + strings.Join(setParts, ", ") + " WHERE id = $" + itoa(argId) + " AND tenant_id = $" + itoa(argId+1)
-		_, err := h.db.Exec(query, args...)
-		if err != nil {
-			if strings.Contains(err.Error(), "unique constraint") {
-				c.JSON(http.StatusConflict, gin.H{"error": "Specialty with this name already exists"})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	err := h.svc.UpdateSpecialty(c.Request.Context(), tenantID, id, req.Name, req.Code, req.IsActive, req.ProgramIDs)
+	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Specialty with this name already exists"})
 			return
 		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-
-	// Update program relationships if provided
-	if req.ProgramIDs != nil {
-		// Delete existing relationships
-		_, _ = h.db.Exec(`DELETE FROM specialty_programs WHERE specialty_id = $1`, id)
-		// Add new relationships
-		for _, programID := range req.ProgramIDs {
-			if programID != "" && programID != "no_program" {
-				_, err := h.db.Exec(`INSERT INTO specialty_programs (specialty_id, program_id) VALUES ($1, $2)`, id, programID)
-				if err != nil {
-					continue
-				}
-			}
-		}
-	}
-
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 func (h *DictionaryHandler) DeleteSpecialty(c *gin.Context) {
 	id := c.Param("id")
 	tenantID := middleware.GetTenantID(c)
-	_, err := h.db.Exec(`UPDATE specialties SET is_active = false, updated_at = now() WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := h.svc.DeleteSpecialty(c.Request.Context(), tenantID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -342,16 +177,6 @@ func (h *DictionaryHandler) DeleteSpecialty(c *gin.Context) {
 }
 
 // --- Cohorts ---
-
-type Cohort struct {
-	ID        string `db:"id" json:"id"`
-	Name      string `db:"name" json:"name"`
-	StartDate string `db:"start_date" json:"start_date"`
-	EndDate   string `db:"end_date" json:"end_date"`
-	IsActive  bool   `db:"is_active" json:"is_active"`
-	CreatedAt string `db:"created_at" json:"created_at"`
-	UpdatedAt string `db:"updated_at" json:"updated_at"`
-}
 
 type createCohortReq struct {
 	Name      string `json:"name" binding:"required"`
@@ -369,27 +194,11 @@ type updateCohortReq struct {
 func (h *DictionaryHandler) ListCohorts(c *gin.Context) {
 	tenantID := middleware.GetTenantID(c)
 	activeOnly := c.Query("active") == "true"
-	query := `SELECT id, name, 
-              COALESCE(to_char(start_date, 'YYYY-MM-DD'), '') as start_date,
-              COALESCE(to_char(end_date, 'YYYY-MM-DD'), '') as end_date,
-              is_active, 
-              to_char(created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as created_at,
-              to_char(updated_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as updated_at 
-              FROM cohorts WHERE tenant_id = $1`
-	args := []interface{}{tenantID}
-
-	if activeOnly {
-		query += ` AND is_active = true`
-	}
-	query += ` ORDER BY name DESC` // Usually want newest cohorts first
-
-	var cohorts []Cohort
-	if err := h.db.Select(&cohorts, query, args...); err != nil {
+	
+	cohorts, err := h.svc.ListCohorts(c.Request.Context(), tenantID, activeOnly)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-	if cohorts == nil {
-		cohorts = []Cohort{}
 	}
 	c.JSON(http.StatusOK, cohorts)
 }
@@ -402,9 +211,7 @@ func (h *DictionaryHandler) CreateCohort(c *gin.Context) {
 		return
 	}
 
-	var id string
-	err := h.db.QueryRow(`INSERT INTO cohorts (name, start_date, end_date, tenant_id) VALUES ($1, $2, $3, $4) RETURNING id`, 
-		req.Name, nullable(req.StartDate), nullable(req.EndDate), tenantID).Scan(&id)
+	id, err := h.svc.CreateCohort(c.Request.Context(), tenantID, req.Name, req.StartDate, req.EndDate)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Cohort with this name already exists"})
@@ -425,35 +232,7 @@ func (h *DictionaryHandler) UpdateCohort(c *gin.Context) {
 		return
 	}
 
-	setParts := []string{"updated_at = now()"}
-	args := []interface{}{}
-	argId := 1
-
-	if req.Name != "" {
-		setParts = append(setParts, "name = $"+itoa(argId))
-		args = append(args, req.Name)
-		argId++
-	}
-	if req.StartDate != "" {
-		setParts = append(setParts, "start_date = $"+itoa(argId))
-		args = append(args, nullable(req.StartDate))
-		argId++
-	}
-	if req.EndDate != "" {
-		setParts = append(setParts, "end_date = $"+itoa(argId))
-		args = append(args, nullable(req.EndDate))
-		argId++
-	}
-	if req.IsActive != nil {
-		setParts = append(setParts, "is_active = $"+itoa(argId))
-		args = append(args, *req.IsActive)
-		argId++
-	}
-
-	args = append(args, id, tenantID)
-	query := "UPDATE cohorts SET " + strings.Join(setParts, ", ") + " WHERE id = $" + itoa(argId) + " AND tenant_id = $" + itoa(argId+1)
-
-	_, err := h.db.Exec(query, args...)
+	err := h.svc.UpdateCohort(c.Request.Context(), tenantID, id, req.Name, req.StartDate, req.EndDate, req.IsActive)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Cohort with this name already exists"})
@@ -468,7 +247,7 @@ func (h *DictionaryHandler) UpdateCohort(c *gin.Context) {
 func (h *DictionaryHandler) DeleteCohort(c *gin.Context) {
 	id := c.Param("id")
 	tenantID := middleware.GetTenantID(c)
-	_, err := h.db.Exec(`UPDATE cohorts SET is_active = false, updated_at = now() WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := h.svc.DeleteCohort(c.Request.Context(), tenantID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -477,15 +256,6 @@ func (h *DictionaryHandler) DeleteCohort(c *gin.Context) {
 }
 
 // --- Departments ---
-
-type Department struct {
-	ID        string `db:"id" json:"id"`
-	Name      string `db:"name" json:"name"`
-	Code      string `db:"code" json:"code"`
-	IsActive  bool   `db:"is_active" json:"is_active"`
-	CreatedAt string `db:"created_at" json:"created_at"`
-	UpdatedAt string `db:"updated_at" json:"updated_at"`
-}
 
 type createDepartmentReq struct {
 	Name string `json:"name" binding:"required"`
@@ -501,24 +271,11 @@ type updateDepartmentReq struct {
 func (h *DictionaryHandler) ListDepartments(c *gin.Context) {
 	activeOnly := c.Query("active") == "true"
 	tenantID := middleware.GetTenantID(c)
-	query := `SELECT id, name, COALESCE(code, '') as code, is_active, 
-              to_char(created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as created_at,
-              to_char(updated_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as updated_at 
-              FROM departments WHERE tenant_id = $1`
-	args := []interface{}{tenantID}
-
-	if activeOnly {
-		query += ` AND is_active = true`
-	}
-	query += ` ORDER BY name ASC`
-
-	var departments []Department
-	if err := h.db.Select(&departments, query, args...); err != nil {
+	
+	departments, err := h.svc.ListDepartments(c.Request.Context(), tenantID, activeOnly)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-	if departments == nil {
-		departments = []Department{}
 	}
 	c.JSON(http.StatusOK, departments)
 }
@@ -531,9 +288,7 @@ func (h *DictionaryHandler) CreateDepartment(c *gin.Context) {
 		return
 	}
 
-	var id string
-	err := h.db.QueryRow(`INSERT INTO departments (name, code, tenant_id) VALUES ($1, $2, $3) RETURNING id`, 
-		req.Name, nullable(req.Code), tenantID).Scan(&id)
+	id, err := h.svc.CreateDepartment(c.Request.Context(), tenantID, req.Name, req.Code)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Department with this name already exists"})
@@ -554,30 +309,7 @@ func (h *DictionaryHandler) UpdateDepartment(c *gin.Context) {
 		return
 	}
 
-	setParts := []string{"updated_at = now()"}
-	args := []interface{}{}
-	argId := 1
-
-	if req.Name != "" {
-		setParts = append(setParts, "name = $"+itoa(argId))
-		args = append(args, req.Name)
-		argId++
-	}
-	if req.Code != "" {
-		setParts = append(setParts, "code = $"+itoa(argId))
-		args = append(args, nullable(req.Code))
-		argId++
-	}
-	if req.IsActive != nil {
-		setParts = append(setParts, "is_active = $"+itoa(argId))
-		args = append(args, *req.IsActive)
-		argId++
-	}
-
-	args = append(args, id, tenantID)
-	query := "UPDATE departments SET " + strings.Join(setParts, ", ") + " WHERE id = $" + itoa(argId) + " AND tenant_id = $" + itoa(argId+1)
-
-	_, err := h.db.Exec(query, args...)
+	err := h.svc.UpdateDepartment(c.Request.Context(), tenantID, id, req.Name, req.Code, req.IsActive)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Department with this name already exists"})
@@ -592,16 +324,10 @@ func (h *DictionaryHandler) UpdateDepartment(c *gin.Context) {
 func (h *DictionaryHandler) DeleteDepartment(c *gin.Context) {
 	id := c.Param("id")
 	tenantID := middleware.GetTenantID(c)
-	_, err := h.db.Exec(`UPDATE departments SET is_active = false, updated_at = now() WHERE id = $1 AND tenant_id = $2`, id, tenantID)
+	err := h.svc.DeleteDepartment(c.Request.Context(), tenantID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
-}
-
-// Helper to convert int to string
-func itoa(i int) string {
-	// Simple implementation using strconv
-	return strconv.Itoa(i)
 }

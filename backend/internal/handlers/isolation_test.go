@@ -8,6 +8,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -55,7 +57,11 @@ func TestDataIsolation_BetweenTenants(t *testing.T) {
 	// Setup Handler
 	// We need a handler that accesses these resources. AdminHandler's GetStudentDetails or MonitorStudents or Documents check.
 	// Using AdminHandler for testing isolation on list endpoints.
-	h := handlers.NewAdminHandler(db, config.AppConfig{}, &playbook.Manager{})
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &playbook.Manager{}, config.AppConfig{})
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, &playbook.Manager{}, config.AppConfig{}, nil, nil, nil)
+	h := handlers.NewAdminHandler(config.AppConfig{}, &playbook.Manager{}, svc, jSvc)
 
 	gin.SetMode(gin.TestMode)
 

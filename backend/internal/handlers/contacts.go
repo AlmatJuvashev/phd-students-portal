@@ -1,32 +1,20 @@
 package handlers
 
 import (
-	"database/sql/driver"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 )
 
 type ContactsHandler struct {
-	db *sqlx.DB
+	svc *services.ContactService
 }
 
-type Contact struct {
-	ID        string       `db:"id" json:"id"`
-	TenantID  string       `db:"tenant_id" json:"tenant_id"` // Added for multitenancy
-	Name      LocalizedMap `db:"name" json:"name"`
-	Title     LocalizedMap `db:"title" json:"title,omitempty"`
-	Email     *string      `db:"email" json:"email,omitempty"`
-	Phone     *string      `db:"phone" json:"phone,omitempty"`
-	SortOrder int          `db:"sort_order" json:"sort_order"`
-	IsActive  bool         `db:"is_active" json:"is_active"`
-	CreatedAt string       `db:"created_at" json:"created_at"`
-	UpdatedAt string       `db:"updated_at" json:"updated_at"`
+func NewContactsHandler(svc *services.ContactService) *ContactsHandler {
+	return &ContactsHandler{svc: svc}
 }
 
 type contactPayload struct {
@@ -38,49 +26,33 @@ type contactPayload struct {
 	IsActive  *bool             `json:"is_active"`
 }
 
-func NewContactsHandler(db *sqlx.DB) *ContactsHandler {
-	return &ContactsHandler{db: db}
-}
-
 func (h *ContactsHandler) PublicList(c *gin.Context) {
-	var contacts []Contact
-	err := h.db.Select(
-		&contacts,
-		`SELECT id, name, title, email, phone, sort_order, is_active,
-		        to_char(created_at,'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created_at,
-		        to_char(updated_at,'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS updated_at
-		   FROM contacts
-		  WHERE is_active = true
-		  ORDER BY sort_order, created_at`,
-	)
+	tenantID, exists := c.Get("tenant_id")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
+		return
+	}
+
+	contacts, err := h.svc.ListPublic(c.Request.Context(), tenantID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-	if contacts == nil {
-		contacts = []Contact{}
 	}
 	c.JSON(http.StatusOK, contacts)
 }
 
 func (h *ContactsHandler) AdminList(c *gin.Context) {
-	includeInactive := c.Query("all") == "true"
-	query := `SELECT id, name, title, email, phone, sort_order, is_active,
-		        to_char(created_at,'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS created_at,
-		        to_char(updated_at,'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS updated_at
-		   FROM contacts`
-	if !includeInactive {
-		query += ` WHERE is_active = true`
-	}
-	query += ` ORDER BY sort_order, created_at`
-
-	var contacts []Contact
-	if err := h.db.Select(&contacts, query); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	tenantID, exists := c.Get("tenant_id")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
 		return
 	}
-	if contacts == nil {
-		contacts = []Contact{}
+	includeInactive := c.Query("all") == "true"
+	
+	contacts, err := h.svc.ListAdmin(c.Request.Context(), tenantID.(string), includeInactive)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, contacts)
 }
@@ -96,8 +68,8 @@ func (h *ContactsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	tenantID := c.GetString("tenant_id") // Get tenant from context
-	if tenantID == "" {
+	tenantIDStr := c.GetString("tenant_id")
+	if tenantIDStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant context required"})
 		return
 	}
@@ -111,18 +83,16 @@ func (h *ContactsHandler) Create(c *gin.Context) {
 		isActive = *req.IsActive
 	}
 
-	var id string
-	err := h.db.QueryRow(
-		`INSERT INTO contacts (tenant_id, name, title, email, phone, sort_order, is_active)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-		tenantID,
-		toJSON(req.Name),
-		toJSON(req.Title),
-		contactNullablePtr(req.Email),
-		contactNullablePtr(req.Phone),
-		sortOrder,
-		isActive,
-	).Scan(&id)
+	contact := models.Contact{
+		Name:      models.LocalizedMap(req.Name),
+		Title:     models.LocalizedMap(req.Title),
+		Email:     req.Email,
+		Phone:     req.Phone,
+		SortOrder: sortOrder,
+		IsActive:  isActive,
+	}
+
+	id, err := h.svc.Create(c.Request.Context(), tenantIDStr, contact)
 	if err != nil {
 		if strings.Contains(err.Error(), "contacts_name_key") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Contact already exists"})
@@ -136,49 +106,41 @@ func (h *ContactsHandler) Create(c *gin.Context) {
 
 func (h *ContactsHandler) Update(c *gin.Context) {
 	id := c.Param("id")
+	tenantIDStr := c.GetString("tenant_id")
+	
 	var req contactPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	setParts := []string{"updated_at = now()"}
-	args := []interface{}{}
+	updates := make(map[string]interface{})
 
 	if len(req.Name) > 0 {
-		setParts = append(setParts, "name = $"+strconv.Itoa(len(args)+1))
-		args = append(args, toJSON(req.Name))
+		updates["name"] = models.LocalizedMap(req.Name)
 	}
 	if req.Title != nil {
-		setParts = append(setParts, "title = $"+strconv.Itoa(len(args)+1))
-		args = append(args, toJSON(req.Title))
+		updates["title"] = models.LocalizedMap(req.Title)
 	}
 	if req.Email != nil {
-		setParts = append(setParts, "email = $"+strconv.Itoa(len(args)+1))
-		args = append(args, contactNullablePtr(req.Email))
+		updates["email"] = req.Email
 	}
 	if req.Phone != nil {
-		setParts = append(setParts, "phone = $"+strconv.Itoa(len(args)+1))
-		args = append(args, contactNullablePtr(req.Phone))
+		updates["phone"] = req.Phone
 	}
 	if req.SortOrder != nil {
-		setParts = append(setParts, "sort_order = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *req.SortOrder)
+		updates["sort_order"] = *req.SortOrder
 	}
 	if req.IsActive != nil {
-		setParts = append(setParts, "is_active = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *req.IsActive)
+		updates["is_active"] = *req.IsActive
 	}
 
-	if len(setParts) == 1 {
+	if len(updates) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no fields to update"})
 		return
 	}
 
-	args = append(args, id)
-	query := "UPDATE contacts SET " + strings.Join(setParts, ", ") + " WHERE id = $" + strconv.Itoa(len(args))
-
-	if _, err := h.db.Exec(query, args...); err != nil {
+	if err := h.svc.Update(c.Request.Context(), tenantIDStr, id, updates); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -187,64 +149,12 @@ func (h *ContactsHandler) Update(c *gin.Context) {
 
 func (h *ContactsHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
-	if _, err := h.db.Exec(`UPDATE contacts SET is_active = false, updated_at = now() WHERE id = $1`, id); err != nil {
+	tenantIDStr := c.GetString("tenant_id")
+	
+	if err := h.svc.Delete(c.Request.Context(), tenantIDStr, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
-func contactNullableString(v string) interface{} {
-	if strings.TrimSpace(v) == "" {
-		return nil
-	}
-	return v
-}
-
-func contactNullablePtr(v *string) interface{} {
-	if v == nil {
-		return nil
-	}
-	return contactNullableString(*v)
-}
-
-func toJSON(m map[string]string) interface{} {
-	if len(m) == 0 {
-		return nil
-	}
-	b, err := json.Marshal(m)
-	if err != nil {
-		return nil
-	}
-	return b
-}
-
-type LocalizedMap map[string]string
-
-func (m *LocalizedMap) Scan(value interface{}) error {
-	if value == nil {
-		*m = LocalizedMap{}
-		return nil
-	}
-	var b []byte
-	switch v := value.(type) {
-	case []byte:
-		b = v
-	case string:
-		b = []byte(v)
-	default:
-		return fmt.Errorf("unsupported type %T", v)
-	}
-	if len(b) == 0 {
-		*m = LocalizedMap{}
-		return nil
-	}
-	return json.Unmarshal(b, m)
-}
-
-func (m LocalizedMap) Value() (driver.Value, error) {
-	if len(m) == 0 {
-		return nil, nil
-	}
-	return json.Marshal(m)
-}

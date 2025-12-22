@@ -32,8 +32,8 @@ func TestUsersHandler_UpdateMe_ProfileFields(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil)
-	h := handlers.NewUsersHandler(svc, db, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -87,8 +87,8 @@ func TestUsersHandler_UpdateAvatar(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil)
-	h := handlers.NewUsersHandler(svc, db, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -136,8 +136,8 @@ func TestUsersHandler_RateLimiting(t *testing.T) {
 	}
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil)
-	h := handlers.NewUsersHandler(svc, db, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

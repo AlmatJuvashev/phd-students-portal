@@ -34,6 +34,22 @@ type UserTenantMembership struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
+// TenantMembershipView extends membership with tenant details
+type TenantMembershipView struct {
+	TenantID   string `db:"tenant_id" json:"tenant_id"`
+	TenantName string `db:"tenant_name" json:"tenant_name"`
+	TenantSlug string `db:"tenant_slug" json:"tenant_slug"`
+	Role       string `db:"role" json:"role"`
+	IsPrimary  bool   `db:"is_primary" json:"is_primary"`
+}
+
+// TenantStatsView includes user and admin counts
+type TenantStatsView struct {
+	Tenant
+	UserCount  int `db:"user_count" json:"user_count"`
+	AdminCount int `db:"admin_count" json:"admin_count"`
+}
+
 // TenantContext holds the current tenant context for a request
 type TenantContext struct {
 	Tenant     *Tenant

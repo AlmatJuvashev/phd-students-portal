@@ -1,10 +1,10 @@
-package chat
+package repository
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -12,21 +12,50 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Store struct {
+// ChatRepository defines data access for chat functionality.
+type ChatRepository interface {
+	// Room management
+	CreateRoom(ctx context.Context, tenantID, name string, roomType models.ChatRoomType, createdBy string, meta json.RawMessage) (*models.ChatRoom, error)
+	UpdateRoom(ctx context.Context, roomID string, name *string, archived *bool) (*models.ChatRoom, error)
+	GetRoom(ctx context.Context, roomID string) (*models.ChatRoom, error)
+	ListRoomsForUser(ctx context.Context, userID, tenantID string) ([]models.ChatRoom, error)
+	ListRoomsForTenant(ctx context.Context, tenantID string) ([]models.ChatRoom, error)
+	
+	// Member management
+	IsMember(ctx context.Context, roomID, userID string) (bool, error)
+	AddMember(ctx context.Context, roomID, userID string, role models.ChatRoomMemberRole) error
+	RemoveMember(ctx context.Context, roomID, userID string) error
+	ListMembers(ctx context.Context, roomID string) ([]models.MemberWithUser, error)
+	
+	// Message management
+	CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string, meta json.RawMessage) (*models.ChatMessage, error)
+	ListMessages(ctx context.Context, roomID string, limit int, before, after *time.Time) ([]models.ChatMessage, error)
+	UpdateMessage(ctx context.Context, msgID, userID, newBody string) (*models.ChatMessage, error)
+	DeleteMessage(ctx context.Context, msgID, userID string) error
+	MarkRoomAsRead(ctx context.Context, roomID, userID string) error
+	
+	// Batch helpers
+	GetUsersByFilters(ctx context.Context, filters map[string]string) ([]string, error)
+	GetUsersByIDs(ctx context.Context, userIDs []string) ([]models.UserInfo, error)
+}
+
+// SQLChatRepository implements ChatRepository using sqlx.
+type SQLChatRepository struct {
 	db *sqlx.DB
 }
 
-func NewStore(db *sqlx.DB) *Store {
-	return &Store{db: db}
+// NewSQLChatRepository creates a new instance.
+func NewSQLChatRepository(db *sqlx.DB) ChatRepository {
+	return &SQLChatRepository{db: db}
 }
 
-// CreateRoom inserts a new room with tenant_id.
-func (s *Store) CreateRoom(ctx context.Context, tenantID, name string, roomType models.ChatRoomType, createdBy string, meta json.RawMessage) (*models.ChatRoom, error) {
+// CreateRoom inserts a new room.
+func (r *SQLChatRepository) CreateRoom(ctx context.Context, tenantID, name string, roomType models.ChatRoomType, createdBy string, meta json.RawMessage) (*models.ChatRoom, error) {
 	if len(meta) == 0 {
 		meta = json.RawMessage("{}")
 	}
 	var room models.ChatRoom
-	err := s.db.QueryRowxContext(ctx, `
+	err := r.db.QueryRowxContext(ctx, `
 		WITH creator AS (
 			SELECT id, role FROM users WHERE id = $4
 		), new_room AS (
@@ -46,10 +75,10 @@ func (s *Store) CreateRoom(ctx context.Context, tenantID, name string, roomType 
 	return &room, nil
 }
 
-// UpdateRoom renames and/or archives a room.
-func (s *Store) UpdateRoom(ctx context.Context, roomID string, name *string, archived *bool) (*models.ChatRoom, error) {
+// UpdateRoom updates room details.
+func (r *SQLChatRepository) UpdateRoom(ctx context.Context, roomID string, name *string, archived *bool) (*models.ChatRoom, error) {
 	var room models.ChatRoom
-	err := s.db.QueryRowxContext(ctx, `
+	err := r.db.QueryRowxContext(ctx, `
 		UPDATE chat_rooms
 		SET
 			name = COALESCE($2, name),
@@ -63,10 +92,10 @@ func (s *Store) UpdateRoom(ctx context.Context, roomID string, name *string, arc
 	return &room, nil
 }
 
-// GetRoom fetches a chat room by ID.
-func (s *Store) GetRoom(ctx context.Context, roomID string) (*models.ChatRoom, error) {
+// GetRoom returns a room by ID.
+func (r *SQLChatRepository) GetRoom(ctx context.Context, roomID string) (*models.ChatRoom, error) {
 	var room models.ChatRoom
-	err := s.db.GetContext(ctx, &room, `
+	err := r.db.GetContext(ctx, &room, `
 		SELECT id, name, type, created_by, created_by_role, is_archived, meta, created_at
 		FROM chat_rooms
 		WHERE id = $1
@@ -77,10 +106,10 @@ func (s *Store) GetRoom(ctx context.Context, roomID string) (*models.ChatRoom, e
 	return &room, nil
 }
 
-// ListRoomsForUser returns rooms where the user is a member, including unread count and last message time.
-func (s *Store) ListRoomsForUser(ctx context.Context, userID, tenantID string) ([]models.ChatRoom, error) {
+// ListRoomsForUser returns rooms the user is a member of.
+func (r *SQLChatRepository) ListRoomsForUser(ctx context.Context, userID, tenantID string) ([]models.ChatRoom, error) {
 	var rooms []models.ChatRoom
-	err := s.db.SelectContext(ctx, &rooms, `
+	err := r.db.SelectContext(ctx, &rooms, `
 		SELECT 
 			r.id, r.name, r.type, r.created_by, r.created_by_role, r.is_archived, r.meta, r.created_at,
 			COALESCE(unread.count, 0) AS unread_count,
@@ -108,11 +137,10 @@ func (s *Store) ListRoomsForUser(ctx context.Context, userID, tenantID string) (
 	return rooms, err
 }
 
-// ListRoomsForTenant returns ALL rooms for a given tenant (for admin CRUD operations).
-// This does not require the admin to be a member of the rooms.
-func (s *Store) ListRoomsForTenant(ctx context.Context, tenantID string) ([]models.ChatRoom, error) {
+// ListRoomsForTenant list all rooms (admin).
+func (r *SQLChatRepository) ListRoomsForTenant(ctx context.Context, tenantID string) ([]models.ChatRoom, error) {
 	var rooms []models.ChatRoom
-	err := s.db.SelectContext(ctx, &rooms, `
+	err := r.db.SelectContext(ctx, &rooms, `
 		SELECT 
 			r.id, r.name, r.type, r.created_by, r.created_by_role, r.is_archived, r.meta, r.created_at,
 			COALESCE(member_count.count, 0) AS unread_count,
@@ -134,10 +162,10 @@ func (s *Store) ListRoomsForTenant(ctx context.Context, tenantID string) ([]mode
 	return rooms, err
 }
 
-// IsMember returns true if the user is in the room.
-func (s *Store) IsMember(ctx context.Context, roomID, userID string) (bool, error) {
+// IsMember checks if a user is in a room.
+func (r *SQLChatRepository) IsMember(ctx context.Context, roomID, userID string) (bool, error) {
 	var exists bool
-	err := s.db.QueryRowContext(ctx, `
+	err := r.db.QueryRowContext(ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM chat_room_members WHERE room_id = $1 AND user_id = $2
 		)
@@ -145,9 +173,9 @@ func (s *Store) IsMember(ctx context.Context, roomID, userID string) (bool, erro
 	return exists, err
 }
 
-// AddMember inserts or updates membership for a room. Derives tenant_id from room.
-func (s *Store) AddMember(ctx context.Context, roomID, userID string, role models.ChatRoomMemberRole) error {
-	_, err := s.db.ExecContext(ctx, `
+// AddMember adds or updates a member.
+func (r *SQLChatRepository) AddMember(ctx context.Context, roomID, userID string, role models.ChatRoomMemberRole) error {
+	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO chat_room_members (tenant_id, room_id, user_id, role_in_room)
 		SELECT r.tenant_id, $1, $2, $3 FROM chat_rooms r WHERE r.id = $1
 		ON CONFLICT (room_id, user_id)
@@ -156,31 +184,18 @@ func (s *Store) AddMember(ctx context.Context, roomID, userID string, role model
 	return err
 }
 
-// RemoveMember deletes a user from a room.
-func (s *Store) RemoveMember(ctx context.Context, roomID, userID string) error {
-	_, err := s.db.ExecContext(ctx, `
+// RemoveMember removes a member.
+func (r *SQLChatRepository) RemoveMember(ctx context.Context, roomID, userID string) error {
+	_, err := r.db.ExecContext(ctx, `
 		DELETE FROM chat_room_members WHERE room_id = $1 AND user_id = $2
 	`, roomID, userID)
 	return err
 }
 
-type MemberWithUser struct {
-	TenantID   string                    `db:"tenant_id" json:"tenant_id"`
-	RoomID     string                    `db:"room_id" json:"room_id"`
-	UserID     string                    `db:"user_id" json:"user_id"`
-	RoleInRoom models.ChatRoomMemberRole `db:"role_in_room" json:"role_in_room"`
-	JoinedAt   time.Time                 `db:"joined_at" json:"joined_at"`
-	LastReadAt *time.Time                `db:"last_read_at" json:"last_read_at"`
-	Email      string                    `db:"email" json:"email"`
-	FirstName  string                    `db:"first_name" json:"first_name"`
-	LastName   string                    `db:"last_name" json:"last_name"`
-	Username   string                    `db:"username" json:"username"`
-}
-
-// ListMembers returns members for a room with basic user info.
-func (s *Store) ListMembers(ctx context.Context, roomID string) ([]MemberWithUser, error) {
-	var members []MemberWithUser
-	err := s.db.SelectContext(ctx, &members, `
+// ListMembers lists members of a room.
+func (r *SQLChatRepository) ListMembers(ctx context.Context, roomID string) ([]models.MemberWithUser, error) {
+	var members []models.MemberWithUser
+	err := r.db.SelectContext(ctx, &members, `
 		SELECT 
 			m.tenant_id, m.room_id, m.user_id, m.role_in_room, m.joined_at, rs.last_read_at,
 			u.first_name, u.last_name, u.email, u.username
@@ -193,25 +208,14 @@ func (s *Store) ListMembers(ctx context.Context, roomID string) ([]MemberWithUse
 	return members, err
 }
 
-// CreateMessage inserts a message and returns the stored record. Derives tenant_id from room.
-func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string, meta json.RawMessage) (*models.ChatMessage, error) {
-	// Default meta to empty JSON object if nil/empty, otherwise Postgres errors with "invalid input syntax for type json"
+// CreateMessage sends a message.
+func (r *SQLChatRepository) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string, meta json.RawMessage) (*models.ChatMessage, error) {
 	if len(meta) == 0 {
 		meta = json.RawMessage("{}")
 	}
 
-	// Logging inputs for debugging
-	log.Printf("[CreateMessage] DBG: roomID=%s, senderID=%s", roomID, senderID)
-	log.Printf("[CreateMessage] DBG: meta string=%s", string(meta))
-	
-	attBytes, _ := json.Marshal(attachments)
-	log.Printf("[CreateMessage] DBG: attachments string=%s", string(attBytes))
-	
-	// Ensure importance is NULL if nil, usually sqlx handles this but let's be safe
-	// Using QueryRowxContext with string(meta) to ensure it is treated as text for jsonb
-	
 	var msg models.ChatMessage
-	err := s.db.QueryRowxContext(ctx, `
+	err := r.db.QueryRowxContext(ctx, `
 		WITH room_tenant AS (
 			SELECT tenant_id FROM chat_rooms WHERE id = $1
 		), ins AS (
@@ -232,8 +236,8 @@ func (s *Store) CreateMessage(ctx context.Context, roomID, senderID, body string
 	return &msg, nil
 }
 
-// ListMessages returns messages for a room with simple cursor filters.
-func (s *Store) ListMessages(ctx context.Context, roomID string, limit int, before, after *time.Time) ([]models.ChatMessage, error) {
+// ListMessages gets messages with pagination.
+func (r *SQLChatRepository) ListMessages(ctx context.Context, roomID string, limit int, before, after *time.Time) ([]models.ChatMessage, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -260,28 +264,28 @@ func (s *Store) ListMessages(ctx context.Context, roomID string, limit int, befo
 	argPos := 2
 
 	if before != nil {
-		query += " AND m.created_at < $" + itoa(argPos)
+		query += " AND m.created_at < $" + strconv.Itoa(argPos)
 		args = append(args, *before)
 		argPos++
 	}
 	if after != nil {
-		query += " AND m.created_at > $" + itoa(argPos)
+		query += " AND m.created_at > $" + strconv.Itoa(argPos)
 		args = append(args, *after)
 		argPos++
 	}
 
-	query += " ORDER BY m.created_at DESC LIMIT $" + itoa(argPos)
+	query += " ORDER BY m.created_at DESC LIMIT $" + strconv.Itoa(argPos)
 	args = append(args, limit)
 
 	var messages []models.ChatMessage
-	err := s.db.SelectContext(ctx, &messages, query, args...)
+	err := r.db.SelectContext(ctx, &messages, query, args...)
 	return messages, err
 }
 
-// UpdateMessage updates the body of a message and sets edited_at.
-func (s *Store) UpdateMessage(ctx context.Context, msgID, userID, newBody string) (*models.ChatMessage, error) {
+// UpdateMessage edits a message.
+func (r *SQLChatRepository) UpdateMessage(ctx context.Context, msgID, userID, newBody string) (*models.ChatMessage, error) {
 	var msg models.ChatMessage
-	err := s.db.QueryRowxContext(ctx, `
+	err := r.db.QueryRowxContext(ctx, `
 		UPDATE chat_messages
 		SET body = $1, edited_at = NOW()
 		WHERE id = $2 AND sender_id = $3 AND deleted_at IS NULL
@@ -293,9 +297,9 @@ func (s *Store) UpdateMessage(ctx context.Context, msgID, userID, newBody string
 	return &msg, nil
 }
 
-// DeleteMessage soft-deletes a message.
-func (s *Store) DeleteMessage(ctx context.Context, msgID, userID string) error {
-	res, err := s.db.ExecContext(ctx, `
+// DeleteMessage soft deletes a message.
+func (r *SQLChatRepository) DeleteMessage(ctx context.Context, msgID, userID string) error {
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE chat_messages
 		SET deleted_at = NOW()
 		WHERE id = $1 AND sender_id = $2 AND deleted_at IS NULL
@@ -313,9 +317,9 @@ func (s *Store) DeleteMessage(ctx context.Context, msgID, userID string) error {
 	return nil
 }
 
-// MarkRoomAsRead updates the last_read_at timestamp for a user in a room.
-func (s *Store) MarkRoomAsRead(ctx context.Context, roomID, userID string) error {
-	_, err := s.db.ExecContext(ctx, `
+// MarkRoomAsRead sets read status.
+func (r *SQLChatRepository) MarkRoomAsRead(ctx context.Context, roomID, userID string) error {
+	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO chat_room_read_status (room_id, user_id, last_read_at)
 		VALUES ($1, $2, NOW())
 		ON CONFLICT (room_id, user_id)
@@ -324,6 +328,39 @@ func (s *Store) MarkRoomAsRead(ctx context.Context, roomID, userID string) error
 	return err
 }
 
-func itoa(i int) string {
-	return strconv.FormatInt(int64(i), 10)
+// GetUsersByFilters is a helper for batch operations. 
+func (r *SQLChatRepository) GetUsersByFilters(ctx context.Context, filters map[string]string) ([]string, error) {
+	query := `SELECT id FROM users WHERE is_active=true`
+	args := []interface{}{}
+	
+	validFilters := []string{"program", "department", "cohort", "specialty", "role"}
+	for _, f := range validFilters {
+		if val, ok := filters[f]; ok && val != "" {
+			query += fmt.Sprintf(" AND %s=$%d", f, len(args)+1)
+			args = append(args, val)
+		}
+	}
+	
+	var userIDs []string
+	err := r.db.SelectContext(ctx, &userIDs, query, args...)
+	return userIDs, err
+}
+
+// GetUsersByIDs fetches basic user info for notifications.
+func (r *SQLChatRepository) GetUsersByIDs(ctx context.Context, userIDs []string) ([]models.UserInfo, error) {
+	if len(userIDs) == 0 {
+		return nil, nil
+	}
+	query, args, err := sqlx.In(`
+		SELECT id, email, first_name, last_name 
+		FROM users 
+		WHERE id IN (?)
+	`, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+	var users []models.UserInfo
+	err = r.db.SelectContext(ctx, &users, query, args...)
+	return users, err
 }

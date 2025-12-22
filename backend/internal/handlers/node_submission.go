@@ -1,49 +1,22 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"log"
-	"os"
-	"strings"
-	"time"
+	"net/http"
 
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 )
 
 type NodeSubmissionHandler struct {
-	db     *sqlx.DB
-	cfg    config.AppConfig
-	pb     *playbook.Manager
-	mailer *mailer.Mailer
+	svc *services.JourneyService
 }
 
-func NewNodeSubmissionHandler(db *sqlx.DB, cfg config.AppConfig, pb *playbook.Manager) *NodeSubmissionHandler {
-	return &NodeSubmissionHandler{
-		db:     db,
-		cfg:    cfg,
-		pb:     pb,
-		mailer: mailer.NewMailer(),
-	}
-}
-
-type nodeInstanceRecord struct {
-	ID         string         `db:"id"`
-	NodeID     string         `db:"node_id"`
-	State      string         `db:"state"`
-	CurrentRev int            `db:"current_rev"`
-	Locale     sql.NullString `db:"locale"`
+func NewNodeSubmissionHandler(svc *services.JourneyService) *NodeSubmissionHandler {
+	return &NodeSubmissionHandler{svc: svc}
 }
 
 // GET /api/journey/nodes/:nodeId/submission
@@ -51,90 +24,47 @@ func (h *NodeSubmissionHandler) GetSubmission(c *gin.Context) {
 	nodeID := c.Param("nodeId")
 	uid := userIDFromClaims(c)
 	if uid == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	locale := h.resolveLocale(c.Query("locale"))
 	tenantID := middleware.GetTenantID(c)
+	
+	l := c.Query("locale")
+	var localePtr *string
+	if l != "" {
+		localePtr = &l
+	}
 
-	instance, err := h.ensureNodeInstance(c, tenantID, uid, nodeID, locale)
+	dto, err := h.svc.GetSubmission(c.Request.Context(), tenantID, uid, nodeID, localePtr)
 	if err != nil {
-		handleNodeErr(c, err)
+		log.Printf("[NodeSubmission] Get error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	dto, err := h.buildSubmissionDTO(instance.ID)
-	if err != nil {
-		handleNodeErr(c, err)
-		return
-	}
-	c.JSON(200, dto)
+	c.JSON(http.StatusOK, dto)
 }
 
 // GET /api/journey/profile
 func (h *NodeSubmissionHandler) GetProfile(c *gin.Context) {
 	uid := userIDFromClaims(c)
 	if uid == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	
-	// Fetch profile data (S1_profile)
-	var profileForm map[string]interface{}
-	var rawProfile json.RawMessage
-	err := h.db.QueryRow(`SELECT form_data FROM profile_submissions WHERE user_id=$1`, uid).Scan(&rawProfile)
+	tenantID := middleware.GetTenantID(c)
+
+	dto, err := h.svc.GetSubmission(c.Request.Context(), tenantID, uid, "S1_profile", nil)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		// If no profile, start with empty map
-		profileForm = make(map[string]interface{})
-	} else {
-		if err := json.Unmarshal(rawProfile, &profileForm); err != nil {
-			c.JSON(500, gin.H{"error": "failed to parse profile data"})
-			return
-		}
+		log.Printf("[NodeSubmission] GetProfile error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-
-	// Fetch publications data (S1_publications_list)
-	// We need the latest revision of the form data for this node
-	var rawPubs json.RawMessage
-	err = h.db.QueryRow(`
-		SELECT r.form_data 
-		FROM node_instances i
-		JOIN node_instance_form_revisions r ON r.node_instance_id = i.id AND r.rev = i.current_rev
-		WHERE i.user_id=$1 AND i.node_id='S1_publications_list'
-	`, uid).Scan(&rawPubs)
-	
-	if err == nil {
-		// Parse publications data
-		var pubsData map[string]interface{}
-		if err := json.Unmarshal(rawPubs, &pubsData); err == nil {
-			// Merge publications into profile
-			// The structure of pubsData depends on how it's stored. 
-			// Based on buildSubmissionDTO, it might need normalization (buildApp7Form).
-			// But for raw storage, it's just the JSON.
-			// We'll merge top-level keys: wos_scopus, kokson, conferences
-			
-			// Check if we need to normalize (like in buildSubmissionDTO)
-			// For simplicity, we assume the raw stored data is what we want, 
-			// or we can try to use the same logic as buildSubmissionDTO if needed.
-			// Let's just merge the raw keys for now.
-			for k, v := range pubsData {
-				profileForm[k] = v
-			}
-		}
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		// Log error but don't fail the request
-		log.Printf("[GetProfile] Error fetching publications: %v", err)
-	}
-
-	c.JSON(200, profileForm)
+	c.JSON(http.StatusOK, dto)
 }
 
 type submissionReq struct {
-	FormData json.RawMessage `json:"form_data"`
-	State    string          `json:"state"`
+	State string          `json:"state"` // optional state transition
+	Data  json.RawMessage `json:"data"`  // form data
 }
 
 // PUT /api/journey/nodes/:nodeId/submission
@@ -142,69 +72,37 @@ func (h *NodeSubmissionHandler) PutSubmission(c *gin.Context) {
 	nodeID := c.Param("nodeId")
 	uid := userIDFromClaims(c)
 	if uid == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	role := roleFromContext(c)
+	tenantID := middleware.GetTenantID(c)
+	
 	var req submissionReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	locale := h.resolveLocale(c.Query("locale"))
-	tenantID := middleware.GetTenantID(c)
-
-	var err error
-	err = h.withTx(func(tx *sqlx.Tx) error {
-		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
-		if err != nil {
-			return err
-		}
-		if len(req.FormData) != 0 {
-			if nodeID == "S1_publications_list" {
-				sanitized, _, err := normalizeApp7Payload(req.FormData)
-				if err != nil {
-					return err
-				}
-				req.FormData = sanitized
-			}
-			if err := h.appendFormRevision(tx, inst, uid, req.FormData); err != nil {
-				return err
-			}
-			if nodeID == "S1_profile" {
-				if err := h.upsertProfileSubmission(tx, tenantID, uid, req.FormData); err != nil {
-					return err
-				}
-			}
-		}
-		if req.State != "" && req.State != inst.State {
-			role := roleFromContext(c)
-			if err := h.transitionState(tx, tenantID, inst, uid, role, req.State); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		handleNodeErr(c, err)
-		return
-	}
-	// reload dto
-	inst, _ := h.loadInstance(uid, nodeID)
 	
-	// If state is done, activate next nodes
-	if inst.State == "done" {
-		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID, tenantID); err != nil {
-			log.Printf("[PutSubmission] Failed to activate next nodes: %v", err)
-			// Don't fail the request
-		}
-	}
+	l := c.Query("locale")
+	var localePtr *string
+	if l != "" { localePtr = &l }
 
-	dto, err := h.buildSubmissionDTO(inst.ID)
+	// Data is already bytes (RawMessage)
+	err := h.svc.PutSubmission(c.Request.Context(), tenantID, uid, role, nodeID, localePtr, req.State, []byte(req.Data))
 	if err != nil {
-		handleNodeErr(c, err)
+		log.Printf("[NodeSubmission] Put error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()}) // Bad Request usually for state/val errors
 		return
 	}
-	c.JSON(200, dto)
+	
+	// Return updated DTO
+	dto, err := h.svc.GetSubmission(c.Request.Context(), tenantID, uid, nodeID, localePtr)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"status": "saved_but_reload_failed"}) 
+		return
+	}
+	c.JSON(http.StatusOK, dto)
 }
 
 type nodeUploadPresignReq struct {
@@ -219,101 +117,30 @@ func (h *NodeSubmissionHandler) PresignUpload(c *gin.Context) {
 	nodeID := c.Param("nodeId")
 	uid := userIDFromClaims(c)
 	if uid == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
+	
 	var req nodeUploadPresignReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	maxBytes := int64(h.cfg.FileUploadMaxMB) * 1024 * 1024
-	if maxBytes > 0 && req.SizeBytes > maxBytes {
-		c.JSON(400, gin.H{"error": fmt.Sprintf("file too large (max %d MB)", h.cfg.FileUploadMaxMB)})
-	}
-	locale := h.resolveLocale(c.Query("locale"))
-	tenantID := middleware.GetTenantID(c)
-	var docID string
-	var instanceID string
-	var err error
-	err = h.withTx(func(tx *sqlx.Tx) error {
-		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
-		if err != nil {
-			return err
-		}
-		slot, err := h.getSlot(tx, inst.ID, req.SlotKey)
-		if err != nil {
-			return err
-		}
-		if len(slot.MimeWhitelist) > 0 {
-			valid := false
-			for _, m := range slot.MimeWhitelist {
-				if strings.EqualFold(m, req.ContentType) {
-					valid = true
-					break
-				}
-			}
-			if !valid {
-				return fmt.Errorf("invalid mime type")
-			}
-		}
-		instanceID = inst.ID
-		docID, err = h.ensureDocumentForSlot(tx, tenantID, uid, nodeID, req.SlotKey)
-		return err
-	})
-	if err != nil {
-		handleNodeErr(c, err)
-		return
-	}
-	s3c, err := services.NewS3FromEnv()
-	if err != nil {
-		handleNodeErr(c, err)
-		return
-	}
-	if s3c == nil {
-		c.JSON(400, gin.H{"error": "S3 not configured"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	
-	// Validate file size
-	if err := services.ValidateFileSize(req.SizeBytes); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	
-	// Validate content type
-	if err := services.ValidateContentType(req.ContentType); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	
-	objectKey := storage.BuildNodeObjectKey(uid, nodeID, req.SlotKey, req.Filename)
-	expires := services.GetPresignExpires()
-	url, err := s3c.PresignPut(objectKey, req.ContentType, expires)
+	url, err := h.svc.PresignUpload(c.Request.Context(), uid, nodeID, req.SlotKey, req.Filename, req.ContentType, req.SizeBytes)
 	if err != nil {
-		handleNodeErr(c, err)
+		log.Printf("[NodeSubmission] Presign error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	_ = instanceID // currently unused but reserved for future audit
-	resp := gin.H{
-		"upload_url":       url,
-		"object_key":       objectKey,
-		"document_id":      docID,
-		"bucket":           s3c.Bucket(),
-		"expires_in":       int(expires.Seconds()),
-		"max_size_bytes":   maxBytes,
-		"required_headers": map[string]string{"Content-Type": req.ContentType},
-	}
-	c.JSON(200, resp)
+	c.JSON(http.StatusOK, gin.H{"url": url})
 }
 
-type nodeAttachReq struct {
-	SlotKey     string `json:"slot_key" binding:"required"`
-	Filename    string `json:"filename" binding:"required"`
-	ObjectKey   string `json:"object_key" binding:"required"`
-	ContentType string `json:"content_type" binding:"required"`
-	SizeBytes   int64  `json:"size_bytes" binding:"required"`
-	ETag        string `json:"etag"`
+type nodeUploadAttachReq struct {
+	SlotKey          string `json:"slot_key" binding:"required"`
+	UploadedFilename string `json:"uploaded_filename" binding:"required"` // S3 key or part
+	OriginalFilename string `json:"original_filename" binding:"required"`
+	SizeBytes        int64  `json:"size_bytes" binding:"required"`
 }
 
 // POST /api/journey/nodes/:nodeId/uploads/attach
@@ -321,135 +148,33 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 	nodeID := c.Param("nodeId")
 	uid := userIDFromClaims(c)
 	if uid == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	log.Printf("[AttachUpload] Starting: nodeID=%s, userID=%s", nodeID, uid)
-	role := roleFromContext(c)
-	var req nodeAttachReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("[AttachUpload] JSON bind error: %v", err)
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	log.Printf("[AttachUpload] Request: slotKey=%s, filename=%s, size=%d", req.SlotKey, req.Filename, req.SizeBytes)
-	s3c, err := services.NewS3FromEnv()
-	if err != nil {
-		log.Printf("[AttachUpload] S3 init error: %v", err)
-		handleNodeErr(c, err)
-		return
-	}
-	if s3c == nil {
-		log.Printf("[AttachUpload] S3 not configured")
-		c.JSON(400, gin.H{"error": "S3 not configured"})
-		return
-	}
-	bucket := s3c.Bucket()
-	locale := h.resolveLocale(c.Query("locale"))
 	tenantID := middleware.GetTenantID(c)
-	log.Printf("[AttachUpload] Starting transaction")
-	err = h.withTx(func(tx *sqlx.Tx) error {
-		log.Printf("[AttachUpload] ensureNodeInstanceTx...")
-		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
-		if err != nil {
-			log.Printf("[AttachUpload] ensureNodeInstanceTx error: %v", err)
-			return err
-		}
-		log.Printf("[AttachUpload] Instance: id=%s, state=%s", inst.ID, inst.State)
-		
-		log.Printf("[AttachUpload] getSlot...")
-		slot, err := h.getSlot(tx, inst.ID, req.SlotKey)
-		if err != nil {
-			log.Printf("[AttachUpload] getSlot error: %v", err)
-			return err
-		}
-		log.Printf("[AttachUpload] Slot: id=%s, multiplicity=%s", slot.ID, slot.Multiplicity)
-		
-		log.Printf("[AttachUpload] ensureDocumentForSlot...")
-		docID, err := h.ensureDocumentForSlot(tx, tenantID, uid, nodeID, req.SlotKey)
-		if err != nil {
-			log.Printf("[AttachUpload] ensureDocumentForSlot error: %v", err)
-			return err
-		}
-		log.Printf("[AttachUpload] Document ID: %s", docID)
-		
-		log.Printf("[AttachUpload] Inserting document_version...")
-		var versionID string
-		err = tx.QueryRowx(`INSERT INTO document_versions (document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag, tenant_id)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8, $9) RETURNING id`,
-			docID, req.ObjectKey, req.ObjectKey, bucket, req.ContentType, req.SizeBytes, uid, nullableString(req.ETag), tenantID).Scan(&versionID)
-		if err != nil {
-			log.Printf("[AttachUpload] Insert document_version error: %v", err)
-			return err
-		}
-		log.Printf("[AttachUpload] Version ID: %s", versionID)
-		
-		log.Printf("[AttachUpload] Updating document current_version_id...")
-		_, err = tx.Exec(`UPDATE documents SET current_version_id=$1 WHERE id=$2`, versionID, docID)
-		if err != nil {
-			log.Printf("[AttachUpload] Update document error: %v", err)
-			return err
-		}
-		
-		// Keep all attachments active to maintain submission history
-		// Students can upload multiple versions and see the full history
-		
-		log.Printf("[AttachUpload] Inserting slot attachment...")
-		_, err = tx.Exec(`INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, filename, size_bytes, attached_by, status)
-			VALUES ($1,$2,$3,$4,$5,'submitted')`, slot.ID, versionID, req.Filename, req.SizeBytes, uid)
-		if err != nil {
-			log.Printf("[AttachUpload] Insert slot attachment error: %v", err)
-			return err
-		}
-		
-		log.Printf("[AttachUpload] Inserting event...")
-        if err := h.insertEvent(tx, inst.ID, "attachment_uploaded", uid, map[string]any{"slot_key": req.SlotKey, "version_id": versionID}); err != nil {
-			log.Printf("[AttachUpload] Insert event error: %v", err)
-			return err
-		}
-		
-		if inst.State == "active" {
-			log.Printf("[AttachUpload] Transitioning state to submitted...")
-			if err := h.transitionState(tx, tenantID, inst, uid, role, "submitted"); err != nil {
-				log.Printf("[AttachUpload] Transition state error: %v", err)
-				return err
-			}
-		}
-		log.Printf("[AttachUpload] Transaction completed successfully")
-		return nil
-	})
-	if err != nil {
-		log.Printf("[AttachUpload] Transaction error: %v", err)
-		handleNodeErr(c, err)
-		return
-	}
-	log.Printf("[AttachUpload] Loading instance...")
-	inst, err := h.loadInstance(uid, nodeID)
-	if err != nil {
-		log.Printf("[AttachUpload] loadInstance error: %v", err)
-		handleNodeErr(c, err)
+	
+	var req nodeUploadAttachReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	
-	// Notify assigned advisors about the submission (non-blocking, errors just logged)
-	go func() {
-		if err := services.NotifyAdvisorsOnSubmission(h.db, uid, nodeID, inst.ID, ""); err != nil {
-			log.Printf("[AttachUpload] NotifyAdvisors error (non-fatal): %v", err)
-		}
-	}()
-	log.Printf("[AttachUpload] Building submission DTO...")
-	dto, err := h.buildSubmissionDTO(inst.ID)
+	err := h.svc.AttachUpload(c.Request.Context(), tenantID, uid, nodeID, req.SlotKey, req.UploadedFilename, req.OriginalFilename, req.SizeBytes)
 	if err != nil {
-		log.Printf("[AttachUpload] buildSubmissionDTO error: %v", err)
-		handleNodeErr(c, err)
+		log.Printf("[NodeSubmission] Attach error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	log.Printf("[AttachUpload] Success! Returning 200")
-	c.JSON(200, dto)
-}
-
-type stateReq struct {
-	State string `json:"state" binding:"required"`
+	
+	// Respond with updated DTO or specific attachment info?
+	// Original handler might have returned success.
+	// We'll return the full submission DTO for UI refresh.
+	dto, err := h.svc.GetSubmission(c.Request.Context(), tenantID, uid, nodeID, nil)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"status": "attached"})
+		return
+	}
+	c.JSON(http.StatusOK, dto)
 }
 
 // PATCH /api/journey/nodes/:nodeId/state
@@ -457,621 +182,27 @@ func (h *NodeSubmissionHandler) PatchState(c *gin.Context) {
 	nodeID := c.Param("nodeId")
 	uid := userIDFromClaims(c)
 	if uid == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-	var req stateReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	locale := h.resolveLocale(c.Query("locale"))
+	role := roleFromContext(c)
 	tenantID := middleware.GetTenantID(c)
-	err := h.withTx(func(tx *sqlx.Tx) error {
-		inst, err := h.ensureNodeInstanceTx(tx, tenantID, uid, nodeID, locale)
-		if err != nil {
-			return err
-		}
-		role := roleFromContext(c)
-		if err := h.transitionState(tx, tenantID, inst, uid, role, req.State); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		handleNodeErr(c, err)
-		return
-	}
-	inst, _ := h.loadInstance(uid, nodeID)
-	
-	// If state is done, activate next nodes
-	if inst.State == "done" {
-		if err := ActivateNextNodes(h.db, h.pb, uid, nodeID, tenantID); err != nil {
-			log.Printf("[PatchState] Failed to activate next nodes: %v", err)
-		}
-	}
 
-	dto, err := h.buildSubmissionDTO(inst.ID)
-	if err != nil {
-		handleNodeErr(c, err)
-		return
+	var req struct {
+		State string `json:"state" binding:"required"`
 	}
-	c.JSON(200, dto)
-}
-
-func (h *NodeSubmissionHandler) withTx(fn func(tx *sqlx.Tx) error) error {
-	tx, err := h.db.Beginx()
-	if err != nil {
-		return err
-	}
-	err = fn(tx)
-	if err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-	return tx.Commit()
-}
-
-func (h *NodeSubmissionHandler) ensureNodeInstance(c *gin.Context, tenantID, userID, nodeID, locale string) (*nodeInstanceRecord, error) {
-	tx, err := h.db.Beginx()
-	if err != nil {
-		return nil, err
-	}
-	inst, err := h.ensureNodeInstanceTx(tx, tenantID, userID, nodeID, locale)
-	if err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-	return inst, nil
-}
-
-func (h *NodeSubmissionHandler) ensureNodeInstanceTx(tx *sqlx.Tx, tenantID, userID, nodeID, locale string) (*nodeInstanceRecord, error) {
-    inst, err := h.loadInstanceTx(tx, userID, nodeID)
-    if err == nil {
-        // Backfill missing upload slots if playbook now defines them
-        if err := h.ensureSlotsForInstance(tx, tenantID, inst.ID, nodeID); err != nil {
-            return nil, err
-        }
-        return inst, nil
-    }
-	if !errors.Is(err, sql.ErrNoRows) {
-		return nil, err
-	}
-	nodeDef, ok := h.pb.NodeDefinition(nodeID)
-	if !ok {
-		return nil, fmt.Errorf("node not found in playbook")
-	}
-	var rec nodeInstanceRecord
-	log.Printf("[ensureNodeInstanceTx] Creating node instance: userID=%s nodeID=%s versionID=%s", userID, nodeID, h.pb.VersionID)
-	err = tx.QueryRowx(`INSERT INTO node_instances (user_id, playbook_version_id, node_id, state, locale, tenant_id)
-        VALUES ($1,$2,$3,'active',$4, $5)
-        RETURNING id, node_id, state, current_rev, locale`, userID, h.pb.VersionID, nodeID, locale, tenantID).Scan(&rec.ID, &rec.NodeID, &rec.State, &rec.CurrentRev, &rec.Locale)
-	if err != nil {
-		log.Printf("[ensureNodeInstanceTx] INSERT failed: %v (versionID=%s)", err, h.pb.VersionID)
-		return nil, err
-	}
-    if nodeDef.Requirements != nil {
-        for _, up := range nodeDef.Requirements.Uploads {
-            req := up.Required
-            mime := pq.Array(up.Mime)
-            if len(up.Mime) == 0 {
-                mime = pq.Array([]string{})
-            }
-            _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist, tenant_id)
-                VALUES ($1,$2,$3,'single',$4, $5)`, rec.ID, up.Key, req, mime, tenantID)
-            if err != nil {
-                return nil, err
-            }
-        }
-    }
-	if err := h.insertEvent(tx, rec.ID, "opened", userID, map[string]any{"locale": locale}); err != nil {
-		return nil, err
-	}
-	_, _ = tx.Exec(`INSERT INTO journey_states (user_id, node_id, state, tenant_id)
-        VALUES ($1,$2,'active', $3)
-        ON CONFLICT (user_id, node_id) DO UPDATE SET state='active', updated_at=now()`, userID, nodeID, tenantID)
-	return &rec, nil
-}
-
-// ensureSlotsForInstance inserts any missing slot rows for an existing node instance
-// based on the current playbook definition (useful after adding requirements.uploads
-// to a node in a newer playbook version).
-func (h *NodeSubmissionHandler) ensureSlotsForInstance(tx *sqlx.Tx, tenantID, instanceID, nodeID string) error {
-    nodeDef, ok := h.pb.NodeDefinition(nodeID)
-    if !ok || nodeDef.Requirements == nil || len(nodeDef.Requirements.Uploads) == 0 {
-        return nil
-    }
-    // Load existing slot keys for this instance
-    var existing []string
-    if err := tx.Select(&existing, `SELECT slot_key FROM node_instance_slots WHERE node_instance_id=$1`, instanceID); err != nil {
-        return err
-    }
-    present := map[string]struct{}{}
-    for _, k := range existing {
-        present[k] = struct{}{}
-    }
-    // Insert any missing slots
-    for _, up := range nodeDef.Requirements.Uploads {
-        if _, ok := present[up.Key]; ok {
-            continue
-        }
-        mime := pq.Array(up.Mime)
-        if len(up.Mime) == 0 {
-            mime = pq.Array([]string{})
-        }
-        if _, err := tx.Exec(`INSERT INTO node_instance_slots (node_instance_id, slot_key, required, multiplicity, mime_whitelist, tenant_id)
-            VALUES ($1,$2,$3,'single',$4, $5)`, instanceID, up.Key, up.Required, mime, tenantID); err != nil {
-            return err
-        }
-    }
-    return nil
-}
-
-func (h *NodeSubmissionHandler) loadInstanceTx(tx *sqlx.Tx, userID, nodeID string) (*nodeInstanceRecord, error) {
-	var rec nodeInstanceRecord
-	err := tx.QueryRowx(`SELECT id, node_id, state, current_rev, locale FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 AND node_id=$3`, userID, h.pb.VersionID, nodeID).Scan(&rec.ID, &rec.NodeID, &rec.State, &rec.CurrentRev, &rec.Locale)
-	if err != nil {
-		return nil, err
-	}
-	return &rec, nil
-}
-
-func (h *NodeSubmissionHandler) loadInstance(userID, nodeID string) (*nodeInstanceRecord, error) {
-	var rec nodeInstanceRecord
-	err := h.db.QueryRowx(`SELECT id, node_id, state, current_rev, locale FROM node_instances WHERE user_id=$1 AND playbook_version_id=$2 AND node_id=$3`, userID, h.pb.VersionID, nodeID).Scan(&rec.ID, &rec.NodeID, &rec.State, &rec.CurrentRev, &rec.Locale)
-	if err != nil {
-		return nil, err
-	}
-	return &rec, nil
-}
-
-func (h *NodeSubmissionHandler) appendFormRevision(tx *sqlx.Tx, inst *nodeInstanceRecord, userID string, data json.RawMessage) error {
-	nextRev := inst.CurrentRev + 1
-	if _, err := tx.Exec(`INSERT INTO node_instance_form_revisions (node_instance_id, rev, form_data, edited_by)
-        VALUES ($1,$2,$3,$4)`, inst.ID, nextRev, data, userID); err != nil {
-		return err
-	}
-	if _, err := tx.Exec(`UPDATE node_instances SET current_rev=$1, updated_at=now() WHERE id=$2`, nextRev, inst.ID); err != nil {
-		return err
-	}
-	inst.CurrentRev = nextRev
-	return h.insertEvent(tx, inst.ID, "draft_saved", userID, map[string]any{"rev": nextRev})
-}
-
-func (h *NodeSubmissionHandler) upsertProfileSubmission(tx *sqlx.Tx, tenantID, userID string, data json.RawMessage) error {
-	_, err := tx.Exec(`INSERT INTO profile_submissions (user_id, form_data, tenant_id)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_id)
-        DO UPDATE SET form_data = EXCLUDED.form_data, updated_at = NOW()`, userID, data, tenantID)
-	if err != nil {
-		return err
-	}
-	
-	// Reverse sync: Update users table with specialty from profile form
-	// This keeps the users.specialty column in sync with profile_submissions
-	var formData map[string]interface{}
-	if err := json.Unmarshal(data, &formData); err != nil {
-		log.Printf("[upsertProfileSubmission] Failed to parse form data for sync: %v", err)
-		return nil // Don't fail the main operation
-	}
-	
-	// Sync specialty if present
-	if specialty, ok := formData["specialty"].(string); ok && specialty != "" {
-		_, err = tx.Exec(`UPDATE users SET specialty = $1, updated_at = NOW() WHERE id = $2`, specialty, userID)
-		if err != nil {
-			log.Printf("[upsertProfileSubmission] Failed to sync specialty to users: %v", err)
-		}
-	}
-	// Sync program if present
-	if program, ok := formData["program"].(string); ok && program != "" {
-		_, err = tx.Exec(`UPDATE users SET program = $1, updated_at = NOW() WHERE id = $2`, program, userID)
-		if err != nil {
-			log.Printf("[upsertProfileSubmission] Failed to sync program to users: %v", err)
-		}
-	}
-	
-	return nil
-}
-
-func (h *NodeSubmissionHandler) transitionState(tx *sqlx.Tx, tenantID string, inst *nodeInstanceRecord, userID, role, newState string) error {
-	roles := []string{}
-
-	err := tx.QueryRowx(`SELECT allowed_roles FROM node_state_transitions WHERE from_state=$1 AND to_state=$2`, inst.State, newState).Scan(pq.Array(&roles))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// Iteration override: allow students to complete nodes directly to done
-			if role == "student" && newState == "done" && (inst.State == "active" || inst.State == "submitted") {
-				// treat as allowed below
-				roles = []string{role}
-			} else {
-				return fmt.Errorf("transition not allowed")
-			}
-		} else {
-			return err
-		}
-	}
-	allowed := false
-	for _, r := range roles {
-		if r == role {
-			allowed = true
-			break
-		}
-	}
-	// Additional safety: keep override even if roles were loaded but current role not listed
-	if !allowed && role == "student" && newState == "done" && (inst.State == "active" || inst.State == "submitted") {
-		allowed = true
-	}
-	if !allowed {
-		return fmt.Errorf("role %s cannot transition from %s to %s", role, inst.State, newState)
-	}
-	previous := inst.State
-	query := "UPDATE node_instances SET state=$1, updated_at=now() WHERE id=$2"
-	if newState == "submitted" {
-		query = "UPDATE node_instances SET state=$1, submitted_at=now(), updated_at=now() WHERE id=$2"
-	}
-	if _, err := tx.Exec(query, newState, inst.ID); err != nil {
-		return err
-	}
-	_, err = tx.Exec(`INSERT INTO journey_states (user_id,node_id,state,tenant_id) VALUES ($1,$2,$3,$4)
-        ON CONFLICT (user_id,node_id) DO UPDATE SET state=$3, updated_at=now()`, userID, inst.NodeID, newState, tenantID)
-	if err != nil {
-		return err
-	}
-	inst.State = newState
-	payload := map[string]any{"from": previous, "to": newState}
-	
-	// Send email notification after successful state transition
-	go h.sendStateChangeEmail(userID, inst.NodeID, previous, newState)
-	
-	return h.insertEvent(tx, inst.ID, "state_changed", userID, payload)
-}
-
-func (h *NodeSubmissionHandler) getSlot(tx *sqlx.Tx, instanceID, slotKey string) (slotRecord, error) {
-	var slot slotRecord
-	err := tx.QueryRowx(`SELECT id, slot_key, required, multiplicity, mime_whitelist FROM node_instance_slots WHERE node_instance_id=$1 AND slot_key=$2`, instanceID, slotKey).Scan(&slot.ID, &slot.SlotKey, &slot.Required, &slot.Multiplicity, pq.Array(&slot.MimeWhitelist))
-	if err != nil {
-		return slotRecord{}, err
-	}
-	slot.NodeInstanceID = instanceID
-	return slot, nil
-}
-
-type slotRecord struct {
-	ID             string
-	NodeInstanceID string
-	SlotKey        string
-	Required       bool
-	Multiplicity   string
-	MimeWhitelist  []string
-}
-
-func (h *NodeSubmissionHandler) ensureDocumentForSlot(tx *sqlx.Tx, tenantID, userID, nodeID, slotKey string) (string, error) {
-	title := fmt.Sprintf("node:%s:%s", nodeID, slotKey)
-	var docID string
-	err := tx.QueryRowx(`SELECT id FROM documents WHERE user_id=$1 AND title=$2`, userID, title).Scan(&docID)
-	if err == nil {
-		return docID, nil
-	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return "", err
-	}
-	err = tx.QueryRowx(`INSERT INTO documents (user_id, kind, title, tenant_id) VALUES ($1,'node_slot',$2, $3) RETURNING id`, userID, title, tenantID).Scan(&docID)
-	if err != nil {
-		return "", err
-	}
-	return docID, nil
-}
-
-func (h *NodeSubmissionHandler) insertEvent(tx *sqlx.Tx, nodeInstanceID, eventType, actorID string, payload map[string]any) error {
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	_, err = tx.Exec(`INSERT INTO node_events (node_instance_id, event_type, payload, actor_id) VALUES ($1,$2,$3,$4)`, nodeInstanceID, eventType, data, actorID)
-	return err
-}
-
-func (h *NodeSubmissionHandler) sendStateChangeEmail(userID, nodeID, fromState, toState string) {
-	// Get user email and name
-	var user struct {
-		Email     string `db:"email"`
-		FirstName string `db:"first_name"`
-		LastName  string `db:"last_name"`
-	}
-	err := h.db.QueryRowx(`SELECT email, first_name, last_name FROM users WHERE id=$1`, userID).Scan(&user.Email, &user.FirstName, &user.LastName)
-	if err != nil {
-		log.Printf("[sendStateChangeEmail] Error fetching user: %v", err)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	studentName := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
-	frontendURL := os.Getenv("FRONTEND_BASE_URL")
-	if frontendURL == "" {
-		frontendURL = "http://localhost:5173"
-	}
-
-	// Send email to student when state changes to "approved" or "changes_requested"
-	if toState == "approved" || toState == "changes_requested" {
-		err = h.mailer.SendStateChangeNotification(user.Email, studentName, nodeID, fromState, toState, frontendURL)
-		if err != nil {
-			log.Printf("[sendStateChangeEmail] Error sending email to student: %v", err)
-		}
-	}
-
-	// Send email to admin when student submits
-	if toState == "submitted" {
-		adminEmail := os.Getenv("ADMIN_EMAIL")
-		if adminEmail != "" {
-			subject := fmt.Sprintf("PhD Portal: New Submission - %s", nodeID)
-			body := fmt.Sprintf(`
-				<html>
-				<body style="font-family: Arial, sans-serif;">
-					<h2>New Student Submission</h2>
-					<p><strong>Student:</strong> %s</p>
-					<p><strong>Node:</strong> %s</p>
-					<p><strong>Status:</strong> %s → %s</p>
-					<p><a href="%s/admin/students-monitor">View in Admin Panel</a></p>
-				</body>
-				</html>
-			`, studentName, nodeID, fromState, toState, frontendURL)
-			
-			err = h.mailer.SendNotificationEmail(adminEmail, subject, body)
-			if err != nil {
-				log.Printf("[sendStateChangeEmail] Error sending email to admin: %v", err)
-			}
-		}
-	}
-}
-
-func (h *NodeSubmissionHandler) buildSubmissionDTO(instanceID string) (gin.H, error) {
-	var inst struct {
-		ID         string         `db:"id"`
-		NodeID     string         `db:"node_id"`
-		State      string         `db:"state"`
-		Locale     sql.NullString `db:"locale"`
-		CurrentRev int            `db:"current_rev"`
-	}
-	err := h.db.QueryRowx(`SELECT id, node_id, state, locale, current_rev FROM node_instances WHERE id=$1`, instanceID).Scan(&inst.ID, &inst.NodeID, &inst.State, &inst.Locale, &inst.CurrentRev)
+	err := h.svc.PatchState(c.Request.Context(), tenantID, uid, role, nodeID, req.State)
 	if err != nil {
-		return nil, err
-	}
-	localeStr := ""
-	if inst.Locale.Valid {
-		localeStr = inst.Locale.String
-	}
-	dto := gin.H{
-		"node_id":             inst.NodeID,
-		"playbook_version_id": h.pb.VersionID,
-		"state":               inst.State,
-		"locale":              localeStr,
-	}
-	if inst.CurrentRev > 0 {
-		var rev struct {
-			Rev  int             `db:"rev"`
-			Data json.RawMessage `db:"form_data"`
-		}
-		err := h.db.QueryRowx(`SELECT rev, form_data FROM node_instance_form_revisions WHERE node_instance_id=$1 AND rev=$2`, instanceID, inst.CurrentRev).Scan(&rev.Rev, &rev.Data)
-		if err == nil {
-			if inst.NodeID == "S1_publications_list" {
-				if form, parseErr := buildApp7Form(rev.Data); parseErr == nil {
-					summary := summarizeApp7(form.Sections)
-					for key, val := range form.LegacyCounts {
-						if val > 0 && summary[key] == 0 {
-							summary[key] = val
-						}
-					}
-					clientData := gin.H{
-						"wos_scopus":  form.Sections.WosScopus,
-						"kokson":      form.Sections.Kokson,
-						"conferences": form.Sections.Conferences,
-						"ip":          form.Sections.IP,
-						"summary":     summary,
-					}
-					if len(form.LegacyCounts) > 0 {
-						clientData["legacy_counts"] = form.LegacyCounts
-					}
-					dto["form"] = gin.H{"rev": rev.Rev, "data": clientData}
-				} else {
-					dto["form"] = gin.H{"rev": rev.Rev, "data": rev.Data}
-				}
-			} else {
-				dto["form"] = gin.H{"rev": rev.Rev, "data": rev.Data}
-			}
-		} else {
-			log.Printf("[buildSubmissionDTO] Error fetching revision: %v (instID=%s, rev=%d)", err, instanceID, inst.CurrentRev)
-		}
-	}
-	slots, err := h.fetchSlots(instanceID)
-	if err != nil {
-		return nil, err
-	}
-	dto["slots"] = slots
-	outcomes, err := h.fetchOutcomes(instanceID)
-	if err != nil {
-		return nil, err
-	}
-	if len(outcomes) > 0 {
-		dto["outcomes"] = outcomes
-	}
-	return dto, nil
-}
-
-func (h *NodeSubmissionHandler) fetchSlots(instanceID string) ([]gin.H, error) {
-	log.Printf("[fetchSlots] instanceID=%s", instanceID)
-	rows, err := h.db.Queryx(`SELECT s.id, s.slot_key, s.required, s.multiplicity, s.mime_whitelist,
-		a.id AS attachment_id, a.document_version_id, a.filename, a.size_bytes, a.attached_at, a.is_active,
-		a.status, a.review_note, a.approved_at, a.approved_by,
-		a.reviewed_document_version_id, a.reviewed_at, a.reviewed_by,
-		rdv.size_bytes AS reviewed_size_bytes, rdv.mime_type AS reviewed_mime_type,
-		COALESCE(ru.first_name || ' ' || ru.last_name, '') AS reviewed_by_name
-		FROM node_instance_slots s
-		LEFT JOIN node_instance_slot_attachments a ON a.slot_id=s.id
-		LEFT JOIN document_versions rdv ON rdv.id=a.reviewed_document_version_id
-		LEFT JOIN users ru ON ru.id=a.reviewed_by
-		WHERE s.node_instance_id=$1
-		ORDER BY s.slot_key, a.attached_at DESC`, instanceID)
-	if err != nil {
-		log.Printf("[fetchSlots] query error: %v", err)
-		return nil, err
-	}
-	defer rows.Close()
-	type row struct {
-		SlotID                    string         `db:"id"`
-		SlotKey                   string         `db:"slot_key"`
-		Required                  bool           `db:"required"`
-		Multiplicity              string         `db:"multiplicity"`
-		Mime                      pq.StringArray `db:"mime_whitelist"`
-		AttachmentID              sql.NullString `db:"attachment_id"`
-		VersionID                 sql.NullString `db:"document_version_id"`
-		Filename                  sql.NullString `db:"filename"`
-		SizeBytes                 sql.NullInt64  `db:"size_bytes"`
-		AttachedAt                sql.NullTime   `db:"attached_at"`
-		IsActive                  sql.NullBool   `db:"is_active"`
-		Status                    sql.NullString `db:"status"`
-		ReviewNote                sql.NullString `db:"review_note"`
-		ApprovedAt                sql.NullTime   `db:"approved_at"`
-		ApprovedBy                sql.NullString `db:"approved_by"`
-		ReviewedDocumentVersionID sql.NullString `db:"reviewed_document_version_id"`
-		ReviewedAt                sql.NullTime   `db:"reviewed_at"`
-		ReviewedBy                sql.NullString `db:"reviewed_by"`
-		ReviewedSizeBytes         sql.NullInt64  `db:"reviewed_size_bytes"`
-		ReviewedMimeType          sql.NullString `db:"reviewed_mime_type"`
-		ReviewedByName            sql.NullString `db:"reviewed_by_name"`
-	}
-	slots := []gin.H{}
-	slotMap := map[string]gin.H{}
-	rowCount := 0
-	for rows.Next() {
-		rowCount++
-		var r row
-		if err := rows.StructScan(&r); err != nil {
-			log.Printf("[fetchSlots] scan error on row %d: %v", rowCount, err)
-			return nil, err
-		}
-		log.Printf("[fetchSlots] row %d: slot=%s attachment_id=%v version_id=%v is_active=%v reviewed_doc_id=%v", 
-			rowCount, r.SlotKey, r.AttachmentID.String, r.VersionID.String, r.IsActive.Bool, r.ReviewedDocumentVersionID.String)
-		key := r.SlotKey
-		slot, exists := slotMap[key]
-		if !exists {
-			slot = gin.H{
-				"key":          r.SlotKey,
-				"required":     r.Required,
-				"multiplicity": r.Multiplicity,
-				"mime":         []string(r.Mime),
-				"attachments":  []gin.H{},
-			}
-			slotMap[key] = slot
-			slots = append(slots, slot)
-		}
-		if r.AttachmentID.Valid && r.VersionID.Valid {
-			attachments := slot["attachments"].([]gin.H)
-			att := gin.H{
-				"version_id": r.VersionID.String,
-				"filename":   r.Filename.String,
-				"size_bytes": r.SizeBytes.Int64,
-				"is_active":  r.IsActive.Bool,
-			}
-			if r.AttachedAt.Valid {
-				att["attached_at"] = r.AttachedAt.Time.Format(time.RFC3339)
-			}
-			if r.Status.Valid {
-				att["status"] = r.Status.String
-			}
-			if r.ReviewNote.Valid {
-				att["review_note"] = r.ReviewNote.String
-			}
-			if r.ApprovedAt.Valid {
-				att["approved_at"] = r.ApprovedAt.Time.Format(time.RFC3339)
-			}
-			if r.ApprovedBy.Valid {
-				att["approved_by"] = r.ApprovedBy.String
-			}
-			att["download_url"] = fmt.Sprintf("/api/documents/versions/%s/download", r.VersionID.String)
-			// Add reviewed document information if exists
-			if r.ReviewedDocumentVersionID.Valid && r.ReviewedDocumentVersionID.String != "" {
-				log.Printf("[fetchSlots] adding reviewed_document for attachment %s: reviewed_version_id=%s", 
-					r.VersionID.String, r.ReviewedDocumentVersionID.String)
-				reviewedDoc := gin.H{
-					"version_id":   r.ReviewedDocumentVersionID.String,
-					"download_url": fmt.Sprintf("/api/documents/versions/%s/download", r.ReviewedDocumentVersionID.String),
-				}
-				if r.ReviewedSizeBytes.Valid {
-					reviewedDoc["size_bytes"] = r.ReviewedSizeBytes.Int64
-				}
-				if r.ReviewedMimeType.Valid {
-					reviewedDoc["mime_type"] = r.ReviewedMimeType.String
-				}
-				if r.ReviewedAt.Valid {
-					reviewedDoc["reviewed_at"] = r.ReviewedAt.Time.Format(time.RFC3339)
-				}
-				if r.ReviewedByName.Valid && r.ReviewedByName.String != "" {
-					reviewedDoc["reviewed_by"] = r.ReviewedByName.String
-				}
-				att["reviewed_document"] = reviewedDoc
-			}
-			attachments = append(attachments, att)
-			slot["attachments"] = attachments
-		}
-	}
-	log.Printf("[fetchSlots] returning %d slots with total attachments", len(slots))
-	return slots, nil
-}
-
-func (h *NodeSubmissionHandler) fetchOutcomes(instanceID string) ([]gin.H, error) {
-	rows, err := h.db.Queryx(`SELECT outcome_value, decided_by, note, created_at FROM node_outcomes WHERE node_instance_id=$1 ORDER BY created_at DESC`, instanceID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var outs []gin.H
-	for rows.Next() {
-		var value, decidedBy, note string
-		var created time.Time
-		if err := rows.Scan(&value, &decidedBy, &note, &created); err != nil {
-			return nil, err
-		}
-		outs = append(outs, gin.H{
-			"value":      value,
-			"decided_by": decidedBy,
-			"note":       note,
-			"created_at": created.Format(time.RFC3339),
-		})
-	}
-	return outs, nil
-}
-
-func handleNodeErr(c *gin.Context, err error) {
-	if err == nil {
+		log.Printf("[NodeSubmission] PatchState error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if strings.Contains(err.Error(), "not allowed") {
-		c.JSON(403, gin.H{"error": err.Error()})
-		return
-	}
-	var valErr *app7ValidationError
-	if errors.As(err, &valErr) {
-		c.JSON(400, gin.H{"error": valErr.Error()})
-		return
-	}
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		c.JSON(404, gin.H{"error": "not found"})
-	default:
-		c.JSON(500, gin.H{"error": err.Error()})
-	}
-}
-
-func (h *NodeSubmissionHandler) resolveLocale(requested string) string {
-	if requested != "" {
-		return requested
-	}
-	if h.pb.DefaultLocale != "" {
-		return h.pb.DefaultLocale
-	}
-	return "ru"
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 func roleFromContext(c *gin.Context) string {
@@ -1083,11 +214,4 @@ func roleFromContext(c *gin.Context) string {
 		}
 	}
 	return ""
-}
-
-func nullableString(v string) interface{} {
-	if strings.TrimSpace(v) == "" {
-		return nil
-	}
-	return v
 }

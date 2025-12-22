@@ -11,6 +11,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -28,8 +30,14 @@ func TestSuperadminTenantsHandler_ListTenants(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`)
 	require.NoError(t, err)
 
+	// Services
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	tenantSvc := services.NewTenantService(tenantRepo)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminTenantsHandler(db, cfg)
+	h := handlers.NewSuperadminTenantsHandler(tenantSvc, adminSvc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -73,8 +81,14 @@ func TestSuperadminTenantsHandler_GetTenant(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, tenantID)
 	require.NoError(t, err)
 
+	// Services
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	tenantSvc := services.NewTenantService(tenantRepo)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminTenantsHandler(db, cfg)
+	h := handlers.NewSuperadminTenantsHandler(tenantSvc, adminSvc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -116,7 +130,14 @@ func TestSuperadminTenantsHandler_CreateTenant(t *testing.T) {
 	defer teardown()
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminTenantsHandler(db, cfg)
+	
+	// Services
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	tenantSvc := services.NewTenantService(tenantRepo)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
+	h := handlers.NewSuperadminTenantsHandler(tenantSvc, adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_create_tenant", "superadmin")
@@ -226,7 +247,14 @@ func TestSuperadminTenantsHandler_UpdateTenantServices(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminTenantsHandler(db, cfg)
+	
+	// Services
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	tenantSvc := services.NewTenantService(tenantRepo)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
+	h := handlers.NewSuperadminTenantsHandler(tenantSvc, adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_update_services", "superadmin")
@@ -405,7 +433,14 @@ func TestSuperadminTenantsHandler_DeleteTenant(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminTenantsHandler(db, cfg)
+
+	// Services
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	tenantSvc := services.NewTenantService(tenantRepo)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
+	h := handlers.NewSuperadminTenantsHandler(tenantSvc, adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_delete_tenant", "superadmin")

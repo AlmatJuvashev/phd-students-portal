@@ -9,6 +9,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -45,7 +47,9 @@ func TestLockedState_CantSubmit(t *testing.T) {
 	}
 
 	cfg := config.AppConfig{}
-	h := handlers.NewNodeSubmissionHandler(db, cfg, pb)
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewNodeSubmissionHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -113,7 +117,9 @@ func TestWaitingState_CantAdvance(t *testing.T) {
 	}
 
 	cfg := config.AppConfig{}
-	h := handlers.NewNodeSubmissionHandler(db, cfg, pb)
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewNodeSubmissionHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -178,7 +184,9 @@ func TestFullStateFlow(t *testing.T) {
 	}
 
 	cfg := config.AppConfig{}
-	h := handlers.NewNodeSubmissionHandler(db, cfg, pb)
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewNodeSubmissionHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -257,7 +265,9 @@ func TestNeedsFixes_Resubmit(t *testing.T) {
 	}
 
 	cfg := config.AppConfig{}
-	h := handlers.NewNodeSubmissionHandler(db, cfg, pb)
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewNodeSubmissionHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

@@ -7,6 +7,14 @@ import (
 	"os"
 )
 
+// EmailSender defines the interface for sending system emails
+type EmailSender interface {
+	SendEmailVerification(to, token, userName string) error
+	SendEmailChangeNotification(to, userName string) error
+	SendAddedToRoomNotification(to, userName, roomName string) error
+	SendPasswordResetEmail(to, token, userName string) error
+}
+
 type EmailService struct {
 	host     string
 	port     string

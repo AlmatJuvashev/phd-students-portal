@@ -11,6 +11,7 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -35,7 +36,8 @@ func TestCalendarHandler_CreateEvent(t *testing.T) {
 		ON CONFLICT (id) DO NOTHING`, userID)
 	require.NoError(t, err)
 
-	svc := services.NewCalendarService(db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := services.NewCalendarService(repo)
 	h := handlers.NewCalendarHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -91,7 +93,8 @@ func TestCalendarHandler_GetEvents(t *testing.T) {
 		VALUES ($1, $2, 'Test Event', 'Test Description', $3, $4, 'academic', 'Test Location')`, tenantID, userID, startTime, endTime)
 	require.NoError(t, err)
 
-	svc := services.NewCalendarService(db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := services.NewCalendarService(repo)
 	h := handlers.NewCalendarHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -147,7 +150,8 @@ func TestCalendarHandler_UpdateDelete(t *testing.T) {
 		VALUES ($1, $2, 'Old Title', 'Desc', NOW(), NOW() + interval '1 hour', 'academic', 'Loc') RETURNING id`, tenantID, userID).Scan(&eventID)
 	require.NoError(t, err)
 
-	svc := services.NewCalendarService(db)
+	repo := repository.NewSQLEventRepository(db)
+	svc := services.NewCalendarService(repo)
 	h := handlers.NewCalendarHandler(svc)
 
 	gin.SetMode(gin.TestMode)

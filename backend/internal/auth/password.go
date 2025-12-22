@@ -42,3 +42,22 @@ func Slugify(s string) string {
 	s = strings.ReplaceAll(s, ".", "")
 	return s
 }
+
+// GenerateSecureToken returns a random string of hex characters
+func GenerateSecureToken(length int) (string, error) {
+	b := make([]byte, length)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", b), nil
+}
+
+// IsImageMimeType checks if the content type is an allowed image type
+func IsImageMimeType(contentType string) bool {
+	switch contentType {
+	case "image/jpeg", "image/png", "image/gif":
+		return true
+	default:
+		return false
+	}
+}
