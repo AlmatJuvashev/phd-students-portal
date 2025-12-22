@@ -412,8 +412,10 @@ func TestGetAdvisorsForStudent(t *testing.T) {
 		($3, 'a2', 'a2@t.com', 'A2', 'D', 'advisor', 'h', true)`, studentID, advisor1ID, advisor2ID)
 
 	tenantID := uuid.New().String()
-	db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, 'slug-'+$1, 'T', 'university', true)`, tenantID)
-	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3), ($1, $4, $3)`, studentID, advisor1ID, tenantID, advisor2ID)
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, $2, 'T', 'university', true)`, tenantID, "slug-"+tenantID)
+	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3), ($1, $4, $3)`, studentID, advisor1ID, tenantID, advisor2ID)
+	require.NoError(t, err)
 
 	advisors, err := services.GetAdvisorsForStudent(db, studentID)
 	require.NoError(t, err)
@@ -429,15 +431,20 @@ func TestHasAdvisors(t *testing.T) {
 	studentWithAdvisor := uuid.New().String()
 	studentWithoutAdvisor := uuid.New().String()
 	advisorID := uuid.New().String()
-
-	db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) VALUES 
-		($1, 's1', 's1@t.com', 'S1', 'T', 'student', 'h', true),
-		($2, 's2', 's2@t.com', 'S2', 'T', 'student', 'h', true),
-		($3, 'a', 'a@t.com', 'A', 'D', 'advisor', 'h', true)`, studentWithAdvisor, studentWithoutAdvisor, advisorID)
-
 	tenantID := uuid.New().String()
-	db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, 'slug-'+$1, 'T', 'university', true)`, tenantID)
-	db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, studentWithAdvisor, advisorID, tenantID)
+
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) VALUES ($1, $2, 'T', 'university', true)`, tenantID, "slug-"+tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) VALUES 
+		($1, 's1', 's1@t.com', 'S', '1', 'student', 'h', true),
+		($2, 's2', 's2@t.com', 'S', '2', 'student', 'h', true),
+		($3, 'a', 'a@t.com', 'A', '1', 'advisor', 'h', true)`, studentWithAdvisor, studentWithoutAdvisor, advisorID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, studentWithAdvisor, advisorID, tenantID)
+	require.NoError(t, err)
+	// Deleted duplicate setup code
 
 	// Student with advisor
 	has, err := services.HasAdvisors(db, studentWithAdvisor)

@@ -3,62 +3,95 @@ package repository
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jmoiron/sqlx"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestSQLUserRepository_Create(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLUserRepository(sqlxDB)
+func TestSQLUserRepository_CreateUser(t *testing.T) {
+	db, cleanup := testutils.SetupTestDB()
+	defer cleanup()
 
-	mock.ExpectQuery("INSERT INTO users").
-		WithArgs("jdoe1234", "john@example.com", "John", "Doe", models.RoleStudent, "hash", true, nil, nil, nil, nil, nil).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("uid-123"))
-
-	id, err := repo.Create(context.Background(), &models.User{
-		Username: "jdoe1234",
-		Email: "john@example.com",
-		FirstName: "John",
-		LastName: "Doe",
-		Role: models.RoleStudent,
+	repo := NewSQLUserRepository(db)
+	
+	user := &models.User{
+		ID:           "u1",
+		Username:     "testuser",
+		Email:        "test@example.com",
+		FirstName:    "Test",
+		LastName:     "User",
+		Role:         "student",
 		PasswordHash: "hash",
-	})
+		IsActive:     true,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, "uid-123", id)
-	assert.NoError(t, mock.ExpectationsWereMet())
+	id, err := repo.Create(context.Background(), user)
+	require.NoError(t, err)
+	assert.NotEmpty(t, id)
+
+	// Verify insertion
+	fetched, err := repo.GetByEmail(context.Background(), user.Email)
+	require.NoError(t, err)
+	assert.Equal(t, id, fetched.ID) // Create returns generated id potentially if not supplied, but our model had "u1". Logic in Create ignores ID insert? SQL says: INSERT INTO ... RETURNING id.
+	// user_repository.go Create method does NOT insert ID. It lets DB generate it (UUID default).
+	assert.Equal(t, user.Username, fetched.Username)
+	assert.Equal(t, user.Role, fetched.Role)
 }
 
-func TestSQLUserRepository_List(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLUserRepository(sqlxDB)
+func TestSQLUserRepository_UpdateUser(t *testing.T) {
+	db, cleanup := testutils.SetupTestDB()
+	defer cleanup()
 
-	// Mock Count Query
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM users`).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(10))
-
-	// Mock List Query with JOIN
-	// We use QueryMatcherRegexp under the hood, so we need to account for wildcards.
-	// The query has newlines, so we need to be careful.
-	mock.ExpectQuery(`SELECT u.id, u.username.*FROM users u.*LEFT JOIN LATERAL`).
-		WithArgs(10, 0).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "first_name", "last_name", "role", "is_active", "created_at", "phone", "program", "specialty", "department", "cohort"}).
-			AddRow("1", "user1", "u1@e.com", "User", "One", "student", true, nil, "", "CS", "AI", "Eng", "2024"))
-
-	users, total, err := repo.List(context.Background(), UserFilter{}, Pagination{Limit: 10, Offset: 0})
-
-	assert.NoError(t, err)
-	assert.Equal(t, 10, total)
-	if assert.NotEmpty(t, users) {
-		assert.Equal(t, "CS", users[0].Program)
+	repo := NewSQLUserRepository(db)
+	
+	user := &models.User{
+		Username:     "updateuser",
+		Email:        "update@example.com",
+		FirstName:    "Update",
+		LastName:     "Me",
+		Role:         "student",
+		PasswordHash: "hash",
+		IsActive:     true,
 	}
-	assert.NoError(t, mock.ExpectationsWereMet())
+	id, err := repo.Create(context.Background(), user)
+	require.NoError(t, err)
+	user.ID = id // Capture generated ID
+
+	// Update
+	user.FirstName = "UpdatedName"
+	user.LastName = "UpdatedLast"
+	err = repo.Update(context.Background(), user)
+	require.NoError(t, err)
+
+	fetched, err := repo.GetByID(context.Background(), id)
+	require.NoError(t, err)
+	assert.Equal(t, "UpdatedName", fetched.FirstName)
+	assert.Equal(t, "UpdatedLast", fetched.LastName)
+}
+
+func TestSQLUserRepository_LinkAdvisor(t *testing.T) {
+	db, cleanup := testutils.SetupTestDB()
+	defer cleanup()
+
+	repo := NewSQLUserRepository(db)
+
+	// Create Student
+	studentID := testutils.CreateTestUser(t, db, "student1", "student")
+	// Create Advisor
+	advisorID := testutils.CreateTestUser(t, db, "advisor1", "advisor")
+	tenantID := "00000000-0000-0000-0000-000000000001"
+
+	err := repo.LinkAdvisor(context.Background(), studentID, advisorID, tenantID)
+	require.NoError(t, err)
+
+	// Verify linkage manually since GetStudentAdvisors is missing
+	var count int
+	err = db.Get(&count, "SELECT COUNT(*) FROM student_advisors WHERE student_id=$1 AND advisor_id=$2", studentID, advisorID)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count)
 }

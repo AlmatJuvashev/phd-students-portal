@@ -95,18 +95,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		})
 	})
 
-	api.GET("/me", func(c *gin.Context) {
-		// require auth, then return current user
-		middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds)(c)
-		if c.IsAborted() {
-			return
-		}
-		if val, ok := c.Get("current_user"); ok {
-			c.JSON(200, val)
-			return
-		}
-		c.JSON(401, gin.H{"error": "unauthenticated"})
-	})
+
 
 	// Services
 	emailService := services.NewEmailService()

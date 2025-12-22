@@ -72,9 +72,10 @@ func TestSuperadminLogsHandler_ListLogs(t *testing.T) {
 		assert.True(t, ok)
 		assert.GreaterOrEqual(t, len(data), 3)
 
-		pagination, ok := resp["pagination"].(map[string]interface{})
-		assert.True(t, ok)
-		assert.Equal(t, float64(1), pagination["page"])
+		// API returns limit/offset flat
+		assert.NotNil(t, resp["limit"], "Limit should be present")
+		assert.NotNil(t, resp["offset"], "Offset should be present")
+		assert.Equal(t, float64(20), resp["limit"]) // Default limit
 	})
 
 	t.Run("List Logs With Tenant Filter", func(t *testing.T) {
@@ -124,12 +125,8 @@ func TestSuperadminLogsHandler_ListLogs(t *testing.T) {
 		data := resp["data"].([]interface{})
 		assert.LessOrEqual(t, len(data), 2)
 
-		if resp["pagination"] != nil {
-			pagination := resp["pagination"].(map[string]interface{})
-			assert.Equal(t, float64(2), pagination["limit"])
-		} else {
-			t.Log("Pagination field missing in response")
-		}
+		assert.Equal(t, float64(2), resp["limit"])
+		assert.Equal(t, float64(0), resp["offset"])
 	})
 
 	t.Run("List Logs With Date Filter", func(t *testing.T) {

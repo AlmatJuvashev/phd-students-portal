@@ -426,6 +426,10 @@ func (h *AdminHandler) PresignReviewedDocumentUpload(c *gin.Context) {
 			c.JSON(403, gin.H{"error": "forbidden"})
 			return
 		}
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(404, gin.H{"error": "not found"})
+			return
+		}
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
