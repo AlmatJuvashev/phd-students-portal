@@ -2,13 +2,17 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -18,13 +22,6 @@ import (
 func TestAuthHandler_Login_Security(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
-	
-	// Setup Redis (Mock or Real)
-	// For testing rate limits, we need a real redis or robust mock.
-	// Assuming test environment has redis available via SetupTestRedis or similar,
-	// or we can skip if no redis.
-	// But let's assume we can connect to localhost for now or use miniredis if available.
-	// Check if testutils has Redis helper.
 	
 	// Create a user
 	username := "security_test_user"
@@ -42,14 +39,17 @@ func TestAuthHandler_Login_Security(t *testing.T) {
 		ServerURL:  "http://localhost",
 	}
 
-	// Use a distinct redis prefix or flush db to avoid noise?
-	// We'll trust the keys are unique enough (keys include username).
+	// Assuming local redis is available for rate limit testing
 	rds := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	
-	authHandler := NewAuthHandler(db, cfg, nil, rds)
+	repo := repository.NewSQLUserRepository(db)
+	authService := services.NewAuthService(repo, services.NewEmailService(), cfg)
+	authHandler := NewAuthHandler(authService, cfg, rds)
 
 	// Clean limit for this user
-	rds.Del(t.Context(), "rate_limit:login:"+username)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	rds.Del(ctx, "rate_limit:login:"+username)
 
 	t.Run("HttpOnly Cookie Set on Success", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -77,7 +77,9 @@ func TestAuthHandler_Login_Security(t *testing.T) {
 			}
 		}
 		
-		assert.NotNil(t, jwtCookie, "jwt_token cookie should be present")
+		if jwtCookie == nil {
+			t.Fatalf("jwt_token cookie should be present. Response: %s", w.Body.String())
+		}
 		assert.True(t, jwtCookie.HttpOnly, "Cookie should be HttpOnly")
 		assert.Equal(t, "/", jwtCookie.Path)
 		

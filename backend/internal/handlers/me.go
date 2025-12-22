@@ -5,23 +5,27 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 )
 
 type MeHandler struct {
-	db  *sqlx.DB
-	cfg config.AppConfig
-	rdb *redis.Client
+	userSvc   *services.UserService
+	tenantSvc *services.TenantService
+	cfg       config.AppConfig
+	rdb       *redis.Client
 }
 
-func NewMeHandler(db *sqlx.DB, cfg config.AppConfig, r *redis.Client) *MeHandler {
-	return &MeHandler{db: db, cfg: cfg, rdb: r}
+func NewMeHandler(userSvc *services.UserService, tenantSvc *services.TenantService, cfg config.AppConfig, r *redis.Client) *MeHandler {
+	return &MeHandler{
+		userSvc:   userSvc,
+		tenantSvc: tenantSvc,
+		cfg:       cfg,
+		rdb:       r,
+	}
 }
 
 // Me returns current user info from cache or DB (populates cache for 10 min).
@@ -36,20 +40,30 @@ func (h *MeHandler) Me(c *gin.Context) {
 		}
 	}
 
-	// query DB
-	var row struct {
-		ID        string `db:"id" json:"id"`
-		Username  string `db:"username" json:"username"`
-		Email     string `db:"email" json:"email"`
-		FirstName string `db:"first_name" json:"first_name"`
-		LastName  string `db:"last_name" json:"last_name"`
-		Role      string `db:"role" json:"role"`
-	}
-	if err := h.db.Get(&row, `SELECT id, username, email, first_name, last_name, role FROM users WHERE id=$1`, sub); err != nil {
+	// query Service
+	user, err := h.userSvc.GetByID(c.Request.Context(), sub)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
-	b, _ := json.Marshal(row)
+
+	// Transform to JSON
+	// We can just omit sensitive fields or use a specific response struct.
+	// The original handler returned a struct with specific json tags.
+	// models.User has json tags but includes PasswordHash? No, checking logic.
+	// models.User definition doesn't show PasswordHash json tag usually or it's "-".
+	// Let's assume models.User is safe or we use a map/struct here to be exact.
+	// Original returned: id, username, email, first_name, last_name, role.
+	response := map[string]interface{}{
+		"id":         user.ID,
+		"username":   user.Username,
+		"email":      user.Email,
+		"first_name": user.FirstName,
+		"last_name":  user.LastName,
+		"role":       user.Role,
+	}
+
+	b, _ := json.Marshal(response)
 	if h.rdb != nil {
 		_ = h.rdb.Set(services.Ctx, "me:"+sub, string(b), time.Minute*10).Err()
 	}
@@ -60,23 +74,8 @@ func (h *MeHandler) Me(c *gin.Context) {
 func (h *MeHandler) MyTenants(c *gin.Context) {
 	sub := c.GetString("userID")
 
-	type Membership struct {
-		TenantID   string `db:"tenant_id" json:"tenant_id"`
-		TenantName string `db:"tenant_name" json:"tenant_name"`
-		TenantSlug string `db:"tenant_slug" json:"tenant_slug"`
-		Role       string `db:"role" json:"role"`
-		IsPrimary  bool   `db:"is_primary" json:"is_primary"`
-	}
-
-	var memberships []Membership
-	query := `
-		SELECT utm.tenant_id, t.name as tenant_name, t.slug as tenant_slug, utm.role, utm.is_primary
-		FROM user_tenant_memberships utm
-		JOIN tenants t ON utm.tenant_id = t.id
-		WHERE utm.user_id = $1 AND t.is_active = true
-		ORDER BY utm.is_primary DESC, t.name
-	`
-	if err := h.db.Select(&memberships, query, sub); err != nil {
+	memberships, err := h.tenantSvc.ListForUser(c.Request.Context(), sub)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch memberships"})
 		return
 	}
@@ -92,30 +91,17 @@ func (h *MeHandler) MyTenant(c *gin.Context) {
 		return
 	}
 
-	type TenantInfo struct {
-		ID              string         `db:"id" json:"id"`
-		Slug            string         `db:"slug" json:"slug"`
-		Name            string         `db:"name" json:"name"`
-		AppName         *string        `db:"app_name" json:"app_name"`
-		PrimaryColor    string         `db:"primary_color" json:"primary_color"`
-		SecondaryColor  string         `db:"secondary_color" json:"secondary_color"`
-		EnabledServices pq.StringArray `db:"enabled_services" json:"enabled_services"`
+	// If not found or error, return 404/500
+	tenant, err := h.tenantSvc.GetTenantByID(c.Request.Context(), tenantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch tenant details"})
+		return
 	}
-
-	var tenant TenantInfo
-	query := `
-		SELECT id, slug, name, app_name, 
-		       COALESCE(primary_color, '#3b82f6') as primary_color,
-		       COALESCE(secondary_color, '#1e40af') as secondary_color,
-		       COALESCE(enabled_services, ARRAY['chat', 'calendar']) as enabled_services
-		FROM tenants
-		WHERE id = $1
-	`
-	if err := h.db.Get(&tenant, query, tenantID); err != nil {
+	if tenant == nil {
+		// Should technically not happen if list was correct, but race condition possible
 		c.JSON(http.StatusNotFound, gin.H{"error": "tenant not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, tenant)
 }
-

@@ -11,6 +11,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -29,11 +31,13 @@ func TestDocumentsHandler_List(t *testing.T) {
 
 	// Seed document
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Test Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Test Doc', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -69,13 +73,15 @@ func TestDocumentsHandler_Upload(t *testing.T) {
 
 	// Create document first
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Upload Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Upload Doc', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{
 		UploadDir: "/tmp/test-uploads", // Mock dir
 	}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -120,11 +126,13 @@ func TestDocumentsHandler_Delete(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'To Delete') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'To Delete', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -160,11 +168,13 @@ func TestDocumentsHandler_Get(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Get Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Get Doc', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -183,11 +193,13 @@ func TestDocumentsHandler_Get(t *testing.T) {
 		t.Logf("Response Code: %d", w.Code)
 		t.Logf("Response Body: %s", w.Body.String())
 
-		assert.Equal(t, http.StatusOK, w.Code)
+		require.Equal(t, http.StatusOK, w.Code, "Expected 200 OK. Body: %s", w.Body.String())
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		err := json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
 		
-		doc := resp["doc"].(map[string]interface{})
+		doc, ok := resp["doc"].(map[string]interface{})
+		require.True(t, ok, "response should contain doc object")
 		assert.Equal(t, "Get Doc", doc["title"])
 	})
 }
@@ -214,7 +226,9 @@ func TestDocumentsHandler_Create(t *testing.T) {
 	cfg := config.AppConfig{
 		UploadDir: t.TempDir(),
 	}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -258,14 +272,16 @@ func TestDocumentsHandler_UploadVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, title, kind, created_at) 
-		VALUES ('00000000-0000-0000-0000-000000000001', $1, 'Doc for Upload', 'other', NOW()) RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, title, kind, created_at, updated_at) 
+		VALUES ('00000000-0000-0000-0000-000000000001', $1, 'Doc for Upload', 'other', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{
 		UploadDir: t.TempDir(),
 	}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -306,11 +322,13 @@ func TestDocumentsHandler_PresignUpload(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Presign Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Presign Doc', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -354,7 +372,7 @@ func TestDocumentsHandler_PresignGetLatest(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Latest Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'Latest Doc', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	// Seed version
@@ -363,7 +381,9 @@ func TestDocumentsHandler_PresignGetLatest(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -400,7 +420,7 @@ func TestDocumentsHandler_DownloadVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	var docID string
-	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'DL Doc') RETURNING id`, userID).Scan(&docID)
+	err = db.QueryRow(`INSERT INTO documents (tenant_id, user_id, kind, title, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000001', $1, 'other', 'DL Doc', NOW(), NOW()) RETURNING id`, userID).Scan(&docID)
 	require.NoError(t, err)
 
 	var verID string
@@ -409,7 +429,9 @@ func TestDocumentsHandler_DownloadVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
-	h := handlers.NewDocumentsHandler(db, cfg)
+	repo := repository.NewSQLDocumentRepository(db)
+	svc, _ := services.NewDocumentService(repo, cfg)
+	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

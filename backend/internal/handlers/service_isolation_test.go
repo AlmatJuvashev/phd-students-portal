@@ -12,6 +12,7 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -25,12 +26,16 @@ func TestServiceIsolation(t *testing.T) {
 	defer teardown()
 
 	// Setup Services
-	calendarSvc := services.NewCalendarService(db)
+	// Setup Services
+	repo := repository.NewSQLEventRepository(db)
+	calendarSvc := services.NewCalendarService(repo)
 	calendarHandler := handlers.NewCalendarHandler(calendarSvc)
 
 	cfg := config.AppConfig{UploadDir: "/tmp/test-uploads"}
 	emailSvc := services.NewEmailService()
-	chatHandler := handlers.NewChatHandler(db, cfg, emailSvc)
+	chatRepo := repository.NewSQLChatRepository(db)
+	chatSvc := services.NewChatService(chatRepo, emailSvc, cfg)
+	chatHandler := handlers.NewChatHandler(chatSvc, cfg)
 
 	// Setup Tenants
 	tenantA := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"

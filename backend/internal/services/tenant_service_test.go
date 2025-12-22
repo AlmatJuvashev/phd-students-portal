@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/stretchr/testify/assert"
@@ -15,19 +16,21 @@ func TestTenantService_GetTenants(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := services.NewTenantService(db)
+	repo := repository.NewSQLTenantRepository(db)
+	svc := services.NewTenantService(repo)
 	ctx := context.Background()
 
 	// 1. GetTenantBySlug
 	// Insert default tenant if not exists, or handle missing
 	_, err := db.Exec(`INSERT INTO tenants (id, name, slug, is_active) 
 		VALUES ('00000000-0000-0000-0000-000000000001', 'Default Tenant', 'default', true) 
-		ON CONFLICT (id) DO NOTHING`)
+		ON CONFLICT (id) DO UPDATE SET slug = 'default', is_active = true`)
 	require.NoError(t, err)
 
 	slug := "default"
 	tenant, err := svc.GetTenantBySlug(ctx, slug)
 	require.NoError(t, err)
+	require.NotNil(t, tenant, "Tenant should not be nil")
 	assert.Equal(t, "default", tenant.Slug)
 	assert.True(t, tenant.IsActive)
 
@@ -35,10 +38,11 @@ func TestTenantService_GetTenants(t *testing.T) {
 	id := "00000000-0000-0000-0000-000000000001"
 	tenantById, err := svc.GetTenantByID(ctx, id)
 	require.NoError(t, err)
+	require.NotNil(t, tenantById, "Tenant should not be nil")
 	assert.Equal(t, id, tenantById.ID)
 
-	// 3. ListTenants
-	tenants, err := svc.ListTenants(ctx)
+	// 3. ListAllWithStats
+	tenants, err := svc.ListAllWithStats(ctx)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(tenants), 1)
 }
@@ -47,7 +51,8 @@ func TestTenantService_UserMembership(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
-	svc := services.NewTenantService(db)
+	repo := repository.NewSQLTenantRepository(db)
+	svc := services.NewTenantService(repo)
 	ctx := context.Background()
 
 	userID := "10000000-0000-0000-0000-000000000001"
@@ -63,7 +68,7 @@ func TestTenantService_UserMembership(t *testing.T) {
 	require.NoError(t, err)
 
 	// 4. AddUserToTenant
-	err = svc.AddUserToTenant(ctx, userID, tenantID, models.RoleStudent, true)
+	err = svc.AddUserToTenant(ctx, userID, tenantID, string(models.RoleStudent), true)
 	require.NoError(t, err)
 
 	// 5. GetUserMembershipInTenant
@@ -94,12 +99,13 @@ func TestTenantService_UserMembership(t *testing.T) {
 	// 9. GetUserRoleInTenant
 	role, err := svc.GetUserRoleInTenant(ctx, userID, tenantID)
 	require.NoError(t, err)
-	assert.Equal(t, models.RoleStudent, role)
+	assert.Equal(t, string(models.RoleStudent), role)
 
 	// 10. RemoveUserFromTenant
 	err = svc.RemoveUserFromTenant(ctx, userID, tenantID)
 	require.NoError(t, err)
 
-	_, err = svc.GetUserMembershipInTenant(ctx, userID, tenantID)
-	assert.Error(t, err) // Should not be found
+	membership, err = svc.GetUserMembershipInTenant(ctx, userID, tenantID)
+	require.NoError(t, err)
+	assert.Nil(t, membership) // Should not be found (nil result)
 }

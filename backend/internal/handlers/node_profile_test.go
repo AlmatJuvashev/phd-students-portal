@@ -8,6 +8,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -36,7 +38,9 @@ func TestGetProfile(t *testing.T) {
 
 	pb := &playbook.Manager{}
 	cfg := config.AppConfig{}
-	h := handlers.NewNodeSubmissionHandler(db, cfg, pb)
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewNodeSubmissionHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -69,7 +73,9 @@ func TestGetProfile_NotFound(t *testing.T) {
 
 	pb := &playbook.Manager{}
 	cfg := config.AppConfig{}
-	h := handlers.NewNodeSubmissionHandler(db, cfg, pb)
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewNodeSubmissionHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

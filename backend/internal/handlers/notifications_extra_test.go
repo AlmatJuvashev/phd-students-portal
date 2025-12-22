@@ -6,8 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
+	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +34,9 @@ func TestNotificationsHandler_Admin(t *testing.T) {
 		($1, 'node2', 'update', 'Student updated node2', true, '{}')`, studentID)
 	require.NoError(t, err)
 
-	h := handlers.NewNotificationsHandler(db)
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -114,18 +119,24 @@ func TestNotificationHandler_Student_MarkAllAsRead(t *testing.T) {
 	defer teardown()
 
 	userID := "22222222-2222-2222-2222-222222222222"
-	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+	tenantID := "77777777-7777-7777-7777-777777777777"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug, tenant_type, is_active) 
+		VALUES ($1, 'Test Tenant', 'test-extra', 'university', true) ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'student2', 's2@ex.com', 'Student', 'Two', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
 	// Seed notifications
-	_, err = db.Exec(`INSERT INTO notifications (recipient_id, title, message, type, is_read) 
+	_, err = db.Exec(`INSERT INTO notifications (recipient_id, tenant_id, title, message, type, is_read) 
 		VALUES 
-		($1, 'N1', 'M1', 'info', false),
-		($1, 'N2', 'M2', 'info', false)`, userID)
+		($1, $2, 'N1', 'M1', 'info', false),
+		($1, $2, 'N2', 'M2', 'info', false)`, userID, tenantID)
 	require.NoError(t, err)
 
-	svc := services.NewNotificationService(db)
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := services.NewNotificationService(repo)
 	h := handlers.NewNotificationHandler(svc)
 
 	gin.SetMode(gin.TestMode)

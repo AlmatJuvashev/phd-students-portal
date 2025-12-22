@@ -9,6 +9,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -32,7 +34,10 @@ func TestJourneyHandler_GetState(t *testing.T) {
 
 	pb := &playbook.Manager{}
 	cfg := config.AppConfig{}
-	h := handlers.NewJourneyHandler(db, cfg, pb)
+	
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewJourneyHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -66,7 +71,10 @@ func TestJourneyHandler_SetState(t *testing.T) {
 
 	pb := &playbook.Manager{}
 	cfg := config.AppConfig{}
-	h := handlers.NewJourneyHandler(db, cfg, pb)
+	
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewJourneyHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -92,7 +100,7 @@ func TestJourneyHandler_SetState(t *testing.T) {
 
 		// Verify DB
 		var state string
-		err := db.QueryRow("SELECT state FROM journey_states WHERE user_id=$1 AND node_id='node2'", userID).Scan(&state)
+		err := db.QueryRow("SELECT state FROM journey_states WHERE user_id=$1 AND node_id='node2' AND tenant_id='00000000-0000-0000-0000-000000000001'", userID).Scan(&state)
 		assert.NoError(t, err)
 		assert.Equal(t, "active", state)
 	})
@@ -129,7 +137,10 @@ func TestJourneyHandler_Reset(t *testing.T) {
 
 	pb := &playbook.Manager{}
 	cfg := config.AppConfig{}
-	h := handlers.NewJourneyHandler(db, cfg, pb)
+
+	repo := repository.NewSQLJourneyRepository(db)
+	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
+	h := handlers.NewJourneyHandler(svc)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

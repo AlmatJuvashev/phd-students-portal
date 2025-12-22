@@ -9,6 +9,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +26,9 @@ func TestChecklistHandler_ListModules(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChecklistHandler(db, cfg)
+	repo := repository.NewSQLChecklistRepository(db)
+	svc := services.NewChecklistService(repo)
+	h := handlers.NewChecklistHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -53,7 +57,9 @@ func TestChecklistHandler_ListStepsByModule(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChecklistHandler(db, cfg)
+	repo := repository.NewSQLChecklistRepository(db)
+	svc := services.NewChecklistService(repo)
+	h := handlers.NewChecklistHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -89,7 +95,9 @@ func TestChecklistHandler_ListStudentSteps(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChecklistHandler(db, cfg)
+	repo := repository.NewSQLChecklistRepository(db)
+	svc := services.NewChecklistService(repo)
+	h := handlers.NewChecklistHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -123,7 +131,9 @@ func TestChecklistHandler_UpdateStudentStep(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChecklistHandler(db, cfg)
+	repo := repository.NewSQLChecklistRepository(db)
+	svc := services.NewChecklistService(repo)
+	h := handlers.NewChecklistHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -162,7 +172,9 @@ func TestChecklistHandler_AdvisorInbox(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChecklistHandler(db, cfg)
+	repo := repository.NewSQLChecklistRepository(db)
+	svc := services.NewChecklistService(repo)
+	h := handlers.NewChecklistHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -198,10 +210,22 @@ func TestChecklistHandler_ApproveStep(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChecklistHandler(db, cfg)
+	repo := repository.NewSQLChecklistRepository(db)
+	svc := services.NewChecklistService(repo)
+	h := handlers.NewChecklistHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	// Create tenant and document for comment attachment
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err = db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ($1, 'test', 'Test Tenant', 'university', true) ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+	
+	_, err = db.Exec(`INSERT INTO documents (id, user_id, title, kind, tenant_id, created_at, updated_at) 
+		VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', $1, 'Thesis', 'dissertation', $2, now(), now())`, userID, tenantID)
+	require.NoError(t, err)
+
 	r.POST("/checklist/students/:id/steps/:stepId/approve", h.ApproveStep)
 
 	req, _ := http.NewRequest("POST", "/checklist/students/"+userID+"/steps/22222222-2222-2222-2222-222222222222/approve", nil)
@@ -234,10 +258,22 @@ func TestChecklistHandler_ReturnStep(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewChecklistHandler(db, cfg)
+	repo := repository.NewSQLChecklistRepository(db)
+	svc := services.NewChecklistService(repo)
+	h := handlers.NewChecklistHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
+	// Create tenant and document for comment attachment
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err = db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active) 
+		VALUES ($1, 'test', 'Test Tenant', 'university', true) ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO documents (id, user_id, title, kind, tenant_id, created_at, updated_at) 
+		VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', $1, 'Thesis', 'dissertation', $2, now(), now())`, userID, tenantID)
+	require.NoError(t, err)
+
 	r.POST("/checklist/students/:id/steps/:stepId/return", h.ReturnStep)
 
 	reqBody := map[string]string{"comment": "Please fix this"}

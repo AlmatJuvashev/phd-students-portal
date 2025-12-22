@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/jmoiron/sqlx"
@@ -24,13 +26,55 @@ type UserRepository interface {
 	EmailExists(ctx context.Context, email string, excludeUserID string) (bool, error)
 	List(ctx context.Context, filter UserFilter, pagination Pagination) ([]models.User, int, error)
 	
+	// Password Reset
+	CreatePasswordResetToken(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error
+	GetPasswordResetToken(ctx context.Context, tokenHash string) (string, time.Time, error)
+	DeletePasswordResetToken(ctx context.Context, tokenHash string) error
+
+	// Multitenancy
+	GetTenantRole(ctx context.Context, userID, tenantID string) (string, error)
+
 	// Student specific
 	LinkAdvisor(ctx context.Context, studentID, advisorID string) error
+
+	// Security & Audit
+	CheckRateLimit(ctx context.Context, userID, action string, window time.Duration) (int, error)
+	RecordRateLimit(ctx context.Context, userID, action string) error
+	
+	// Email Verification
+	CreateEmailVerificationToken(ctx context.Context, userID, newEmail, token string, expiresAt time.Time) error
+	GetEmailVerificationToken(ctx context.Context, token string) (string, string, string, error) // Returns userID, newEmail, expiresAt (string or time?)
+	DeleteEmailVerificationToken(ctx context.Context, token string) error
+	GetPendingEmailVerification(ctx context.Context, userID string) (string, error)
+	
+	// Audit
+	LogProfileAudit(ctx context.Context, userID, field, oldValue, newValue, changedBy string) error
+	
+	// Legacy Sync
+	SyncProfileSubmissions(ctx context.Context, userID string, formData map[string]string, tenantID string) error
 }
+
 
 type SQLUserRepository struct {
 	db *sqlx.DB
 }
+
+const userBaseSelect = `
+	SELECT 
+		id, username, email, first_name, last_name, role, password_hash, is_active, 
+		COALESCE(is_superadmin, false) as is_superadmin,
+		COALESCE(phone, '') as phone,
+		COALESCE(program, '') as program, 
+		COALESCE(specialty, '') as specialty, 
+		COALESCE(department, '') as department, 
+		COALESCE(cohort, '') as cohort,
+		COALESCE(avatar_url, '') as avatar_url,
+		COALESCE(bio, '') as bio,
+		COALESCE(address, '') as address,
+		date_of_birth,
+		created_at, updated_at
+	FROM users
+`
 
 func NewSQLUserRepository(db *sqlx.DB) *SQLUserRepository {
 	return &SQLUserRepository{db: db}
@@ -59,7 +103,7 @@ func (r *SQLUserRepository) Create(ctx context.Context, u *models.User) (string,
 
 func (r *SQLUserRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
 	var u models.User
-	query := `SELECT * FROM users WHERE id = $1`
+	query := userBaseSelect + ` WHERE id = $1`
 	err := r.db.GetContext(ctx, &u, query, id)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -72,7 +116,7 @@ func (r *SQLUserRepository) GetByID(ctx context.Context, id string) (*models.Use
 
 func (r *SQLUserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	var u models.User
-	query := `SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true`
+	query := userBaseSelect + ` WHERE LOWER(email) = LOWER($1) AND is_active = true`
 	err := r.db.GetContext(ctx, &u, query, email)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -85,7 +129,7 @@ func (r *SQLUserRepository) GetByEmail(ctx context.Context, email string) (*mode
 
 func (r *SQLUserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	var u models.User
-	query := `SELECT * FROM users WHERE username = $1`
+	query := userBaseSelect + ` WHERE username = $1`
 	err := r.db.GetContext(ctx, &u, query, username)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -250,6 +294,140 @@ func (r *SQLUserRepository) List(ctx context.Context, filter UserFilter, paginat
 	return users, total, nil
 }
 
+// Password Reset Token Methods
+
+func (r *SQLUserRepository) CreatePasswordResetToken(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) 
+		VALUES ($1, $2, $3)`,
+		userID, tokenHash, expiresAt)
+	return err
+}
+
+func (r *SQLUserRepository) GetPasswordResetToken(ctx context.Context, tokenHash string) (string, time.Time, error) {
+	var userID string
+	var expiresAt time.Time
+	err := r.db.QueryRowContext(ctx, `
+		SELECT user_id, expires_at 
+		FROM password_reset_tokens 
+		WHERE token_hash = $1`, tokenHash).Scan(&userID, &expiresAt)
+	if err == sql.ErrNoRows {
+		return "", time.Time{}, ErrNotFound
+	}
+	return userID, expiresAt, err
+}
+
+func (r *SQLUserRepository) DeletePasswordResetToken(ctx context.Context, tokenHash string) error {
+	_, err := r.db.ExecContext(ctx, "DELETE FROM password_reset_tokens WHERE token_hash = $1", tokenHash)
+	return err
+}
+
+func (r *SQLUserRepository) GetTenantRole(ctx context.Context, userID, tenantID string) (string, error) {
+	var role string
+	err := r.db.QueryRowContext(ctx, `
+		SELECT role 
+		FROM user_tenant_memberships 
+		WHERE user_id = $1 AND tenant_id = $2`, userID, tenantID).Scan(&role)
+	if err == sql.ErrNoRows {
+		return "", ErrNotFound
+	}
+	return role, err
+}
+
+
+
+
+// Limit Helper
+func (r *SQLUserRepository) CheckRateLimit(ctx context.Context, userID, action string, window time.Duration) (int, error) {
+	var count int
+	// PG interval syntax: '1 hour' etc. 
+	// We construct interval string from duration.
+	// Simplification: window in minutes/hours.
+	// Safer: pass interval string or use comparison with now() - seconds.
+	seconds := int(window.Seconds())
+	interval := fmt.Sprintf("%d seconds", seconds)
+	
+	err := r.db.GetContext(ctx, &count, `
+		SELECT COUNT(*) FROM rate_limit_events 
+		WHERE user_id=$1 AND action=$2 AND occurred_at > NOW() - $3::interval
+	`, userID, action, interval)
+	return count, err
+}
+
+func (r *SQLUserRepository) RecordRateLimit(ctx context.Context, userID, action string) error {
+	_, err := r.db.ExecContext(ctx, "INSERT INTO rate_limit_events (user_id, action) VALUES ($1, $2)", userID, action)
+	return err
+}
+
+// Email Verification
+func (r *SQLUserRepository) CreateEmailVerificationToken(ctx context.Context, userID, newEmail, token string, expiresAt time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO email_verification_tokens (user_id, new_email, token, expires_at)
+		VALUES ($1, $2, $3, $4)
+	`, userID, newEmail, token, expiresAt)
+	return err
+}
+
+func (r *SQLUserRepository) GetPendingEmailVerification(ctx context.Context, userID string) (string, error) {
+	var newEmail string
+	// Find latest pending token
+	err := r.db.QueryRowContext(ctx, `
+		SELECT new_email FROM email_verification_tokens 
+		WHERE user_id=$1 AND expires_at > NOW() 
+		ORDER BY expires_at DESC LIMIT 1`, userID).Scan(&newEmail)
+	if err == sql.ErrNoRows {
+		return "", nil // No pending verification
+	}
+	return newEmail, err
+}
+
+func (r *SQLUserRepository) GetEmailVerificationToken(ctx context.Context, token string) (string, string, string, error) {
+	// Let's scan into time.Time if possible, but existing code scanned string or interface?
+	// The table def isn't visible, assuming TIMESTAMPTZ.
+	var userID, newEmail string
+	var expiresAt time.Time
+	
+	err := r.db.QueryRowContext(ctx, `
+		SELECT user_id, new_email, expires_at
+		FROM email_verification_tokens
+		WHERE token=$1 AND expires_at > NOW()
+	`, token).Scan(&userID, &newEmail, &expiresAt)
+	
+	if err == sql.ErrNoRows {
+		return "", "", "", ErrNotFound
+	}
+	if err != nil {
+		return "", "", "", err
+	}
+	return userID, newEmail, expiresAt.Format(time.RFC3339), nil
+}
+
+func (r *SQLUserRepository) DeleteEmailVerificationToken(ctx context.Context, token string) error {
+	_, err := r.db.ExecContext(ctx, "DELETE FROM email_verification_tokens WHERE token=$1", token)
+	return err
+}
+
+// Audit
+func (r *SQLUserRepository) LogProfileAudit(ctx context.Context, userID, field, oldValue, newValue, changedBy string) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO profile_audit_log (user_id, field_name, old_value, new_value, changed_by)
+		VALUES ($1, $2, $3, $4, $5)
+	`, userID, field, oldValue, newValue, changedBy)
+	return err
+}
+
+func (r *SQLUserRepository) SyncProfileSubmissions(ctx context.Context, userID string, formData map[string]string, tenantID string) error {
+	if len(formData) == 0 { return nil }
+	jsonBytes, err := json.Marshal(formData)
+	if err != nil { return err }
+
+	_, err = r.db.ExecContext(ctx, `INSERT INTO profile_submissions (user_id, form_data, tenant_id)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id)
+        DO UPDATE SET form_data = profile_submissions.form_data || $2::jsonb, updated_at = NOW()`,
+		userID, jsonBytes, tenantID)
+	return err
+}
 
 // Helper for optional fields
 func nullable(s string) any {

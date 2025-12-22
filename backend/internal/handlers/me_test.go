@@ -8,6 +8,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -27,9 +29,17 @@ func TestMeHandler_Me(t *testing.T) {
 		($1, '00000000-0000-0000-0000-000000000001', 'student', true)`, userID)
 	require.NoError(t, err)
 
-	cfg := config.AppConfig{}
-	// Pass nil for redis client
-	h := handlers.NewMeHandler(db, cfg, nil)
+
+	
+	// Setup Services
+	userRepo := repository.NewSQLUserRepository(db)
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	userSvc := services.NewUserService(userRepo, nil, config.AppConfig{}, nil)
+	tenantSvc := services.NewTenantService(tenantRepo)
+
+
+
+	h := handlers.NewMeHandler(userSvc, tenantSvc, config.AppConfig{}, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -93,8 +103,14 @@ func TestMeHandler_MyTenants(t *testing.T) {
 		($1, $3, 'admin', false)`, userID, tenant1ID, tenant2ID)
 	require.NoError(t, err)
 
-	cfg := config.AppConfig{}
-	h := handlers.NewMeHandler(db, cfg, nil)
+	// Services
+	userRepo := repository.NewSQLUserRepository(db)
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	userSvc := services.NewUserService(userRepo, nil, config.AppConfig{}, nil)
+	tenantSvc := services.NewTenantService(tenantRepo)
+
+	cfg := config.AppConfig{} // Ensure cfg is defined
+	h := handlers.NewMeHandler(userSvc, tenantSvc, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -162,8 +178,14 @@ func TestMeHandler_MyTenant(t *testing.T) {
 		VALUES ($1, 'servicestest', 'Services Test Tenant', true, ARRAY['chat'], '#ff0000', '#00ff00')`, tenantID)
 	require.NoError(t, err)
 
+	// Services
+	userRepo := repository.NewSQLUserRepository(db)
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	userSvc := services.NewUserService(userRepo, nil, config.AppConfig{}, nil)
+	tenantSvc := services.NewTenantService(tenantRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewMeHandler(db, cfg, nil)
+	h := handlers.NewMeHandler(userSvc, tenantSvc, cfg, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

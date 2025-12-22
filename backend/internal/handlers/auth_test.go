@@ -14,6 +14,7 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -34,8 +35,10 @@ func TestAuthHandler_Login(t *testing.T) {
 
 	// Setup handler
 	cfg := config.AppConfig{JWTSecret: "secret", JWTExpDays: 1}
-	// Login in test doesn't use email service
-	h := handlers.NewAuthHandler(db, cfg, services.NewEmailService(), nil)
+	
+	repo := repository.NewSQLUserRepository(db)
+	authService := services.NewAuthService(repo, services.NewEmailService(), cfg)
+	h := handlers.NewAuthHandler(authService, cfg, nil)
 
 	// Setup Gin
 	gin.SetMode(gin.TestMode)
@@ -73,7 +76,9 @@ func TestAuthHandler_Login(t *testing.T) {
 				break
 			}
 		}
-		assert.NotNil(t, tokenCookie, "jwt_token cookie should be set")
+		if tokenCookie == nil {
+			t.Fatalf("jwt_token cookie should be set. Response: %s", w.Body.String())
+		}
 		assert.NotEmpty(t, tokenCookie.Value)
 	})
 
@@ -90,7 +95,7 @@ func TestAuthHandler_Login(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Неверный пароль")
+		assert.Contains(t, w.Body.String(), "Неверный логин или пароль")
 	})
 
 	t.Run("User Not Found", func(t *testing.T) {
@@ -106,7 +111,7 @@ func TestAuthHandler_Login(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		assert.Contains(t, w.Body.String(), "Пользователь не найден")
+		assert.Contains(t, w.Body.String(), "Неверный логин или пароль")
 	})
 }
 
@@ -124,8 +129,10 @@ func TestAuthHandler_PasswordReset(t *testing.T) {
 	assert.NoError(t, err)
 
 	cfg := config.AppConfig{JWTSecret: "secret"}
-	// Use real email service (will log skip if not configured)
-	h := handlers.NewAuthHandler(db, cfg, services.NewEmailService(), nil)
+	
+	repo := repository.NewSQLUserRepository(db)
+	authService := services.NewAuthService(repo, services.NewEmailService(), cfg)
+	h := handlers.NewAuthHandler(authService, cfg, nil)
 
 	r := gin.New()
 	r.POST("/forgot-password", h.ForgotPassword)

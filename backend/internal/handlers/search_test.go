@@ -8,6 +8,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -61,7 +63,10 @@ func TestSearchHandler_GlobalSearch(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.AppConfig{}
-	h := handlers.NewSearchHandler(db, cfg)
+	
+	repo := repository.NewSQLSearchRepository(db)
+	svc := services.NewSearchService(repo)
+	h := handlers.NewSearchHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

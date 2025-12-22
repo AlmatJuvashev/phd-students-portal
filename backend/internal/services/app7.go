@@ -1,4 +1,4 @@
-package handlers
+package services
 
 import (
 	"encoding/json"
@@ -66,11 +66,6 @@ var (
 	doiPattern   = regexp.MustCompile(`(?i)^10\.[0-9]{4,9}/[-._;()/:A-Z0-9]+$`)
 	issnPattern  = regexp.MustCompile(`^[0-9]{4}-[0-9]{3}[0-9Xx]$`)
 	yearPattern  = regexp.MustCompile(`^(18|19|20)\d{2}([/\\-](18|19|20)\d{2})?$`)
-	stringFields = []string{
-		"title", "format", "format_other", "journal", "year", "volume_issue",
-		"pages_or_sheets", "doi", "issn_print", "issn_online", "indexing",
-		"indexing_other", "ip_type", "ip_type_other", "certificate_no", "isbn",
-	}
 )
 
 func normalizeApp7Payload(raw json.RawMessage) ([]byte, *App7Form, error) {

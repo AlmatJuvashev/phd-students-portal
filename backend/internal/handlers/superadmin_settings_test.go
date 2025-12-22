@@ -11,6 +11,8 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +34,12 @@ func TestSuperadminSettingsHandler_ListSettings(t *testing.T) {
 		ON CONFLICT (key) DO UPDATE SET value = '42', category = 'test'`)
 	require.NoError(t, err)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminSettingsHandler(db, cfg)
+	h := handlers.NewSuperadminSettingsHandler(adminSvc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -80,8 +86,12 @@ func TestSuperadminSettingsHandler_GetSetting(t *testing.T) {
 		ON CONFLICT (key) DO UPDATE SET value = '"gettestvalue"', description = 'Test description', category = 'test'`)
 	require.NoError(t, err)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminSettingsHandler(db, cfg)
+	h := handlers.NewSuperadminSettingsHandler(adminSvc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -114,8 +124,12 @@ func TestSuperadminSettingsHandler_UpdateSetting(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminSettingsHandler(db, cfg)
+	h := handlers.NewSuperadminSettingsHandler(adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_update_setting", "superadmin")
@@ -198,8 +212,12 @@ func TestSuperadminSettingsHandler_DeleteSetting(t *testing.T) {
 		ON CONFLICT (key) DO UPDATE SET value = '"todelete"'`)
 	require.NoError(t, err)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminSettingsHandler(db, cfg)
+	h := handlers.NewSuperadminSettingsHandler(adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_delete_setting", "superadmin")
@@ -245,8 +263,12 @@ func TestSuperadminSettingsHandler_GetCategories(t *testing.T) {
 	_, _ = db.Exec(`INSERT INTO global_settings (key, value, category) 
 		VALUES ('cat2.setting', '"v"', 'category2') ON CONFLICT (key) DO NOTHING`)
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminSettingsHandler(db, cfg)
+	h := handlers.NewSuperadminSettingsHandler(adminSvc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -271,8 +293,12 @@ func TestSuperadminSettingsHandler_BulkUpdate(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
 	cfg := config.AppConfig{}
-	h := handlers.NewSuperadminSettingsHandler(db, cfg)
+	h := handlers.NewSuperadminSettingsHandler(adminSvc, cfg)
 
 	// Create admin user for context
 	adminID := testutils.CreateTestUser(t, db, "admin_bulk_setting", "superadmin")

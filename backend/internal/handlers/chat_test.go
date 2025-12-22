@@ -9,6 +9,7 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,9 @@ func setupChatTest(t *testing.T) (*handlers.ChatHandler, *gin.Engine, string, *s
 	cfg := config.AppConfig{UploadDir: "/tmp/test-uploads"}
 	// Create an email service with SMTP disabled (empty host/port)
 	emailSvc := services.NewEmailService()
-	h := handlers.NewChatHandler(db, cfg, emailSvc)
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, emailSvc, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

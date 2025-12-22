@@ -3,7 +3,9 @@ package services_test
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
@@ -90,9 +92,69 @@ func (m *MockUserRepository) LinkAdvisor(ctx context.Context, studentID, advisor
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) CreatePasswordResetToken(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error {
+	args := m.Called(ctx, userID, tokenHash, expiresAt)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) GetPasswordResetToken(ctx context.Context, tokenHash string) (string, time.Time, error) {
+	args := m.Called(ctx, tokenHash)
+	return args.String(0), args.Get(1).(time.Time), args.Error(2)
+}
+
+func (m *MockUserRepository) DeletePasswordResetToken(ctx context.Context, tokenHash string) error {
+	args := m.Called(ctx, tokenHash)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) GetTenantRole(ctx context.Context, userID, tenantID string) (string, error) {
+	args := m.Called(ctx, userID, tenantID)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockUserRepository) CheckRateLimit(ctx context.Context, userID, action string, window time.Duration) (int, error) {
+	args := m.Called(ctx, userID, action, window)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *MockUserRepository) RecordRateLimit(ctx context.Context, userID, action string) error {
+	args := m.Called(ctx, userID, action)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) CreateEmailVerificationToken(ctx context.Context, userID, newEmail, token string, expiresAt time.Time) error {
+	args := m.Called(ctx, userID, newEmail, token, expiresAt)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) GetEmailVerificationToken(ctx context.Context, token string) (string, string, string, error) {
+	args := m.Called(ctx, token)
+	return args.String(0), args.String(1), args.String(2), args.Error(3)
+}
+
+func (m *MockUserRepository) DeleteEmailVerificationToken(ctx context.Context, token string) error {
+	args := m.Called(ctx, token)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) GetPendingEmailVerification(ctx context.Context, userID string) (string, error) {
+	args := m.Called(ctx, userID)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockUserRepository) LogProfileAudit(ctx context.Context, userID, field, oldValue, newValue, changedBy string) error {
+	args := m.Called(ctx, userID, field, oldValue, newValue, changedBy)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) SyncProfileSubmissions(ctx context.Context, userID string, formData map[string]string, tenantID string) error {
+	args := m.Called(ctx, userID, formData, tenantID)
+	return args.Error(0)
+}
+
 func TestUserService_CreateUser(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	svc := services.NewUserService(mockRepo, nil) // Mock Redis as nil
+	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil)
 
 	ctx := context.Background()
 	req := services.CreateUserRequest{
@@ -128,7 +190,7 @@ func TestUserService_CreateUser(t *testing.T) {
 
 func TestUserService_ListUsers(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	svc := services.NewUserService(mockRepo, nil)
+	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil)
 
 	ctx := context.Background()
 	filter := repository.UserFilter{Role: "student"}
