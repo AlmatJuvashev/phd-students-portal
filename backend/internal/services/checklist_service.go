@@ -39,22 +39,22 @@ func (s *ChecklistService) GetAdvisorInbox(ctx context.Context) ([]models.Adviso
 	return s.repo.GetAdvisorInbox(ctx)
 }
 
-func (s *ChecklistService) ApproveStep(ctx context.Context, userID, stepID, authorID, comment string, mentions []string) error {
+func (s *ChecklistService) ApproveStep(ctx context.Context, userID, stepID, authorID, tenantID, comment string, mentions []string) error {
 	if err := s.repo.ApproveStep(ctx, userID, stepID); err != nil {
 		return err
 	}
 	if comment != "" {
-		return s.repo.AddCommentToLatestDocument(ctx, userID, comment, authorID, mentions)
+		return s.repo.AddCommentToLatestDocument(ctx, userID, comment, authorID, tenantID, mentions)
 	}
 	return nil
 }
 
-func (s *ChecklistService) ReturnStep(ctx context.Context, userID, stepID, authorID, comment string, mentions []string) error {
+func (s *ChecklistService) ReturnStep(ctx context.Context, userID, stepID, authorID, tenantID, comment string, mentions []string) error {
 	if err := s.repo.ReturnStep(ctx, userID, stepID); err != nil {
 		return err
 	}
 	if comment != "" {
-		return s.repo.AddCommentToLatestDocument(ctx, userID, comment, authorID, mentions)
+		return s.repo.AddCommentToLatestDocument(ctx, userID, comment, authorID, tenantID, mentions)
 	}
 	return nil
 }
