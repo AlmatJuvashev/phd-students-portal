@@ -267,16 +267,22 @@ func (s *UserService) UpdateProfile(ctx context.Context, req UpdateProfileReques
 		err = s.repo.CreateEmailVerificationToken(ctx, req.UserID, req.Email, token, expires)
 		if err != nil { return nil, err }
 
-		// Send Email
+		// Send Email (check if emailSvc is configured)
 		userName := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
-		err = s.emailSvc.SendEmailVerification(req.Email, token, userName)
-		if err != nil {
+		if s.emailSvc != nil {
+			err = s.emailSvc.SendEmailVerification(req.Email, token, userName)
+			if err != nil {
+				response["message"] = "verification_email_pending"
+				response["warning"] = "email service not configured"
+			} else {
+				_ = s.emailSvc.SendEmailChangeNotification(user.Email, userName)
+				response["message"] = "verification_email_sent"
+				response["info"] = "please check your new email"
+			}
+		} else {
+			// Email service not available
 			response["message"] = "verification_email_pending"
 			response["warning"] = "email service not configured"
-		} else {
-			_ = s.emailSvc.SendEmailChangeNotification(user.Email, userName)
-			response["message"] = "verification_email_sent"
-			response["info"] = "please check your new email"
 		}
 		
 		// Audit
