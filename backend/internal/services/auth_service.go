@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
@@ -35,43 +36,57 @@ type LoginResponse struct {
 }
 
 func (s *AuthService) Login(ctx context.Context, username, password string, tenantID string) (*LoginResponse, error) {
+	log.Printf("[AuthService.Login] Attempting login for username=%s, tenantID=%s", username, tenantID)
+	
 	user, err := s.repo.GetByUsername(ctx, username)
 	if err != nil {
+		log.Printf("[AuthService.Login] User not found: username=%s, error=%v", username, err)
 		return nil, errors.New("invalid credentials")
 	}
+	log.Printf("[AuthService.Login] Found user: id=%s, role=%s, isActive=%v", user.ID, user.Role, user.IsActive)
 
 	if !user.IsActive {
+		log.Printf("[AuthService.Login] User inactive: id=%s", user.ID)
 		return nil, errors.New("account inactive")
 	}
 
 	if !auth.CheckPassword(user.PasswordHash, password) {
+		log.Printf("[AuthService.Login] Password mismatch for user=%s, hash_prefix=%s", username, user.PasswordHash[:30])
 		return nil, errors.New("invalid credentials")
 	}
+	log.Printf("[AuthService.Login] Password verified for user=%s", username)
 
 	// Verify Tenant Access
 	var role string
 	if user.Role == "superadmin" {
 		role = "superadmin"
+		log.Printf("[AuthService.Login] User is superadmin, bypassing tenant check")
 		// Superadmin has access to everything effectively, but token needs a role.
 		// If tenantID is provided, we should check if they are "operating as" superadmin?
 		// Existing logic: "Verify user has access to this tenant (unless superadmin)"
 		// If superadmin, role stays superadmin.
 	} else if tenantID != "" {
 		// Check membership
+		log.Printf("[AuthService.Login] Checking tenant membership: userID=%s, tenantID=%s", user.ID, tenantID)
 		tenantRole, err := s.repo.GetTenantRole(ctx, user.ID, tenantID)
 		if err != nil {
+			log.Printf("[AuthService.Login] Tenant access denied: userID=%s, tenantID=%s, error=%v", user.ID, tenantID, err)
 			return nil, errors.New("access denied to this portal")
 		}
 		role = tenantRole
+		log.Printf("[AuthService.Login] Tenant access granted: role=%s", role)
 	} else {
 		// No tenant context (e.g. platform admin login? or just resolving user role)
 		role = string(user.Role)
+		log.Printf("[AuthService.Login] No tenant context, using user role=%s", role)
 	}
 
 	token, err := s.GenerateToken(user.ID, role, tenantID, user.Role == "superadmin")
 	if err != nil {
+		log.Printf("[AuthService.Login] Token generation failed: %v", err)
 		return nil, err
 	}
+	log.Printf("[AuthService.Login] Login successful: userID=%s, role=%s, tenantID=%s", user.ID, role, tenantID)
 	
 	return &LoginResponse{
 		Token:        token,
@@ -80,6 +95,7 @@ func (s *AuthService) Login(ctx context.Context, username, password string, tena
 		IsSuperadmin: user.Role == "superadmin", 
 	}, nil
 }
+
 
 func (s *AuthService) RequestPasswordReset(ctx context.Context, email string) error {
 	user, err := s.repo.GetByEmail(ctx, email)

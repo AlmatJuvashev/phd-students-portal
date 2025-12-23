@@ -83,11 +83,9 @@ func (s *UserService) CreateUser(ctx context.Context, req CreateUserRequest) (*m
 
 	// 4. Link Advisors (if student)
 	if req.Role == "student" && len(req.AdvisorIDs) > 0 {
-	if req.Role == "student" && len(req.AdvisorIDs) > 0 {
 		for _, aid := range req.AdvisorIDs {
 			_ = s.repo.LinkAdvisor(ctx, id, aid, req.TenantID)
 		}
-	}
 	}
 
 	// 5. Invalidate List Cache (if applicable)

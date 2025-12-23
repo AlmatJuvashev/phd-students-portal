@@ -164,10 +164,8 @@ func TestUserService_CreateUser(t *testing.T) {
 		Role:      "student",
 	}
 
-	// Expect username generation check
-	// Note: UserService generates username. It calls GetByUsername to check existence.
-	// We'll simulate it doesn't exist on first try.
-	mockRepo.On("GetByUsername", ctx, mock.AnythingOfType("string")).Return((*models.User)(nil), nil).Once()
+	// Expect Exists check for username uniqueness
+	mockRepo.On("Exists", ctx, mock.AnythingOfType("string")).Return(false, nil).Once()
 
 	// Expect Create call
 	mockRepo.On("Create", ctx, mock.MatchedBy(func(u *models.User) bool {

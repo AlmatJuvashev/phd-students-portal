@@ -63,3 +63,25 @@ dev:
 kill-port:
 	@echo "Killing processes listening on port $(PORT_TO_KILL)"
 	@lsof -ti:$(PORT_TO_KILL) | xargs kill -9 2>/dev/null || true
+
+# ============= Test Targets =============
+TEST_DB_URL?=postgres://postgres:postgres@localhost:5435/phd_test?sslmode=disable
+
+create-test-db:
+	@echo "Creating phd_test database if it doesn't exist..."
+	@psql "$(DB_URL)" -tc "SELECT 1 FROM pg_database WHERE datname = 'phd_test'" | grep -q 1 || \
+		psql "$(DB_URL)" -c "CREATE DATABASE phd_test"
+	@echo "Test database ready."
+
+# Run tests sequentially (-p 1) to avoid deadlocks from concurrent table cleanup
+test: create-test-db
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 1 -count=1
+
+test-coverage: create-test-db
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 1 -coverprofile=coverage.out
+	go tool cover -func=coverage.out | tail -n 1
+
+test-verbose: create-test-db
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 1 -count=1 -v
+
+
