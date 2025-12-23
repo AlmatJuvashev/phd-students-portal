@@ -74,7 +74,7 @@ func TestTenantService_UserMembership(t *testing.T) {
 	// 5. GetUserMembershipInTenant
 	membership, err := svc.GetUserMembershipInTenant(ctx, userID, tenantID)
 	require.NoError(t, err)
-	assert.Equal(t, models.RoleStudent, membership.Role)
+	assert.Equal(t, string(models.RoleStudent), membership.Role)
 	assert.True(t, membership.IsPrimary)
 
 	// 6. GetUserTenants
