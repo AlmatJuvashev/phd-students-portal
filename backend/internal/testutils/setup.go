@@ -24,7 +24,8 @@ func SetupTestDB() (*sqlx.DB, func()) {
 	dbURL := os.Getenv("TEST_DATABASE_URL")
 	if dbURL == "" {
 		// Default to localhost test DB if not set
-		dbURL = "postgres://postgres:postgres@localhost:5435/phd?sslmode=disable"
+		// IMPORTANT: Uses phd_test (not phd) to avoid wiping demo data
+		dbURL = "postgres://postgres:postgres@localhost:5435/phd_test?sslmode=disable"
 	}
 
 	db, err := sqlx.Connect("postgres", dbURL)

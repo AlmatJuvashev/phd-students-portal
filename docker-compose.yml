@@ -10,6 +10,7 @@ services:
       - "5435:5432" # Changed from 5432 to 5435
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
 
   minio:
     image: minio/minio:latest

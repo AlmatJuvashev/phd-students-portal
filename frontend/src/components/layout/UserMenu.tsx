@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu() {
   const { t } = useTranslation("common");
-  const { user: me } = useAuth();
+  const { user: me, logout } = useAuth();
 
   if (!me) return null;
 
@@ -55,12 +55,7 @@ export function UserMenu() {
           </div>
         </DropdownItem>
       </Link>
-      <DropdownItem
-        onClick={() => {
-          localStorage.removeItem("token");
-          location.href = "/login";
-        }}
-      >
+      <DropdownItem onClick={logout}>
         <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
           <LogOut className="h-4 w-4" />
           <span>{t("nav.logout")}</span>
@@ -69,3 +64,4 @@ export function UserMenu() {
     </DropdownMenu>
   );
 }
+
