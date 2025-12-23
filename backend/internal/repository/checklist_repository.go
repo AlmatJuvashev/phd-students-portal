@@ -20,7 +20,7 @@ type ChecklistRepository interface {
 	GetAdvisorInbox(ctx context.Context) ([]models.AdvisorInboxItem, error)
 	ApproveStep(ctx context.Context, userID, stepID string) error
 	ReturnStep(ctx context.Context, userID, stepID string) error
-	AddCommentToLatestDocument(ctx context.Context, userID, body, authorID string, mentions []string) error
+	AddCommentToLatestDocument(ctx context.Context, studentID, content, authorID, tenantID string, mentions []string) error
 }
 
 type SQLChecklistRepository struct {
@@ -91,13 +91,18 @@ func (r *SQLChecklistRepository) ReturnStep(ctx context.Context, userID, stepID 
 	return err
 }
 
-func (r *SQLChecklistRepository) AddCommentToLatestDocument(ctx context.Context, userID, body, authorID string, mentions []string) error {
-	// Fallback to first user if authorID is empty (legacy behavior for unprotected endpoints)
-	query := `INSERT INTO comments (document_id, body, author_id, mentions)
-		VALUES ((SELECT id FROM documents WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1),
-				$2, 
-				COALESCE(NULLIF($3, ''), (SELECT id FROM users ORDER BY created_at LIMIT 1)), 
-				$4)`
-	_, err := r.db.ExecContext(ctx, query, userID, body, authorID, pq.StringArray(mentions))
+func (r *SQLChecklistRepository) AddCommentToLatestDocument(ctx context.Context, studentID, content, authorID, tenantID string, mentions []string) error {
+	// Schema: comments (id, user_id, document_id, content, created_at, updated_at, parent_id, mentions, tenant_id)
+	// user_id = author of comment, document_id = latest document for student
+	// If authorID is empty, fall back to first user in system
+	query := `INSERT INTO comments (user_id, document_id, content, tenant_id, mentions)
+		VALUES (
+			CASE WHEN $3 = '' THEN (SELECT id FROM users ORDER BY created_at LIMIT 1) ELSE $3::uuid END, 
+			(SELECT id FROM documents WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1),
+			$2,
+			$4::uuid,
+			$5
+		)`
+	_, err := r.db.ExecContext(ctx, query, studentID, content, authorID, tenantID, pq.StringArray(mentions))
 	return err
 }

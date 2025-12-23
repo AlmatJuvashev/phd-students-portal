@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"strings"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -91,11 +92,12 @@ type reviewReq struct {
 func (h *ChecklistHandler) ApproveStep(c *gin.Context) {
 	uid := c.Param("id")
 	step := c.Param("stepId")
+	tenantID := c.GetString("tenant_id")
 	var r reviewReq
 	_ = c.ShouldBindJSON(&r)
 	
 	// Pass empty string as authorID to let repository fallback to system user
-	if err := h.svc.ApproveStep(c.Request.Context(), uid, step, "", r.Comment, r.Mentions); err != nil {
+	if err := h.svc.ApproveStep(c.Request.Context(), uid, step, "", tenantID, r.Comment, r.Mentions); err != nil {
 		c.JSON(500, gin.H{"error": "approve failed"})
 		return
 	}
@@ -106,12 +108,14 @@ func (h *ChecklistHandler) ApproveStep(c *gin.Context) {
 func (h *ChecklistHandler) ReturnStep(c *gin.Context) {
 	uid := c.Param("id")
 	step := c.Param("stepId")
+	tenantID := c.GetString("tenant_id")
 	var r reviewReq
 	_ = c.ShouldBindJSON(&r)
 	
 	// Pass empty string as authorID to let repository fallback to system user
-	if err := h.svc.ReturnStep(c.Request.Context(), uid, step, "", r.Comment, r.Mentions); err != nil {
-		c.JSON(500, gin.H{"error": "return failed"})
+	if err := h.svc.ReturnStep(c.Request.Context(), uid, step, "", tenantID, r.Comment, r.Mentions); err != nil {
+		log.Printf("[ChecklistHandler.ReturnStep] Error: %v", err)
+		c.JSON(500, gin.H{"error": "return failed", "details": err.Error()})
 		return
 	}
 	c.JSON(200, gin.H{"ok": true})

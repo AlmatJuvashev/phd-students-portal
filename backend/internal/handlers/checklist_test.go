@@ -226,6 +226,12 @@ func TestChecklistHandler_ApproveStep(t *testing.T) {
 		VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', $1, 'Thesis', 'dissertation', $2, now(), now())`, userID, tenantID)
 	require.NoError(t, err)
 
+	// Add middleware to set tenant_id in context
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
+
 	r.POST("/checklist/students/:id/steps/:stepId/approve", h.ApproveStep)
 
 	req, _ := http.NewRequest("POST", "/checklist/students/"+userID+"/steps/22222222-2222-2222-2222-222222222222/approve", nil)
@@ -273,6 +279,12 @@ func TestChecklistHandler_ReturnStep(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO documents (id, user_id, title, kind, tenant_id, created_at, updated_at) 
 		VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', $1, 'Thesis', 'dissertation', $2, now(), now())`, userID, tenantID)
 	require.NoError(t, err)
+
+	// Add middleware to set tenant_id in context
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
 
 	r.POST("/checklist/students/:id/steps/:stepId/return", h.ReturnStep)
 

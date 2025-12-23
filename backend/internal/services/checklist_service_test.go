@@ -100,7 +100,8 @@ func TestChecklistService_ApproveStep(t *testing.T) {
 	// Need a document linked if we wanted to test commenting, but AddCommentToLatestDocument logic is complex.
 	// Assume simple approve without comment update succeeds.
 	
-	err = svc.ApproveStep(ctx, studentID, stepID, advisorID, "", nil)
+	// ApproveStep now requires tenantID. Pass empty string since no comment is being added.
+	err = svc.ApproveStep(ctx, studentID, stepID, advisorID, tenantID, "", nil)
 	require.NoError(t, err)
 
 	// Verify status -> done
