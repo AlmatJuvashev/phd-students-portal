@@ -1,0 +1,115 @@
+{
+  "playbook_id": "test-playbook",
+  "version": "1.0.0-test",
+  "locale_default": "en",
+  "worlds": [
+    {
+      "id": "W1",
+      "title": {
+        "en": "Test World"
+      },
+      "nodes": [
+        {
+          "id": "S1_profile",
+          "title": {
+            "en": "Student Profile"
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": [],
+          "next": ["S1_text_ready"],
+          "requirements": {
+            "fields": [
+              {
+                "key": "full_name",
+                "required": true,
+                "label": {"en": "Full Name"}
+              },
+              {
+                "key": "specialty",
+                "required": true,
+                "type": "select",
+                "label": {"en": "Specialty"},
+                "options": []
+              },
+              {
+                "key": "program",
+                "required": true,
+                "type": "select",
+                "label": {"en": "Program"},
+                "options": []
+              },
+              {
+                "key": "department",
+                "required": true,
+                "type": "select",
+                "label": {"en": "Department"},
+                "options": []
+              }
+            ]
+          }
+        },
+        {
+          "id": "S1_text_ready",
+          "title": {
+            "en": "Dissertation Draft Ready"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_profile"],
+          "next": ["S1_publications_list"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "dissertation_draft",
+                "label": {"en": "Dissertation Draft"},
+                "required": true,
+                "mime": ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+              }
+            ]
+          }
+        },
+        {
+          "id": "S1_publications_list",
+          "title": {
+            "en": "Publications List"
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_text_ready"],
+          "next": [],
+          "requirements": {
+            "fields": [
+              {
+                "key": "wos_scopus",
+                "type": "collection",
+                "label": {"en": "WoS/Scopus Publications"},
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "label": {"en": "Title"}
+                  },
+                  {
+                    "key": "year",
+                    "type": "number",
+                    "required": true,
+                    "label": {"en": "Year"}
+                  }
+                ]
+              }
+            ],
+            "uploads": [
+              {
+                "key": "appendix_7_signed",
+                "label": {"en": "Appendix 7 (signed)"},
+                "required": false,
+                "mime": ["application/pdf"]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
