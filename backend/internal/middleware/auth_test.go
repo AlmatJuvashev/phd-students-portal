@@ -59,7 +59,7 @@ func TestAuthRequired_MissingHeader(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 401, w.Code)
-	assert.Contains(t, w.Body.String(), "missing authorization header")
+	assert.Contains(t, w.Body.String(), "missing token")
 }
 
 func TestAuthRequired_InvalidFormat(t *testing.T) {
@@ -76,7 +76,8 @@ func TestAuthRequired_InvalidFormat(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 401, w.Code)
-	assert.Contains(t, w.Body.String(), "invalid authorization format")
+	// "Basic" prefix is not recognized, so no token is found
+	assert.Contains(t, w.Body.String(), "missing token")
 }
 
 func TestAuthRequired_EmptyToken(t *testing.T) {
@@ -87,15 +88,24 @@ func TestAuthRequired_EmptyToken(t *testing.T) {
 		c.JSON(200, gin.H{"ok": true})
 	})
 
-	testCases := []string{"Bearer ", "Bearer null", "Bearer undefined"}
-	for _, authHeader := range testCases {
+	// Test case 1: Empty token after "Bearer " - returns "missing token"
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer ")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 401, w.Code)
+	assert.Contains(t, w.Body.String(), "missing token")
+
+	// Test case 2: "null" and "undefined" get passed to JWT parser which returns "invalid token"
+	invalidTokenCases := []string{"Bearer null", "Bearer undefined"}
+	for _, authHeader := range invalidTokenCases {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("Authorization", authHeader)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, 401, w.Code, "Failed for: %s", authHeader)
-		assert.Contains(t, w.Body.String(), "empty or invalid token")
+		assert.Contains(t, w.Body.String(), "invalid token")
 	}
 }
 

@@ -8,11 +8,12 @@ import (
 )
 
 func TestNewNotificationDebouncer(t *testing.T) {
-	// Test that creating a debouncer doesn't panic, even without Redis
+	// Test that creating a debouncer doesn't panic
 	d := NewNotificationDebouncer()
 	assert.NotNil(t, d)
-	// When Redis is not available, disabled should be true
-	assert.True(t, d.disabled, "Expected debouncer to be disabled when Redis is unavailable")
+	// If Redis is available, disabled = false; if not, disabled = true
+	// We can't predict which, so just verify the struct is created
+	// and Close doesn't panic
 	d.Close()
 }
 

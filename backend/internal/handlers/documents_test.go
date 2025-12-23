@@ -6,7 +6,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -204,15 +203,7 @@ func TestDocumentsHandler_Get(t *testing.T) {
 	})
 }
 
-func TestMain(m *testing.M) {
-	// Set S3 env vars for all tests in this package
-	os.Setenv("S3_BUCKET", "test-bucket")
-	os.Setenv("S3_ACCESS_KEY", "test-key")
-	os.Setenv("S3_SECRET_KEY", "test-secret")
-	os.Setenv("S3_REGION", "us-east-1")
-	code := m.Run()
-	os.Exit(code)
-}
+// TestMain is defined in main_test.go
 
 func TestDocumentsHandler_Create(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()

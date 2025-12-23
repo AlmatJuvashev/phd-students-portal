@@ -51,7 +51,8 @@ func TestSQLAdminRepository_ListStudentProgress(t *testing.T) {
 	require.Len(t, list, 1)
 	assert.Equal(t, "John Doe", list[0].Name)
 	assert.Equal(t, 1, list[0].CompletedNodes)
-	assert.Equal(t, "node1", list[0].CurrentNodeID)
+	require.NotNil(t, list[0].CurrentNodeID)
+	assert.Equal(t, "node1", *list[0].CurrentNodeID)
 }
 
 func TestSQLAdminRepository_ListStudentsForMonitor(t *testing.T) {
@@ -66,9 +67,8 @@ func TestSQLAdminRepository_ListStudentsForMonitor(t *testing.T) {
 	sID, _ := userRepo.Create(context.Background(), &models.User{Username: "s2", Email: "s2@test.com", Role: "student", FirstName: "Alice", LastName: "Smith"})
 	tenantRepo.AddUserToTenant(context.Background(), sID, tID, "student", true)
 
-	// Add profile submission for program/department
-	psID := "22222222-2222-2222-2222-222222222222"
-	_, err := db.Exec(`INSERT INTO profile_submissions (id, user_id, form_data, submitted_at) VALUES ($1, $2, '{"program": "CS", "department": "Eng"}', now())`, psID, sID)
+	// Add profile submission for program/department (note: no 'id' column, user_id is the PK, tenant_id required)
+	_, err := db.Exec(`INSERT INTO profile_submissions (user_id, form_data, submitted_at, tenant_id) VALUES ($1, '{"program": "CS", "department": "Eng"}', now(), $2)`, sID, tID)
 	require.NoError(t, err)
 
 	// Test Filter by Tenant
@@ -124,7 +124,8 @@ func TestSQLAdminRepository_CheckAdvisorAccess(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, access)
 
-	access2, err := repo.CheckAdvisorAccess(context.Background(), sID, "wrong-id")
+	// Use a valid UUID that doesn't exist
+	access2, err := repo.CheckAdvisorAccess(context.Background(), sID, "ffffffff-ffff-ffff-ffff-ffffffffffff")
 	require.NoError(t, err)
 	assert.False(t, access2)
 }
@@ -139,11 +140,9 @@ func TestSQLAdminRepository_AdminNotifications(t *testing.T) {
 	sID, _ := userRepo.Create(context.Background(), &models.User{Username: "s_notif", Email: "s_n@test.com", Role: "student", FirstName: "S", LastName: "N"})
 	
 	nID := "33333333-3333-3333-3333-333333333333"
-	// Create notification
-	tID := "00000000-0000-0000-0000-000000000001"
-	// Insert manually since CreateNotification helper might not cover all fields or we want specific state
-	_, err := db.Exec(`INSERT INTO admin_notifications (id, student_id, event_type, message, is_read, created_at, tenant_id) 
-		VALUES ($1, $2, 'submission', 'New Sub', false, now(), $3)`, nID, sID, tID)
+	// Create notification (note: admin_notifications table doesn't have tenant_id column, but requires node_id)
+	_, err := db.Exec(`INSERT INTO admin_notifications (id, student_id, node_id, event_type, message, is_read, created_at) 
+		VALUES ($1, $2, 'test_node', 'submission', 'New Sub', false, now())`, nID, sID)
 	require.NoError(t, err)
 
 	// List Unread
