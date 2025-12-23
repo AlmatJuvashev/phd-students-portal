@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -146,4 +147,16 @@ func CreateTestUser(t *testing.T, db *sqlx.DB, username, role string) string {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
 	return id
+}
+
+// SetupTestPlaybook loads the test playbook JSON and initializes a PlaybookManager for tests.
+// It inserts the playbook into playbook_versions and sets it as active for the given tenant.
+func SetupTestPlaybook(db *sqlx.DB, tenantID string) (*playbook.Manager, error) {
+	// Find the test_playbook.json file
+	_, b, _, _ := runtime.Caller(0)
+	basepath := filepath.Dir(b)
+	playbookPath := filepath.Join(basepath, "test_playbook.json")
+	
+	// Use playbook.EnsureActiveForTenant to load and activate
+	return playbook.EnsureActiveForTenant(db, playbookPath, tenantID)
 }

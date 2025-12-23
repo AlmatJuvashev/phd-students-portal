@@ -10,7 +10,6 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -36,7 +35,9 @@ func TestGetProfile(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO profile_submissions (tenant_id, user_id, form_data) VALUES ('00000000-0000-0000-0000-000000000001', $1, $2)`, userID, string(dataBytes))
 	require.NoError(t, err)
 
-	pb := &playbook.Manager{}
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	pb, err := testutils.SetupTestPlaybook(db, tenantID)
+	require.NoError(t, err)
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLJourneyRepository(db)
 	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
@@ -58,8 +59,8 @@ func TestGetProfile(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "Computer Science", resp["program"])
-	assert.Equal(t, "1234567890", resp["phone"])
+	// Response structure: {node_id, state, form, slots}
+	assert.Equal(t, "S1_profile", resp["node_id"])
 }
 
 func TestGetProfile_NotFound(t *testing.T) {
@@ -71,7 +72,9 @@ func TestGetProfile_NotFound(t *testing.T) {
 		VALUES ($1, 'testuser2', 'test2@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
-	pb := &playbook.Manager{}
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	pb, err := testutils.SetupTestPlaybook(db, tenantID)
+	require.NoError(t, err)
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLJourneyRepository(db)
 	svc := services.NewJourneyService(repo, pb, cfg, nil, nil, nil)
@@ -97,5 +100,7 @@ func TestGetProfile_NotFound(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Empty(t, resp)
+	// Should return submission DTO with node_id
+	assert.Equal(t, "S1_profile", resp["node_id"])
+	assert.Equal(t, "active", resp["state"])
 }
