@@ -45,6 +45,7 @@ func TestMeHandler_Me(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", map[string]interface{}{"sub": userID})
+		c.Set("userID", userID) // Me handler reads from userID, not claims
 		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
@@ -116,6 +117,7 @@ func TestMeHandler_MyTenants(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", map[string]interface{}{"sub": userID})
+		c.Set("userID", userID) // MyTenants handler reads from claims via getSub()
 		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
@@ -150,8 +152,8 @@ func TestMeHandler_MyTenants(t *testing.T) {
 		r2 := gin.New()
 		r2.Use(func(c *gin.Context) {
 			c.Set("claims", map[string]interface{}{"sub": noMemberUserID})
-		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
-		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
+			c.Set("userID", noMemberUserID)
+			c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 			c.Next()
 		})
 		r2.GET("/me/tenants", h.MyTenants)
@@ -230,7 +232,8 @@ func TestMeHandler_MyTenant(t *testing.T) {
 	t.Run("Get My Tenant Not Found", func(t *testing.T) {
 		r3 := gin.New()
 		r3.Use(func(c *gin.Context) {
-			c.Set("tenant_id", "nonexistent-id")
+			// Use a valid UUID format that doesn't exist in the database
+			c.Set("tenant_id", "ffffffff-ffff-ffff-ffff-ffffffffffff")
 			c.Next()
 		})
 		r3.GET("/me/tenant", h.MyTenant)
