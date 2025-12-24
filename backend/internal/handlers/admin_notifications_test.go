@@ -60,8 +60,10 @@ func TestNotificationsHandler_ListNotifications(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp []map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
-		assert.Len(t, resp, 1)
-		assert.Equal(t, "Admin Msg 1", resp[0]["message"])
+		require.Len(t, resp, 1, "Expected 1 unread notification")
+		if len(resp) > 0 {
+			assert.Equal(t, "Admin Msg 1", resp[0]["message"])
+		}
 	})
 }
 
