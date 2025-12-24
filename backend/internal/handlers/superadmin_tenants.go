@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
@@ -90,7 +91,11 @@ func (h *SuperadminTenantsHandler) CreateTenant(c *gin.Context) {
 
 	id, err := h.tenantSvc.Create(c.Request.Context(), tenant)
 	if err != nil {
-		// handle duplicate key error logic? Helper function was private in previous version
+		// Check for duplicate key constraint violation
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
+			c.JSON(http.StatusConflict, gin.H{"error": "tenant with this slug already exists"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create tenant: " + err.Error()})
 		return
 	}
@@ -251,6 +256,17 @@ func (h *SuperadminTenantsHandler) UpdateTenantServices(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	
+	// Validate service names
+	validServices := map[string]bool{
+		"chat": true, "calendar": true, "smtp": true, "email_alias": true,
+	}
+	for _, service := range req.EnabledServices {
+		if !validServices[service] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid service: " + service})
+			return
+		}
 	}
 	
 	name, err := h.tenantSvc.UpdateServices(c.Request.Context(), id, req.EnabledServices)
