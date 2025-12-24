@@ -23,19 +23,23 @@ func TestNodeSubmissionHandler_GetSubmission(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	userID := "10000000-bbbb-1000-1000-100000000000"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'subuser', 'sub@ex.com', 'Sub', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, $2, 'student')`, userID, tenantID)
+	require.NoError(t, err)
+
 	versionID := "20000000-bbbb-2000-2000-200000000000"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
-		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')`, versionID)
+		VALUES ($1, 'v1', 'checksum', '{}', $2)`, versionID, tenantID)
 	require.NoError(t, err)
 
 	var instanceID string
-	err = db.QueryRow(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id, current_rev) 
-		VALUES ($1, 'node1', 'active', $2, 1) RETURNING id`, userID, versionID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (tenant_id, user_id, node_id, state, playbook_version_id, current_rev) 
+		VALUES ($1, $2, 'node1', 'active', $3, 1) RETURNING id`, tenantID, userID, versionID).Scan(&instanceID)
 	require.NoError(t, err)
 
 	_, err = db.Exec(`INSERT INTO node_instance_form_revisions (node_instance_id, rev, form_data, edited_by) 
@@ -57,6 +61,7 @@ func TestNodeSubmissionHandler_GetSubmission(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.GET("/journey/nodes/:nodeId", h.GetSubmission)
@@ -80,18 +85,22 @@ func TestNodeSubmissionHandler_SubmitNode(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	userID := "30000000-bbbb-3000-3000-300000000000"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'submituser', 'submit@ex.com', 'Submit', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
-	versionID := "40000000-bbbb-4000-4000-400000000000"
-	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
-		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')`, versionID)
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, $2, 'student')`, userID, tenantID)
 	require.NoError(t, err)
 
-	_, err = db.Exec(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id) 
-		VALUES ($1, 'node1', 'active', $2)`, userID, versionID)
+	versionID := "40000000-bbbb-4000-4000-400000000000"
+	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
+		VALUES ($1, 'v1', 'checksum', '{}', $2)`, versionID, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO node_instances (tenant_id, user_id, node_id, state, playbook_version_id) 
+		VALUES ($1, $2, 'node1', 'active', $3)`, tenantID, userID, versionID)
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{
@@ -109,13 +118,14 @@ func TestNodeSubmissionHandler_SubmitNode(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.PUT("/journey/nodes/:nodeId/submission", h.PutSubmission)
 
 	t.Run("Submit Node", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"form_data": map[string]interface{}{
+			"data": map[string]interface{}{
 				"field": "submitted_value",
 			},
 			"state": "submitted",
@@ -146,21 +156,25 @@ func TestNodeSubmissionHandler_SubmitProfile(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
 
+	tenantID := "00000000-0000-0000-0000-000000000001"
 	userID := "70000000-0000-0000-0000-000000000000"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'profileuser', 'profile@ex.com', 'Profile', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, $2, 'student')`, userID, tenantID)
+	require.NoError(t, err)
+
 	// Seed playbook version
 	versionID := "80000000-0000-0000-0000-000000000000"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
-		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')`, versionID)
+		VALUES ($1, 'v1', 'checksum', '{}', $2)`, versionID, tenantID)
 	require.NoError(t, err)
 
 	// Seed S1_profile node instance
 	var instanceID string
-	err = db.QueryRow(`INSERT INTO node_instances (user_id, node_id, state, playbook_version_id) 
-		VALUES ($1, 'S1_profile', 'active', $2) RETURNING id`, userID, versionID).Scan(&instanceID)
+	err = db.QueryRow(`INSERT INTO node_instances (tenant_id, user_id, node_id, state, playbook_version_id) 
+		VALUES ($1, $2, 'S1_profile', 'active', $3) RETURNING id`, tenantID, userID, versionID).Scan(&instanceID)
 	require.NoError(t, err)
 
 	pb := &playbook.Manager{
@@ -178,13 +192,14 @@ func TestNodeSubmissionHandler_SubmitProfile(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Set("tenant_id", tenantID)
 		c.Next()
 	})
 	r.PUT("/journey/nodes/:nodeId/submission", h.PutSubmission)
 
 	t.Run("Submit Profile", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"form_data": map[string]interface{}{
+			"data": map[string]interface{}{
 				"program":    "PhD CS",
 				"specialty":  "AI",
 				"department": "CS",
