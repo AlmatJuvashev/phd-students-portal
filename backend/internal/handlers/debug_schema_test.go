@@ -21,9 +21,9 @@ func TestDebugSchema(t *testing.T) {
 		var name, dtype string
 		rows.Scan(&name, &dtype)
 		t.Logf(" - %s (%s)", name, dtype)
-		if name == "tenant_id" {
+		if name == "is_superadmin" {
 			found = true
 		}
 	}
-	assert.True(t, found, "tenant_id column missing in users table")
+	assert.True(t, found, "is_superadmin column missing in users table")
 }
