@@ -303,7 +303,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
 			chat.POST("/rooms/:roomId/read", chatHandler.MarkAsRead)
 			
-			// Protected file access
+			// File upload/download - available to all chat members
+			chat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
 			chat.GET("/rooms/:roomId/files/:filename", chatHandler.DownloadFile)
 
 			// Admin chat actions
@@ -317,7 +318,6 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 				adminChat.DELETE("/rooms/:roomId/members/:userId", chatHandler.RemoveMember)
 				adminChat.POST("/rooms/:roomId/members/batch", chatHandler.AddRoomMembersBatch)
 				adminChat.DELETE("/rooms/:roomId/members/batch", chatHandler.RemoveRoomMembersBatch)
-				adminChat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
 			}
 			
 			// Message editing/deletion
