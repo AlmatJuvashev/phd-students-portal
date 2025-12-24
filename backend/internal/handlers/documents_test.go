@@ -35,7 +35,7 @@ func TestDocumentsHandler_List(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -79,7 +79,7 @@ func TestDocumentsHandler_Upload(t *testing.T) {
 		UploadDir: "/tmp/test-uploads", // Mock dir
 	}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -130,7 +130,7 @@ func TestDocumentsHandler_Delete(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -172,7 +172,7 @@ func TestDocumentsHandler_Get(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -218,7 +218,7 @@ func TestDocumentsHandler_Create(t *testing.T) {
 		UploadDir: t.TempDir(),
 	}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -271,7 +271,7 @@ func TestDocumentsHandler_UploadVersion(t *testing.T) {
 		UploadDir: t.TempDir(),
 	}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -318,7 +318,7 @@ func TestDocumentsHandler_PresignUpload(t *testing.T) {
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -373,7 +373,7 @@ func TestDocumentsHandler_PresignGetLatest(t *testing.T) {
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)
@@ -421,7 +421,7 @@ func TestDocumentsHandler_DownloadVersion(t *testing.T) {
 
 	cfg := config.AppConfig{S3Bucket: "test-bucket"}
 	repo := repository.NewSQLDocumentRepository(db)
-	svc, _ := services.NewDocumentService(repo, cfg)
+	svc := services.NewDocumentService(repo, cfg, nil)
 	h := handlers.NewDocumentsHandler(svc, cfg)
 
 	gin.SetMode(gin.TestMode)

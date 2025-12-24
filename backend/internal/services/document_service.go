@@ -11,21 +11,17 @@ import (
 )
 
 type DocumentService struct {
-	repo repository.DocumentRepository
-	s3   *S3Client // Can be interface-ized later if needed
-	cfg  config.AppConfig
+	repo    repository.DocumentRepository
+	storage StorageClient
+	cfg     config.AppConfig
 }
 
-func NewDocumentService(repo repository.DocumentRepository, cfg config.AppConfig) (*DocumentService, error) {
-	s3c, err := NewS3FromEnv()
-	if err != nil {
-		return nil, fmt.Errorf("failed to init s3: %w", err)
-	}
+func NewDocumentService(repo repository.DocumentRepository, cfg config.AppConfig, storage StorageClient) *DocumentService {
 	return &DocumentService{
-		repo: repo,
-		s3:   s3c,
-		cfg:  cfg,
-	}, nil
+		repo:    repo,
+		storage: storage,
+		cfg:     cfg,
+	}
 }
 
 type CreateDocumentRequest struct {
@@ -92,8 +88,8 @@ func (s *DocumentService) DeleteDocument(ctx context.Context, id string) error {
 // S3 Operations
 
 func (s *DocumentService) PresignUpload(ctx context.Context, docID string, filename string, contentType string) (string, string, error) {
-	if s.s3 == nil {
-		return "", "", errors.New("S3 not configured")
+	if s.storage == nil {
+		return "", "", errors.New("storage not configured")
 	}
 	
 	if err := ValidateContentType(contentType); err != nil {
@@ -104,7 +100,7 @@ func (s *DocumentService) PresignUpload(ctx context.Context, docID string, filen
 	key := fmt.Sprintf("%s/%s", docID, filename)
 	expires := GetPresignExpires()
 	
-	url, err := s.s3.PresignPut(key, contentType, expires)
+	url, err := s.storage.PresignPut(ctx, key, contentType, expires)
 	if err != nil {
 		return "", "", err
 	}
@@ -113,8 +109,8 @@ func (s *DocumentService) PresignUpload(ctx context.Context, docID string, filen
 }
 
 func (s *DocumentService) PresignDownload(ctx context.Context, verID string) (string, error) {
-	if s.s3 == nil {
-		return "", errors.New("S3 not configured")
+	if s.storage == nil {
+		return "", errors.New("storage not configured")
 	}
 	
 	ver, err := s.repo.GetVersion(ctx, verID)
@@ -123,16 +119,16 @@ func (s *DocumentService) PresignDownload(ctx context.Context, verID string) (st
 	}
 	
 	if !ver.ObjectKey.Valid || ver.ObjectKey.String == "" {
-		return "", errors.New("version is not stored in S3")
+		return "", errors.New("version is not stored in storage")
 	}
 	
 	expires := GetPresignExpires()
-	return s.s3.PresignGet(ver.ObjectKey.String, expires)
+	return s.storage.PresignGet(ctx, ver.ObjectKey.String, expires)
 }
 
 func (s *DocumentService) PresignLatestDownload(ctx context.Context, docID string) (string, error) {
-	if s.s3 == nil {
-		return "", errors.New("S3 not configured")
+	if s.storage == nil {
+		return "", errors.New("storage not configured")
 	}
 	
 	ver, err := s.repo.GetLatestVersion(ctx, docID)
@@ -141,11 +137,11 @@ func (s *DocumentService) PresignLatestDownload(ctx context.Context, docID strin
 	}
 	
 	if !ver.ObjectKey.Valid || ver.ObjectKey.String == "" {
-		return "", errors.New("latest version is not stored in S3")
+		return "", errors.New("latest version is not stored in storage")
 	}
 	
 	expires := GetPresignExpires()
-	return s.s3.PresignGet(ver.ObjectKey.String, expires)
+	return s.storage.PresignGet(ctx, ver.ObjectKey.String, expires)
 }
 
 // GetStoragePath returns the local path or S3 info for a version
@@ -154,15 +150,15 @@ func (s *DocumentService) GetVersionFile(ctx context.Context, verID string) (*mo
 	return s.repo.GetVersion(ctx, verID)
 }
 
-// Helper to check S3 client availability
+// Helper to check storage client availability
 func (s *DocumentService) IsS3Configured() bool {
-	return s.s3 != nil
+	return s.storage != nil
 }
 
 // Helper to get bucket name
 func (s *DocumentService) GetS3Bucket() string {
-	if s.s3 != nil {
-		return s.s3.Bucket()
+	if s.storage != nil {
+		return s.storage.Bucket()
 	}
 	return ""
 }

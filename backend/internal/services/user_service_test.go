@@ -154,7 +154,7 @@ func (m *MockUserRepository) SyncProfileSubmissions(ctx context.Context, userID 
 
 func TestUserService_CreateUser(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
 
 	ctx := context.Background()
 	req := services.CreateUserRequest{
@@ -188,7 +188,7 @@ func TestUserService_CreateUser(t *testing.T) {
 
 func TestUserService_ListUsers(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
 
 	ctx := context.Background()
 	filter := repository.UserFilter{Role: "student"}

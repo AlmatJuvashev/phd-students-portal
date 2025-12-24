@@ -29,18 +29,20 @@ type CreateUserRequest struct {
 }
 
 type UserService struct {
-	repo repository.UserRepository
-	rds  *redis.Client
-	cfg  config.AppConfig
-	emailSvc *EmailService // We need this
+	repo     repository.UserRepository
+	rds      *redis.Client
+	cfg      config.AppConfig
+	emailSvc *EmailService
+	storage  StorageClient
 }
 
-func NewUserService(repo repository.UserRepository, rds *redis.Client, cfg config.AppConfig, emailSvc *EmailService) *UserService {
+func NewUserService(repo repository.UserRepository, rds *redis.Client, cfg config.AppConfig, emailSvc *EmailService, storage StorageClient) *UserService {
 	return &UserService{
-		repo: repo,
-		rds:  rds,
-		cfg:  cfg,
+		repo:     repo,
+		rds:      rds,
+		cfg:      cfg,
 		emailSvc: emailSvc,
+		storage:  storage,
 	}
 }
 
@@ -384,16 +386,19 @@ func (s *UserService) PresignAvatarUpload(ctx context.Context, userID, filename,
 	if !auth.IsImageMimeType(contentType) { // Assuming auth helper valid, otherwise manual check
 		// manual check
 		if contentType != "image/jpeg" && contentType != "image/png" && contentType != "image/gif" {
-			 return "", "", "", fmt.Errorf("only image files are allowed")
+			return "", "", "", fmt.Errorf("only image files are allowed")
 		}
 	}
 	
-	s3c, err := NewS3FromEnv()
-	if err != nil { return "", "", "", err }
+	if s.storage == nil {
+		return "", "", "", fmt.Errorf("storage not configured")
+	}
 	
 	key := fmt.Sprintf("avatars/%s/%d_%s", userID, time.Now().Unix(), filename)
-	url, err := s3c.PresignPut(key, contentType, 15*time.Minute)
-	if err != nil { return "", "", "", err }
+	url, err := s.storage.PresignPut(ctx, key, contentType, 15*time.Minute)
+	if err != nil {
+		return "", "", "", err
+	}
 	
 	publicURL := fmt.Sprintf("%s/%s/%s", s.cfg.S3Endpoint, s.cfg.S3Bucket, key)
 	return url, key, publicURL, nil

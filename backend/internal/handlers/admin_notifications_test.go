@@ -34,7 +34,7 @@ func TestNotificationsHandler_ListNotifications(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -79,7 +79,7 @@ func TestNotificationsHandler_GetUnreadCount(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -113,7 +113,7 @@ func TestNotificationsHandler_MarkAsRead(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -147,7 +147,7 @@ func TestNotificationsHandler_MarkAllAsRead(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)

@@ -24,6 +24,13 @@ type S3Config struct {
 	UsePathStyle bool
 }
 
+type StorageClient interface {
+	PresignPut(ctx context.Context, key, contentType string, expires time.Duration) (string, error)
+	PresignGet(ctx context.Context, key string, expires time.Duration) (string, error)
+	ObjectExists(ctx context.Context, key string) (bool, error)
+	Bucket() string
+}
+
 type S3Client struct {
 	cfg    S3Config
 	client *s3.Client
@@ -86,13 +93,13 @@ func NewS3FromEnv() (*S3Client, error) {
 	return &S3Client{cfg: scfg, client: client}, nil
 }
 
-func (s *S3Client) PresignPut(objectKey, contentType string, expires time.Duration) (string, error) {
+func (s *S3Client) PresignPut(ctx context.Context, objectKey, contentType string, expires time.Duration) (string, error) {
 	if s == nil || s.client == nil {
 		return "", nil
 	}
 	log.Printf("[S3] Presigning PUT for key=%s bucket=%s expires=%v", objectKey, s.cfg.Bucket, expires)
 	ps := s3.NewPresignClient(s.client)
-	req, err := ps.PresignPutObject(context.Background(), &s3.PutObjectInput{
+	req, err := ps.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      &s.cfg.Bucket,
 		Key:         &objectKey,
 		ContentType: &contentType,
@@ -111,13 +118,13 @@ func getEnv(k, def string) string {
 	return def
 }
 
-func (s *S3Client) PresignGet(objectKey string, expires time.Duration) (string, error) {
+func (s *S3Client) PresignGet(ctx context.Context, objectKey string, expires time.Duration) (string, error) {
 	if s == nil || s.client == nil {
 		return "", nil
 	}
 	log.Printf("[S3] Presigning GET for key=%s bucket=%s expires=%v", objectKey, s.cfg.Bucket, expires)
 	ps := s3.NewPresignClient(s.client)
-	req, err := ps.PresignGetObject(context.Background(), &s3.GetObjectInput{
+	req, err := ps.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: &s.cfg.Bucket,
 		Key:    &objectKey,
 	}, s3.WithPresignExpires(expires))
@@ -153,11 +160,11 @@ func firstNonEmpty(values ...string) string {
 }
 
 // ObjectExists checks if an object exists in S3 bucket
-func (s *S3Client) ObjectExists(objectKey string) (bool, error) {
+func (s *S3Client) ObjectExists(ctx context.Context, objectKey string) (bool, error) {
 	if s == nil || s.client == nil {
 		return false, nil
 	}
-	_, err := s.client.HeadObject(context.Background(), &s3.HeadObjectInput{
+	_, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: &s.cfg.Bucket,
 		Key:    &objectKey,
 	})

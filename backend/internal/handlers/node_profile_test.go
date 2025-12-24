@@ -10,6 +10,7 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -36,7 +37,7 @@ func TestGetProfile(t *testing.T) {
 	require.NoError(t, err)
 
 	tenantID := "00000000-0000-0000-0000-000000000001"
-	pb, err := testutils.SetupTestPlaybook(db, tenantID)
+	pb, err := playbook.SetupTestPlaybook(db, tenantID)
 	require.NoError(t, err)
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLJourneyRepository(db)
@@ -73,7 +74,7 @@ func TestGetProfile_NotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	tenantID := "00000000-0000-0000-0000-000000000001"
-	pb, err := testutils.SetupTestPlaybook(db, tenantID)
+	pb, err := playbook.SetupTestPlaybook(db, tenantID)
 	require.NoError(t, err)
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLJourneyRepository(db)

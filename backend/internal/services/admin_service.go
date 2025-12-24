@@ -13,16 +13,18 @@ import (
 )
 
 type AdminService struct {
-	repo repository.AdminRepository
-	pb   *pb.Manager
-	cfg  config.AppConfig
+	repo    repository.AdminRepository
+	pb      *pb.Manager
+	cfg     config.AppConfig
+	storage StorageClient
 }
 
-func NewAdminService(repo repository.AdminRepository, pbm *pb.Manager, cfg config.AppConfig) *AdminService {
+func NewAdminService(repo repository.AdminRepository, pbm *pb.Manager, cfg config.AppConfig, storage StorageClient) *AdminService {
 	return &AdminService{
-		repo: repo,
-		pb:   pbm,
-		cfg:  cfg,
+		repo:    repo,
+		pb:      pbm,
+		cfg:     cfg,
+		storage: storage,
 	}
 }
 
@@ -565,10 +567,8 @@ func (s *AdminService) PresignReviewedDocumentUpload(ctx context.Context, attach
 		if !allowed { return "", "", errors.New("forbidden") }
 	}
 
-	// S3 Client
-	s3c, err := NewS3FromEnv()
-	if err != nil || s3c == nil {
-		return "", "", errors.New("S3 not configured")
+	if s.storage == nil {
+		return "", "", errors.New("storage client not available")
 	}
 
 	// Generate object key: reviewed_documents/{attachment_id}/{timestamp}-{filename}
@@ -576,7 +576,7 @@ func (s *AdminService) PresignReviewedDocumentUpload(ctx context.Context, attach
 	objectKey := fmt.Sprintf("reviewed_documents/%s/%s-%s", attachmentID, timestamp, filename)
 
 	expires := GetPresignExpires()
-	url, err := s3c.PresignPut(objectKey, contentType, expires)
+	url, err := s.storage.PresignPut(ctx, objectKey, contentType, expires)
 	if err != nil {
 		return "", "", err
 	}

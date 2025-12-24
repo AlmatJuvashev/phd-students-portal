@@ -26,7 +26,7 @@ func TestUsersHandler_CreateUser(t *testing.T) {
 
 	
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil, nil)
 	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
@@ -75,7 +75,7 @@ func TestUsersHandler_ListUsers(t *testing.T) {
 
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil, nil)
 	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
@@ -132,7 +132,7 @@ func TestUsersHandler_UpdateMe_Extended(t *testing.T) {
 
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil, nil)
 	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
@@ -178,7 +178,7 @@ func TestUsersHandler_PresignAvatar(t *testing.T) {
 
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil, nil)
 	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
@@ -229,7 +229,7 @@ func TestUsersHandler_VerifyEmailChange(t *testing.T) {
 
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil, nil)
 	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
@@ -262,7 +262,7 @@ func TestUsersHandler_SetActive(t *testing.T) {
 
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil)
+	svc := services.NewUserService(repo, nil, config.AppConfig{}, nil, nil)
 	h := handlers.NewUsersHandler(svc, config.AppConfig{})
 
 	gin.SetMode(gin.TestMode)
