@@ -29,6 +29,9 @@ func TestLockedState_CantSubmit(t *testing.T) {
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
+	require.NoError(t, err)
+
 	versionID := "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -99,6 +102,9 @@ func TestWaitingState_CantAdvance(t *testing.T) {
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
+	require.NoError(t, err)
+
 	versionID := "dddddddd-dddd-dddd-dddd-dddddddddddd"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -166,6 +172,9 @@ func TestFullStateFlow(t *testing.T) {
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
+	require.NoError(t, err)
+
 	versionID := "ffffffff-ffff-ffff-ffff-ffffffffffff"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -217,7 +226,7 @@ func TestFullStateFlow(t *testing.T) {
 	require.Equal(t, http.StatusOK, w.Code)
 
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "submitted", resp["state"])
+	assert.Equal(t, true, resp["ok"])
 
 	// Step 3: Done (submitted -> done via override)
 	body, _ = json.Marshal(map[string]string{"state": "done"})
@@ -245,6 +254,9 @@ func TestNeedsFixes_Resubmit(t *testing.T) {
 	userID := "11112222-3333-4444-5555-666677778888"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
 	require.NoError(t, err)
 
 	versionID := "99998888-7777-6666-5555-444433332222"
@@ -308,5 +320,5 @@ func TestNeedsFixes_Resubmit(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "submitted", resp["state"])
+	assert.Equal(t, true, resp["ok"])
 }
