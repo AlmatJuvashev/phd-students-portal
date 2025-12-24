@@ -87,3 +87,22 @@ func (h *NotificationHandler) MarkAllAsRead(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "all marked as read"})
 }
+
+func (h *NotificationHandler) GetNotifications(c *gin.Context) {
+	userID := c.GetString("userID")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	
+	limit := 50 // default
+	notifs, err := h.service.ListNotifications(c.Request.Context(), userID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if notifs == nil {
+		notifs = []models.Notification{}
+	}
+	c.JSON(http.StatusOK, notifs)
+}
