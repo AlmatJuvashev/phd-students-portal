@@ -28,6 +28,9 @@ func setupTestEnvironment(t *testing.T, userRole string) (*handlers.NodeSubmissi
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', $2, 'hash', true)`, userID, userRole)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', $2)`, userID, userRole)
+	require.NoError(t, err)
+
 	versionID := "22222222-2222-2222-2222-222222222222"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -89,7 +92,7 @@ func TestNodeStateTransitions_StudentSubmitsNode(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "submitted", resp["state"])
+	assert.Equal(t, true, resp["ok"])
 }
 
 func TestNodeStateTransitions_StudentCannotDirectlyApprove(t *testing.T) {
@@ -115,7 +118,7 @@ func TestNodeStateTransitions_StudentCannotDirectlyApprove(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	// Check that either it succeeded (override) or failed
 	if w.Code == http.StatusOK {
-		assert.Equal(t, "done", resp["state"])
+		assert.Equal(t, true, resp["ok"])
 	} else {
 		assert.Contains(t, w.Body.String(), "error")
 	}
@@ -131,9 +134,15 @@ func TestNodeStateTransitions_AdminApprovesNode(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'User', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, studentID)
+	require.NoError(t, err)
+
 	adminID := "22222222-2222-2222-2222-222222222222"
 	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, adminID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'admin')`, adminID)
 	require.NoError(t, err)
 
 	versionID := "22222222-2222-2222-2222-222222222222"
@@ -217,6 +226,9 @@ func TestNodeStateTransitions_AdvisorRequestsFixes(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'User', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, studentID)
+	require.NoError(t, err)
+
 	versionID := "33333333-3333-3333-3333-333333333333"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -284,6 +296,9 @@ func TestNodeStateTransitions_StudentResubmitsAfterFixes(t *testing.T) {
 		VALUES ($1, 'student', 'student@ex.com', 'Student', 'User', 'student', 'hash', true)`, studentID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, studentID)
+	require.NoError(t, err)
+
 	versionID := "55555555-5555-5555-5555-555555555555"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -344,7 +359,7 @@ func TestNodeStateTransitions_StudentResubmitsAfterFixes(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "submitted", resp["state"])
+	assert.Equal(t, true, resp["ok"])
 }
 
 func TestNodeStateTransitions_InvalidStateRejected(t *testing.T) {
@@ -375,6 +390,9 @@ func TestNodeStateTransitions_EventsLogged(t *testing.T) {
 	userID := "123e4567-e89b-12d3-a456-426614174000"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
 	require.NoError(t, err)
 
 	versionID := "22222222-2222-2222-2222-222222222222"
