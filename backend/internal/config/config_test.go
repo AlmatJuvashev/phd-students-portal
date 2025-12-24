@@ -8,17 +8,31 @@ import (
 )
 
 func TestMustLoad_Defaults(t *testing.T) {
-	// Save and restore environment
-	originalDBURL := os.Getenv("DATABASE_URL")
+	// Save all config-related environment variables
+	envVars := []string{
+		"DATABASE_URL", "APP_PORT", "APP_ENV", "JWT_SECRET", "JWT_EXP_DAYS",
+		"UPLOAD_DIR", "FILE_UPLOAD_MAX_MB", "SMTP_HOST", "SMTP_PORT",
+		"SMTP_USER", "SMTP_PASS", "SMTP_FROM", "FRONTEND_BASE", "SERVER_URL",
+		"REDIS_URL", "S3_ENDPOINT", "S3_REGION", "S3_BUCKET", "S3_ACCESS_KEY", "S3_SECRET_KEY",
+	}
+	
+	originalValues := make(map[string]string)
+	for _, key := range envVars {
+		originalValues[key] = os.Getenv(key)
+		os.Unsetenv(key)
+	}
+	
 	defer func() {
-		if originalDBURL != "" {
-			os.Setenv("DATABASE_URL", originalDBURL)
-		} else {
-			os.Unsetenv("DATABASE_URL")
+		for key, val := range originalValues {
+			if val != "" {
+				os.Setenv(key, val)
+			} else {
+				os.Unsetenv(key)
+			}
 		}
 	}()
 
-	// Set minimal required env var
+	// Set only the required DATABASE_URL
 	os.Setenv("DATABASE_URL", "postgres://test:test@localhost:5432/test")
 
 	cfg := MustLoad()
