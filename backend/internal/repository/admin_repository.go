@@ -424,7 +424,6 @@ func (r *SQLAdminRepository) GetBottleneck(ctx context.Context, studentIDs []str
 		return "", 0, nil
 	}
 	return nodeID, count, err
-	return nodeID, count, err
 }
 
 func (r *SQLAdminRepository) CheckAdvisorAccess(ctx context.Context, studentID, advisorID string) (bool, error) {

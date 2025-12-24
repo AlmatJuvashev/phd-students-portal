@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
@@ -277,7 +278,9 @@ func TestSuperAdminRepository_ActivityLogs(t *testing.T) {
 			Action:     "create",
 			EntityType: "user",
 			EntityID:   uID,
-			// Metadata omitted to avoid type complexity in tests
+			Description: "Test log entry",
+			IPAddress:  "127.0.0.1",
+			Metadata:   map[string]interface{}{"test": "data", "status": "active"},
 		}
 
 		err := repo.LogActivity(context.Background(), params)
@@ -290,10 +293,11 @@ func TestSuperAdminRepository_ActivityLogs(t *testing.T) {
 			params := models.ActivityLogParams{
 				TenantID:   &tID,
 				UserID:     &uID,
-				Action:     "test_action",
-				EntityType: "test_entity",
+				Action:     "test_action_" + strconv.Itoa(i),
+				EntityType: "test_entity_" + strconv.Itoa(i),
 				EntityID:   uID,
-				// Metadata omitted
+				IPAddress:  "127.0.0.1",
+				Metadata:   map[string]interface{}{"index": i},
 			}
 			err := repo.LogActivity(context.Background(), params)
 			require.NoError(t, err)
@@ -324,15 +328,15 @@ func TestSuperAdminRepository_ActivityLogs(t *testing.T) {
 	t.Run("GetActions", func(t *testing.T) {
 		actions, err := repo.GetActions(context.Background())
 		require.NoError(t, err)
-		// Actions list depends on existing logs, so we just verify no error
-		assert.NotNil(t, actions)
+		assert.NotEmpty(t, actions, "Should have at least one action type")
+		assert.Contains(t, actions, "create")
 	})
 
 	t.Run("GetEntityTypes", func(t *testing.T) {
 		entityTypes, err := repo.GetEntityTypes(context.Background())
 		require.NoError(t, err)
-		// Entity types depend on existing logs, so we just verify no error
-		assert.NotNil(t, entityTypes)
+		assert.NotEmpty(t, entityTypes, "Should have at least one entity type")
+		assert.Contains(t, entityTypes, "user")
 	})
 }
 

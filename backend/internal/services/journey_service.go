@@ -204,63 +204,107 @@ func (s *JourneyService) GetScoreboard(ctx context.Context, tenantID, currentUse
 	}, nil
 }
 
-// ActivateNextNodes logic moving from handlers/journey_progression.go
+// ActivateNextNodes checks dependent nodes and activates them if all prerequisites are met
 func (s *JourneyService) ActivateNextNodes(ctx context.Context, userID, completedNodeID, tenantID string) error {
 	log.Printf("[ActivateNextNodes] Starting for user=%s node=%s", userID, completedNodeID)
 	
-	// 1. Parse playbook (Simple JSON walk)
-	var pbStruct struct {
-		Worlds []struct {
-			Nodes []struct {
-				ID   string   `json:"id"`
-				Next []string `json:"next"`
-			} `json:"nodes"`
-		} `json:"worlds"`
-	}
-	if err := json.Unmarshal(s.pb.Raw, &pbStruct); err != nil {
-		return fmt.Errorf("parse playbook: %w", err)
+	nodeDef, ok := s.pb.NodeDefinition(completedNodeID)
+	if !ok {
+		return nil // Should not happen with valid nodeID
 	}
 	
-	var nextNodes []string
-	found := false
-	for _, world := range pbStruct.Worlds {
-		for _, node := range world.Nodes {
-			if node.ID == completedNodeID {
-				nextNodes = node.Next
-				found = true
-				break
-			}
-		}
-		if found { break }
-	}
-	
-	if len(nextNodes) == 0 {
+	if len(nodeDef.Next) == 0 {
 		return nil
 	}
 	
-	for _, nodeID := range nextNodes {
-		// Check existence
+	for _, nodeID := range nodeDef.Next {
+		// 1. Check if we can activate this node (all prerequisites done)
+		can, err := s.canActivate(ctx, userID, nodeID)
+		if err != nil {
+			log.Printf("[ActivateNextNodes] Error checking prerequisites for %s: %v", nodeID, err)
+			continue
+		}
+		if !can {
+			log.Printf("[ActivateNextNodes] Node %s prerequisites not yet met", nodeID)
+			continue
+		}
+
+		// 2. Activate or Create
 		inst, err := s.repo.GetNodeInstance(ctx, userID, nodeID)
 		if inst != nil { // Exists
 			if inst.State == "locked" {
-				_ = s.repo.UpdateNodeInstanceState(ctx, inst.ID, "locked", "active")
-				log.Printf("Activated existing node %s", nodeID)
-				_ = s.repo.UpsertJourneyState(ctx, userID, nodeID, "active", tenantID)
+				err = s.repo.UpdateNodeInstanceState(ctx, inst.ID, "locked", "active")
+				if err == nil {
+					log.Printf("Activated existing node %s", nodeID)
+					_ = s.repo.UpsertJourneyState(ctx, userID, nodeID, "active", tenantID)
+				}
 			}
-		} else if err == nil || err == context.Canceled { // No error (nil return from GetNodeInstance implies not found logic in simple repo, but sqlx returns error usually. My implementation returns nil if NoRows)
-			// Wait, my GetNodeInstance returns (nil, nil) if SQL NoRows.
-			// So if inst==nil -> create.
-			
+		} else if err == nil { 
 			// Create
 			_, err := s.repo.CreateNodeInstance(ctx, tenantID, userID, s.pb.VersionID, nodeID, "active", nil)
 			if err != nil {
 				log.Printf("Error creating instance %s: %v", nodeID, err)
 			} else {
-				// s.repo.LogNodeEvent(...)
+				_ = s.repo.UpsertJourneyState(ctx, userID, nodeID, "active", tenantID)
+				
+				// Log Event
+				payload := map[string]any{"reason": "prerequisites_met", "source": completedNodeID}
+				_ = s.repo.LogNodeEvent(ctx, "", "node_activated", userID, payload) // Note: ID empty if not yet fetched
 			}
-			_ = s.repo.UpsertJourneyState(ctx, userID, nodeID, "active", tenantID)
 		}
 	}
+	return nil
+}
+
+func (s *JourneyService) canActivate(ctx context.Context, userID, nodeID string) (bool, error) {
+	nodeDef, ok := s.pb.NodeDefinition(nodeID)
+	if !ok {
+		return false, fmt.Errorf("node %s not found in playbook", nodeID)
+	}
+
+	if len(nodeDef.Prerequisites) == 0 {
+		return true, nil
+	}
+
+	// Fetch all instances for user to check states
+	// Optimization: Get states for specific nodes only? 
+	// For now, journey state table is small and indexed by (user_id, node_id).
+	// But we need to be sure they are 'done'.
+	for _, preID := range nodeDef.Prerequisites {
+		inst, err := s.repo.GetNodeInstance(ctx, userID, preID)
+		if err != nil {
+			return false, err
+		}
+		if inst == nil || inst.State != "done" {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (s *JourneyService) verifyRequirements(ctx context.Context, inst *models.NodeInstance) error {
+	// Use GetFullSubmissionSlots as it includes both SlotKey and Attachments
+	slots, err := s.repo.GetFullSubmissionSlots(ctx, inst.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, slot := range slots {
+		if slot.Required {
+			hasActive := false
+			for _, a := range slot.Attachments {
+				if a.IsActive {
+					hasActive = true
+					break
+				}
+			}
+			if !hasActive {
+				return fmt.Errorf("required file for slot '%s' is missing", slot.SlotKey)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -515,6 +559,13 @@ func (s *JourneyService) transitionState(ctx context.Context, tenantID string, i
 		return fmt.Errorf("role %s cannot transition from %s to %s", role, inst.State, newState)
 	}
 	
+	// Requirement Verification for terminal states
+	if newState == "submitted" || newState == "done" {
+		if err := s.verifyRequirements(ctx, inst); err != nil {
+			return fmt.Errorf("requirements not met: %w", err)
+		}
+	}
+
 	oldState := inst.State
 	err = s.repo.UpdateNodeInstanceState(ctx, inst.ID, oldState, newState)
 	if err != nil {
@@ -630,6 +681,14 @@ func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nod
 	}
 
 	log.Printf("[JourneyService] AttachUpload: Attaching %s to slot %s", originalFilename, slot.ID)
+
+	// Multiplicity check: If single, deactivate previous attachments
+	if slot.Multiplicity == "single" {
+		err = s.repo.DeactivateSlotAttachments(ctx, slot.ID)
+		if err != nil {
+			return fmt.Errorf("failed to deactivate old attachments: %w", err)
+		}
+	}
 
 	// 1. Create or Find Document
 	// For simplicity, we create a new Document entry for each upload, 
