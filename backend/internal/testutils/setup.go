@@ -32,7 +32,10 @@ func SetupTestDB() (*sqlx.DB, func()) {
 	if err != nil {
 		log.Fatalf("Failed to connect to test DB: %v", err)
 	}
-	db.SetMaxOpenConns(1)
+	// Allow multiple connections for parallel test execution
+	// but keep it reasonable to avoid overwhelming the test DB
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
 
 	// Find project root to locate migrations
 	_, b, _, _ := runtime.Caller(0)
@@ -72,32 +75,56 @@ func SetupTestDB() (*sqlx.DB, func()) {
 }
 
 func cleanupDB(db *sqlx.DB) {
-	// Cleanup logic
-	// Truncating tables.
+	// Cleanup logic - order matters for foreign key constraints
+	// Clean child tables first, then parent tables
 	tables := []string{
-		"users", "tenants", "user_tenant_memberships",
-		"programs", "specialties", "cohorts", "departments", "specialty_programs",
-		"node_instances", "node_instance_form_revisions", "node_instance_slots", "node_instance_slot_attachments", "node_outcomes", "node_events",
-		"chat_rooms", "chat_room_members", "chat_messages", "chat_room_read_status",
+		// Child tables first (those with foreign keys)
+		"node_instance_slot_attachments", "node_instance_slots", "node_instance_form_revisions", "node_outcomes", "node_events",
+		"node_instances",
+		"journey_states", "node_deadlines",
+		"student_advisors",
+		"chat_room_read_status", "chat_messages", "chat_room_members", "chat_rooms",
+		"event_attendees", "events",
+		"student_steps", "checklist_steps", "checklist_modules",
+		"document_versions", "documents",
+		"comments",
 		"notifications",
-		"events", "event_attendees",
-		"checklist_modules", "checklist_steps", "student_steps",
-		"documents", "document_versions", "comments",
-		"playbook_versions", "playbook_active_version",
-		"contacts",
-		"journey_states", "student_advisors", "node_deadlines",
+		"admin_notifications",
+		"user_tenant_memberships",
 		"profile_submissions", "profile_audit_log", "email_verification_tokens", "rate_limit_events",
+		"specialty_programs",
+		"playbook_active_version", "playbook_versions",
+		"contacts",
+		// Parent tables last
+		"users",
+		"programs", "specialties", "cohorts", "departments",
+		"tenants",
 	}
+	
+	// Use a transaction to make cleanup atomic and faster
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("Failed to start cleanup transaction: %v", err)
+		return
+	}
+	defer tx.Rollback()
+	
 	for _, table := range tables {
-		_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
+		_, err := tx.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
 		if err != nil {
 			// Log but don't fail, maybe table doesn't exist yet
 			log.Printf("Failed to truncate table %s: %v", table, err)
 		}
 	}
-	// Truncate node_state_transitions and admin_notifications
-	db.Exec("TRUNCATE TABLE node_state_transitions CASCADE")
-	db.Exec("TRUNCATE TABLE admin_notifications CASCADE")
+	
+	// Truncate node_state_transitions separately
+	tx.Exec("TRUNCATE TABLE node_state_transitions CASCADE")
+	
+	// Commit the cleanup transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("Failed to commit cleanup transaction: %v", err)
+		return
+	}
 
 	// Seed default transitions (from migration 0006)
 	db.Exec(`INSERT INTO node_state_transitions(from_state, to_state, allowed_roles) VALUES
