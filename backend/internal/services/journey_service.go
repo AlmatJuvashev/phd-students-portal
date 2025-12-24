@@ -442,6 +442,15 @@ func (s *JourneyService) PutSubmission(ctx context.Context, tenantID, userID, ro
 		if err != nil {
 			return err
 		}
+		
+		// Special handling for S1_profile node: sync data to users table
+		if nodeID == "S1_profile" {
+			err = s.syncProfileToUsers(ctx, tenantID, userID, formData)
+			if err != nil {
+				// Log error but don't fail the submission
+				log.Printf("[PutSubmission] Failed to sync profile to users: %v", err)
+			}
+		}
 	}
 
 	// 3. Transition State if requested
@@ -590,5 +599,40 @@ func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nod
 	// TODO: Create Document Version via DocumentService.
 	// For now we assume success or logging.
 	
+	return nil
+}
+
+// syncProfileToUsers syncs profile submission data to the users table
+// This is called when the S1_profile node is submitted
+func (s *JourneyService) syncProfileToUsers(ctx context.Context, tenantID, userID string, formData []byte) error {
+	// Parse the form data
+	var data map[string]interface{}
+	if err := json.Unmarshal(formData, &data); err != nil {
+		return fmt.Errorf("failed to parse form data: %w", err)
+	}
+	
+	// Build update fields dynamically based on available fields
+	fields := make(map[string]interface{})
+	
+	// Map profile fields to user table columns
+	syncFields := []string{"program", "specialty", "department", "cohort"}
+	for _, f := range syncFields {
+		if val, ok := data[f]; ok {
+			fields[f] = val
+		}
+	}
+	
+	// If no fields to update, return early
+	if len(fields) == 0 {
+		return nil
+	}
+	
+	// Execute the update via repository
+	err := s.repo.SyncProfileToUsers(ctx, userID, tenantID, fields)
+	if err != nil {
+		return fmt.Errorf("failed to update users table: %w", err)
+	}
+	
+	log.Printf("[syncProfileToUsers] Successfully synced profile data for user %s", userID)
 	return nil
 }

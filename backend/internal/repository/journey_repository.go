@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"fmt"
+	"strings"
+
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -45,6 +48,9 @@ type JourneyRepository interface {
 	GetSlot(ctx context.Context, instanceID, slotKey string) (*models.NodeInstanceSlot, error)
 	CreateAttachment(ctx context.Context, slotID, docVerID, status, filename, attachedBy string, sizeBytes int64) (string, error)
 	
+	// Profile Sync
+	SyncProfileToUsers(ctx context.Context, userID, tenantID string, fields map[string]interface{}) error
+
 	// Transaction
 	WithTx(ctx context.Context, fn func(repo JourneyRepository) error) error
 }
@@ -374,4 +380,43 @@ func (r *SQLJourneyRepository) CreateAttachment(ctx context.Context, slotID, doc
 	err := r.q().QueryRowxContext(ctx, `INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, attached_by, size_bytes, attached_at)
 		VALUES ($1, $2, true, $3, $4, $5, $6, now()) RETURNING id`, slotID, docVerID, status, filename, attachedBy, sizeBytes).Scan(&id)
 	return id, err
+}
+
+func (r *SQLJourneyRepository) SyncProfileToUsers(ctx context.Context, userID, tenantID string, fields map[string]interface{}) error {
+	if len(fields) == 0 {
+		return nil
+	}
+
+	// 1. Sync to profile_submissions table (legacy/compatibility)
+	jsonBytes, err := json.Marshal(fields)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.q().ExecContext(ctx, `INSERT INTO profile_submissions (user_id, form_data, tenant_id)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id)
+        DO UPDATE SET form_data = profile_submissions.form_data || $2::jsonb, updated_at = NOW()`,
+		userID, jsonBytes, tenantID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Sync to users table (denormalized for performance)
+	setClauses := make([]string, 0, len(fields))
+	args := make([]interface{}, 0, len(fields)+1)
+	argIndex := 1
+
+	for field, value := range fields {
+		setClauses = append(setClauses, fmt.Sprintf("%s = $%d", field, argIndex))
+		args = append(args, value)
+		argIndex++
+	}
+
+	args = append(args, userID)
+	query := fmt.Sprintf("UPDATE users SET %s WHERE id = $%d", 
+		strings.Join(setClauses, ", "), argIndex)
+
+	_, err = r.q().ExecContext(ctx, query, args...)
+	return err
 }
