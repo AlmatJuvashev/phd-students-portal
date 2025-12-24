@@ -123,7 +123,7 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 		FirstName  string `json:"first_name" binding:"required"`
 		LastName   string `json:"last_name" binding:"required"`
 		Email      string `json:"email" binding:"required,email"`
-		Role       string `json:"role" binding:"required,oneof=student admin superadmin"`
+		Role       string `json:"role" binding:"required,oneof=student admin advisor chair"`
 		Phone      string `json:"phone"`
 		Program    string `json:"program"`
 		Specialty  string `json:"specialty"`
@@ -135,7 +135,7 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Don't allow creating superadmin through update
+	// Don't allow assigning superadmin role via this handler
 	if req.Role == "superadmin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "cannot assign superadmin role"})
 		return
@@ -162,7 +162,11 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 			c.JSON(403, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(500, gin.H{"error": "update failed"})
+		if err == repository.ErrNotFound {
+			c.JSON(404, gin.H{"error": "user not found"})
+			return
+		}
+		c.JSON(500, gin.H{"error": "update failed", "details": err.Error()})
 		return
 	}
 	
