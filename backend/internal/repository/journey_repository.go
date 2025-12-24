@@ -34,7 +34,7 @@ type JourneyRepository interface {
 	GetNodeOutcomes(ctx context.Context, instanceID string) ([]models.NodeOutcome, error)
 	UpsertSubmission(ctx context.Context, instanceID string, currentRev int, locale *string) error
 	GetFormRevision(ctx context.Context, instanceID string, rev int) ([]byte, error)
-	InsertFormRevision(ctx context.Context, instanceID string, rev int, data []byte) error
+	InsertFormRevision(ctx context.Context, instanceID string, rev int, data []byte, editedBy string) error
 	InsertOutcome(ctx context.Context, instanceID, value, decidedBy, note string) error
 	
 	// Events
@@ -325,8 +325,8 @@ func (r *SQLJourneyRepository) GetFormRevision(ctx context.Context, instanceID s
 	return data, err
 }
 
-func (r *SQLJourneyRepository) InsertFormRevision(ctx context.Context, instanceID string, rev int, data []byte) error {
-	_, err := r.q().ExecContext(ctx, `INSERT INTO node_instance_form_revisions (node_instance_id, rev, form_data, created_at) VALUES ($1,$2,$3,now())`, instanceID, rev, data)
+func (r *SQLJourneyRepository) InsertFormRevision(ctx context.Context, instanceID string, rev int, data []byte, editedBy string) error {
+	_, err := r.q().ExecContext(ctx, `INSERT INTO node_instance_form_revisions (node_instance_id, rev, form_data, edited_by, created_at) VALUES ($1,$2,$3,$4,now())`, instanceID, rev, data, editedBy)
 	return err
 }
 

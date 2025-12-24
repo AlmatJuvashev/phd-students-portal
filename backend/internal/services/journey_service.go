@@ -433,7 +433,7 @@ func (s *JourneyService) PutSubmission(ctx context.Context, tenantID, userID, ro
 	// 2. Append Form Revision
 	if len(formData) > 0 {
 		inst.CurrentRev++
-		err = s.repo.InsertFormRevision(ctx, inst.ID, inst.CurrentRev, formData)
+		err = s.repo.InsertFormRevision(ctx, inst.ID, inst.CurrentRev, formData, userID)
 		if err != nil {
 			return err
 		}
