@@ -29,6 +29,9 @@ func TestFormNode_GetSubmission(t *testing.T) {
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
+	require.NoError(t, err)
+
 	versionID := "22222222-2222-2222-2222-222222222222"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -56,6 +59,7 @@ func TestFormNode_GetSubmission(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -81,6 +85,9 @@ func TestConfirmTaskNode_GetSubmission(t *testing.T) {
 	userID := "33333333-3333-3333-3333-333333333333"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
 	require.NoError(t, err)
 
 	versionID := "44444444-4444-4444-4444-444444444444"
@@ -115,6 +122,7 @@ func TestConfirmTaskNode_GetSubmission(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -148,6 +156,9 @@ func TestInfoNode_GetSubmission(t *testing.T) {
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
 	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
+	require.NoError(t, err)
+
 	versionID := "66666666-6666-6666-6666-666666666666"
 	_, err = db.Exec(`INSERT INTO playbook_versions (id, version, checksum, raw_json, tenant_id) 
 		VALUES ($1, 'v1', 'checksum', '{}', '00000000-0000-0000-0000-000000000001')
@@ -175,6 +186,7 @@ func TestInfoNode_GetSubmission(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -200,6 +212,9 @@ func TestFormNode_PutSubmission(t *testing.T) {
 	userID := "77777777-7777-7777-7777-777777777777"
 	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
 		VALUES ($1, 'testuser', 'test@ex.com', 'Test', 'User', 'student', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role) VALUES ($1, '00000000-0000-0000-0000-000000000001', 'student')`, userID)
 	require.NoError(t, err)
 
 	versionID := "88888888-8888-8888-8888-888888888888"
@@ -228,6 +243,7 @@ func TestFormNode_PutSubmission(t *testing.T) {
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
 		c.Set("claims", jwt.MapClaims{"sub": userID, "role": "student"})
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
 		c.Next()
 	})
 	r.GET("/nodes/:nodeId/submission", h.GetSubmission)
@@ -241,7 +257,7 @@ func TestFormNode_PutSubmission(t *testing.T) {
 
 	// PUT form data
 	formData := map[string]interface{}{
-		"form_data": map[string]string{"full_name": "Test Person"},
+		"data": map[string]string{"full_name": "Test Person"},
 	}
 	body, _ := json.Marshal(formData)
 	req, _ = http.NewRequest("PUT", "/nodes/form_node/submission", bytes.NewBuffer(body))
