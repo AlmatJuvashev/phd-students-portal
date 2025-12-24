@@ -260,7 +260,7 @@ func (h *SuperadminTenantsHandler) UpdateTenantServices(c *gin.Context) {
 	
 	// Validate service names
 	validServices := map[string]bool{
-		"chat": true, "calendar": true, "smtp": true, "email_alias": true,
+		"chat": true, "calendar": true, "smtp": true, "email": true, "email_alias": true,
 	}
 	for _, service := range req.EnabledServices {
 		if !validServices[service] {
