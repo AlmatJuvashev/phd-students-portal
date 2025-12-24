@@ -175,6 +175,11 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	contactService := services.NewContactService(contactRepo)
 	contactsHandler := NewContactsHandler(contactService)
 
+	// Analytics
+	analyticsRepo := repository.NewSQLAnalyticsRepository(db)
+	analyticsService := services.NewAnalyticsService(analyticsRepo)
+	analyticsHandler := NewAnalyticsHandler(analyticsService)
+
 	// ===========================================
 	// SUPERADMIN ROUTES (global platform admin)
 	// ===========================================
@@ -239,9 +244,93 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		// Notifications
 		notif := protected.Group("/notifications")
 		{
+			notif.GET("", notificationHandler.GetNotifications)
 			notif.GET("/unread", notificationHandler.GetUnread)
 			notif.POST("/:id/read", notificationHandler.MarkAsRead)
 			notif.POST("/read-all", notificationHandler.MarkAllAsRead)
+		}
+
+		// Journey
+		j := protected.Group("/journey")
+		{
+			j.GET("/state", journey.GetState)
+			j.PUT("/state", journey.SetState)
+			j.POST("/reset", journey.Reset)
+			j.GET("/scoreboard", journey.GetScoreboard)
+
+			j.GET("/profile", nodeSubmission.GetProfile)
+			nodes := j.Group("/nodes/:nodeId")
+			{
+				nodes.GET("/submission", nodeSubmission.GetSubmission)
+				nodes.PUT("/submission", nodeSubmission.PutSubmission)
+				nodes.PATCH("/state", nodeSubmission.PatchState)
+				
+				uploads := nodes.Group("/uploads")
+				{
+					uploads.POST("/presign", nodeSubmission.PresignUpload)
+					uploads.POST("/attach", nodeSubmission.AttachUpload)
+				}
+			}
+		}
+
+		// Admin/Advisor Progress Monitoring
+		adm := protected.Group("/admin")
+		adm.Use(middleware.RequireAdminOrAdvisor())
+		{
+			adm.GET("/student-progress", adminHandler.StudentProgress)
+			adm.GET("/monitor", adminHandler.MonitorStudents)
+			adm.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
+			adm.GET("/students/:id", adminHandler.GetStudentDetails)
+			adm.GET("/students/:id/journey", adminHandler.StudentJourney)
+			adm.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
+			adm.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
+			
+			// Review actions
+			adm.POST("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
+			adm.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
+			adm.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
+			
+			// Reminders
+			adm.POST("/reminders", adminHandler.PostReminders)
+		}
+
+		// Chat
+		chat := protected.Group("/chat")
+		{
+			chat.GET("/rooms", chatHandler.ListRooms)
+			chat.GET("/rooms/:roomId/members", chatHandler.GetRoomMembers)
+			chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
+			chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
+			chat.POST("/rooms/:roomId/read", chatHandler.MarkAsRead)
+			
+			// Protected file access
+			chat.GET("/rooms/:roomId/files/:filename", chatHandler.DownloadFile)
+
+			// Admin chat actions
+			adminChat := chat.Group("")
+			adminChat.Use(middleware.RequireAdminOrAdvisor())
+			{
+				adminChat.POST("/rooms", chatHandler.CreateRoom)
+				adminChat.PATCH("/rooms/:roomId", chatHandler.UpdateRoom)
+				adminChat.GET("/rooms/all", chatHandler.ListAllRooms)
+				adminChat.POST("/rooms/:roomId/members", chatHandler.AddMember)
+				adminChat.DELETE("/rooms/:roomId/members/:userId", chatHandler.RemoveMember)
+				adminChat.POST("/rooms/:roomId/members/batch", chatHandler.AddRoomMembersBatch)
+				adminChat.DELETE("/rooms/:roomId/members/batch", chatHandler.RemoveRoomMembersBatch)
+				adminChat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
+			}
+			
+			// Message editing/deletion
+			chat.PATCH("/messages/:messageId", chatHandler.UpdateMessage)
+			chat.DELETE("/messages/:messageId", chatHandler.DeleteMessage)
+		}
+
+		// Analytics
+		an := protected.Group("/analytics")
+		an.Use(middleware.RequireAdminOrAdvisor())
+		{
+			an.GET("/stages", analyticsHandler.GetStageStats)
+			an.GET("/overdue", analyticsHandler.GetOverdueStats)
 		}
 	}
 	

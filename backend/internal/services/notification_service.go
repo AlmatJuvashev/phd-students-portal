@@ -30,3 +30,7 @@ func (s *NotificationService) MarkAsRead(ctx context.Context, notificationID, us
 func (s *NotificationService) MarkAllAsRead(ctx context.Context, userID string) error {
 	return s.repo.MarkAllAsRead(ctx, userID)
 }
+
+func (s *NotificationService) ListNotifications(ctx context.Context, userID string, limit int) ([]models.Notification, error) {
+	return s.repo.ListByRecipient(ctx, userID, limit)
+}

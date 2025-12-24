@@ -13,6 +13,7 @@ type NotificationRepository interface {
 	GetUnread(ctx context.Context, userID string) ([]models.Notification, error)
 	MarkAsRead(ctx context.Context, notificationID, userID string) error
 	MarkAllAsRead(ctx context.Context, userID string) error
+	ListByRecipient(ctx context.Context, userID string, limit int) ([]models.Notification, error)
 }
 
 type SQLNotificationRepository struct {
@@ -71,4 +72,19 @@ func (r *SQLNotificationRepository) MarkAllAsRead(ctx context.Context, userID st
 	query := `UPDATE notifications SET is_read = TRUE WHERE recipient_id = $1`
 	_, err := r.db.ExecContext(ctx, query, userID)
 	return err
+}
+
+func (r *SQLNotificationRepository) ListByRecipient(ctx context.Context, userID string, limit int) ([]models.Notification, error) {
+	query := `
+		SELECT * FROM notifications 
+		WHERE recipient_id = $1 
+		ORDER BY created_at DESC 
+		LIMIT $2`
+
+	var notifs []models.Notification
+	err := r.db.SelectContext(ctx, &notifs, query, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	return notifs, nil
 }

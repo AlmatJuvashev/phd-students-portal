@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	DefaultTenantID = "00000000-0000-0000-0000-000000000001"
+	DefaultTenantID = "dd000000-0000-0000-0000-d00000000001"
 )
 
 func main() {
@@ -49,50 +49,74 @@ func main() {
 	advisor1 := ensureUser(db, "advisor.smith", "smith@test.kaznmu.kz", "John", "Smith", "advisor", hashedPass)
 	advisor2 := ensureUser(db, "advisor.jones", "jones@test.kaznmu.kz", "Sarah", "Jones", "advisor", hashedPass)
 
-	// 4. Create Students and Seed Progress
-	
-	// Student 1: Just started
-	s1 := ensureUser(db, "demo.student1", "student1@test.kaznmu.kz", "Alice", "Early", "student", hashedPass)
-	linkAdvisor(db, s1, advisor1)
-	seedProgress(db, s1, versionID, nil, "S1_profile")
+	// 4. Define Journey Path (Linear)
+	journeyNodes := []string{
+		"S1_profile",
+		"S1_text_ready",
+		"S0_antiplagiat",
+		"S1_publications_list",
+		"E1_apply_omid",
+		"NK_package",
+		"E3_hearing_nk",
+		"D1_normokontrol_ncste",
+		"D2_apply_to_ds",
+	}
 
-	// Student 2: Midway through World 1
-	s2 := ensureUser(db, "demo.student2", "student2@test.kaznmu.kz", "Bob", "Steady", "student", hashedPass)
-	linkAdvisor(db, s2, advisor1)
-	seedProgress(db, s2, versionID, []string{"S1_profile", "S1_text_ready"}, "S0_antiplagiat")
-	seedFormData(db, s2, versionID, "S1_profile", map[string]interface{}{
-		"full_name": "Bob Steady",
-		"specialty": "Epidemiology",
-		"program":   "PhD in Public Health",
-	})
+	lastNames := []string{
+		"Abishev", "Baitursynov", "Chokanov", "Dosmukhamedov", "Esenberlin",
+		"Faith", "Gabdullin", "Iskakov", "Jansugurov", "Kunanbayev",
+		"Lomonosov", "Mukanov", "Nauryzbayev", "Omarov", "Pushkin",
+		"Qurmangazy", "Ryskulov", "Satpayev", "Tulebayev", "Ualikhanov",
+		"Valid", "Weld", "Xander", "Yelyubayev", "Zhumabayev",
+	}
 
-	// Student 3: Advanced (World 2)
-	s3 := ensureUser(db, "demo.student3", "student3@test.kaznmu.kz", "Charlie", "Advanced", "student", hashedPass)
-	linkAdvisor(db, s3, advisor2)
-	seedProgress(db, s3, versionID, []string{"S1_profile", "S1_text_ready", "S0_antiplagiat", "S1_publications_list", "E1_apply_omid"}, "NK_package")
-	seedFormData(db, s3, versionID, "S1_profile", map[string]interface{}{
-		"full_name": "Charlie Advanced",
-		"specialty": "Biostatistics",
-		"program":   "PhD in Medicine",
-	})
+	// 5. Create 25 Students
+	fmt.Printf("Seeding 25 students...\n")
+	for i := 1; i <= 25; i++ {
+		username := fmt.Sprintf("demo.student%d", i)
+		email := fmt.Sprintf("student%d@test.kaznmu.kz", i)
+		firstName := "Demo"
+		lastName := lastNames[i-1]
+		
+		sid := ensureUser(db, username, email, firstName, lastName, "student", hashedPass)
+		
+		// Alternate advisors
+		if i%2 == 0 {
+			linkAdvisor(db, sid, advisor1)
+		} else {
+			linkAdvisor(db, sid, advisor2)
+		}
 
-	// Student 4: Needs Fixes
-	s4 := ensureUser(db, "demo.student4", "student4@test.kaznmu.kz", "David", "Fixer", "student", hashedPass)
-	linkAdvisor(db, s4, advisor1)
-	seedProgress(db, s4, versionID, []string{"S1_profile", "S1_text_ready", "S0_antiplagiat"}, "S1_publications_list")
-	setNodeState(db, s4, versionID, "S1_publications_list", "needs_fixes")
-	seedFormData(db, s4, versionID, "S1_profile", map[string]interface{}{
-		"full_name": "David Fixer",
-		"specialty": "Epidemiology",
-	})
+		// Distribute progress: 
+		// i=1 (node 0 active), i=25 (node 9 active)
+		// We'll map i to progress level
+		progressLevel := (i - 1) * len(journeyNodes) / 25
+		if progressLevel >= len(journeyNodes) {
+			progressLevel = len(journeyNodes) - 1
+		}
 
-	// Student 5: Submitted for Review
-	s5 := ensureUser(db, "demo.student5", "student5@test.kaznmu.kz", "Eve", "Reviewee", "student", hashedPass)
-	linkAdvisor(db, s5, advisor2)
-	seedProgress(db, s5, versionID, []string{"S1_profile", "S1_text_ready", "S0_antiplagiat"}, "S1_publications_list")
-	setNodeState(db, s5, versionID, "S1_publications_list", "submitted")
+		doneNodes := journeyNodes[:progressLevel]
+		activeNode := journeyNodes[progressLevel]
 
-	fmt.Println("Demo progress seeding completed successfully!")
+		seedProgress(db, sid, versionID, doneNodes, activeNode)
+
+		// Seed some basic profile data for everyone
+		seedFormData(db, sid, versionID, "S1_profile", map[string]interface{}{
+			"full_name": fmt.Sprintf("%s %s", firstName, lastName),
+			"specialty": "Public Health",
+			"program":   "PhD",
+		})
+
+		// For some students, set special states
+		if i == 5 {
+			setNodeState(db, sid, versionID, activeNode, "needs_fixes")
+		}
+		if i == 10 {
+			setNodeState(db, sid, versionID, activeNode, "submitted")
+		}
+	}
+
+	fmt.Println("25 Demo students seeding completed successfully!")
 }
 
 func ensureUser(db *sqlx.DB, username, email, first, last, role, hash string) string {
@@ -101,7 +125,7 @@ func ensureUser(db *sqlx.DB, username, email, first, last, role, hash string) st
 		INSERT INTO users (username, email, first_name, last_name, role, password_hash, is_active)
 		VALUES ($1, $2, $3, $4, $5, $6, true)
 		ON CONFLICT (username) 
-		DO UPDATE SET first_name = $3, last_name = $4, email = $2, role = $5
+		DO UPDATE SET first_name = $3, last_name = $4, email = $2, role = $5, password_hash = $6
 		RETURNING id`, username, email, first, last, role, hash).Scan(&id)
 	if err != nil {
 		err = db.Get(&id, "SELECT id FROM users WHERE username=$1", username)
@@ -110,7 +134,7 @@ func ensureUser(db *sqlx.DB, username, email, first, last, role, hash string) st
 	_, _ = db.Exec(`
 		INSERT INTO user_tenant_memberships (user_id, tenant_id, role)
 		VALUES ($1, $2, $3)
-		ON CONFLICT (user_id, tenant_id) DO NOTHING`, id, DefaultTenantID, role)
+		ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = EXCLUDED.role`, id, DefaultTenantID, role)
 
 	return id
 }
@@ -137,7 +161,7 @@ func setNodeState(db *sqlx.DB, userID, versionID, nodeID, state string) {
 		INSERT INTO node_instances (user_id, playbook_version_id, node_id, state, tenant_id)
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (user_id, playbook_version_id, node_id) 
-		DO UPDATE SET state = $4, updated_at = NOW()
+		DO UPDATE SET state = EXCLUDED.state, tenant_id = EXCLUDED.tenant_id, updated_at = NOW()
 		RETURNING id`, userID, versionID, nodeID, state, DefaultTenantID).Scan(&instID)
 	
 	if err != nil {
@@ -148,7 +172,7 @@ func setNodeState(db *sqlx.DB, userID, versionID, nodeID, state string) {
 		INSERT INTO journey_states (tenant_id, user_id, node_id, state, updated_at)
 		VALUES ($1, $2, $3, $4, NOW())
 		ON CONFLICT (user_id, node_id) 
-		DO UPDATE SET state = $4, updated_at = NOW()`, DefaultTenantID, userID, nodeID, state)
+		DO UPDATE SET state = EXCLUDED.state, tenant_id = EXCLUDED.tenant_id, updated_at = NOW()`, DefaultTenantID, userID, nodeID, state)
 }
 
 func seedFormData(db *sqlx.DB, userID, versionID, nodeID string, data map[string]interface{}) {
