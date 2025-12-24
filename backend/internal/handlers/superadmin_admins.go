@@ -58,7 +58,7 @@ type CreateAdminRequest struct {
 	FirstName    string   `json:"first_name" binding:"required"`
 	LastName     string   `json:"last_name" binding:"required"`
 	Password     string   `json:"password" binding:"required,min=8"`
-	Role         string   `json:"role" binding:"required,oneof=admin superadmin"` // Global role assumption or logic
+	Role         string   `json:"role" binding:"omitempty,oneof=admin superadmin"` // Optional, defaults based on is_superadmin
 	IsSuperadmin bool     `json:"is_superadmin"` // Explicit override
 	TenantIDs    []string `json:"tenant_ids"`    // Tenants to assign to
 }
@@ -85,6 +85,16 @@ func (h *SuperadminAdminsHandler) CreateAdmin(c *gin.Context) {
 	// If standard admin, create user and memberships.
 
 	isSuper := req.IsSuperadmin || req.Role == "superadmin"
+	
+	// Default role if not provided
+	role := req.Role
+	if role == "" {
+		if isSuper {
+			role = "superadmin"
+		} else {
+			role = "admin"
+		}
+	}
 
 	params := models.CreateAdminParams{
 		Username:     req.Username,
@@ -92,7 +102,7 @@ func (h *SuperadminAdminsHandler) CreateAdmin(c *gin.Context) {
 		PasswordHash: string(hashed),
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
-		Role:         req.Role, // Default global role or used in memberships?
+		Role:         role,
 		IsSuperadmin: isSuper,
 		TenantIDs:    req.TenantIDs,
 	}
