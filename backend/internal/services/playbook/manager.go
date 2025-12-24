@@ -25,10 +25,12 @@ type Requirements struct {
 }
 
 type Node struct {
-	ID           string            `json:"id"`
-	Title        map[string]string `json:"title"`
-	Type         string            `json:"type"`
-	Requirements *Requirements     `json:"requirements"`
+	ID            string            `json:"id"`
+	Title         map[string]string `json:"title"`
+	Type          string            `json:"type"`
+	Requirements  *Requirements     `json:"requirements"`
+	Prerequisites []string          `json:"prerequisites"`
+	Next          []string          `json:"next"`
 }
 
 type World struct {

@@ -328,7 +328,7 @@ func (r *SQLSuperAdminRepository) GetEntityTypes(ctx context.Context) ([]string,
 func (r *SQLSuperAdminRepository) LogActivity(ctx context.Context, params models.ActivityLogParams) error {
 	query := `
 		INSERT INTO activity_logs (user_id, tenant_id, action, entity_type, entity_id, description, ip_address, user_agent, metadata)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, '{}'))
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9::jsonb, '{}'::jsonb))
 	`
 	
 	var metaJSON []byte
@@ -381,9 +381,9 @@ func (r *SQLSuperAdminRepository) UpdateSetting(ctx context.Context, key string,
 
 	query := `
 		INSERT INTO global_settings (key, value, description, category, updated_at, updated_by)
-		VALUES ($1, $2, $3, COALESCE($4, 'general'), now(), $5)
+		VALUES ($1, $2::jsonb, $3, COALESCE($4, 'general'), now(), $5)
 		ON CONFLICT (key) DO UPDATE SET
-			value = $2,
+			value = $2::jsonb,
 			description = COALESCE($3, global_settings.description),
 			category = COALESCE($4, global_settings.category),
 			updated_at = now(),

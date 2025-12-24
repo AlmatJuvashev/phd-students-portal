@@ -47,6 +47,7 @@ type JourneyRepository interface {
 	CreateSlot(ctx context.Context, instanceID, slotKey, tenantID string, required bool, multiplicity string, mime []string) (string, error)
 	GetSlot(ctx context.Context, instanceID, slotKey string) (*models.NodeInstanceSlot, error)
 	CreateAttachment(ctx context.Context, slotID, docVerID, status, filename, attachedBy string, sizeBytes int64) (string, error)
+	DeactivateSlotAttachments(ctx context.Context, slotID string) error
 	
 	// Profile Sync
 	SyncProfileToUsers(ctx context.Context, userID, tenantID string, fields map[string]interface{}) error
@@ -380,6 +381,11 @@ func (r *SQLJourneyRepository) CreateAttachment(ctx context.Context, slotID, doc
 	err := r.q().QueryRowxContext(ctx, `INSERT INTO node_instance_slot_attachments (slot_id, document_version_id, is_active, status, filename, attached_by, size_bytes, attached_at)
 		VALUES ($1, $2, true, $3, $4, $5, $6, now()) RETURNING id`, slotID, docVerID, status, filename, attachedBy, sizeBytes).Scan(&id)
 	return id, err
+}
+
+func (r *SQLJourneyRepository) DeactivateSlotAttachments(ctx context.Context, slotID string) error {
+	_, err := r.q().ExecContext(ctx, `UPDATE node_instance_slot_attachments SET is_active = false WHERE slot_id = $1`, slotID)
+	return err
 }
 
 func (r *SQLJourneyRepository) SyncProfileToUsers(ctx context.Context, userID, tenantID string, fields map[string]interface{}) error {

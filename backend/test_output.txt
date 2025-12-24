@@ -1,724 +1,262 @@
-=== RUN   TestNotificationsHandler_ListNotifications
-    admin_notifications_test.go:27: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:27
-        	Error:      	Received unexpected error:
-        	            	pq: null value in column "node_id" of relation "admin_notifications" violates not-null constraint
-        	Test:       	TestNotificationsHandler_ListNotifications
---- FAIL: TestNotificationsHandler_ListNotifications (0.76s)
-=== RUN   TestNotificationsHandler_GetUnreadCount
-    admin_notifications_test.go:73: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:73
-        	Error:      	Received unexpected error:
-        	            	pq: null value in column "node_id" of relation "admin_notifications" violates not-null constraint
-        	Test:       	TestNotificationsHandler_GetUnreadCount
---- FAIL: TestNotificationsHandler_GetUnreadCount (0.61s)
-=== RUN   TestNotificationsHandler_MarkAsRead
-    admin_notifications_test.go:105: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:105
-        	Error:      	Received unexpected error:
-        	            	pq: null value in column "node_id" of relation "admin_notifications" violates not-null constraint
-        	Test:       	TestNotificationsHandler_MarkAsRead
---- FAIL: TestNotificationsHandler_MarkAsRead (0.53s)
-=== RUN   TestNotificationsHandler_MarkAllAsRead
-    admin_notifications_test.go:137: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:137
-        	Error:      	Received unexpected error:
-        	            	pq: null value in column "node_id" of relation "admin_notifications" violates not-null constraint
-        	Test:       	TestNotificationsHandler_MarkAllAsRead
---- FAIL: TestNotificationsHandler_MarkAllAsRead (0.55s)
-=== RUN   TestAdminHandler_StudentProgress
-=== RUN   TestAdminHandler_StudentProgress/List_Student_Progress
---- PASS: TestAdminHandler_StudentProgress (0.57s)
-    --- PASS: TestAdminHandler_StudentProgress/List_Student_Progress (0.01s)
-=== RUN   TestAdminHandler_MonitorStudents
-=== RUN   TestAdminHandler_MonitorStudents/Admin_List_All
-=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Assigned
-=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty)
-=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Program
-=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program
---- PASS: TestAdminHandler_MonitorStudents (0.64s)
-    --- PASS: TestAdminHandler_MonitorStudents/Admin_List_All (0.01s)
-    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Assigned (0.01s)
-    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty) (0.00s)
-    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Program (0.01s)
-    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program (0.00s)
-=== RUN   TestAdminHandler_GetStudentDetails
-=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Success
-=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Not_Found
---- PASS: TestAdminHandler_GetStudentDetails (0.69s)
-    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Success (0.01s)
-    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Not_Found (0.00s)
-=== RUN   TestAdminHandler_StudentJourney
-=== RUN   TestAdminHandler_StudentJourney/Get_Student_Journey
---- PASS: TestAdminHandler_StudentJourney (0.70s)
-    --- PASS: TestAdminHandler_StudentJourney/Get_Student_Journey (0.00s)
-=== RUN   TestAdminHandler_ListStudentNodeFiles
-=== RUN   TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files
-2025/12/06 07:41:01 [ListStudentNodeFiles] studentID=10000000-0000-0000-0000-000000000006 nodeID=node1
-2025/12/06 07:41:01 [ListStudentNodeFiles] found instanceID=7ca60f48-f43d-4669-a587-ae9facf4a574
-2025/12/06 07:41:01 [ListStudentNodeFiles] returning 1 files
---- PASS: TestAdminHandler_ListStudentNodeFiles (0.58s)
-    --- PASS: TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files (0.00s)
-=== RUN   TestAdminHandler_MonitorAnalytics
-=== RUN   TestAdminHandler_MonitorAnalytics/Get_Analytics
---- PASS: TestAdminHandler_MonitorAnalytics (0.55s)
-    --- PASS: TestAdminHandler_MonitorAnalytics/Get_Analytics (0.00s)
-=== RUN   TestAdminHandler_ReviewAttachment
-=== RUN   TestAdminHandler_ReviewAttachment/Review_Attachment
-2025/12/06 07:41:02 [ReviewAttachment] attachmentID=5dbb1858-74f8-44b3-b6c5-c87d65e5e7c6 status=approved note="" actorID=99999999-9999-9999-9999-999999999999
-2025/12/06 07:41:02 [ReviewAttachment] Counts: submitted=0 approved=1 rejected=0 total=1 currentState=done latestFileStatus=approved
-2025/12/06 07:41:02 [ReviewAttachment] State transition: done -> done
---- PASS: TestAdminHandler_ReviewAttachment (0.51s)
-    --- PASS: TestAdminHandler_ReviewAttachment/Review_Attachment (0.02s)
-=== RUN   TestAdminHandler_ListStudentProgress
-=== RUN   TestAdminHandler_ListStudentProgress/List_Student_Progress
-    admin_progress_test.go:529: Response: [{"id":"11111111-1111-1111-1111-111111111111","name":"Student One","email":"s1@ex.com","role":"student","progress":{"completed_nodes":1,"total_nodes":1,"percent":100,"current_node_id":"node1","last_submission_at":"2025-12-06T02:41:03Z"}}]
---- PASS: TestAdminHandler_ListStudentProgress (0.44s)
-    --- PASS: TestAdminHandler_ListStudentProgress/List_Student_Progress (0.00s)
-=== RUN   TestAdminHandler_UploadReviewedDocument
-    admin_progress_test.go:572: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go:572
-        	Error:      	Received unexpected error:
-        	            	pq: column "status" of relation "node_instance_slots" does not exist
-        	Test:       	TestAdminHandler_UploadReviewedDocument
---- FAIL: TestAdminHandler_UploadReviewedDocument (0.41s)
-=== RUN   TestAdminHandler_PatchStudentNodeState
-=== RUN   TestAdminHandler_PatchStudentNodeState/Patch_Node_State
-    admin_progress_test.go:676: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go:676
+	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/clean_test_data		coverage: 0.0% of statements
+	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/mock		coverage: 0.0% of statements
+	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_demo_progress		coverage: 0.0% of statements
+	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_multitenancy		coverage: 0.0% of statements
+	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_playbook		coverage: 0.0% of statements
+	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_test_users		coverage: 0.0% of statements
+	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/server		coverage: 0.0% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth	1.780s	coverage: 72.0% of statements
+2025/12/24 16:25:04 Config loaded: Port=8280, Env=development, FrontendBase=http://localhost:5173, ServerURL=http://localhost:8080
+--- FAIL: TestMustLoad_Defaults (0.00s)
+    config_test.go:27: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/config/config_test.go:27
         	Error:      	Not equal: 
-        	            	expected: 200
-        	            	actual  : 403
-        	Test:       	TestAdminHandler_PatchStudentNodeState/Patch_Node_State
-    admin_progress_test.go:682: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go:682
-        	Error:      	Not equal: 
-        	            	expected: "done"
-        	            	actual  : "active"
+        	            	expected: "8080"
+        	            	actual  : "8280"
         	            	
         	            	Diff:
         	            	--- Expected
         	            	+++ Actual
         	            	@@ -1 +1 @@
-        	            	-done
-        	            	+active
-        	Test:       	TestAdminHandler_PatchStudentNodeState/Patch_Node_State
---- FAIL: TestAdminHandler_PatchStudentNodeState (0.38s)
-    --- FAIL: TestAdminHandler_PatchStudentNodeState/Patch_Node_State (0.00s)
-=== RUN   TestAdminHandler_PresignReviewedDocumentUpload
-=== RUN   TestAdminHandler_PresignReviewedDocumentUpload/Presign_Upload
---- PASS: TestAdminHandler_PresignReviewedDocumentUpload (0.35s)
-    --- PASS: TestAdminHandler_PresignReviewedDocumentUpload/Presign_Upload (0.00s)
-=== RUN   TestAdminHandler_AttachReviewedDocument
-=== RUN   TestAdminHandler_AttachReviewedDocument/Attach_Reviewed_Document
-2025/12/06 07:41:04 [AttachReviewedDocument] Creating version: doc_id=fb1bcbd2-fe68-48db-af2a-d8f55ec1d9bf object_key=reviewed/file.pdf bucket=phd-portal size=200 mime=application/pdf
-2025/12/06 07:41:04 [AttachReviewedDocument] Created version_id=992c782b-8e12-41d0-97bc-1cc332ef2942, updating attachment 652847f7-6dc6-4442-a33d-40417a07a2ac
---- PASS: TestAdminHandler_AttachReviewedDocument (0.39s)
-    --- PASS: TestAdminHandler_AttachReviewedDocument/Attach_Reviewed_Document (0.00s)
-=== RUN   TestAnalyticsHandler_GetStageStats
---- PASS: TestAnalyticsHandler_GetStageStats (0.34s)
-=== RUN   TestAnalyticsHandler_GetOverdueStats
---- PASS: TestAnalyticsHandler_GetOverdueStats (0.43s)
-=== RUN   TestAuthHandler_Login
-=== RUN   TestAuthHandler_Login/Successful_Login
-    auth_test.go:51: Response body: {"role":"student","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjUwNzUyNjUsImlhdCI6MTc2NDk4ODg2NSwicm9sZSI6InN0dWRlbnQiLCJzdWIiOiIxMjNlNDU2Ny1lODliLTEyZDMtYTQ1Ni00MjY2MTQxNzQwMDAifQ.-H7cPhmJ5jUOkQvk9gUx4jY5NMXUXFyLbwyuRHm71dA"}
-=== RUN   TestAuthHandler_Login/Invalid_Password
-=== RUN   TestAuthHandler_Login/User_Not_Found
---- PASS: TestAuthHandler_Login (0.56s)
-    --- PASS: TestAuthHandler_Login/Successful_Login (0.07s)
-    --- PASS: TestAuthHandler_Login/Invalid_Password (0.07s)
-    --- PASS: TestAuthHandler_Login/User_Not_Found (0.00s)
-=== RUN   TestCalendarHandler_CreateEvent
-=== RUN   TestCalendarHandler_CreateEvent/Create_Event_Success
---- PASS: TestCalendarHandler_CreateEvent (0.37s)
-    --- PASS: TestCalendarHandler_CreateEvent/Create_Event_Success (0.00s)
-=== RUN   TestCalendarHandler_GetEvents
-=== RUN   TestCalendarHandler_GetEvents/Get_Events
---- PASS: TestCalendarHandler_GetEvents (0.36s)
-    --- PASS: TestCalendarHandler_GetEvents/Get_Events (0.00s)
-=== RUN   TestCalendarHandler_UpdateDelete
-=== RUN   TestCalendarHandler_UpdateDelete/Update_Event
-2025/12/06 07:41:07 [UpdateEvent] Updating event e29afa08-2845-456c-ae61-56e1af85a536 for user 11111111-1111-1111-1111-111111111111
-2025/12/06 07:41:07 [UpdateEvent] Request data: title=New Title, start=2025-12-06T07:41:07+05:00, end=2025-12-06T08:41:07+05:00, type=academic
-2025/12/06 07:41:07 [UpdateEvent] Event e29afa08-2845-456c-ae61-56e1af85a536 updated successfully
-=== RUN   TestCalendarHandler_UpdateDelete/Delete_Event
-=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_Invalid_Time
-2025/12/06 07:41:07 [UpdateEvent] Updating event e29afa08-2845-456c-ae61-56e1af85a536 for user 11111111-1111-1111-1111-111111111111
-2025/12/06 07:41:07 [UpdateEvent] Request data: title=Invalid Time, start=invalid, end=invalid, type=academic
-2025/12/06 07:41:07 [UpdateEvent] ERROR fetching event: sql: no rows in result set
-    calendar_test.go:189: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/calendar_test.go:189
+        	            	-8080
+        	            	+8280
+        	Test:       	TestMustLoad_Defaults
+    config_test.go:29: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/config/config_test.go:29
         	Error:      	Not equal: 
-        	            	expected: 400
-        	            	actual  : 404
-        	Test:       	TestCalendarHandler_UpdateDelete/Update_Event_Invalid_Time
-=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_End_Before_Start
-2025/12/06 07:41:07 [UpdateEvent] Updating event e29afa08-2845-456c-ae61-56e1af85a536 for user 11111111-1111-1111-1111-111111111111
-2025/12/06 07:41:07 [UpdateEvent] Request data: title=End Before Start, start=2025-12-06T08:41:07+05:00, end=2025-12-06T07:41:07+05:00, type=academic
-2025/12/06 07:41:07 [UpdateEvent] ERROR fetching event: sql: no rows in result set
-    calendar_test.go:205: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/calendar_test.go:205
-        	Error:      	Not equal: 
-        	            	expected: 400
-        	            	actual  : 404
-        	Test:       	TestCalendarHandler_UpdateDelete/Update_Event_End_Before_Start
-=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied
-    calendar_test.go:226: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/calendar_test.go:226
-        	Error:      	Not equal: 
-        	            	expected: 403
-        	            	actual  : 404
-        	Test:       	TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied
---- FAIL: TestCalendarHandler_UpdateDelete (0.33s)
-    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event (0.00s)
-    --- PASS: TestCalendarHandler_UpdateDelete/Delete_Event (0.00s)
-    --- FAIL: TestCalendarHandler_UpdateDelete/Update_Event_Invalid_Time (0.00s)
-    --- FAIL: TestCalendarHandler_UpdateDelete/Update_Event_End_Before_Start (0.00s)
-    --- FAIL: TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied (0.00s)
-=== RUN   TestChatHandler_RoomManagement
-=== RUN   TestChatHandler_RoomManagement/Update_Room
-=== RUN   TestChatHandler_RoomManagement/List_Rooms_(Empty_initially)
---- PASS: TestChatHandler_RoomManagement (0.32s)
-    --- PASS: TestChatHandler_RoomManagement/Update_Room (0.00s)
-    --- PASS: TestChatHandler_RoomManagement/List_Rooms_(Empty_initially) (0.00s)
-=== RUN   TestChatHandler_Members
-=== RUN   TestChatHandler_Members/Add_Member
-=== RUN   TestChatHandler_Members/List_Members
-=== RUN   TestChatHandler_Members/Remove_Member
---- PASS: TestChatHandler_Members (0.33s)
-    --- PASS: TestChatHandler_Members/Add_Member (0.00s)
-    --- PASS: TestChatHandler_Members/List_Members (0.00s)
-    --- PASS: TestChatHandler_Members/Remove_Member (0.00s)
-=== RUN   TestChatHandler_MessageOperations
-=== RUN   TestChatHandler_MessageOperations/Update_Message
-=== RUN   TestChatHandler_MessageOperations/Mark_As_Read
-=== RUN   TestChatHandler_MessageOperations/Delete_Message
---- PASS: TestChatHandler_MessageOperations (0.33s)
-    --- PASS: TestChatHandler_MessageOperations/Update_Message (0.00s)
-    --- PASS: TestChatHandler_MessageOperations/Mark_As_Read (0.00s)
-    --- PASS: TestChatHandler_MessageOperations/Delete_Message (0.00s)
-=== RUN   TestChatHandler_MessageCreation
-=== RUN   TestChatHandler_MessageCreation/Create_Message
-=== RUN   TestChatHandler_MessageCreation/List_Messages
---- PASS: TestChatHandler_MessageCreation (0.31s)
-    --- PASS: TestChatHandler_MessageCreation/Create_Message (0.00s)
-    --- PASS: TestChatHandler_MessageCreation/List_Messages (0.00s)
-=== RUN   TestChatHandler_CreateRoom
-=== RUN   TestChatHandler_CreateRoom/Create_Room_Success
---- PASS: TestChatHandler_CreateRoom (0.33s)
-    --- PASS: TestChatHandler_CreateRoom/Create_Room_Success (0.00s)
-=== RUN   TestChatHandler_Messages
-=== RUN   TestChatHandler_Messages/Send_Message
-=== RUN   TestChatHandler_Messages/List_Messages
---- PASS: TestChatHandler_Messages (0.35s)
-    --- PASS: TestChatHandler_Messages/Send_Message (0.01s)
-    --- PASS: TestChatHandler_Messages/List_Messages (0.00s)
-=== RUN   TestChecklistHandler_ListModules
---- PASS: TestChecklistHandler_ListModules (0.37s)
-=== RUN   TestChecklistHandler_ListStepsByModule
---- PASS: TestChecklistHandler_ListStepsByModule (0.49s)
-=== RUN   TestChecklistHandler_ListStudentSteps
---- PASS: TestChecklistHandler_ListStudentSteps (0.34s)
-=== RUN   TestChecklistHandler_UpdateStudentStep
---- PASS: TestChecklistHandler_UpdateStudentStep (0.33s)
-=== RUN   TestChecklistHandler_AdvisorInbox
---- PASS: TestChecklistHandler_AdvisorInbox (0.36s)
-=== RUN   TestChecklistHandler_ApproveStep
---- PASS: TestChecklistHandler_ApproveStep (0.35s)
-=== RUN   TestChecklistHandler_ReturnStep
---- PASS: TestChecklistHandler_ReturnStep (0.33s)
-=== RUN   TestCommentsHandler_CreateComment
---- PASS: TestCommentsHandler_CreateComment (0.37s)
-=== RUN   TestCommentsHandler_GetComments
---- PASS: TestCommentsHandler_GetComments (0.33s)
-=== RUN   TestContactsHandler_CRUD
-=== RUN   TestContactsHandler_CRUD/Create_Contact
-=== RUN   TestContactsHandler_CRUD/Public_List
-=== RUN   TestContactsHandler_CRUD/Update_Contact
-=== RUN   TestContactsHandler_CRUD/Admin_List
-=== RUN   TestContactsHandler_CRUD/Delete_Contact
---- PASS: TestContactsHandler_CRUD (0.36s)
-    --- PASS: TestContactsHandler_CRUD/Create_Contact (0.00s)
-    --- PASS: TestContactsHandler_CRUD/Public_List (0.00s)
-    --- PASS: TestContactsHandler_CRUD/Update_Contact (0.00s)
-    --- PASS: TestContactsHandler_CRUD/Admin_List (0.00s)
-    --- PASS: TestContactsHandler_CRUD/Delete_Contact (0.00s)
-=== RUN   TestDictionaryHandler_Programs
-=== RUN   TestDictionaryHandler_Programs/Create_Program
-=== RUN   TestDictionaryHandler_Programs/List_Programs
-=== RUN   TestDictionaryHandler_Programs/Update_Program
-=== RUN   TestDictionaryHandler_Programs/Delete_Program
---- PASS: TestDictionaryHandler_Programs (0.41s)
-    --- PASS: TestDictionaryHandler_Programs/Create_Program (0.00s)
-    --- PASS: TestDictionaryHandler_Programs/List_Programs (0.00s)
-    --- PASS: TestDictionaryHandler_Programs/Update_Program (0.00s)
-    --- PASS: TestDictionaryHandler_Programs/Delete_Program (0.00s)
-=== RUN   TestDictionaryHandler_Departments
-=== RUN   TestDictionaryHandler_Departments/Create_Department
-=== RUN   TestDictionaryHandler_Departments/List_Departments
-=== RUN   TestDictionaryHandler_Departments/Update_Department
-=== RUN   TestDictionaryHandler_Departments/Delete_Department
---- PASS: TestDictionaryHandler_Departments (0.38s)
-    --- PASS: TestDictionaryHandler_Departments/Create_Department (0.00s)
-    --- PASS: TestDictionaryHandler_Departments/List_Departments (0.00s)
-    --- PASS: TestDictionaryHandler_Departments/Update_Department (0.00s)
-    --- PASS: TestDictionaryHandler_Departments/Delete_Department (0.00s)
-=== RUN   TestDictionaryHandler_Cohorts
-=== RUN   TestDictionaryHandler_Cohorts/Create_Cohort
-=== RUN   TestDictionaryHandler_Cohorts/List_Cohorts
-=== RUN   TestDictionaryHandler_Cohorts/Update_Cohort
-=== RUN   TestDictionaryHandler_Cohorts/Delete_Cohort
---- PASS: TestDictionaryHandler_Cohorts (0.37s)
-    --- PASS: TestDictionaryHandler_Cohorts/Create_Cohort (0.00s)
-    --- PASS: TestDictionaryHandler_Cohorts/List_Cohorts (0.00s)
-    --- PASS: TestDictionaryHandler_Cohorts/Update_Cohort (0.00s)
-    --- PASS: TestDictionaryHandler_Cohorts/Delete_Cohort (0.00s)
-=== RUN   TestDictionaryHandler_Specialties
-=== RUN   TestDictionaryHandler_Specialties/List_Specialties
---- PASS: TestDictionaryHandler_Specialties (0.33s)
-    --- PASS: TestDictionaryHandler_Specialties/List_Specialties (0.00s)
-=== RUN   TestDictionaryHandler_SpecialtyCRUD
-=== RUN   TestDictionaryHandler_SpecialtyCRUD/Create_Specialty
-=== RUN   TestDictionaryHandler_SpecialtyCRUD/Update_Specialty
-=== RUN   TestDictionaryHandler_SpecialtyCRUD/Delete_Specialty
---- PASS: TestDictionaryHandler_SpecialtyCRUD (0.31s)
-    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Create_Specialty (0.00s)
-    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Update_Specialty (0.00s)
-    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Delete_Specialty (0.00s)
-=== RUN   TestDocumentsHandler_List
-=== RUN   TestDocumentsHandler_List/List_Documents
---- PASS: TestDocumentsHandler_List (0.34s)
-    --- PASS: TestDocumentsHandler_List/List_Documents (0.00s)
-=== RUN   TestDocumentsHandler_Upload
-=== RUN   TestDocumentsHandler_Upload/Upload_Document_Version
---- PASS: TestDocumentsHandler_Upload (0.37s)
-    --- PASS: TestDocumentsHandler_Upload/Upload_Document_Version (0.00s)
-=== RUN   TestDocumentsHandler_Delete
-=== RUN   TestDocumentsHandler_Delete/Delete_Document
---- PASS: TestDocumentsHandler_Delete (0.34s)
-    --- PASS: TestDocumentsHandler_Delete/Delete_Document (0.00s)
-=== RUN   TestDocumentsHandler_Get
-=== RUN   TestDocumentsHandler_Get/Get_Document
-    documents_test.go:178: Response Code: 200
-    documents_test.go:179: Response Body: {"doc":{"id":"4535c4c7-3c99-42ee-bbc7-1c9a79bafb5c","user_id":"30000000-0000-0000-0000-000000000004","title":"Get Doc","kind":"other","current_version_id":null},"versions":null}
---- PASS: TestDocumentsHandler_Get (0.35s)
-    --- PASS: TestDocumentsHandler_Get/Get_Document (0.00s)
-=== RUN   TestDocumentsHandler_Create
-=== RUN   TestDocumentsHandler_Create/Create_Document
-    documents_test.go:224: Response Code: 200
-    documents_test.go:225: Response Body: {"id":"7f0e360d-6361-4565-832a-2faaa954c838"}
---- PASS: TestDocumentsHandler_Create (0.32s)
-    --- PASS: TestDocumentsHandler_Create/Create_Document (0.00s)
-=== RUN   TestDocumentsHandler_UploadVersion
-=== RUN   TestDocumentsHandler_UploadVersion/Upload_Version
---- PASS: TestDocumentsHandler_UploadVersion (0.36s)
-    --- PASS: TestDocumentsHandler_UploadVersion/Upload_Version (0.00s)
-=== RUN   TestDocumentsHandler_PresignUpload
-=== RUN   TestDocumentsHandler_PresignUpload/Presign_Upload
-2025/12/06 07:41:16 [S3] Presigning PUT for key=b82e4b23-6672-4040-b2da-e4e841fac1d4/test.pdf bucket=phd-portal expires=15m0s
---- PASS: TestDocumentsHandler_PresignUpload (0.35s)
-    --- PASS: TestDocumentsHandler_PresignUpload/Presign_Upload (0.00s)
-=== RUN   TestDocumentsHandler_PresignGetLatest
-=== RUN   TestDocumentsHandler_PresignGetLatest/Presign_Get_Latest
-2025/12/06 07:41:17 [S3] Presigning GET for key=path bucket=phd-portal expires=15m0s
---- PASS: TestDocumentsHandler_PresignGetLatest (0.36s)
-    --- PASS: TestDocumentsHandler_PresignGetLatest/Presign_Get_Latest (0.00s)
-=== RUN   TestDocumentsHandler_DownloadVersion
-=== RUN   TestDocumentsHandler_DownloadVersion/Download_Version
-2025/12/06 07:41:17 [DownloadVersion] version=f3013a14-b2fe-4590-b08f-b4d1d0fd2d11 storage_path=path bucket=bucket object_key=key size=100
-2025/12/06 07:41:17 [S3] Presigning GET for key=key bucket=phd-portal expires=15m0s
-2025/12/06 07:41:17 [DownloadVersion] redirecting to S3 presigned URL for key
---- PASS: TestDocumentsHandler_DownloadVersion (0.33s)
-    --- PASS: TestDocumentsHandler_DownloadVersion/Download_Version (0.00s)
-=== RUN   TestJourneyHandler_GetState
-=== RUN   TestJourneyHandler_GetState/Get_State
---- PASS: TestJourneyHandler_GetState (0.32s)
-    --- PASS: TestJourneyHandler_GetState/Get_State (0.00s)
-=== RUN   TestJourneyHandler_SetState
-=== RUN   TestJourneyHandler_SetState/Set_State_Success
-=== RUN   TestJourneyHandler_SetState/Set_State_Invalid
---- PASS: TestJourneyHandler_SetState (0.32s)
-    --- PASS: TestJourneyHandler_SetState/Set_State_Success (0.00s)
-    --- PASS: TestJourneyHandler_SetState/Set_State_Invalid (0.00s)
-=== RUN   TestJourneyHandler_Reset
-=== RUN   TestJourneyHandler_Reset/Reset_Journey
---- PASS: TestJourneyHandler_Reset (0.29s)
-    --- PASS: TestJourneyHandler_Reset/Reset_Journey (0.00s)
-=== RUN   TestMeHandler_Me
-=== RUN   TestMeHandler_Me/Get_Me_Success
-=== RUN   TestMeHandler_Me/Get_Me_Not_Found
---- PASS: TestMeHandler_Me (0.31s)
-    --- PASS: TestMeHandler_Me/Get_Me_Success (0.00s)
-    --- PASS: TestMeHandler_Me/Get_Me_Not_Found (0.00s)
-=== RUN   TestInvalidNodeID
---- PASS: TestInvalidNodeID (0.35s)
-=== RUN   TestUnauthorizedUser
-    node_errors_test.go:104: Unauthorized response: {"error":"unauthorized"}
---- PASS: TestUnauthorizedUser (0.35s)
-=== RUN   TestMalformedJSON
-2025/12/06 07:41:19 [fetchSlots] instanceID=09eba53c-4247-4b16-8173-cbbec7ea0e1a
-2025/12/06 07:41:19 [fetchSlots] returning 0 slots with total attachments
-    node_errors_test.go:160: Malformed JSON response: {"error":"invalid character 'o' in literal null (expecting 'u')"}
---- PASS: TestMalformedJSON (0.35s)
-=== RUN   TestInvalidStateTransition
-2025/12/06 07:41:20 [fetchSlots] instanceID=750f8282-b639-4935-8f27-0aa5d2a391ba
-2025/12/06 07:41:20 [fetchSlots] returning 0 slots with total attachments
-    node_errors_test.go:216: Invalid state transition response: {"error":"transition not allowed"}
---- PASS: TestInvalidStateTransition (0.36s)
-=== RUN   TestGetProfile
---- PASS: TestGetProfile (0.32s)
-=== RUN   TestGetProfile_NotFound
---- PASS: TestGetProfile_NotFound (0.33s)
-=== RUN   TestLockedState_CantSubmit
-2025/12/06 07:41:21 [fetchSlots] instanceID=859bb6e7-aea9-4f02-811c-9a4e54b0bf48
-2025/12/06 07:41:21 [fetchSlots] returning 0 slots with total attachments
-    node_state_full_test.go:84: Locked node response: {"error":"transition not allowed"}
---- PASS: TestLockedState_CantSubmit (0.40s)
-=== RUN   TestWaitingState_CantAdvance
-2025/12/06 07:41:21 [fetchSlots] instanceID=4741246c-e23e-4643-9335-5c89a88a6d1a
-2025/12/06 07:41:21 [fetchSlots] returning 0 slots with total attachments
-    node_state_full_test.go:148: Waiting node response: {"error":"transition not allowed"}
---- PASS: TestWaitingState_CantAdvance (0.38s)
-=== RUN   TestFullStateFlow
-2025/12/06 07:41:22 [fetchSlots] instanceID=25fcc14d-7fa0-4fa6-b189-5b13d1f36308
-2025/12/06 07:41:22 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:22 [fetchSlots] instanceID=25fcc14d-7fa0-4fa6-b189-5b13d1f36308
-2025/12/06 07:41:22 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:22 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:22 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:22 [fetchSlots] instanceID=25fcc14d-7fa0-4fa6-b189-5b13d1f36308
-2025/12/06 07:41:22 [fetchSlots] returning 0 slots with total attachments
-    node_state_full_test.go:220: Done transition response: {"locale":"ru","node_id":"flow_node","playbook_version_id":"ffffffff-ffff-ffff-ffff-ffffffffffff","slots":[],"state":"done"}
---- PASS: TestFullStateFlow (0.47s)
-=== RUN   TestNeedsFixes_Resubmit
-2025/12/06 07:41:22 [fetchSlots] instanceID=d1603c1f-e0c5-48d2-b945-c2a11c6dcf2e
-2025/12/06 07:41:22 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:22 [fetchSlots] instanceID=d1603c1f-e0c5-48d2-b945-c2a11c6dcf2e
-2025/12/06 07:41:22 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:22 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:22 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:22 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:22 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:22 [fetchSlots] instanceID=d1603c1f-e0c5-48d2-b945-c2a11c6dcf2e
-2025/12/06 07:41:22 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestNeedsFixes_Resubmit (0.52s)
-=== RUN   TestNodeStateTransitions_StudentSubmitsNode
-2025/12/06 07:41:23 [fetchSlots] instanceID=813cc03b-5c1f-4789-9d2c-3a68338e0656
-2025/12/06 07:41:23 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:23 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:23 [fetchSlots] instanceID=813cc03b-5c1f-4789-9d2c-3a68338e0656
-2025/12/06 07:41:23 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:23 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestNodeStateTransitions_StudentSubmitsNode (0.44s)
-=== RUN   TestNodeStateTransitions_StudentCannotDirectlyApprove
-2025/12/06 07:41:23 [fetchSlots] instanceID=2d29fa43-52ee-45b1-a2df-92f6ca513b7e
-2025/12/06 07:41:23 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:23 [fetchSlots] instanceID=2d29fa43-52ee-45b1-a2df-92f6ca513b7e
-2025/12/06 07:41:23 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestNodeStateTransitions_StudentCannotDirectlyApprove (0.45s)
-=== RUN   TestNodeStateTransitions_AdminApprovesNode
-2025/12/06 07:41:23 [fetchSlots] instanceID=7d20c191-c481-4a07-8675-9c2582c4abcd
-2025/12/06 07:41:23 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:23 [fetchSlots] instanceID=7d20c191-c481-4a07-8675-9c2582c4abcd
-2025/12/06 07:41:23 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:23 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:23 [fetchSlots] returning 0 slots with total attachments
-    node_state_transitions_test.go:198: Admin approval response: {"error":"transition not allowed"}
---- PASS: TestNodeStateTransitions_AdminApprovesNode (0.40s)
-=== RUN   TestNodeStateTransitions_AdvisorRequestsFixes
-2025/12/06 07:41:24 [fetchSlots] instanceID=7b354fee-103b-49b3-b501-ec72fe0a312e
-2025/12/06 07:41:24 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:24 [fetchSlots] instanceID=7b354fee-103b-49b3-b501-ec72fe0a312e
-2025/12/06 07:41:24 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:24 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:24 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestNodeStateTransitions_AdvisorRequestsFixes (0.48s)
-=== RUN   TestNodeStateTransitions_StudentResubmitsAfterFixes
-2025/12/06 07:41:24 [fetchSlots] instanceID=eb1b86d6-ec6d-4924-bdc2-13c9eef671ad
-2025/12/06 07:41:24 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:24 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:24 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:24 [fetchSlots] instanceID=eb1b86d6-ec6d-4924-bdc2-13c9eef671ad
-2025/12/06 07:41:24 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:24 [fetchSlots] instanceID=eb1b86d6-ec6d-4924-bdc2-13c9eef671ad
-2025/12/06 07:41:24 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:24 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:24 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestNodeStateTransitions_StudentResubmitsAfterFixes (0.42s)
-=== RUN   TestNodeStateTransitions_InvalidStateRejected
-2025/12/06 07:41:25 [fetchSlots] instanceID=5a731717-19ba-4928-9cd3-00875769e4b9
-2025/12/06 07:41:25 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestNodeStateTransitions_InvalidStateRejected (0.47s)
-=== RUN   TestNodeStateTransitions_EventsLogged
-2025/12/06 07:41:25 [fetchSlots] instanceID=6cbddb36-d523-4f6e-83b1-54bf24e1cd7d
-2025/12/06 07:41:25 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:25 [fetchSlots] instanceID=6cbddb36-d523-4f6e-83b1-54bf24e1cd7d
-2025/12/06 07:41:25 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:25 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:25 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestNodeStateTransitions_EventsLogged (0.41s)
-=== RUN   TestNodeSubmissionHandler_GetSubmission
-    node_submission_test.go:36: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:36
-        	Error:      	Received unexpected error:
-        	            	pq: column "form_data" of relation "node_instances" does not exist
-        	Test:       	TestNodeSubmissionHandler_GetSubmission
---- FAIL: TestNodeSubmissionHandler_GetSubmission (0.40s)
-=== RUN   TestNodeSubmissionHandler_SubmitNode
-=== RUN   TestNodeSubmissionHandler_SubmitNode/Submit_Node
-2025/12/06 07:41:26 [fetchSlots] instanceID=e5e45a45-225d-43e1-ac8f-17e4a19dc098
-2025/12/06 07:41:26 [fetchSlots] returning 0 slots with total attachments
-    node_submission_test.go:122: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:122
-        	Error:      	Received unexpected error:
-        	            	pq: column "form_data" does not exist
-        	Test:       	TestNodeSubmissionHandler_SubmitNode/Submit_Node
-    node_submission_test.go:123: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:123
-        	Error:      	"" does not contain "submitted_value"
-        	Test:       	TestNodeSubmissionHandler_SubmitNode/Submit_Node
-    node_submission_test.go:124: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:124
-        	Error:      	Not equal: 
-        	            	expected: "submitted"
-        	            	actual  : ""
+        	            	expected: "change-me"
+        	            	actual  : "super-secret-student-portal-data"
         	            	
         	            	Diff:
         	            	--- Expected
         	            	+++ Actual
         	            	@@ -1 +1 @@
-        	            	-submitted
-        	            	+
-        	Test:       	TestNodeSubmissionHandler_SubmitNode/Submit_Node
---- FAIL: TestNodeSubmissionHandler_SubmitNode (0.42s)
-    --- FAIL: TestNodeSubmissionHandler_SubmitNode/Submit_Node (0.01s)
-=== RUN   TestNodeSubmissionHandler_SubmitProfile
-=== RUN   TestNodeSubmissionHandler_SubmitProfile/Submit_Profile
-2025/12/06 07:41:26 [fetchSlots] instanceID=2bbc6f38-42a1-4437-941e-b26f4a155e80
-2025/12/06 07:41:26 [fetchSlots] returning 0 slots with total attachments
-    node_submission_test.go:195: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:195
-        	Error:      	Received unexpected error:
-        	            	sql: Scan error on column index 0, name "program": converting NULL to string is unsupported
-        	Test:       	TestNodeSubmissionHandler_SubmitProfile/Submit_Profile
-    node_submission_test.go:196: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:196
+        	            	-change-me
+        	            	+super-secret-student-portal-data
+        	Test:       	TestMustLoad_Defaults
+    config_test.go:34: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/config/config_test.go:34
         	Error:      	Not equal: 
-        	            	expected: "PhD CS"
-        	            	actual  : ""
+        	            	expected: "1025"
+        	            	actual  : "1027"
         	            	
         	            	Diff:
         	            	--- Expected
         	            	+++ Actual
         	            	@@ -1 +1 @@
-        	            	-PhD CS
-        	            	+
-        	Test:       	TestNodeSubmissionHandler_SubmitProfile/Submit_Profile
-    node_submission_test.go:197: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go:197
-        	Error:      	Not equal: 
-        	            	expected: "AI"
-        	            	actual  : ""
-        	            	
-        	            	Diff:
-        	            	--- Expected
-        	            	+++ Actual
-        	            	@@ -1 +1 @@
-        	            	-AI
-        	            	+
-        	Test:       	TestNodeSubmissionHandler_SubmitProfile/Submit_Profile
---- FAIL: TestNodeSubmissionHandler_SubmitProfile (0.42s)
-    --- FAIL: TestNodeSubmissionHandler_SubmitProfile/Submit_Profile (0.01s)
-=== RUN   TestFormNode_GetSubmission
-2025/12/06 07:41:27 [fetchSlots] instanceID=33444f0c-9fe4-47b6-a5fa-221a2898e937
-2025/12/06 07:41:27 [fetchSlots] returning 0 slots with total attachments
-    node_types_test.go:69: Form node response: map[locale:ru node_id:form_node playbook_version_id:22222222-2222-2222-2222-222222222222 slots:[] state:active]
---- PASS: TestFormNode_GetSubmission (0.41s)
-=== RUN   TestConfirmTaskNode_GetSubmission
-2025/12/06 07:41:27 [fetchSlots] instanceID=b1fabb91-9281-45f5-ab16-a950cb84bc95
-2025/12/06 07:41:27 [fetchSlots] row 1: slot=document attachment_id= version_id= is_active=false reviewed_doc_id=
-2025/12/06 07:41:27 [fetchSlots] returning 1 slots with total attachments
-    node_types_test.go:130: ConfirmTask slots: [map[attachments:[] key:document mime:[] multiplicity:single required:true]]
-    node_types_test.go:132: ConfirmTask node response: map[locale:ru node_id:confirm_node playbook_version_id:44444444-4444-4444-4444-444444444444 slots:[map[attachments:[] key:document mime:[] multiplicity:single required:true]] state:active]
---- PASS: TestConfirmTaskNode_GetSubmission (0.35s)
-=== RUN   TestInfoNode_GetSubmission
-2025/12/06 07:41:28 [fetchSlots] instanceID=1d96cc38-b753-4e75-a6f7-b250c5f62df7
-2025/12/06 07:41:28 [fetchSlots] returning 0 slots with total attachments
-    node_types_test.go:184: Info node response: map[locale:ru node_id:info_node playbook_version_id:66666666-6666-6666-6666-666666666666 slots:[] state:active]
---- PASS: TestInfoNode_GetSubmission (0.36s)
-=== RUN   TestFormNode_PutSubmission
-2025/12/06 07:41:28 [fetchSlots] instanceID=298f039c-736f-40b5-a913-e494cf627b5e
-2025/12/06 07:41:28 [fetchSlots] returning 0 slots with total attachments
-2025/12/06 07:41:28 [fetchSlots] instanceID=298f039c-736f-40b5-a913-e494cf627b5e
-2025/12/06 07:41:28 [fetchSlots] returning 0 slots with total attachments
---- PASS: TestFormNode_PutSubmission (0.36s)
-=== RUN   TestPresignUpload_Success
-2025/12/06 07:41:28 [fetchSlots] instanceID=7335a997-7c8d-4084-a70d-0a158293a093
-2025/12/06 07:41:28 [fetchSlots] row 1: slot=doc_slot attachment_id= version_id= is_active=false reviewed_doc_id=
-2025/12/06 07:41:28 [fetchSlots] returning 1 slots with total attachments
-2025/12/06 07:41:28 [S3] Presigning PUT for key=nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251206-d26f7e2b-b18a-4053-8cfb-02be91d4f8d4-test.pdf bucket=phd-portal expires=15m0s
-    node_upload_test.go:89: Presign success: map[bucket:phd-portal document_id:9aa50c34-46bf-4f3d-8cb1-5cd55fedbb2a expires_in:900 max_size_bytes:1.048576e+07 object_key:nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251206-d26f7e2b-b18a-4053-8cfb-02be91d4f8d4-test.pdf required_headers:map[Content-Type:application/pdf] upload_url:http://localhost:9090/phd-portal/nodes/11111111-aaaa-1111-1111-111111111111/upload_node/doc_slot/20251206-d26f7e2b-b18a-4053-8cfb-02be91d4f8d4-test.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20251206%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251206T024128Z&X-Amz-Expires=900&X-Amz-SignedHeaders=host&x-id=PutObject&X-Amz-Signature=9862064695d68f4c7f378d43b79ba2e7edf06727f8bd4fb14f1c773b4d957310]
---- PASS: TestPresignUpload_Success (0.41s)
-=== RUN   TestUpload_InvalidMime
-2025/12/06 07:41:29 [fetchSlots] instanceID=2eb76441-fe42-4aa0-a9fb-f07957308e1d
-2025/12/06 07:41:29 [fetchSlots] row 1: slot=pdf_only attachment_id= version_id= is_active=false reviewed_doc_id=
-2025/12/06 07:41:29 [fetchSlots] returning 1 slots with total attachments
-    node_upload_test.go:160: Invalid MIME response: {"error":"invalid mime type"}
---- PASS: TestUpload_InvalidMime (0.40s)
-=== RUN   TestUpload_SizeTooLarge
-2025/12/06 07:41:29 [fetchSlots] instanceID=be3198d0-5955-400e-aee9-70d0e4ecc5f7
-2025/12/06 07:41:29 [fetchSlots] row 1: slot=small_file attachment_id= version_id= is_active=false reviewed_doc_id=
-2025/12/06 07:41:29 [fetchSlots] returning 1 slots with total attachments
-    node_upload_test.go:229: Size too large response: {"error":"file too large (max 1 MB)"}
---- PASS: TestUpload_SizeTooLarge (0.49s)
-=== RUN   TestAttachUpload
-2025/12/06 07:41:30 [fetchSlots] instanceID=31ef9879-1164-472d-a993-cc389c4af5ec
-2025/12/06 07:41:30 [fetchSlots] row 1: slot=slot1 attachment_id= version_id= is_active=false reviewed_doc_id=
-2025/12/06 07:41:30 [fetchSlots] returning 1 slots with total attachments
-2025/12/06 07:41:30 [AttachUpload] Starting: nodeID=attach_node, userID=77777777-aaaa-7777-7777-777777777777
-2025/12/06 07:41:30 [AttachUpload] Request: slotKey=slot1, filename=file.pdf, size=100
-2025/12/06 07:41:30 [AttachUpload] Starting transaction
-2025/12/06 07:41:30 [AttachUpload] ensureNodeInstanceTx...
-2025/12/06 07:41:30 [AttachUpload] Instance: id=31ef9879-1164-472d-a993-cc389c4af5ec, state=active
-2025/12/06 07:41:30 [AttachUpload] getSlot...
-2025/12/06 07:41:30 [AttachUpload] Slot: id=4c0093cf-00df-4e43-93b5-0818566b1ca9, multiplicity=single
-2025/12/06 07:41:30 [AttachUpload] ensureDocumentForSlot...
-2025/12/06 07:41:30 [AttachUpload] Document ID: a4ca113f-d279-4c09-b33c-09672b852778
-2025/12/06 07:41:30 [AttachUpload] Inserting document_version...
-2025/12/06 07:41:30 [AttachUpload] Version ID: 5f507f81-f22e-41af-82fe-6ec97d0fbaf5
-2025/12/06 07:41:30 [AttachUpload] Updating document current_version_id...
-2025/12/06 07:41:30 [AttachUpload] Inserting slot attachment...
-2025/12/06 07:41:30 [AttachUpload] Inserting event...
-2025/12/06 07:41:30 [AttachUpload] Transitioning state to submitted...
-2025/12/06 07:41:30 [AttachUpload] Transaction completed successfully
-2025/12/06 07:41:30 [AttachUpload] Loading instance...
-2025/12/06 07:41:30 Failed to send email to juvashev@gmail.com: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:30 [sendStateChangeEmail] Error sending email to admin: dial tcp [::1]:1027: connect: connection refused
-2025/12/06 07:41:30 [AttachUpload] Building submission DTO...
-2025/12/06 07:41:30 [fetchSlots] instanceID=31ef9879-1164-472d-a993-cc389c4af5ec
-2025/12/06 07:41:30 [fetchSlots] row 1: slot=slot1 attachment_id=e96f0f93-de8b-413b-a4f2-8cd89034b14f version_id=5f507f81-f22e-41af-82fe-6ec97d0fbaf5 is_active=true reviewed_doc_id=
-2025/12/06 07:41:30 [fetchSlots] returning 1 slots with total attachments
-2025/12/06 07:41:30 [AttachUpload] Success! Returning 200
---- PASS: TestAttachUpload (0.42s)
-=== RUN   TestNotificationsHandler_Admin
-=== RUN   TestNotificationsHandler_Admin/List_Notifications
-2025/12/06 07:41:30 [ListNotifications] Starting - unreadOnly: false
-2025/12/06 07:41:30 [ListNotifications] Executing query: 
-		SELECT 
-			n.id,
-			n.student_id,
-			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
-			COALESCE(u.email, '') as student_email,
-			n.node_id,
-			COALESCE(n.node_instance_id::text, '') as node_instance_id,
-			n.event_type,
-			n.is_read,
-			n.message,
-			n.metadata::text as metadata,
-			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
-		FROM admin_notifications n
-		JOIN users u ON u.id = n.student_id
-	 ORDER BY n.created_at DESC LIMIT 100
-2025/12/06 07:41:30 [ListNotifications] Found 2 notifications
-2025/12/06 07:41:30 [ListNotifications] First notification: id=de159514-5fd9-48c1-b80c-627cba46ecda, student=Student One, node=node1, message=Student submitted node1
-2025/12/06 07:41:30 [ListNotifications] Returning 2 notifications
-=== RUN   TestNotificationsHandler_Admin/List_Unread_Only
-2025/12/06 07:41:30 [ListNotifications] Starting - unreadOnly: true
-2025/12/06 07:41:30 [ListNotifications] Executing query: 
-		SELECT 
-			n.id,
-			n.student_id,
-			COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as student_name,
-			COALESCE(u.email, '') as student_email,
-			n.node_id,
-			COALESCE(n.node_instance_id::text, '') as node_instance_id,
-			n.event_type,
-			n.is_read,
-			n.message,
-			n.metadata::text as metadata,
-			to_char(n.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at
-		FROM admin_notifications n
-		JOIN users u ON u.id = n.student_id
-	 WHERE n.is_read = false ORDER BY n.created_at DESC LIMIT 100
-2025/12/06 07:41:30 [ListNotifications] Found 1 notifications
-2025/12/06 07:41:30 [ListNotifications] First notification: id=de159514-5fd9-48c1-b80c-627cba46ecda, student=Student One, node=node1, message=Student submitted node1
-2025/12/06 07:41:30 [ListNotifications] Returning 1 notifications
-=== RUN   TestNotificationsHandler_Admin/Get_Unread_Count
-=== RUN   TestNotificationsHandler_Admin/Mark_As_Read
-=== RUN   TestNotificationsHandler_Admin/Mark_All_As_Read
---- PASS: TestNotificationsHandler_Admin (0.40s)
-    --- PASS: TestNotificationsHandler_Admin/List_Notifications (0.00s)
-    --- PASS: TestNotificationsHandler_Admin/List_Unread_Only (0.00s)
-    --- PASS: TestNotificationsHandler_Admin/Get_Unread_Count (0.00s)
-    --- PASS: TestNotificationsHandler_Admin/Mark_As_Read (0.00s)
-    --- PASS: TestNotificationsHandler_Admin/Mark_All_As_Read (0.00s)
-=== RUN   TestNotificationHandler_Student_MarkAllAsRead
---- PASS: TestNotificationHandler_Student_MarkAllAsRead (0.36s)
-=== RUN   TestNotificationHandler_GetUnread
-=== RUN   TestNotificationHandler_GetUnread/Get_Unread
-2025/12/06 07:41:31 [GetUnread reqID=1764988891291845000] Handler called
-2025/12/06 07:41:31 [GetUnread reqID=1764988891291845000] userID from context: '123e4567-e89b-12d3-a456-426614174000'
-2025/12/06 07:41:31 [GetUnread reqID=1764988891291845000] returning 1 notifications
---- PASS: TestNotificationHandler_GetUnread (0.43s)
-    --- PASS: TestNotificationHandler_GetUnread/Get_Unread (0.00s)
-=== RUN   TestNotificationHandler_MarkAsRead
-=== RUN   TestNotificationHandler_MarkAsRead/Mark_As_Read
---- PASS: TestNotificationHandler_MarkAsRead (0.42s)
-    --- PASS: TestNotificationHandler_MarkAsRead/Mark_As_Read (0.00s)
-=== RUN   TestSearchHandler_GlobalSearch
-=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Users
-=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Documents
-=== RUN   TestSearchHandler_GlobalSearch/Student_Search_Own_Document
-=== RUN   TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users
---- PASS: TestSearchHandler_GlobalSearch (0.40s)
-    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Users (0.00s)
-    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Documents (0.00s)
-    --- PASS: TestSearchHandler_GlobalSearch/Student_Search_Own_Document (0.00s)
-    --- PASS: TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users (0.00s)
-=== RUN   TestUsersHandler_GetPendingEmailVerification
---- PASS: TestUsersHandler_GetPendingEmailVerification (0.36s)
-=== RUN   TestUsersHandler_UpdateMe_EmailChange
-2025/12/06 07:41:33 [EMAIL] SMTP not configured - email features disabled
-2025/12/06 07:41:33 [EMAIL] Skipping verification email to newemail@example.com (SMTP not configured)
---- PASS: TestUsersHandler_UpdateMe_EmailChange (0.60s)
-=== RUN   TestUsersHandler_PresignAvatarUpload
-2025/12/06 07:41:33 [S3] Presigning PUT for key=avatars/04fda2ba-d9ef-419d-b33c-894c524b0989/1764988893_avatar.jpg bucket=phd-portal expires=15m0s
---- PASS: TestUsersHandler_PresignAvatarUpload (0.37s)
-=== RUN   TestUsersHandler_UpdateUser
-=== RUN   TestUsersHandler_UpdateUser/Update_User_Not_Found
---- PASS: TestUsersHandler_UpdateUser (0.44s)
-    --- PASS: TestUsersHandler_UpdateUser/Update_User_Not_Found (0.00s)
-=== RUN   TestUsersHandler_ChangeOwnPassword
---- PASS: TestUsersHandler_ChangeOwnPassword (0.66s)
-=== RUN   TestUsersHandler_ResetPasswordForUser
---- PASS: TestUsersHandler_ResetPasswordForUser (0.53s)
-=== RUN   TestUsersHandler_CreateUser
-=== RUN   TestUsersHandler_CreateUser/Create_Student_Success
---- PASS: TestUsersHandler_CreateUser (0.44s)
-    --- PASS: TestUsersHandler_CreateUser/Create_Student_Success (0.08s)
-=== RUN   TestUsersHandler_ListUsers
-=== RUN   TestUsersHandler_ListUsers/List_All_Users
-=== RUN   TestUsersHandler_ListUsers/Filter_by_Role
---- PASS: TestUsersHandler_ListUsers (0.43s)
-    --- PASS: TestUsersHandler_ListUsers/List_All_Users (0.00s)
-    --- PASS: TestUsersHandler_ListUsers/Filter_by_Role (0.00s)
-=== RUN   TestUsersHandler_UpdateMe_Extended
-=== RUN   TestUsersHandler_UpdateMe_Extended/Update_Me_Extended
---- PASS: TestUsersHandler_UpdateMe_Extended (0.55s)
-    --- PASS: TestUsersHandler_UpdateMe_Extended/Update_Me_Extended (0.07s)
-=== RUN   TestUsersHandler_PresignAvatar
-=== RUN   TestUsersHandler_PresignAvatar/Presign_Avatar
---- PASS: TestUsersHandler_PresignAvatar (0.37s)
-    --- PASS: TestUsersHandler_PresignAvatar/Presign_Avatar (0.00s)
-=== RUN   TestUsersHandler_VerifyEmailChange
-=== RUN   TestUsersHandler_VerifyEmailChange/Verify_Email
-    users_test.go:234: Response: {"email":"new@ex.com","message":"email verified and updated successfully"}
---- PASS: TestUsersHandler_VerifyEmailChange (0.37s)
-    --- PASS: TestUsersHandler_VerifyEmailChange/Verify_Email (0.00s)
-=== RUN   TestUsersHandler_SetActive
-=== RUN   TestUsersHandler_SetActive/Set_Active_False
---- PASS: TestUsersHandler_SetActive (0.38s)
-    --- PASS: TestUsersHandler_SetActive/Set_Active_False (0.00s)
+        	            	-1025
+        	            	+1027
+        	Test:       	TestMustLoad_Defaults
+2025/12/24 16:25:04 Config loaded: Port=3000, Env=production, FrontendBase=http://localhost:5173, ServerURL=http://localhost:8080
+2025/12/24 16:25:04 Config loaded: Port=8280, Env=development, FrontendBase=http://localhost:5173, ServerURL=http://localhost:8080
 FAIL
-FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	42.480s
+coverage: 91.7% of statements
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/config	0.841s
+	github.com/AlmatJuvashev/phd-students-portal/backend/internal/db		coverage: 0.0% of statements
+2025/12/24 16:25:07 [EMAIL] SMTP not configured - email features disabled
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/24 16:25:07 [AuthService.Login] Found user: id=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, isActive=true
+2025/12/24 16:25:07 [AuthService.Login] Password verified for user=security_test_user
+2025/12/24 16:25:07 [AuthService.Login] No tenant context, using user role=student
+2025/12/24 16:25:07 [AuthService.Login] Login successful: userID=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, tenantID=
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/24 16:25:07 [AuthService.Login] Found user: id=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, isActive=true
+2025/12/24 16:25:07 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$hLr3DzTQsyD0kIKe9WrpsOh
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/24 16:25:07 [AuthService.Login] Found user: id=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, isActive=true
+2025/12/24 16:25:07 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$hLr3DzTQsyD0kIKe9WrpsOh
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/24 16:25:07 [AuthService.Login] User not found: username=security_test_user, error=record not found
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/24 16:25:07 [AuthService.Login] User not found: username=security_test_user, error=record not found
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/24 16:25:07 [AuthService.Login] User not found: username=security_test_user, error=record not found
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/24 16:25:18 [ListNotifications] Starting - unreadOnly: false
+2025/12/24 16:25:18 [ListNotifications] Found 2 notifications
+2025/12/24 16:25:18 [ListNotifications] Starting - unreadOnly: true
+2025/12/24 16:25:18 [ListNotifications] Found 0 notifications
+--- FAIL: TestNotificationsHandler_ListNotifications (7.28s)
+    --- FAIL: TestNotificationsHandler_ListNotifications/List_Unread_Only (0.09s)
+        admin_notifications_test.go:63: 
+            	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:63
+            	Error:      	"[]" should have 1 item(s), but has 0
+            	Test:       	TestNotificationsHandler_ListNotifications/List_Unread_Only
+panic: runtime error: index out of range [0] with length 0 [recovered]
+	panic: runtime error: index out of range [0] with length 0
+
+goroutine 54 [running]:
+testing.tRunner.func1.2({0x1034ec6a0, 0x14000022f18})
+	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1734 +0x1ac
+testing.tRunner.func1()
+	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1737 +0x334
+panic({0x1034ec6a0?, 0x14000022f18?})
+	/opt/homebrew/Cellar/go/1.24.2/libexec/src/runtime/panic.go:792 +0x124
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers_test.TestNotificationsHandler_ListNotifications.func2(0x14000276c40)
+	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:64 +0x238
+testing.tRunner(0x14000276c40, 0x14000264df0)
+	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1792 +0xe4
+created by testing.(*T).Run in goroutine 43
+	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1851 +0x374
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	13.509s
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/logging	1.140s	coverage: 100.0% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware	47.557s	coverage: 53.8% of statements
+	github.com/AlmatJuvashev/phd-students-portal/backend/internal/models		coverage: 0.0% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/permissions	1.641s	coverage: 93.5% of statements
+2025/12/24 16:25:12 Failed to truncate table document_versions: pq: deadlock detected
+2025/12/24 16:25:24 Failed to truncate table documents: pq: deadlock detected
+2025/12/24 16:25:25 Failed to truncate table document_versions: pq: deadlock detected
+2025/12/24 16:25:30 Failed to truncate table documents: pq: deadlock detected
+2025/12/24 16:25:31 Failed to truncate table document_versions: pq: deadlock detected
+--- FAIL: TestSQLAdminRepository_ListStudentsForMonitor (10.39s)
+    admin_repository_test.go:77: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/admin_repository_test.go:77
+        	Error:      	"[]" should have 1 item(s), but has 0
+        	Test:       	TestSQLAdminRepository_ListStudentsForMonitor
+2025/12/24 16:25:39 Failed to truncate table document_versions: pq: deadlock detected
+--- FAIL: TestSQLAdminRepository_GetStudentDetails (9.13s)
+    admin_repository_test.go:105: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/admin_repository_test.go:105
+        	Error:      	Received unexpected error:
+        	            	sql: no rows in result set
+        	Test:       	TestSQLAdminRepository_GetStudentDetails
+2025/12/24 16:25:44 Failed to truncate table document_versions: pq: deadlock detected
+2025/12/24 16:25:46 Failed to truncate table users: pq: deadlock detected
+--- FAIL: TestSQLAdminRepository_AdminNotifications (3.60s)
+    admin_repository_test.go:146: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/admin_repository_test.go:146
+        	Error:      	Received unexpected error:
+        	            	pq: insert or update on table "admin_notifications" violates foreign key constraint "admin_notifications_student_id_fkey"
+        	Test:       	TestSQLAdminRepository_AdminNotifications
+--- FAIL: TestSQLJourneyRepository_State (2.13s)
+    journey_repository_test.go:36: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/journey_repository_test.go:36
+        	Error:      	Received unexpected error:
+        	            	pq: insert or update on table "journey_states" violates foreign key constraint "journey_states_user_id_fkey"
+        	Test:       	TestSQLJourneyRepository_State
+--- FAIL: TestSQLJourneyRepository_NodeInstances (1.84s)
+    journey_repository_test.go:60: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/journey_repository_test.go:60
+        	Error:      	Received unexpected error:
+        	            	pq: insert or update on table "node_instances" violates foreign key constraint "node_instances_user_id_fkey"
+        	Test:       	TestSQLJourneyRepository_NodeInstances
+--- FAIL: TestSQLTenantRepository_Stats (2.52s)
+    tenant_repository_test.go:136: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/tenant_repository_test.go:136
+        	Error:      	Received unexpected error:
+        	            	pq: deadlock detected
+        	Test:       	TestSQLTenantRepository_Stats
+2025/12/24 16:26:07 Failed to truncate table users: pq: deadlock detected
+--- FAIL: TestChatRepository_ListMembers (1.93s)
+    chat_repository_test.go:163: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/chat_repository_test.go:163
+        	Error:      	"[{00000000-0000-0000-0000-000000000001 d38b0593-f69e-4be9-947f-46a00dbdd04f e9492735-a389-4d84-8725-59fda697ef1e member 2025-12-24 11:26:26.586068 +0000 UTC <nil> Test User chattest10@test.com chattest10}]" should have 2 item(s), but has 1
+        	Test:       	TestChatRepository_ListMembers
+FAIL
+coverage: 13.9% of statements
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository	90.422s
+	github.com/AlmatJuvashev/phd-students-portal/backend/internal/seed		coverage: 0.0% of statements
+2025/12/24 16:25:09 [EMAIL] Sent email to student@test.com: Reset Your Password
+2025/12/24 16:25:09 [EMAIL] Skipping password reset email to student@test.com (SMTP not configured)
+2025/12/24 16:25:09 [EMAIL] Failed to send email to new@test.com: smtp down
+2025/12/24 16:25:09 [EMAIL] Sent email to user@test.com: You have been added to chat room: Research Room
+2025/12/24 16:25:24 Failed to truncate table documents: pq: deadlock detected
+2025/12/24 16:25:25 Failed to truncate table document_versions: pq: deadlock detected
+--- FAIL: TestCalendarService_GetEvents (2.75s)
+    services_test.go:311: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go:311
+        	Error:      	"[]" should have 1 item(s), but has 0
+        	Test:       	TestCalendarService_GetEvents
+--- FAIL: TestCalendarService_GetEvent (3.62s)
+    services_test.go:337: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go:337
+        	Error:      	Received unexpected error:
+        	            	pq: invalid input syntax for type uuid: ""
+        	Test:       	TestCalendarService_GetEvent
+--- FAIL: TestCalendarService_UpdateEvent (1.96s)
+    services_test.go:366: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go:366
+        	Error:      	Received unexpected error:
+        	            	event not found or unauthorized
+        	Test:       	TestCalendarService_UpdateEvent
+--- FAIL: TestAdminService_ListStudentProgress (2.95s)
+    admin_service_test.go:63: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/admin_service_test.go:63
+        	Error:      	"[]" should have 1 item(s), but has 0
+        	Test:       	TestAdminService_ListStudentProgress
+--- FAIL: TestAdminService_MonitorStudents (1.91s)
+    admin_service_test.go:119: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/admin_service_test.go:119
+        	Error:      	"[]" should have 1 item(s), but has 0
+        	Test:       	TestAdminService_MonitorStudents
+2025/12/24 16:26:23 [AuthService.Login] Attempting login for username=student1, tenantID=
+2025/12/24 16:26:23 [AuthService.Login] Found user: id=u1, role=student, isActive=true
+2025/12/24 16:26:23 [AuthService.Login] Password verified for user=student1
+2025/12/24 16:26:23 [AuthService.Login] No tenant context, using user role=student
+2025/12/24 16:26:23 [AuthService.Login] Login successful: userID=u1, role=student, tenantID=
+2025/12/24 16:26:23 [AuthService.Login] Attempting login for username=advisor1, tenantID=t1
+2025/12/24 16:26:23 [AuthService.Login] Found user: id=u2, role=student, isActive=true
+2025/12/24 16:26:24 [AuthService.Login] Password verified for user=advisor1
+2025/12/24 16:26:24 [AuthService.Login] Checking tenant membership: userID=u2, tenantID=t1
+2025/12/24 16:26:24 [AuthService.Login] Tenant access granted: role=advisor
+2025/12/24 16:26:24 [AuthService.Login] Login successful: userID=u2, role=advisor, tenantID=t1
+2025/12/24 16:26:24 [AuthService.Login] Attempting login for username=user3, tenantID=
+2025/12/24 16:26:24 [AuthService.Login] Found user: id=u3, role=, isActive=true
+2025/12/24 16:26:24 [AuthService.Login] Password mismatch for user=user3, hash_prefix=$2a$10$Gd8zWOd1IHp86lv0.CL6S.J
+2025/12/24 16:26:24 [AuthService.Login] Attempting login for username=user4, tenantID=
+2025/12/24 16:26:24 [AuthService.Login] Found user: id=u4, role=, isActive=false
+2025/12/24 16:26:24 [AuthService.Login] User inactive: id=u4
+2025/12/24 16:26:31 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174000 node=node1
+2025/12/24 16:26:33 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174001 node=fork
+2025/12/24 16:26:35 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174002 node=terminal_node
+2025/12/24 16:26:36 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174003 node=node1
+2025/12/24 16:26:36 Activated existing node node2
+2025/12/24 16:26:37 [ActivateNextNodes] Starting for user=user1 node=node1
+2025/12/24 16:26:38 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174005 node=nonexistent_node
+2025/12/24 16:26:39 [NotifyAdvisors] Found 2 advisors for student 11111111-1111-1111-1111-111111111111
+2025/12/24 16:26:39 [NotifyAdvisors] Created submission notification for student 11111111-1111-1111-1111-111111111111, node node-1, 2 advisors assigned
+2025/12/24 16:26:39 [NotifyAdvisors] Found 0 advisors for student 33333333-3333-3333-3333-333333333333
+2025/12/24 16:26:39 [NotifyAdvisors] Double check existence: false
+2025/12/24 16:26:39 [NotifyAdvisors] No advisors assigned to student 33333333-3333-3333-3333-333333333333, skipping notification
+2025/12/24 16:26:42 Testing HasAdvisors with empty student, likely false
+FAIL
+coverage: 26.6% of statements
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services	101.295s
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/debouncer	3.494s	coverage: 59.4% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer	5.082s	coverage: 60.6% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook	41.509s	coverage: 69.1% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/storage	4.335s	coverage: 91.5% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils	18.312s	coverage: 59.6% of statements
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/worker	31.291s	coverage: 65.3% of statements
 FAIL
