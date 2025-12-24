@@ -399,8 +399,21 @@ func (r *SQLSuperAdminRepository) UpdateSetting(ctx context.Context, key string,
 }
 
 func (r *SQLSuperAdminRepository) DeleteSetting(ctx context.Context, key string) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM global_settings WHERE key = $1`, key)
-	return err
+	result, err := r.db.ExecContext(ctx, `DELETE FROM global_settings WHERE key = $1`, key)
+	if err != nil {
+		return err
+	}
+	
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	
+	return nil
 }
 
 func (r *SQLSuperAdminRepository) GetCategories(ctx context.Context) ([]string, error) {

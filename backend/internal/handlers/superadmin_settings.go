@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -94,6 +95,10 @@ func (h *SuperadminSettingsHandler) DeleteSetting(c *gin.Context) {
 	key := c.Param("key")
 	err := h.adminSvc.DeleteSetting(c.Request.Context(), key)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "setting not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete setting"})
 		return
 	}
