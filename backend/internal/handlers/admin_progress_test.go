@@ -59,7 +59,7 @@ func TestAdminHandler_StudentProgress(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -139,7 +139,7 @@ func TestAdminHandler_MonitorStudents(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -250,7 +250,7 @@ func TestAdminHandler_GetStudentDetails(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -319,7 +319,7 @@ func TestAdminHandler_StudentJourney(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -408,7 +408,7 @@ func TestAdminHandler_ListStudentNodeFiles(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -458,7 +458,7 @@ func TestAdminHandler_ListStudentNodeFiles_Forbidden(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
@@ -514,7 +514,7 @@ func TestAdminHandler_MonitorAnalytics(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -624,7 +624,7 @@ func TestAdminHandler_ReviewAttachment(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -692,7 +692,7 @@ func TestAdminHandler_ListStudentProgress(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -785,7 +785,7 @@ func TestAdminHandler_UploadReviewedDocument(t *testing.T) {
 	pb := &playbook.Manager{}
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pb, cfg)
+	svc := services.NewAdminService(repo, pb, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pb, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pb, svc, jSvc)
@@ -863,7 +863,7 @@ func TestAdminHandler_PatchStudentNodeState(t *testing.T) {
 	}
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pb, cfg)
+	svc := services.NewAdminService(repo, pb, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pb, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pb, svc, jSvc)
@@ -963,7 +963,7 @@ func TestAdminHandler_PresignReviewedDocumentUpload(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
@@ -1067,7 +1067,7 @@ func TestAdminHandler_AttachReviewedDocument(t *testing.T) {
 
 	cfg := config.AppConfig{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
@@ -1121,7 +1121,7 @@ func TestAdminHandler_UploadReviewedDocument_Failures(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
@@ -1208,7 +1208,7 @@ func TestAdminHandler_UploadReviewedDocument_Forbidden(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
@@ -1269,7 +1269,7 @@ func TestAdminHandler_PostReminders_Extended(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
@@ -1310,7 +1310,7 @@ func TestAdminHandler_PostReminders_Failures(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
@@ -1357,7 +1357,7 @@ func TestAdminHandler_ReviewAttachment_Failures(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &pb.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &pb.Manager{}, svc, jSvc)
@@ -1427,7 +1427,7 @@ func TestAdminHandler_PostReminders(t *testing.T) {
 	cfg := config.AppConfig{}
 	pb := &pb.Manager{}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pb, cfg)
+	svc := services.NewAdminService(repo, pb, cfg, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pb, cfg, nil, nil, nil)
 	h := handlers.NewAdminHandler(cfg, pb, svc, jSvc)

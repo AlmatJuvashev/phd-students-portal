@@ -35,7 +35,7 @@ func TestNotificationsHandler_Admin(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &pb.Manager{}, config.AppConfig{}, nil)
 	h := handlers.NewNotificationsHandler(svc)
 
 	gin.SetMode(gin.TestMode)

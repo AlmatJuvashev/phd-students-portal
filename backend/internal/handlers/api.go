@@ -13,7 +13,6 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer"
 	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
@@ -100,9 +99,16 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Services
 	emailService := services.NewEmailService()
 	
+	// Journey Service Dependencies
+	// S3 Client
+	s3Svc, err := services.NewS3FromEnv()
+	if err != nil {
+		log.Printf("Warning: S3 init failed: %v", err)
+	}
+
 	// Repositories & Domain Services
 	userRepo := repository.NewSQLUserRepository(db)
-	userService := services.NewUserService(userRepo, rds, cfg, emailService)
+	userService := services.NewUserService(userRepo, rds, cfg, emailService, s3Svc)
 	authService := services.NewAuthService(userRepo, emailService, cfg)
 
 	// Auth routes (login and password reset)
@@ -117,28 +123,14 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	
 	// Documents
 	docRepo := repository.NewSQLDocumentRepository(db)
-	docService, err := services.NewDocumentService(docRepo, cfg)
-	if err != nil {
-		log.Printf("Warning: DocumentService init failed: %v", err)
-	}
-
-	// Journey Service Dependencies
-	// S3 Client
-	s3Svc, err := services.NewS3FromEnv()
-	if err != nil {
-		log.Printf("Warning: S3 init failed: %v", err)
-	}
-	var s3Client *s3.Client
-	if s3Svc != nil {
-		s3Client = s3Svc.Client()
-	}
+	docService := services.NewDocumentService(docRepo, cfg, s3Svc)
 
 	// Mailer
 	mailerSvc := mailer.NewMailer()
 
 	// Journey Service
 	journeyRepo := repository.NewSQLJourneyRepository(db)
-	journeyService := services.NewJourneyService(journeyRepo, playbookManager, cfg, mailerSvc, s3Client, docService)
+	journeyService := services.NewJourneyService(journeyRepo, playbookManager, cfg, mailerSvc, s3Svc, docService)
 
 	journey := NewJourneyHandler(journeyService)
 	_ = journey
@@ -146,7 +138,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	_ = nodeSubmission
 	// Admin Service
 	adminRepo := repository.NewSQLAdminRepository(db)
-	adminService := services.NewAdminService(adminRepo, playbookManager, cfg)
+	adminService := services.NewAdminService(adminRepo, playbookManager, cfg, s3Svc)
 	adminHandler := NewAdminHandler(cfg, playbookManager, adminService, journeyService)
 	_ = adminHandler
 	chatRepo := repository.NewSQLChatRepository(db)

@@ -160,7 +160,7 @@ func TestReviewAttachment_AdvisorApproves(t *testing.T) {
 	// Setup handler
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"confirm_task": {}}}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)
@@ -220,7 +220,7 @@ func TestReviewAttachment_AdvisorApprovesWithComments(t *testing.T) {
 
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"n": {}}}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)
@@ -278,7 +278,7 @@ func TestReviewAttachment_AdvisorUnassignedStudent_Forbidden(t *testing.T) {
 
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"n": {}}}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)
@@ -328,7 +328,7 @@ func TestReviewAttachment_AdminApprovesAnyStudent(t *testing.T) {
 
 	pbm := &pb.Manager{VersionID: f.PVVersionID, Nodes: map[string]pb.Node{"n": {}}}
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, pbm, config.AppConfig{})
+	svc := services.NewAdminService(repo, pbm, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, pbm, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, pbm, svc, jSvc)

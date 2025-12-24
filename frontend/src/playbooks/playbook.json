@@ -1462,6 +1462,36 @@
           "next": ["NK_package"]
         },
         {
+          "id": "NK_package",
+          "title": {
+            "ru": "Пакет документов для НК",
+            "kz": "ҒК құжаттар пакеті",
+            "en": "SC Documents Package"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "prerequisites": ["E1_apply_omid"],
+          "next": ["E3_hearing_nk"],
+          "screen": {
+            "question": {
+              "ru": "Вы собрали и подготовили полный пакет документов для НК?",
+              "kz": "ҒК үшін құжаттар пакетін толық дайындадыңыз ба?",
+              "en": "Have you prepared the full document package for the SC?"
+            },
+            "buttons": [
+              {
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить готовность",
+                  "kz": "Дайындығын растау",
+                  "en": "Confirm readiness"
+                },
+                "action": "confirm_completion"
+              }
+            ]
+          }
+        },
+        {
           "id": "E3_hearing_nk",
           "title": {
             "ru": "Заслушивание НК",

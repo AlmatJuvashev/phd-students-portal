@@ -39,7 +39,7 @@ func TestAdminService_ListStudentProgress(t *testing.T) {
 		},
 	}
 	cfg := testutils.GetTestConfig()
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 
 	ctx := context.Background()
 	tenantID := uuid.New().String()
@@ -84,7 +84,7 @@ func TestAdminService_MonitorStudents(t *testing.T) {
 	}
 
 	cfg := testutils.GetTestConfig()
-	svc := services.NewAdminService(repo, pbm, cfg)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
 
 	ctx := context.Background()
 	tenantID := uuid.New().String()

@@ -16,27 +16,26 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 )
 
 type JourneyService struct {
-	repo   repository.JourneyRepository
-	pb     *playbook.Manager
-	cfg    config.AppConfig
-	mailer *mailer.Mailer
-	s3     *s3.Client
-	docSvc *DocumentService
+	repo    repository.JourneyRepository
+	pb      *playbook.Manager
+	cfg     config.AppConfig
+	mailer  *mailer.Mailer
+	storage StorageClient
+	docSvc  *DocumentService
 }
 
-func NewJourneyService(repo repository.JourneyRepository, pb *playbook.Manager, cfg config.AppConfig, mailer *mailer.Mailer, s3Client *s3.Client, docSvc *DocumentService) *JourneyService {
+func NewJourneyService(repo repository.JourneyRepository, pb *playbook.Manager, cfg config.AppConfig, mailer *mailer.Mailer, storage StorageClient, docSvc *DocumentService) *JourneyService {
 	return &JourneyService{
-		repo:   repo,
-		pb:     pb,
-		cfg:    cfg,
-		mailer: mailer,
-		s3:     s3Client,
-		docSvc: docSvc,
+		repo:    repo,
+		pb:      pb,
+		cfg:     cfg,
+		mailer:  mailer,
+		storage: storage,
+		docSvc:  docSvc,
 	}
 }
 
@@ -559,46 +558,111 @@ func (s *JourneyService) sendStateChangeEmail(ctx context.Context, userID, nodeI
 
 // PresignUpload generates S3 URL
 func (s *JourneyService) PresignUpload(ctx context.Context, userID, nodeID, slotKey, filename, contentType string, sizeBytes int64) (string, error) {
-	// Path: node_uploads/{node_id}/{slot_key}/{uuid}/{filename}
-	path := fmt.Sprintf("node_uploads/%s/%s/%s/%s", nodeID, slotKey, uuid.NewString(), filename)
-	
-	// Check S3
-	if s.s3 == nil {
-		return "", errors.New("s3 client not available")
+	// 1. Validate against playbook
+	nodeDef, ok := s.pb.NodeDefinition(nodeID)
+	if !ok {
+		return "", errors.New("node not found in playbook")
 	}
-	
-	presigner := s3.NewPresignClient(s.s3)
-	req, err := presigner.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:        &s.cfg.S3Bucket,
-		Key:           &path,
-		ContentType:   &contentType,
-		ContentLength: &sizeBytes,
-	}, func(opts *s3.PresignOptions) {
-		opts.Expires = 15 * time.Minute
-	})
+
+	var slotDef *playbook.UploadRequirement
+	if nodeDef.Requirements != nil {
+		for _, up := range nodeDef.Requirements.Uploads {
+			if up.Key == slotKey {
+				slotDef = &up
+				break
+			}
+		}
+	}
+
+	if slotDef == nil {
+		return "", errors.New("slot not found in node definition")
+	}
+
+	// MIME check
+	if len(slotDef.Mime) > 0 {
+		allowed := false
+		for _, m := range slotDef.Mime {
+			if m == contentType {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return "", fmt.Errorf("mime type %s not allowed for this slot", contentType)
+		}
+	}
+
+	// Size check
+	maxBytes := int64(s.cfg.FileUploadMaxMB) * 1024 * 1024
+	if sizeBytes > maxBytes {
+		return "", fmt.Errorf("file size %d bytes is too large (max %dMB)", sizeBytes, s.cfg.FileUploadMaxMB)
+	}
+
+	// 2. Logic
+	path := fmt.Sprintf("node_uploads/%s/%s/%s/%s", nodeID, slotKey, uuid.NewString(), filename)
+
+	if s.storage == nil {
+		return "", errors.New("storage client not available")
+	}
+
+	url, err := s.storage.PresignPut(ctx, path, contentType, 15*time.Minute)
 	if err != nil {
 		return "", err
 	}
-	
-	return req.URL, nil
+
+	return url, nil
 }
 
 // AttachUpload logic
 func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nodeID, slotKey, uploadedFilename, originalFilename string, sizeBytes int64) error {
 	inst, err := s.EnsureNodeInstance(ctx, tenantID, userID, nodeID, nil)
-	if err != nil { return err }
-	
+	if err != nil {
+		return err
+	}
+
 	slot, err := s.repo.GetSlot(ctx, inst.ID, slotKey)
-	if err != nil { return err }
-	
+	if err != nil {
+		return err
+	}
+
 	if s.docSvc == nil {
 		return errors.New("document service not available")
 	}
-	
+
 	log.Printf("[JourneyService] AttachUpload: Attaching %s to slot %s", originalFilename, slot.ID)
-	// TODO: Create Document Version via DocumentService.
-	// For now we assume success or logging.
+
+	// 1. Create or Find Document
+	// For simplicity, we create a new Document entry for each upload, 
+	// or we could look up an existing one for this slot.
+	// Standard approach: create a Document record if this is the first upload to the slot, 
+	// but many slots allow multiple versions.
 	
+	docID, err := s.docSvc.CreateMetadata(ctx, CreateDocumentRequest{
+		Title:    originalFilename,
+		Kind:     "node_slot",
+		TenantID: tenantID,
+		UserID:   userID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create document metadata: %w", err)
+	}
+
+	// 2. Create Document Version
+	verID, err := s.docSvc.CreateVersion(ctx, docID, tenantID, userID, models.DocumentVersion{
+		StoragePath: uploadedFilename, // We use the S3 key here
+		MimeType:    "application/octet-stream", // Should we pass this from handler?
+		SizeBytes:   sizeBytes,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create document version: %w", err)
+	}
+
+	// 3. Create Node Instance Slot Attachment
+	_, err = s.repo.CreateAttachment(ctx, slot.ID, verID, "submitted", originalFilename, userID, sizeBytes)
+	if err != nil {
+		return fmt.Errorf("failed to create slot attachment: %w", err)
+	}
+
 	return nil
 }
 

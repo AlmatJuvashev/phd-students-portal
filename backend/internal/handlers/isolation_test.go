@@ -58,7 +58,7 @@ func TestDataIsolation_BetweenTenants(t *testing.T) {
 	// We need a handler that accesses these resources. AdminHandler's GetStudentDetails or MonitorStudents or Documents check.
 	// Using AdminHandler for testing isolation on list endpoints.
 	repo := repository.NewSQLAdminRepository(db)
-	svc := services.NewAdminService(repo, &playbook.Manager{}, config.AppConfig{})
+	svc := services.NewAdminService(repo, &playbook.Manager{}, config.AppConfig{}, nil)
 	jRepo := repository.NewSQLJourneyRepository(db)
 	jSvc := services.NewJourneyService(jRepo, &playbook.Manager{}, config.AppConfig{}, nil, nil, nil)
 	h := handlers.NewAdminHandler(config.AppConfig{}, &playbook.Manager{}, svc, jSvc)

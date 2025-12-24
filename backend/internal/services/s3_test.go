@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -67,21 +68,21 @@ func TestS3Client_Client_NilClient(t *testing.T) {
 
 func TestS3Client_PresignPut_NilClient(t *testing.T) {
 	var client *S3Client
-	url, err := client.PresignPut("key", "application/pdf", 15*time.Minute)
+	url, err := client.PresignPut(context.Background(), "key", "application/pdf", 15*time.Minute)
 	assert.NoError(t, err)
 	assert.Equal(t, "", url)
 }
 
 func TestS3Client_PresignGet_NilClient(t *testing.T) {
 	var client *S3Client
-	url, err := client.PresignGet("key", 15*time.Minute)
+	url, err := client.PresignGet(context.Background(), "key", 15*time.Minute)
 	assert.NoError(t, err)
 	assert.Equal(t, "", url)
 }
 
 func TestS3Client_ObjectExists_NilClient(t *testing.T) {
 	var client *S3Client
-	exists, err := client.ObjectExists("key")
+	exists, err := client.ObjectExists(context.Background(), "key")
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }

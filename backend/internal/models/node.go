@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 // NodeInstance represents the state of a user's progress on a specific node
 type NodeInstance struct {
@@ -30,11 +34,14 @@ type NodeDeadline struct {
 
 // NodeInstanceSlot represents a data slot for a node instance
 type NodeInstanceSlot struct {
-	ID             string `db:"id" json:"id"`
-	NodeInstanceID string `db:"node_instance_id" json:"node_instance_id"`
-	TenantID       string `db:"tenant_id" json:"tenant_id"`
-	SlotKey        string `db:"slot_key" json:"slot_key"`
-	Status         string `db:"status" json:"status"` // empty/filled
+	ID             string         `db:"id" json:"id"`
+	NodeInstanceID string         `db:"node_instance_id" json:"node_instance_id"`
+	TenantID       string         `db:"tenant_id" json:"tenant_id"`
+	SlotKey        string         `db:"slot_key" json:"slot_key"`
+	Status         string         `db:"status" json:"status"` // empty/filled
+	Required       bool           `db:"required" json:"required"`
+	Multiplicity   string         `db:"multiplicity" json:"multiplicity"`
+	MimeWhitelist  pq.StringArray `db:"mime_whitelist" json:"mime"`
 }
 
 // NodeInstanceSlotAttachment represents a file attached to a slot
