@@ -116,7 +116,169 @@ func main() {
 		}
 	}
 
-	fmt.Println("25 Demo students seeding completed successfully!")
+	// 6. Create Chat Groups with Russian Messages
+	fmt.Printf("Creating chat groups with messages...\n")
+	
+	// Collect all student IDs
+	var studentIDs []string
+	rows, err := db.Query(`
+		SELECT DISTINCT u.id, u.username
+		FROM users u 
+		JOIN user_tenant_memberships utm ON u.id = utm.user_id 
+		WHERE u.username LIKE 'demo.student%' 
+		AND utm.tenant_id = $1 
+		ORDER BY u.username`, DefaultTenantID)
+	if err != nil {
+		log.Printf("Failed to query students: %v", err)
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			var id, username string
+			if err := rows.Scan(&id, &username); err == nil {
+				studentIDs = append(studentIDs, id)
+			}
+		}
+	}
+	
+	fmt.Printf("Found %d students for chat groups\n", len(studentIDs))
+	
+	// Create 5 chat groups
+	chatGroups := []struct {
+		name     string
+		messages []struct {
+			senderIdx int // -1 for advisor1, -2 for advisor2, 0-24 for students
+			text      string
+		}
+	}{
+		{
+			name: "Общие вопросы",
+			messages: []struct {
+				senderIdx int
+				text      string
+			}{
+				{-1, "Добрый день! Напоминаю всем о необходимости сдать отчеты до конца месяца."},
+				{0, "Здравствуйте! Подскажите, пожалуйста, какой формат отчета требуется?"},
+				{-1, "Формат стандартный - по шаблону на портале. Объем не менее 10 страниц."},
+				{5, "Спасибо за информацию!"},
+				{10, "А можно ли использовать данные из предыдущего семестра?"},
+				{-2, "Да, но с обновлениями и дополнениями."},
+			},
+		},
+		{
+			name: "Защита диссертаций",
+			messages: []struct {
+				senderIdx int
+				text      string
+			}{
+				{-2, "Коллеги, кто планирует защиту в этом году?"},
+				{20, "Я планирую на май. Уже начал подготовку документов."},
+				{22, "А какие документы нужны для подачи заявки?"},
+				{-2, "Полный список есть в разделе 'Защита'. Основное: диссертация, автореферат, отзывы."},
+				{24, "Сколько отзывов требуется?"},
+				{-1, "Минимум 3 отзыва от ведущих специалистов в вашей области."},
+				{20, "Спасибо! Буду готовить документы."},
+			},
+		},
+		{
+			name: "Публикации",
+			messages: []struct {
+				senderIdx int
+				text      string
+			}{
+				{15, "Добрый день! Кто-нибудь публиковался в Scopus в этом году?"},
+				{18, "Да, я отправил статью в Journal of Public Health. Жду ответа."},
+				{-1, "Отлично! Не забывайте, что для защиты нужно минимум 2 публикации в WoS/Scopus."},
+				{12, "А публикации в РИНЦ засчитываются?"},
+				{-2, "Да, но они идут как дополнительные. Основные должны быть в международных базах."},
+				{15, "Понятно, спасибо!"},
+				{18, "Кстати, есть хороший журнал International Journal of Research - рекомендую."},
+			},
+		},
+		{
+			name: "Методология исследований",
+			messages: []struct {
+				senderIdx int
+				text      string
+			}{
+				{8, "Коллеги, кто использует качественные методы в исследовании?"},
+				{10, "Я использую смешанный подход - и количественные, и качественные методы."},
+				{-1, "Это правильный подход для комплексного исследования."},
+				{8, "А какие программы используете для анализа данных?"},
+				{10, "SPSS для количественных данных, NVivo для качественных."},
+				{12, "Я тоже использую SPSS. Очень удобная программа."},
+				{-2, "Не забывайте про R - это мощный инструмент для статистического анализа."},
+			},
+		},
+		{
+			name: "Научные мероприятия",
+			messages: []struct {
+				senderIdx int
+				text      string
+			}{
+				{-2, "Уважаемые докторанты! В следующем месяце состоится международная конференция по общественному здоровью."},
+				{3, "Где можно посмотреть программу конференции?"},
+				{-2, "Ссылка будет в рассылке. Регистрация уже открыта."},
+				{7, "Планирую выступить с докладом. Какой дедлайн для подачи тезисов?"},
+				{-1, "До 15 числа следующего месяца. Не затягивайте!"},
+				{14, "А будет ли онлайн-участие?"},
+				{-2, "Да, конференция в гибридном формате."},
+				{3, "Отлично! Обязательно приму участие."},
+			},
+		},
+	}
+	
+	for _, group := range chatGroups {
+		// Create chat room
+		var roomID string
+		err := db.QueryRow(`
+			INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id)
+			VALUES ($1, 'cohort', $2, 'advisor', $3)
+			RETURNING id`, group.name, advisor1, DefaultTenantID).Scan(&roomID)
+		if err != nil {
+			log.Printf("Failed to create chat room %s: %v", group.name, err)
+			continue
+		}
+		
+		// Add all students as members
+		for _, studentID := range studentIDs {
+			_, _ = db.Exec(`
+				INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id)
+				VALUES ($1, $2, 'member', $3)
+				ON CONFLICT DO NOTHING`, roomID, studentID, DefaultTenantID)
+		}
+		
+		// Add advisors as admins
+		_, _ = db.Exec(`
+			INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id)
+			VALUES ($1, $2, 'admin', $3)
+			ON CONFLICT DO NOTHING`, roomID, advisor1, DefaultTenantID)
+		_, _ = db.Exec(`
+			INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id)
+			VALUES ($1, $2, 'admin', $3)
+			ON CONFLICT DO NOTHING`, roomID, advisor2, DefaultTenantID)
+		
+		// Add messages
+		for _, msg := range group.messages {
+			var senderID string
+			if msg.senderIdx == -1 {
+				senderID = advisor1
+			} else if msg.senderIdx == -2 {
+				senderID = advisor2
+			} else if msg.senderIdx >= 0 && msg.senderIdx < len(studentIDs) {
+				senderID = studentIDs[msg.senderIdx]
+			} else {
+				continue
+			}
+			
+			_, _ = db.Exec(`
+				INSERT INTO chat_messages (room_id, sender_id, body, tenant_id)
+				VALUES ($1, $2, $3, $4)`, roomID, senderID, msg.text, DefaultTenantID)
+		}
+		
+		fmt.Printf("  Created chat group: %s with %d messages\n", group.name, len(group.messages))
+	}
+
+	fmt.Println("25 Demo students and 5 chat groups seeding completed successfully!")
 }
 
 func ensureUser(db *sqlx.DB, username, email, first, last, role, hash string) string {
