@@ -60,7 +60,13 @@ func TestJourneyService_RequirementEnforcement(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO document_versions (id, document_id, tenant_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by) VALUES ($1, $2, $3, 'p', 'k', 'b', 'app/pdf', 100, $4)`, docVerID, docID, tenantID, userID)
 	assert.NoError(t, err)
 
-	slot, _ := repo.GetSlot(context.Background(), instID, "req_file")
+	// We MUST ensure slots are created via service logic since we jumped directly into repo
+	_, err = svc.EnsureNodeInstance(context.Background(), tenantID, userID, "node1", nil)
+	assert.NoError(t, err)
+
+	slot, err := repo.GetSlot(context.Background(), instID, "req_file")
+	assert.NoError(t, err)
+	assert.NotNil(t, slot)
 	_, err = repo.CreateAttachment(context.Background(), slot.ID, docVerID, "approved", "f.pdf", userID, 100)
 	assert.NoError(t, err)
 

@@ -259,40 +259,20 @@ func TestJourneyService_AttachUpload_RepoFailure(t *testing.T) {
 			"node1": {ID: "node1"},
 		},
 	}
-	repo := &mockRepo{
-		GetNodeInstanceFunc: func() (*models.NodeInstance, error) {
+	mock := &MockJourneyRepository{
+		GetNodeInstanceFunc: func(ctx context.Context, userID, nodeID string) (*models.NodeInstance, error) {
 			// Return a mock instance so it proceeds to GetSlot
 			return &models.NodeInstance{ID: "inst1"}, nil
 		},
-		GetSlotFunc: func() (*models.NodeInstanceSlot, error) {
+		GetSlotFunc: func(ctx context.Context, instanceID, slotKey string) (*models.NodeInstanceSlot, error) {
 			return nil, fmt.Errorf("db error")
 		},
 	}
-	svc := services.NewJourneyService(repo, pb, config.AppConfig{}, nil, nil, nil)
+	svc := services.NewJourneyService(mock, pb, config.AppConfig{}, nil, nil, nil)
 
 	err := svc.AttachUpload(context.Background(), "t1", "u1", "node1", "slot1", "up", "orig", 100)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "db error")
-}
-
-type mockRepo struct {
-	repository.JourneyRepository
-	GetNodeInstanceFunc  func() (*models.NodeInstance, error)
-	GetSlotFunc          func() (*models.NodeInstanceSlot, error)
-	GetNodeInstanceSlotsFunc func() ([]models.NodeInstanceSlot, error)
-}
-
-func (m *mockRepo) GetNodeInstance(ctx context.Context, userID, nodeID string) (*models.NodeInstance, error) {
-	return m.GetNodeInstanceFunc()
-}
-func (m *mockRepo) GetSlot(ctx context.Context, instanceID, slotKey string) (*models.NodeInstanceSlot, error) {
-	return m.GetSlotFunc()
-}
-func (m *mockRepo) GetNodeInstanceSlots(ctx context.Context, instanceID string) ([]models.NodeInstanceSlot, error) {
-	if m.GetNodeInstanceSlotsFunc != nil {
-		return m.GetNodeInstanceSlotsFunc()
-	}
-	return nil, nil
 }
 
 type mockStorage struct{}

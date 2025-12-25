@@ -73,15 +73,46 @@ create-test-db:
 		psql "$(DB_URL)" -c "CREATE DATABASE phd_test"
 	@echo "Test database ready."
 
-# Run tests sequentially (-p 1) to avoid deadlocks from concurrent table cleanup
+# Run tests sequentially (-p 1) - safe but slower
 test: create-test-db
+	@echo "Running tests sequentially..."
 	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 1 -count=1
 
+# Run tests in parallel (-p 8) using the new isolated database infrastructure
+# This is much faster for multi-core machines.
+test-parallel: create-test-db
+	@echo "Running tests in parallel (p=8)..."
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 8 -count=1
+
+# Super fast parallel run with 10 parallel packages
+test-fast: create-test-db
+	@echo "Running tests in ultra-parallel (p=10)..."
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 10 -count=1
+
 test-coverage: create-test-db
-	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 1 -coverprofile=coverage.out
+	@echo "Running tests with coverage analysis..."
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 4 -coverprofile=coverage.out
 	go tool cover -func=coverage.out | tail -n 1
 
 test-verbose: create-test-db
-	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 1 -count=1 -v
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 4 -count=1 -v
+
+# Information helper for the new testing infrastructure
+test-info:
+	@echo "=== High-Performance Testing Infrastructure ==="
+	@echo "The backend now supports true package-level parallelism using database cloning."
+	@echo ""
+	@echo "How it works:"
+	@echo "1. One time setup: A 'phd_test_base' database is created and migrated."
+	@echo "2. Per-package: Each Go package (handlers, services, etc.) gets its own clone (e.g., 'phd_test_handlers')."
+	@echo "3. Isolation: This allows running tests with '-p 8' or more without data interference."
+	@echo ""
+	@echo "Commands:"
+	@echo "  make test           - Standard sequential run (slowest, safest)"
+	@echo "  make test-parallel  - High-speed run with 8 parallel packages (recommended)"
+	@echo "  make test-fast      - Ultra-high speed with 10 parallel packages"
+	@echo "  make test-coverage  - Parallel run with coverage output"
+	@echo "  make test-info      - Show this helper"
+	@echo "==============================================="
 
 

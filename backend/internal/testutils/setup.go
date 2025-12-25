@@ -1,12 +1,16 @@
 package testutils
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
+
+	"sync"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/golang-migrate/migrate/v4"
@@ -17,64 +21,113 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var (
+	testDB *sqlx.DB
+	testOnce sync.Once
+)
+
 // SetupTestDB connects to the test database, applies migrations, and returns the connection.
 // It assumes TEST_DATABASE_URL is set, or defaults to a local test DB.
 // It returns a cleanup function that should be deferred.
 func SetupTestDB() (*sqlx.DB, func()) {
 	dbURL := os.Getenv("TEST_DATABASE_URL")
 	if dbURL == "" {
-		// Default to localhost test DB if not set
-		// IMPORTANT: Uses phd_test (not phd) to avoid wiping demo data
 		dbURL = "postgres://postgres:postgres@localhost:5435/phd_test?sslmode=disable"
 	}
 
-	db, err := sqlx.Connect("postgres", dbURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to test DB: %v", err)
-	}
-	// Allow multiple connections for parallel test execution
-	// but keep it reasonable to avoid overwhelming the test DB
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(5)
+	// Identify package name for database isolation (capture BEFORE testOnce.Do)
+	_, filename, _, _ := runtime.Caller(1)
+	pkgName := filepath.Base(filepath.Dir(filename))
+	log.Printf("[SetupTestDB] Caller file: %s, pkgName: %s", filename, pkgName)
+	targetDB := "phd_test_" + pkgName
+	targetDB = strings.ReplaceAll(targetDB, "-", "_")
+	targetDB = strings.ReplaceAll(targetDB, ".", "_")
 
-	// Find project root to locate migrations
-	_, b, _, _ := runtime.Caller(0)
-	basepath := filepath.Dir(b)
-	// basepath is .../backend/internal/testutils
-	// migrations are in .../backend/db/migrations
-	migrationsPath := filepath.Join(basepath, "../../db/migrations")
+	testOnce.Do(func() {
+		ctx := context.Background()
+		// 1. Connect to 'postgres' to manage databases
+		adminDSN := strings.ReplaceAll(dbURL, "phd_test", "postgres")
+		adminDB, err := sqlx.Connect("postgres", adminDSN)
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to connect to admin DB: %v", err)
+		}
+		defer adminDB.Close()
 
-	// Run migrations
-	m, err := migrate.New(
-		"file://"+migrationsPath,
-		dbURL,
-	)
-	if err != nil {
-		log.Fatalf("Failed to create migrate instance: %v", err)
-	}
+		// Use a single connection for session-level advisory lock
+		conn, err := adminDB.Connx(ctx)
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to get admin conn: %v", err)
+		}
+		defer conn.Close()
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-	// Close migrate instance to release connection
-	srcErr, dbErr := m.Close()
-	if srcErr != nil {
-		log.Printf("Migrate source close error: %v", srcErr)
-	}
-	if dbErr != nil {
-		log.Printf("Migrate db close error: %v", dbErr)
-	}
+		// Global lock for DB management (advisory lock on ID 123456)
+		if _, err := conn.ExecContext(ctx, "SELECT pg_advisory_lock(123456)"); err != nil {
+			log.Fatalf("[SetupTestDB] Failed to acquire advisory lock: %v", err)
+		}
+		defer conn.ExecContext(ctx, "SELECT pg_advisory_unlock(123456)")
 
-	// Clean DB on start to ensure clean slate
-	cleanupDB(db)
+		// 2. Ensure base template exists and is migrated
+		baseDB := "phd_test_base"
+		var baseExists bool
+		conn.GetContext(ctx, &baseExists, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", baseDB)
+		
+		if !baseExists {
+			log.Printf("[SetupTestDB] Creating base template database: %s", baseDB)
+			conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", baseDB))
+			
+			// Migrate base template
+			baseURL := strings.ReplaceAll(dbURL, "phd_test", baseDB)
+			_, b, _, _ := runtime.Caller(0)
+			migrationsPath := filepath.Join(filepath.Dir(b), "../../db/migrations")
+			
+			m, err := migrate.New("file://"+migrationsPath, baseURL)
+			if err != nil {
+				log.Fatalf("[SetupTestDB] Failed to migrate base template: %v", err)
+			}
+			if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+				log.Fatalf("[SetupTestDB] Migration failed on base template: %v", err)
+			}
+			m.Close()
+		}
 
-	return db, func() {
-		cleanupDB(db)
-		db.Close()
+		// 3. Create target DB from template if it doesn't exist
+		var targetExists bool
+		conn.GetContext(ctx, &targetExists, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", targetDB)
+		
+		if !targetExists {
+			log.Printf("[SetupTestDB] Cloning database %s from template %s", targetDB, baseDB)
+			// Ensure no active connections to template (Postgres requirement for cloning)
+			conn.ExecContext(ctx, fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s' AND pid <> pg_backend_pid()", baseDB))
+			_, err = conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s", targetDB, baseDB))
+			if err != nil {
+				log.Fatalf("[SetupTestDB] Failed to clone database %s: %v", targetDB, err)
+			}
+		}
+
+		// 4. Connect to the isolated database
+		pkgDSN := strings.ReplaceAll(dbURL, "phd_test", targetDB)
+		packageDB, err := sqlx.Connect("postgres", pkgDSN)
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to connect to isolated DB %s: %v", targetDB, err)
+		}
+		packageDB.SetMaxOpenConns(20)
+		packageDB.SetMaxIdleConns(10)
+		testDB = packageDB
+	})
+
+	// Clean DB inside the isolated database
+	cleanupDB(testDB, "")
+
+	return testDB, func() {
+		cleanupDB(testDB, "")
 	}
 }
 
-func cleanupDB(db *sqlx.DB) {
+func cleanupDB(db *sqlx.DB, schema string) {
+	// If schema is provided, ensure search_path is set (just in case)
+	if schema != "" {
+		db.Exec(fmt.Sprintf("SET search_path TO %s, public", schema))
+	}
 	// Cleanup logic - order matters for foreign key constraints
 	// Clean child tables first, then parent tables
 	tables := []string{
@@ -101,30 +154,15 @@ func cleanupDB(db *sqlx.DB) {
 		"tenants",
 	}
 	
-	// Use a transaction to make cleanup atomic and faster
-	tx, err := db.Begin()
+	// Use a single TRUNCATE command for all tables - much faster than a loop
+	allTables := strings.Join(tables, ", ")
+	_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", allTables))
 	if err != nil {
-		log.Printf("Failed to start cleanup transaction: %v", err)
-		return
-	}
-	defer tx.Rollback()
-	
-	for _, table := range tables {
-		_, err := tx.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
-		if err != nil {
-			// Log but don't fail, maybe table doesn't exist yet
-			log.Printf("Failed to truncate table %s: %v", table, err)
-		}
+		log.Printf("[cleanupDB] Failed to truncate tables: %v", err)
 	}
 	
-	// Truncate node_state_transitions separately
-	tx.Exec("TRUNCATE TABLE node_state_transitions CASCADE")
-	
-	// Commit the cleanup transaction
-	if err := tx.Commit(); err != nil {
-		log.Printf("Failed to commit cleanup transaction: %v", err)
-		return
-	}
+	// Truncate node_state_transitions separately (it's often handled differently)
+	db.Exec("TRUNCATE TABLE node_state_transitions CASCADE")
 
 	// Seed default transitions (from migration 0006)
 	db.Exec(`INSERT INTO node_state_transitions(from_state, to_state, allowed_roles) VALUES
