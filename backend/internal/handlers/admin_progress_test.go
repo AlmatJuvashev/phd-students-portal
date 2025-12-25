@@ -167,9 +167,12 @@ func TestAdminHandler_MonitorStudents(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		if w.Code != http.StatusOK {
+			t.Errorf("Response: %s", w.Body.String())
+		}
 		var resp []map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
-		assert.Len(t, resp, 1)
+		require.Len(t, resp, 1, "Should return 1 student, got 0. Body: %s", w.Body.String())
 		assert.Equal(t, "Student Two", resp[0]["name"])
 		assert.Equal(t, "CS", resp[0]["program"])
 	})

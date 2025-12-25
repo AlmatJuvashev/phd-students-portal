@@ -8,7 +8,6 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
@@ -37,30 +36,38 @@ func TestJourneyService_ConcurrentTransitions(t *testing.T) {
 	startCond := sync.NewCond(&sync.Mutex{})
 	startedCount := 0
 
-	mock := &concurrencyMockRepo{
-		GetNodeInstanceFunc: func() (*models.NodeInstance, error) {
-			// Signal that we've read the state
-			startCond.L.Lock()
-			startedCount++
-			if startedCount == concurrency {
-				startCond.Broadcast()
-			}
-			for startedCount < concurrency {
-				startCond.Wait()
-			}
-			startCond.L.Unlock()
-			
-			return &models.NodeInstance{ID: "inst1", State: "active", NodeID: "node1"}, nil
-		},
-		UpdateNodeInstanceStateFunc: func(oldState string) error {
-			mu.Lock()
-			defer mu.Unlock()
-			if successCount > 0 {
-				return sql.ErrNoRows // already changed
-			}
-			successCount = 1
-			return nil
-		},
+	mock := NewMockJourneyRepository()
+	mock.GetNodeInstanceFunc = func(ctx context.Context, userID, nodeID string) (*models.NodeInstance, error) {
+		// Signal that we've read the state
+		startCond.L.Lock()
+		startedCount++
+		if startedCount == concurrency {
+			startCond.Broadcast()
+		}
+		for startedCount < concurrency {
+			startCond.Wait()
+		}
+		startCond.L.Unlock()
+		
+		return &models.NodeInstance{ID: "inst1", State: "active", NodeID: "node1"}, nil
+	}
+	mock.GetFullSubmissionSlotsFunc = func(ctx context.Context, instanceID string) ([]models.SubmissionSlotDTO, error) {
+		return nil, nil // No requirements
+	}
+	mock.UpdateNodeInstanceStateFunc = func(ctx context.Context, instanceID, oldState, newState string) error {
+		mu.Lock()
+		defer mu.Unlock()
+		if successCount > 0 {
+			return sql.ErrNoRows // already changed
+		}
+		successCount = 1
+		return nil
+	}
+	mock.GetAllowedTransitionRolesFunc = func(ctx context.Context, from, to string) ([]string, error) {
+		return []string{"student"}, nil
+	}
+	mock.GetUsersByIDsFunc = func(ctx context.Context, ids []string) ([]models.User, error) {
+		return []models.User{{ID: "u1", FirstName: "T", LastName: "U"}}, nil
 	}
 
 	svc := services.NewJourneyService(mock, pb, config.AppConfig{}, nil, nil, nil)
@@ -94,30 +101,3 @@ func TestJourneyService_ConcurrentTransitions(t *testing.T) {
 	}
 	assert.Equal(t, concurrency-1, errCount)
 }
-
-type concurrencyMockRepo struct {
-	repository.JourneyRepository
-	GetNodeInstanceFunc  func() (*models.NodeInstance, error)
-	UpdateNodeInstanceStateFunc func(oldState string) error
-}
-
-func (m *concurrencyMockRepo) GetNodeInstance(ctx context.Context, userID, nodeID string) (*models.NodeInstance, error) {
-	return m.GetNodeInstanceFunc()
-}
-func (m *concurrencyMockRepo) EnsureNodeInstance(ctx context.Context, tenantID, userID, nodeID string, locale *string) (*models.NodeInstance, error) {
-	return m.GetNodeInstanceFunc()
-}
-func (m *concurrencyMockRepo) GetFullSubmissionSlots(ctx context.Context, instanceID string) ([]models.SubmissionSlotDTO, error) {
-	return nil, nil // No requirements
-}
-func (m *concurrencyMockRepo) UpdateNodeInstanceState(ctx context.Context, instanceID, oldState, newState string) error {
-	return m.UpdateNodeInstanceStateFunc(oldState)
-}
-func (m *concurrencyMockRepo) GetAllowedTransitionRoles(ctx context.Context, from, to string) ([]string, error) {
-	return []string{"student"}, nil
-}
-func (m *concurrencyMockRepo) GetUsersByIDs(ctx context.Context, ids []string) ([]models.User, error) {
-	return []models.User{{ID: "u1", FirstName: "T", LastName: "U"}}, nil
-}
-func (m *concurrencyMockRepo) UpsertJourneyState(ctx context.Context, userID, nodeID, state, tenantID string) error { return nil }
-func (m *concurrencyMockRepo) LogNodeEvent(ctx context.Context, instanceID, eventType, actorID string, payload map[string]any) error { return nil }
