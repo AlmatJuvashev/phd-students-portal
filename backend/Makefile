@@ -66,6 +66,7 @@ kill-port:
 
 # ============= Test Targets =============
 TEST_DB_URL?=postgres://postgres:postgres@localhost:5435/phd_test?sslmode=disable
+GOLANGCI_LINT_VERSION=v1.55.2
 
 create-test-db:
 	@echo "Creating phd_test database if it doesn't exist..."
@@ -73,31 +74,36 @@ create-test-db:
 		psql "$(DB_URL)" -c "CREATE DATABASE phd_test"
 	@echo "Test database ready."
 
-# Run tests sequentially (-p 1) - safe but slower
 test: create-test-db
-	@echo "Running tests sequentially..."
-	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 1 -count=1
+	@echo "Running all tests..."
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -count=1
 
-# Run tests in parallel (-p 8) using the new isolated database infrastructure
-# This is much faster for multi-core machines.
-test-parallel: create-test-db
-	@echo "Running tests in parallel (p=8)..."
-	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 8 -count=1
+test-unit:
+	@echo "Running UNIT tests only (fast, no DB)..."
+	go test -v -run Unit ./... -count=1
 
-# Super fast parallel run with 10 parallel packages
-test-fast: create-test-db
-	@echo "Running tests in ultra-parallel (p=10)..."
-	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 10 -count=1
+test-integration: create-test-db
+	@echo "Running INTEGRATION tests only..."
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test -v -skip Unit ./... -count=1
 
 test-coverage: create-test-db
 	@echo "Running tests with coverage analysis..."
-	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 4 -coverprofile=coverage.out
-	go tool cover -func=coverage.out | tail -n 1
+	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -coverprofile=coverage.out
+	go tool cover -func=coverage.out
+	@echo "Generating HTML report..."
+	go tool cover -html=coverage.out -o coverage.html
 
-test-verbose: create-test-db
-	TEST_DATABASE_URL=$(TEST_DB_URL) go test ./... -p 4 -count=1 -v
+lint:
+	@echo "Running golangci-lint..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		echo "golangci-lint not found. Installing $(GOLANGCI_LINT_VERSION)..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
+		$$(go env GOPATH)/bin/golangci-lint run; \
+	fi
 
-# Information helper for the new testing infrastructure
+.PHONY: lint test test-unit test-integration test-coverage
 test-info:
 	@echo "=== High-Performance Testing Infrastructure ==="
 	@echo "The backend now supports true package-level parallelism using database cloning."
