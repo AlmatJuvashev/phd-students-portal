@@ -115,6 +115,41 @@ func TestAuthHandler_Login(t *testing.T) {
 	})
 }
 
+func TestAuthHandler_Logout(t *testing.T) {
+	cfg := config.AppConfig{JWTSecret: "secret", Env: "development", ServerURL: "http://localhost:8080"}
+	h := handlers.NewAuthHandler(nil, cfg, nil)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.POST("/logout", h.Logout)
+
+	t.Run("Logout Clears Cookie on Subdomain", func(t *testing.T) {
+		req, _ := http.NewRequest("POST", "/logout", nil)
+		req.Host = "demo.localhost:8080"
+		// Simulate existing cookie
+		req.AddCookie(&http.Cookie{Name: "jwt_token", Value: "existing-token"})
+		
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		result := w.Result()
+		cookies := result.Cookies()
+		var tokenCookie *http.Cookie
+		for _, c := range cookies {
+			if c.Name == "jwt_token" {
+				tokenCookie = c
+				break
+			}
+		}
+		assert.NotNil(t, tokenCookie, "jwt_token cookie should be present (to be cleared)")
+		assert.Equal(t, -1, tokenCookie.MaxAge)
+		assert.Equal(t, "", tokenCookie.Value)
+	})
+}
+
 func TestAuthHandler_PasswordReset(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()

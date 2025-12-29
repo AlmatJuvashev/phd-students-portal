@@ -1,5 +1,20 @@
-export const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8280/api";
+const getBaseUrl = () => {
+  const defaultUrl = import.meta.env.VITE_API_URL || "http://localhost:8280/api";
+  
+  if (typeof window === "undefined") return defaultUrl;
+
+  const hostname = window.location.hostname;
+  
+  // If we're on a subdomain of localhost (e.g. demo.localhost), 
+  // we must talk to the API on that same host to maintain "same-site" context for cookies.
+  if (hostname.includes(".localhost")) {
+    return `http://${hostname}:8280/api`;
+  }
+  
+  return defaultUrl;
+};
+
+export const API_URL = getBaseUrl();
 
 import { getTenantHeaders } from '@/lib/tenant';
 

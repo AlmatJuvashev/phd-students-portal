@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -117,16 +118,18 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 	resp := make([]gin.H, 0, len(rows))
 	for _, r := range rows {
 		item := gin.H{
-			"id":          r.ID,
-			"name":        r.Name,
-			"email":       r.Email,
-			"phone":       r.Phone,
-			"program":     r.Program,
-			"department":  r.Department,
-			"cohort":      r.Cohort,
-			"advisors":    r.Advisors,
-			"rp_required": r.RPRequired,
-			"last_update": r.LastUpdate,
+			"id":                   r.ID,
+			"name":                 r.Name,
+			"email":                r.Email,
+			"phone":                r.Phone,
+			"program":              r.Program,
+			"department":           r.Department,
+			"cohort":               r.Cohort,
+			"advisors":             r.Advisors,
+			"rp_required":          r.RPRequired,
+			"last_update":          r.LastUpdate,
+			"current_stage":        r.CurrentStage,        // Top-level for frontend
+			"overall_progress_pct": r.OverallProgressPct,  // Top-level for frontend
 			"stats": gin.H{
 				"done_count":    r.DoneCount,
 				"total_nodes":   r.TotalNodes,
@@ -136,6 +139,7 @@ func (h *AdminHandler) MonitorStudents(c *gin.Context) {
 		}
 		resp = append(resp, item)
 	}
+
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -185,16 +189,18 @@ func (h *AdminHandler) GetStudentDetails(c *gin.Context) {
 	
 	// Map to nested structure
 	resp := gin.H{
-		"id":          details.ID,
-		"name":        details.Name,
-		"email":       details.Email,
-		"phone":       details.Phone,
-		"program":     details.Program,
-		"department":  details.Department,
-		"cohort":      details.Cohort,
-		"advisors":    details.Advisors,
-		"rp_required": details.RPRequired,
-		"last_update": details.LastUpdate,
+		"id":                   details.ID,
+		"name":                 details.Name,
+		"email":                details.Email,
+		"phone":                details.Phone,
+		"program":              details.Program,
+		"department":           details.Department,
+		"cohort":               details.Cohort,
+		"advisors":             details.Advisors,
+		"rp_required":          details.RPRequired,
+		"last_update":          details.LastUpdate,
+		"current_stage":        details.CurrentStage,        // Top-level for frontend
+		"overall_progress_pct": details.OverallProgressPct,  // Top-level for frontend
 		"progress": gin.H{
 			"percent":       details.OverallProgressPct,
 			"current_stage": details.CurrentStage,
@@ -212,8 +218,11 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
 	role := roleFromContext(c)
 	callerID := userIDFromClaims(c)
 	
+	log.Printf("[StudentJourney] Fetching journey for studentID=%s", uid)
+	
 	nodes, err := h.svc.GetStudentJourney(c.Request.Context(), uid, role, callerID)
 	if err != nil {
+		log.Printf("[StudentJourney] Error: %v", err)
 		if err.Error() == "forbidden" {
 			c.JSON(403, gin.H{"error": "forbidden"})
 			return
@@ -221,8 +230,14 @@ func (h *AdminHandler) StudentJourney(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+	// Ensure we never return null - always an array
+	if nodes == nil {
+		nodes = []models.StudentJourneyNode{}
+	}
+	log.Printf("[StudentJourney] Returning %d nodes for studentID=%s", len(nodes), uid)
 	c.JSON(200, gin.H{"nodes": nodes})
 }
+
 
 // ListStudentNodeFiles returns attachment metadata for a student's node.
 func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
@@ -230,9 +245,12 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 	nodeID := c.Param("nodeId")
 	role := roleFromContext(c)
 	callerID := userIDFromClaims(c)
+	
+	log.Printf("[ListStudentNodeFiles] studentID=%s nodeID=%s role=%s callerID=%s", studentID, nodeID, role, callerID)
 
 	files, err := h.svc.ListStudentNodeFiles(c.Request.Context(), studentID, nodeID, role, callerID)
 	if err != nil {
+		log.Printf("[ListStudentNodeFiles] error: %v", err)
 		if err.Error() == "forbidden" {
 			c.JSON(403, gin.H{"error": "forbidden"})
 			return
@@ -245,7 +263,12 @@ func (h *AdminHandler) ListStudentNodeFiles(c *gin.Context) {
 		return
 	}
 	
-	log.Printf("[ListStudentNodeFiles] returning %d files", len(files))
+	// Log filenames for debug
+	fileNames := make([]string, len(files))
+	for i, f := range files {
+		fileNames[i] = fmt.Sprintf("%s (Active: %s)", f.Filename, f.Status)
+	}
+	log.Printf("[ListStudentNodeFiles] returning %d files for studentID=%s nodeID=%s: %v", len(files), studentID, nodeID, fileNames)
 	c.JSON(200, files)
 }
 
@@ -491,5 +514,23 @@ func (h *AdminHandler) AttachReviewedDocument(c *gin.Context) {
 		"reviewed_document_version_id": versionID,
 		"reviewed_at":                  reviewedAt,
 	})
+}
+
+// Deadline represents a deadline for a student's node
+type Deadline struct {
+	ID        string  `db:"id" json:"id"`
+	NodeID    string  `db:"node_id" json:"node_id"`
+	DueAt     string  `db:"due_at" json:"due_at"`
+	CreatedBy string  `db:"created_by" json:"created_by"`
+	CreatedAt string  `db:"created_at" json:"created_at"`
+	Note      *string `db:"note" json:"note,omitempty"`
+}
+
+// GetStudentDeadlines returns deadlines for a specific student
+// GET /api/admin/students/:id/deadlines
+func (h *AdminHandler) GetStudentDeadlines(c *gin.Context) {
+	// Return empty array for now - deadlines feature not fully implemented
+	// Future: query node_deadlines table for this student
+	c.JSON(http.StatusOK, []Deadline{})
 }
 

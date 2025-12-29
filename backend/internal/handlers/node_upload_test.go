@@ -95,7 +95,8 @@ func TestPresignUpload_Success(t *testing.T) {
 	require.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Contains(t, resp["url"], "mock-s3.com")
+	assert.Contains(t, resp["upload_url"], "mock-s3.com")
+	assert.NotEmpty(t, resp["object_key"])
 	t.Logf("Presign success: %v", resp)
 }
 
@@ -324,10 +325,10 @@ func TestAttachUpload(t *testing.T) {
 
 	// Attach request
 	attachReq := map[string]interface{}{
-		"slot_key":          "slot1",
-		"uploaded_filename": "path/to/file",
-		"original_filename": "file.pdf",
-		"size_bytes":        100,
+		"slot_key":   "slot1",
+		"object_key": "path/to/file",
+		"filename":   "file.pdf",
+		"size_bytes": 100,
 	}
 	body, _ := json.Marshal(attachReq)
 	req, _ = http.NewRequest("POST", "/nodes/attach_node/uploads/attach", bytes.NewBuffer(body))

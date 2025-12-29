@@ -62,12 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { role: res.role, is_superadmin: res.is_superadmin }
     },
     logout: async () => {
+      console.log("[AuthContext] Logout initiated");
       try {
         await api.post('/auth/logout')
+        console.log("[AuthContext] Logout API call successful");
       } catch (e) {
-        console.error("Logout failed:", e)
+        console.error("[AuthContext] Logout API call failed:", e)
       }
-      qc.removeQueries({ queryKey: ['me'] })
+      qc.clear()
+      localStorage.removeItem('user')
+      sessionStorage.removeItem('user')
+      console.log("[AuthContext] All state cleared, redirecting to /login");
       // Soft reload to reset app state
       window.location.href = '/login'
     },

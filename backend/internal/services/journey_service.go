@@ -23,12 +23,12 @@ type JourneyService struct {
 	repo    repository.JourneyRepository
 	pb      *playbook.Manager
 	cfg     config.AppConfig
-	mailer  *mailer.Mailer
+	mailer  mailer.Mailer
 	storage StorageClient
 	docSvc  *DocumentService
 }
 
-func NewJourneyService(repo repository.JourneyRepository, pb *playbook.Manager, cfg config.AppConfig, mailer *mailer.Mailer, storage StorageClient, docSvc *DocumentService) *JourneyService {
+func NewJourneyService(repo repository.JourneyRepository, pb *playbook.Manager, cfg config.AppConfig, mailer mailer.Mailer, storage StorageClient, docSvc *DocumentService) *JourneyService {
 	return &JourneyService{
 		repo:    repo,
 		pb:      pb,
@@ -241,15 +241,16 @@ func (s *JourneyService) ActivateNextNodes(ctx context.Context, userID, complete
 			}
 		} else if err == nil { 
 			// Create
-			_, err := s.repo.CreateNodeInstance(ctx, tenantID, userID, s.pb.VersionID, nodeID, "active", nil)
+			id, err := s.repo.CreateNodeInstance(ctx, tenantID, userID, s.pb.VersionID, nodeID, "active", nil)
 			if err != nil {
-				log.Printf("Error creating instance %s: %v", nodeID, err)
+				log.Printf("[ActivateNextNodes] Error creating instance %s: %v", nodeID, err)
 			} else {
+				log.Printf("[ActivateNextNodes] Created new node instance %s for node %s", id, nodeID)
 				_ = s.repo.UpsertJourneyState(ctx, userID, nodeID, "active", tenantID)
 				
 				// Log Event
 				payload := map[string]any{"reason": "prerequisites_met", "source": completedNodeID}
-				_ = s.repo.LogNodeEvent(ctx, "", "node_activated", userID, payload) // Note: ID empty if not yet fetched
+				_ = s.repo.LogNodeEvent(ctx, id, "node_activated", userID, payload)
 			}
 		}
 	}
@@ -607,12 +608,12 @@ func (s *JourneyService) sendStateChangeEmail(ctx context.Context, userID, nodeI
 	}
 }
 
-// PresignUpload generates S3 URL
-func (s *JourneyService) PresignUpload(ctx context.Context, userID, nodeID, slotKey, filename, contentType string, sizeBytes int64) (string, error) {
+// PresignUpload generates S3 URL and returns both URL and object path
+func (s *JourneyService) PresignUpload(ctx context.Context, userID, nodeID, slotKey, filename, contentType string, sizeBytes int64) (string, string, error) {
 	// 1. Validate against playbook
 	nodeDef, ok := s.pb.NodeDefinition(nodeID)
 	if !ok {
-		return "", errors.New("node not found in playbook")
+		return "", "", errors.New("node not found in playbook")
 	}
 
 	var slotDef *playbook.UploadRequirement
@@ -626,7 +627,7 @@ func (s *JourneyService) PresignUpload(ctx context.Context, userID, nodeID, slot
 	}
 
 	if slotDef == nil {
-		return "", errors.New("slot not found in node definition")
+		return "", "", errors.New("slot not found in node definition")
 	}
 
 	// MIME check
@@ -639,33 +640,33 @@ func (s *JourneyService) PresignUpload(ctx context.Context, userID, nodeID, slot
 			}
 		}
 		if !allowed {
-			return "", fmt.Errorf("mime type %s not allowed for this slot", contentType)
+			return "", "", fmt.Errorf("mime type %s not allowed for this slot", contentType)
 		}
 	}
 
 	// Size check
 	maxBytes := int64(s.cfg.FileUploadMaxMB) * 1024 * 1024
 	if sizeBytes > maxBytes {
-		return "", fmt.Errorf("file size %d bytes is too large (max %dMB)", sizeBytes, s.cfg.FileUploadMaxMB)
+		return "", "", fmt.Errorf("file size %d bytes is too large (max %dMB)", sizeBytes, s.cfg.FileUploadMaxMB)
 	}
 
 	// 2. Logic
 	path := fmt.Sprintf("node_uploads/%s/%s/%s/%s", nodeID, slotKey, uuid.NewString(), filename)
 
 	if s.storage == nil {
-		return "", errors.New("storage client not available")
+		return "", "", errors.New("storage client not available")
 	}
 
 	url, err := s.storage.PresignPut(ctx, path, contentType, 15*time.Minute)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return url, nil
+	return url, path, nil
 }
 
 // AttachUpload logic
-func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nodeID, slotKey, uploadedFilename, originalFilename string, sizeBytes int64) error {
+func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nodeID, slotKey, objectKey, filename string, sizeBytes int64) error {
 	inst, err := s.EnsureNodeInstance(ctx, tenantID, userID, nodeID, nil)
 	if err != nil {
 		return err
@@ -680,7 +681,7 @@ func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nod
 		return errors.New("document service not available")
 	}
 
-	log.Printf("[JourneyService] AttachUpload: Attaching %s to slot %s", originalFilename, slot.ID)
+	log.Printf("[JourneyService] AttachUpload: Attaching %s to slot %s", filename, slot.ID)
 
 	// Multiplicity check: If single, deactivate previous attachments
 	if slot.Multiplicity == "single" {
@@ -697,7 +698,7 @@ func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nod
 	// but many slots allow multiple versions.
 	
 	docID, err := s.docSvc.CreateMetadata(ctx, CreateDocumentRequest{
-		Title:    originalFilename,
+		Title:    filename,
 		Kind:     "node_slot",
 		TenantID: tenantID,
 		UserID:   userID,
@@ -708,7 +709,7 @@ func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nod
 
 	// 2. Create Document Version
 	verID, err := s.docSvc.CreateVersion(ctx, docID, tenantID, userID, models.DocumentVersion{
-		StoragePath: uploadedFilename, // We use the S3 key here
+		StoragePath: objectKey, // We use the S3 key here
 		MimeType:    "application/octet-stream", // Should we pass this from handler?
 		SizeBytes:   sizeBytes,
 	})
@@ -717,7 +718,7 @@ func (s *JourneyService) AttachUpload(ctx context.Context, tenantID, userID, nod
 	}
 
 	// 3. Create Node Instance Slot Attachment
-	_, err = s.repo.CreateAttachment(ctx, slot.ID, verID, "submitted", originalFilename, userID, sizeBytes)
+	_, err = s.repo.CreateAttachment(ctx, slot.ID, verID, "submitted", filename, userID, sizeBytes)
 	if err != nil {
 		return fmt.Errorf("failed to create slot attachment: %w", err)
 	}

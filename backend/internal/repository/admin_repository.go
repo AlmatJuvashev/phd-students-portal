@@ -339,14 +339,17 @@ func (r *SQLAdminRepository) GetStudentNodeInstances(ctx context.Context, studen
 	var instances []models.NodeInstance
 	// Return latest per node_id
 	query := `
-		SELECT DISTINCT ON (node_id) id, tenant_id, user_id, playbook_version_id, node_id, state, started_at, completed_at, updated_at
+		SELECT DISTINCT ON (node_id) id, tenant_id, user_id, playbook_version_id, node_id, state, opened_at, submitted_at, updated_at
 		FROM node_instances 
 		WHERE user_id=$1 
 		ORDER BY node_id, updated_at DESC
 	`
+	fmt.Printf("[GetStudentNodeInstances] Query for studentID=%s\n", studentID)
 	err := r.db.SelectContext(ctx, &instances, query, studentID)
+	fmt.Printf("[GetStudentNodeInstances] Returned %d instances, err=%v\n", len(instances), err)
 	return instances, err
 }
+
 
 func (r *SQLAdminRepository) GetAnalytics(ctx context.Context, filter models.FilterParams, playbookVersionID string) (*models.AdminAnalytics, error) {
 	// Not implemented directly, used by service composition
@@ -505,7 +508,7 @@ func (r *SQLAdminRepository) GetNodeFiles(ctx context.Context, studentID, nodeID
 		return nil, err
 	}
 
-	query := `SELECT s.slot_key, a.id as attachment_id, a.filename, a.size_bytes, a.status, a.review_note,
+	query := `SELECT s.slot_key, a.id as attachment_id, a.filename, a.size_bytes, a.status, a.review_note, a.is_active,
 		to_char(a.attached_at, 'YYYY-MM-DD"T"HH24:MI:SSZ') as attached_at, 
 		to_char(a.approved_at, 'YYYY-MM-DD"T"HH24:MI:SSZ') as approved_at, 
 		a.approved_by, dv.id AS version_id, dv.mime_type,
@@ -515,7 +518,7 @@ func (r *SQLAdminRepository) GetNodeFiles(ctx context.Context, studentID, nodeID
 		rdv.mime_type AS reviewed_mime_type,
 		COALESCE(ru.first_name||' '||ru.last_name,'') AS reviewed_by_name
 		FROM node_instance_slots s
-		JOIN node_instance_slot_attachments a ON a.slot_id=s.id AND a.is_active=true
+		JOIN node_instance_slot_attachments a ON a.slot_id=s.id
 		JOIN document_versions dv ON dv.id=a.document_version_id
 		LEFT JOIN users u ON u.id=a.attached_by
 		LEFT JOIN document_versions rdv ON rdv.id=a.reviewed_document_version_id
@@ -550,6 +553,10 @@ func (r *SQLAdminRepository) GetNodeFiles(ctx context.Context, studentID, nodeID
 		}
 		
 		// Post process
+		if nf.VersionID != "" {
+			nf.DownloadURL = fmt.Sprintf("/api/documents/versions/%s/download", nf.VersionID)
+		}
+
 		if nf.ReviewedDocID != nil && *nf.ReviewedDocID != "" {
 			nf.ReviewedDocument = &models.ReviewedDocInfo{
 				VersionID: *nf.ReviewedDocID,

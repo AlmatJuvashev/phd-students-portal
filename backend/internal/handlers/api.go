@@ -279,9 +279,11 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		{
 			adm.GET("/student-progress", adminHandler.StudentProgress)
 			adm.GET("/monitor", adminHandler.MonitorStudents)
+			adm.GET("/monitor/students", adminHandler.MonitorStudents) // Alias for frontend compatibility
 			adm.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
 			adm.GET("/students/:id", adminHandler.GetStudentDetails)
 			adm.GET("/students/:id/journey", adminHandler.StudentJourney)
+			adm.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
 			adm.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
 			adm.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
 			
@@ -292,7 +294,55 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			
 			// Reminders
 			adm.POST("/reminders", adminHandler.PostReminders)
+			
+			// User management (admin panel)
+			adm.GET("/users", users.ListUsers)
+			adm.POST("/users", users.CreateUser)
+			adm.PUT("/users/:id", users.UpdateUser)
+			adm.PATCH("/users/:id/active", users.SetActive)
+			adm.POST("/users/:id/reset-password", users.ResetPasswordForUser)
+			
+			// Admin dictionaries
+			admDict := adm.Group("/dictionaries")
+			{
+				admDict.GET("/programs", dictionaryHandler.ListPrograms)
+				admDict.POST("/programs", dictionaryHandler.CreateProgram)
+				admDict.PUT("/programs/:id", dictionaryHandler.UpdateProgram)
+				admDict.DELETE("/programs/:id", dictionaryHandler.DeleteProgram)
+				
+				admDict.GET("/specialties", dictionaryHandler.ListSpecialties)
+				admDict.POST("/specialties", dictionaryHandler.CreateSpecialty)
+				admDict.PUT("/specialties/:id", dictionaryHandler.UpdateSpecialty)
+				admDict.DELETE("/specialties/:id", dictionaryHandler.DeleteSpecialty)
+				
+				admDict.GET("/cohorts", dictionaryHandler.ListCohorts)
+				admDict.POST("/cohorts", dictionaryHandler.CreateCohort)
+				admDict.PUT("/cohorts/:id", dictionaryHandler.UpdateCohort)
+				admDict.DELETE("/cohorts/:id", dictionaryHandler.DeleteCohort)
+				
+				admDict.GET("/departments", dictionaryHandler.ListDepartments)
+				admDict.POST("/departments", dictionaryHandler.CreateDepartment)
+				admDict.PUT("/departments/:id", dictionaryHandler.UpdateDepartment)
+				admDict.DELETE("/departments/:id", dictionaryHandler.DeleteDepartment)
+			}
+			
+			// Admin notifications (duplicated from protected for admin panel access)
+			admNotif := adm.Group("/notifications")
+			{
+				admNotif.GET("", notificationHandler.GetNotifications)
+				admNotif.GET("/unread", notificationHandler.GetUnread)
+				admNotif.GET("/unread-count", notificationHandler.GetUnread) // Alias for compatibility
+				admNotif.POST("/:id/read", notificationHandler.MarkAsRead)
+				admNotif.POST("/read-all", notificationHandler.MarkAllAsRead)
+			}
+			
+			// Admin contacts
+			adm.GET("/contacts", contactsHandler.AdminList)
+			adm.POST("/contacts", contactsHandler.Create)
+			adm.PUT("/contacts/:id", contactsHandler.Update)
+			adm.DELETE("/contacts/:id", contactsHandler.Delete)
 		}
+
 
 		// Chat
 		chat := protected.Group("/chat")

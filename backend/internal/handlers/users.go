@@ -112,6 +112,7 @@ type updateUserReq struct {
 	Specialty  string `json:"specialty" binding:"omitempty"`
 	Department string `json:"department" binding:"omitempty"`
 	Cohort     string `json:"cohort" binding:"omitempty"`
+	AdvisorIDs []string `json:"advisor_ids"`
 }
 
 // UpdateUser allows admin to update user details (except superadmin)
@@ -129,6 +130,7 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 		Specialty  string `json:"specialty"`
 		Department string `json:"department"`
 		Cohort     string `json:"cohort"`
+		AdvisorIDs []string `json:"advisor_ids"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -154,6 +156,8 @@ func (h *UsersHandler) UpdateUser(c *gin.Context) {
 		Specialty:    req.Specialty,
 		Department:   req.Department,
 		Cohort:       req.Cohort,
+		AdvisorIDs:   req.AdvisorIDs,
+		TenantID:     c.GetString("tenant_id"),
 	}
 
 	err := h.userService.AdminUpdateUser(c.Request.Context(), updateReq, adminRole)

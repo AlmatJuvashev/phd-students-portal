@@ -114,6 +114,7 @@ export type NodeFileRow = {
   version_id?: string;
   mime_type?: string;
   download_url: string;
+  is_active: boolean;
 };
 
 export async function fetchStudentNodeFiles(
@@ -128,7 +129,7 @@ export async function reviewAttachment(
   payload: { status: "approved" | "rejected" | "submitted"; note?: string }
 ) {
   return api(`/admin/attachments/${attachmentId}/review`, {
-    method: "PATCH",
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }

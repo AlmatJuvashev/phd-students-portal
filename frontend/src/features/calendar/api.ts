@@ -1,80 +1,79 @@
+import { api } from "@/api/client";
 import { CalendarEvent } from './types';
 
-const MOCK_EVENTS: CalendarEvent[] = [
-  {
-    id: '1',
-    title: 'Research Methodology Lecture',
-    start: new Date(new Date().setHours(10, 0, 0, 0)),
-    end: new Date(new Date().setHours(11, 30, 0, 0)),
-    type: 'academic',
-    location: 'Hall A, Building 4',
-    description: 'Attendance is mandatory for all 1st year PhD students.'
-  },
-  {
-    id: '2',
-    title: 'Consultation with Prof. Ivanov',
-    start: new Date(new Date().setDate(new Date().getDate() + 1)), // Tomorrow
-    end: new Date(new Date().setDate(new Date().getDate() + 1)),
-    type: 'academic',
-    location: 'Office 302',
-    description: 'Discuss chapter 2 corrections.'
-  },
-  {
-    id: '3',
-    title: 'Preliminary Exam',
-    start: new Date(new Date().setDate(new Date().getDate() + 5)),
-    end: new Date(new Date().setDate(new Date().getDate() + 5)),
-    type: 'exam',
-    location: 'Exam Center',
-    description: 'Bring ID and registration slip.'
-  },
-  {
-    id: '4',
-    title: 'Doctoral Day Off',
-    start: new Date(new Date().setDate(new Date().getDate() - 2)),
-    end: new Date(new Date().setDate(new Date().getDate() - 2)),
-    type: 'holiday',
-    description: 'University closed.'
-  },
-  {
-    id: '5',
-    title: 'Gym Session',
-    start: new Date(new Date().setHours(18, 0, 0, 0)),
-    end: new Date(new Date().setHours(19, 30, 0, 0)),
-    type: 'personal',
-    location: 'Campus Gym'
-  }
-];
-
-// Helper to simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Helper to map backend event to frontend CalendarEvent
+const mapBackendEvent = (e: any): CalendarEvent => ({
+  id: e.id,
+  title: e.title,
+  start: new Date(e.start_time),
+  end: new Date(e.end_time),
+  type: e.event_type,
+  description: e.description,
+  location: e.location,
+  meeting_type: e.meeting_type,
+  meeting_url: e.meeting_url,
+  physical_address: e.physical_address,
+  color: e.color,
+  attendees: [], // TODO: map attendees if backend returns them in detailed view
+});
 
 export const fetchEvents = async (start: Date, end: Date): Promise<CalendarEvent[]> => {
-  await delay(400);
-  return MOCK_EVENTS;
+  const startStr = start.toISOString();
+  const endStr = end.toISOString();
+  
+  const events = await api(`/calendar/events?start=${startStr}&end=${endStr}`);
+  return (events || []).map(mapBackendEvent);
 };
 
 export const createEvent = async (event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent> => {
-  await delay(400);
-  const newEvent = { ...event, id: Math.random().toString(36).substr(2, 9) };
-  MOCK_EVENTS.push(newEvent);
-  return newEvent;
+  const payload = {
+    title: event.title,
+    description: event.description,
+    start_time: event.start.toISOString(),
+    end_time: event.end.toISOString(),
+    event_type: event.type,
+    location: event.location,
+    meeting_type: event.meeting_type,
+    meeting_url: event.meeting_url,
+    physical_address: event.physical_address,
+    color: event.color,
+    attendees: event.attendees
+  };
+
+  const res = await api("/calendar/events", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  
+  return mapBackendEvent(res);
 };
 
-export const updateEvent = async (updatedEvent: CalendarEvent): Promise<CalendarEvent> => {
-  await delay(400);
-  const index = MOCK_EVENTS.findIndex(e => e.id === updatedEvent.id);
-  if (index !== -1) {
-    MOCK_EVENTS[index] = updatedEvent;
-  }
-  return updatedEvent;
+export const updateEvent = async (event: CalendarEvent): Promise<CalendarEvent> => {
+  const payload = {
+    title: event.title,
+    description: event.description,
+    start_time: event.start.toISOString(),
+    end_time: event.end.toISOString(),
+    event_type: event.type,
+    location: event.location,
+    meeting_type: event.meeting_type,
+    meeting_url: event.meeting_url,
+    physical_address: event.physical_address,
+    color: event.color,
+    attendees: event.attendees
+  };
+
+  await api(`/calendar/events/${event.id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  
+  return event;
 };
 
 export const deleteEvent = async (id: string): Promise<boolean> => {
-  await delay(300);
-  const index = MOCK_EVENTS.findIndex(e => e.id === id);
-  if (index !== -1) {
-    MOCK_EVENTS.splice(index, 1);
-  }
+  await api(`/calendar/events/${id}`, {
+    method: "DELETE",
+  });
   return true;
 };

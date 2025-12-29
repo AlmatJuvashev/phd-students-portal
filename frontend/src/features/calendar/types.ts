@@ -9,4 +9,9 @@ export interface CalendarEvent {
   type: EventType;
   description?: string;
   location?: string;
+  meeting_type?: 'online' | 'offline';
+  meeting_url?: string;
+  physical_address?: string;
+  color?: string;
+  attendees?: string[]; // user IDs
 }

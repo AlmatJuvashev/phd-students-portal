@@ -23,15 +23,21 @@ func validateJWT(c *gin.Context, secret []byte) (jwt.MapClaims, bool) {
 	cookie, err := c.Cookie("jwt_token")
 	if err == nil && cookie != "" {
 		tokStr = cookie
+		log.Printf("[validateJWT] Found jwt_token cookie (len=%d) for host=%s", len(tokStr), c.Request.Host)
 	} else {
+		if err != nil && err != http.ErrNoCookie {
+			log.Printf("[validateJWT] Error finding jwt_token cookie: %v", err)
+		}
 		// 2. Fallback to Header
 		h := c.GetHeader("Authorization")
 		if strings.HasPrefix(h, "Bearer ") {
 			tokStr = strings.TrimPrefix(h, "Bearer ")
+			log.Printf("[validateJWT] Found Authorization header (len=%d) for host=%s", len(tokStr), c.Request.Host)
 		}
 	}
 
 	if tokStr == "" {
+		log.Printf("[validateJWT] No token found for path=%s", c.Request.URL.Path)
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token", "details": "No token found in cookie or Authorization header"})
 		return nil, false
 	}

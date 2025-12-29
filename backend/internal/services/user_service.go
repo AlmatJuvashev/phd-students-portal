@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"time"
 
@@ -32,11 +33,11 @@ type UserService struct {
 	repo     repository.UserRepository
 	rds      *redis.Client
 	cfg      config.AppConfig
-	emailSvc *EmailService
+	emailSvc EmailSender
 	storage  StorageClient
 }
 
-func NewUserService(repo repository.UserRepository, rds *redis.Client, cfg config.AppConfig, emailSvc *EmailService, storage StorageClient) *UserService {
+func NewUserService(repo repository.UserRepository, rds *redis.Client, cfg config.AppConfig, emailSvc EmailSender, storage StorageClient) *UserService {
 	return &UserService{
 		repo:     repo,
 		rds:      rds,
@@ -306,6 +307,8 @@ type AdminUpdateUserRequest struct {
 	Specialty    string
 	Department   string
 	Cohort       string
+	AdvisorIDs   []string
+	TenantID     string
 }
 
 func (s *UserService) AdminUpdateUser(ctx context.Context, req AdminUpdateUserRequest, adminRole string) error {
@@ -333,9 +336,13 @@ func (s *UserService) AdminUpdateUser(ctx context.Context, req AdminUpdateUserRe
 	
 	err = s.repo.Update(ctx, target)
 	if err != nil { return err }
-	
-	// Invalidate Cache
-	if s.rds != nil { s.rds.Del(ctx, "user:"+req.TargetUserID) }
+
+	// Update Advisors if Student
+	if req.Role == "student" && req.TenantID != "" {
+		// Replace advisors
+		err = s.repo.ReplaceAdvisors(ctx, req.TargetUserID, req.AdvisorIDs, req.TenantID)
+		if err != nil { return err }
+	}
 	
 	return nil
 }
@@ -415,8 +422,7 @@ func (s *UserService) UpdateAvatar(ctx context.Context, userID, avatarURL string
 // --- Helpers ---
 
 func (s *UserService) invalidateListCache(ctx context.Context) {
-	// If we were caching lists keys pattern, we'd delete them here.
-	// For now, placeholder.
+	log.Println("[UserService] Invalidating user list cache")
 }
 
 func (s *UserService) generateUsername(ctx context.Context, firstName, lastName string) (string, error) {

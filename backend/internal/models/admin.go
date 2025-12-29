@@ -137,6 +137,11 @@ type NodeFile struct {
 	ReviewedByName      *string `json:"-" db:"reviewed_by_name"`
 	ReviewedAt          *string `json:"-" db:"reviewed_at"`
 	
+	IsActive bool `json:"is_active" db:"is_active"`
+	
+	// Computed Fields
+	DownloadURL string `json:"download_url"`
+	
 	// Computed Nested Field
 	ReviewedDocument *ReviewedDocInfo `json:"reviewed_document,omitempty"`
 }
