@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/DATA-DOG/go-sqlmock"
@@ -99,5 +100,85 @@ func TestSQLAdminRepository_GetAttachmentCounts_Unit(t *testing.T) {
 		assert.Equal(t, 5, submitted)
 		assert.Equal(t, 3, approved)
 		assert.Equal(t, 1, rejected)
+	})
+}
+
+func TestSQLAdminRepository_GetStudentDetails_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLAdminRepository(sqlx.NewDb(db, "sqlmock"))
+
+	studentID := "st-1"
+	tenantID := "t-1"
+
+	t.Run("Success", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{
+			"id", "email", "phone", "first_name", "last_name", "program", "department", "cohort",
+		}).AddRow(
+			studentID, "jane@example.com", "555-0100", "Jane", "Doe", "PhD", "Biology", "2024",
+		)
+
+		// Regex matching the actual query in repository
+		mock.ExpectQuery(`SELECT u.id, COALESCE\(u.email,('')\) AS email, COALESCE\(ps.form_data->>'phone',('')\) AS phone, u.first_name, u.last_name, COALESCE\(ps.form_data->>'program',('')\) AS program, COALESCE\(ps.form_data->>'department',('')\) AS department, COALESCE\(ps.form_data->>'cohort',('')\) AS cohort FROM users u LEFT JOIN profile_submissions ps ON ps.user_id = u.id JOIN user_tenant_memberships utm ON utm.user_id = u.id WHERE u.id=\$1 AND u.role='student' AND utm.tenant_id=\$2`).
+			WithArgs(studentID, tenantID).
+			WillReturnRows(rows)
+
+		details, err := repo.GetStudentDetails(context.Background(), studentID, tenantID)
+		assert.NoError(t, err)
+		assert.Equal(t, "Jane", details.FirstName)
+		assert.Equal(t, "jane@example.com", details.Email)
+	})
+}
+
+func TestSQLAdminRepository_Attachments_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLAdminRepository(sqlx.NewDb(db, "sqlmock"))
+
+	attID := "att-1"
+	status := "approved"
+	note := "Good job"
+	actorID := "admin-1"
+
+	t.Run("UpdateStatus", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE node_instance_slot_attachments SET status=\$1, review_note=\$2, approved_by=\$3, approved_at=now\(\) WHERE id=\$4`).
+			WithArgs(status, note, actorID, attID).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.UpdateAttachmentStatus(context.Background(), attID, status, note, actorID)
+		assert.NoError(t, err)
+	})
+}
+
+func TestSQLAdminRepository_GetStudentNodeInstances_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLAdminRepository(sqlx.NewDb(db, "sqlmock"))
+
+	studentID := "st-1"
+	t.Run("Success", func(t *testing.T) {
+		// sqlmock Rows must match columns selected in the query
+		// Query: DISTINCT ON ... id, tenant_id, user_id, playbook_version_id, node_id, state, opened_at, submitted_at, updated_at
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "user_id", "playbook_version_id", "node_id", "state", "opened_at", "submitted_at", "updated_at"}).
+			AddRow("inst-1", "t-1", studentID, "v-1", "node-1", "in_progress", time.Now(), nil, time.Now())
+
+		mock.ExpectQuery(`SELECT DISTINCT ON \(node_id\) id, tenant_id, user_id, playbook_version_id, node_id, state, opened_at, submitted_at, updated_at FROM node_instances WHERE user_id=\$1 ORDER BY node_id, updated_at DESC`).
+			WithArgs(studentID).
+			WillReturnRows(rows)
+
+		insts, err := repo.GetStudentNodeInstances(context.Background(), studentID)
+		assert.NoError(t, err)
+		if assert.Len(t, insts, 1) {
+			assert.Equal(t, "node-1", insts[0].NodeID)
+		}
 	})
 }

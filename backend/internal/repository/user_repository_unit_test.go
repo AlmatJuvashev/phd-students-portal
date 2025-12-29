@@ -206,3 +206,76 @@ func TestSQLUserRepository_List_Unit(t *testing.T) {
 		assert.Nil(t, users)
 	})
 }
+
+func TestSQLUserRepository_ReplaceAdvisors_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
+
+	studentID := "st-1"
+	tenantID := "t-1"
+	advisorIDs := []string{"adv-1", "adv-2"}
+
+	t.Run("Success", func(t *testing.T) {
+		mock.ExpectBegin()
+		
+		// 1. Delete
+		mock.ExpectExec(`DELETE FROM student_advisors WHERE student_id=\$1 AND tenant_id=\$2`).
+			WithArgs(studentID, tenantID).
+			WillReturnResult(sqlmock.NewResult(0, 5)) // 5 deleted
+
+		// 2. Insert loop
+		for _, aid := range advisorIDs {
+			mock.ExpectExec(`INSERT INTO student_advisors`).
+				WithArgs(studentID, aid, tenantID).
+				WillReturnResult(sqlmock.NewResult(1, 1))
+		}
+
+		mock.ExpectCommit()
+
+		err := repo.ReplaceAdvisors(context.Background(), studentID, advisorIDs, tenantID)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Rollback", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectExec(`DELETE FROM student_advisors`).
+			WillReturnError(sql.ErrConnDone)
+		mock.ExpectRollback()
+
+		err := repo.ReplaceAdvisors(context.Background(), studentID, advisorIDs, tenantID)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+}
+
+func TestSQLUserRepository_RateLimit_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
+
+	t.Run("CheckRateLimit", func(t *testing.T) {
+		// Matches: SELECT COUNT(*) FROM rate_limit_events WHERE user_id=$1 AND action=$2 AND occurred_at > NOW() - $3::interval
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM rate_limit_events WHERE user_id=\$1 AND action=\$2 AND occurred_at > NOW\(\) - \$3::interval`).
+			WithArgs("u-1", "login", time.Minute).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+		count, err := repo.CheckRateLimit(context.Background(), "u-1", "login", time.Minute)
+		assert.NoError(t, err)
+		assert.Equal(t, 3, count)
+	})
+
+	t.Run("RecordRateLimit", func(t *testing.T) {
+		mock.ExpectExec(`INSERT INTO rate_limit_events \(user_id, action\) VALUES \(\$1, \$2\)`).
+			WithArgs("u-1", "login").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.RecordRateLimit(context.Background(), "u-1", "login")
+		assert.NoError(t, err)
+	})
+}
