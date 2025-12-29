@@ -14,14 +14,13 @@ type NodeInstance struct {
 	PlaybookVersionID string     `db:"playbook_version_id" json:"playbook_version_id"`
 	NodeID            string     `db:"node_id" json:"node_id"`
 	State             string     `db:"state" json:"state"` // todo, in_progress, done, waiting, needs_fixes, locked
-	StartedAt         *time.Time `db:"started_at" json:"started_at,omitempty"`
-	CompletedAt       *time.Time `db:"completed_at" json:"completed_at,omitempty"`
-	SubmittedAt       *time.Time `db:"submitted_at" json:"submitted_at,omitempty"`
 	OpenedAt          time.Time  `db:"opened_at" json:"opened_at"`
+	SubmittedAt       *time.Time `db:"submitted_at" json:"submitted_at,omitempty"`
 	UpdatedAt         time.Time  `db:"updated_at" json:"updated_at"`
 	CurrentRev        int            `db:"current_rev" json:"current_rev"`
 	Locale            *string        `db:"locale" json:"locale,omitempty"`
 }
+
 
 // NodeDeadline represents a deadline overriding the playbook default
 type NodeDeadline struct {

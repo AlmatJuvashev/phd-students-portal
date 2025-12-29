@@ -23,7 +23,7 @@ func TestNewMailer(t *testing.T) {
 		os.Unsetenv("SMTP_FROM")
 	}()
 
-	m := NewMailer()
+	m := NewMailer().(*SMTPMailer)
 	assert.NotNil(t, m)
 	assert.Equal(t, "smtp.test.com", m.host)
 	assert.Equal(t, "587", m.port)
@@ -40,7 +40,7 @@ func TestNewMailer_EmptyEnv(t *testing.T) {
 	os.Unsetenv("SMTP_PASSWORD")
 	os.Unsetenv("SMTP_FROM")
 
-	m := NewMailer()
+	m := NewMailer().(*SMTPMailer)
 	assert.NotNil(t, m)
 	assert.Empty(t, m.host)
 	assert.Empty(t, m.port)
@@ -48,7 +48,7 @@ func TestNewMailer_EmptyEnv(t *testing.T) {
 
 func TestMailer_SendNotificationEmail_NoSMTP(t *testing.T) {
 	// No SMTP configured, should return nil without error
-	m := &Mailer{
+	m := &SMTPMailer{
 		host: "",
 		port: "",
 	}
@@ -58,7 +58,7 @@ func TestMailer_SendNotificationEmail_NoSMTP(t *testing.T) {
 }
 
 func TestMailer_BuildMessage(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		from: "sender@test.com",
 	}
 
@@ -73,7 +73,7 @@ func TestMailer_BuildMessage(t *testing.T) {
 
 func TestMailer_SendStateChangeNotification_NoSMTP(t *testing.T) {
 	// No SMTP configured, should execute template but skip actual send
-	m := &Mailer{
+	m := &SMTPMailer{
 		host: "",
 		port: "",
 		from: "noreply@test.com",
@@ -92,7 +92,7 @@ func TestMailer_SendStateChangeNotification_NoSMTP(t *testing.T) {
 
 func TestMailer_SendStateChangeNotification_TemplateRendering(t *testing.T) {
 	// Test that the template renders correctly
-	m := &Mailer{
+	m := &SMTPMailer{
 		host: "", // No SMTP, so email won't actually be sent
 		port: "",
 		from: "noreply@test.com",
@@ -111,7 +111,7 @@ func TestMailer_SendStateChangeNotification_TemplateRendering(t *testing.T) {
 }
 
 func TestMailer_BuildMessage_Format(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		from: "test@example.com",
 	}
 
@@ -151,7 +151,7 @@ func TestMailer_BuildMessage_Format(t *testing.T) {
 }
 
 func TestMailer_SendStateChangeNotification_Approved(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		host: "",
 		port: "",
 		from: "noreply@test.com",
@@ -169,7 +169,7 @@ func TestMailer_SendStateChangeNotification_Approved(t *testing.T) {
 }
 
 func TestMailer_SendStateChangeNotification_ChangesRequested(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		host: "",
 		port: "",
 		from: "noreply@test.com",
@@ -187,7 +187,7 @@ func TestMailer_SendStateChangeNotification_ChangesRequested(t *testing.T) {
 }
 
 func TestMailer_SendStateChangeNotification_EmptyOldState(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		host: "",
 		port: "",
 		from: "noreply@test.com",
@@ -205,7 +205,7 @@ func TestMailer_SendStateChangeNotification_EmptyOldState(t *testing.T) {
 }
 
 func TestMailer_SendNotificationEmail_WithAuth(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		host:     "",
 		port:     "",
 		user:     "testuser",
@@ -219,7 +219,7 @@ func TestMailer_SendNotificationEmail_WithAuth(t *testing.T) {
 }
 
 func TestMailer_BuildMessage_EmptyFrom(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		from: "",
 	}
 
@@ -229,7 +229,7 @@ func TestMailer_BuildMessage_EmptyFrom(t *testing.T) {
 }
 
 func TestMailer_BuildMessage_HTMLContent(t *testing.T) {
-	m := &Mailer{
+	m := &SMTPMailer{
 		from: "sender@test.com",
 	}
 

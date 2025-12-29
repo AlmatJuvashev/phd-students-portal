@@ -9,7 +9,12 @@ import (
 	"os"
 )
 
-type Mailer struct {
+type Mailer interface {
+	SendNotificationEmail(to, subject, body string) error
+	SendStateChangeNotification(to, studentName, nodeID, oldState, newState, frontendURL string) error
+}
+
+type SMTPMailer struct {
 	host     string
 	port     string
 	user     string
@@ -17,8 +22,8 @@ type Mailer struct {
 	from     string
 }
 
-func NewMailer() *Mailer {
-	return &Mailer{
+func NewMailer() Mailer {
+	return &SMTPMailer{
 		host:     os.Getenv("SMTP_HOST"),
 		port:     os.Getenv("SMTP_PORT"),
 		user:     os.Getenv("SMTP_USER"),
@@ -27,7 +32,7 @@ func NewMailer() *Mailer {
 	}
 }
 
-func (m *Mailer) SendNotificationEmail(to, subject, body string) error {
+func (m *SMTPMailer) SendNotificationEmail(to, subject, body string) error {
 	if m.host == "" || m.port == "" {
 		log.Printf("SMTP not configured, skipping email to %s", to)
 		return nil
@@ -51,7 +56,7 @@ func (m *Mailer) SendNotificationEmail(to, subject, body string) error {
 	return nil
 }
 
-func (m *Mailer) SendStateChangeNotification(to, studentName, nodeID, oldState, newState, frontendURL string) error {
+func (m *SMTPMailer) SendStateChangeNotification(to, studentName, nodeID, oldState, newState, frontendURL string) error {
 	subject := fmt.Sprintf("Статус документа изменен: %s", nodeID)
 	
 	tmpl := `<!DOCTYPE html>
@@ -120,7 +125,7 @@ func (m *Mailer) SendStateChangeNotification(to, studentName, nodeID, oldState, 
 	return m.SendNotificationEmail(to, subject, buf.String())
 }
 
-func (m *Mailer) buildMessage(to, subject, body string) string {
+func (m *SMTPMailer) buildMessage(to, subject, body string) string {
 	msg := fmt.Sprintf("From: %s\r\n", m.from)
 	msg += fmt.Sprintf("To: %s\r\n", to)
 	msg += fmt.Sprintf("Subject: %s\r\n", subject)

@@ -127,20 +127,24 @@ func (h *NodeSubmissionHandler) PresignUpload(c *gin.Context) {
 		return
 	}
 	
-	url, err := h.svc.PresignUpload(c.Request.Context(), uid, nodeID, req.SlotKey, req.Filename, req.ContentType, req.SizeBytes)
+	url, objKey, err := h.svc.PresignUpload(c.Request.Context(), uid, nodeID, req.SlotKey, req.Filename, req.ContentType, req.SizeBytes)
 	if err != nil {
 		log.Printf("[NodeSubmission] Presign error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"url": url})
+	c.JSON(http.StatusOK, gin.H{
+		"upload_url": url,
+		"object_key": objKey,
+	})
 }
 
 type nodeUploadAttachReq struct {
-	SlotKey          string `json:"slot_key" binding:"required"`
-	UploadedFilename string `json:"uploaded_filename" binding:"required"` // S3 key or part
-	OriginalFilename string `json:"original_filename" binding:"required"`
-	SizeBytes        int64  `json:"size_bytes" binding:"required"`
+	SlotKey    string `json:"slot_key" binding:"required"`
+	ObjectKey  string `json:"object_key" binding:"required"`
+	Filename   string `json:"filename" binding:"required"`
+	SizeBytes  int64  `json:"size_bytes" binding:"required"`
+	ETag       string `json:"etag"`
 }
 
 // POST /api/journey/nodes/:nodeId/uploads/attach
@@ -159,7 +163,7 @@ func (h *NodeSubmissionHandler) AttachUpload(c *gin.Context) {
 		return
 	}
 	
-	err := h.svc.AttachUpload(c.Request.Context(), tenantID, uid, nodeID, req.SlotKey, req.UploadedFilename, req.OriginalFilename, req.SizeBytes)
+	err := h.svc.AttachUpload(c.Request.Context(), tenantID, uid, nodeID, req.SlotKey, req.ObjectKey, req.Filename, req.SizeBytes)
 	if err != nil {
 		log.Printf("[NodeSubmission] Attach error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

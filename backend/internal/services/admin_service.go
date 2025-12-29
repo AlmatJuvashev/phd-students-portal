@@ -65,6 +65,10 @@ func (s *AdminService) MonitorStudents(ctx context.Context, filter models.Filter
 	lastUpdates, _ := s.repo.GetLastUpdatesForStudents(ctx, ids)
 	rpRequired, _ := s.repo.GetRPRequiredForStudents(ctx, ids)
 
+	// DEBUG: Log playbook info
+	fmt.Printf("[MonitorStudents] PlaybookVersionID=%s, TotalNodes=%d, StudentCount=%d\n", s.pb.VersionID, len(s.pb.Nodes), len(rows))
+	fmt.Printf("[MonitorStudents] DoneCounts map: %+v\n", doneCounts)
+
 	// 3. Merge and Compute
 	totalNodes := len(s.pb.Nodes)
 	_, worldNodes := s.getWorlds()
@@ -106,16 +110,22 @@ func (s *AdminService) MonitorStudents(ctx context.Context, filter models.Filter
 			r.OverallProgressPct = float64(r.DoneCount) * 100.0 / float64(totalRequired)
 		}
 
-		// Stage logic
-		// We need "Last Node ID" to determine stage. 
-		// "ListStudentProgress" query got CurrentNodeID. "ListStudentsForMonitor" did not.
-		// We might need to add `CurrentNodeID` to `StudentMonitorRow` fetch in Repo.
-		// For now, let's leave stage as default or fetch it? 
-		// Fetching it batch is better.
-		// Let's assume we add `GetLastNodeForStudents` to repo or add column to ListStudentsForMonitor.
-		// Adding column is better.
+		// Stage logic - derive from CurrentNodeID
+		nodeID := ""
+		if r.CurrentNodeID != nil {
+			nodeID = *r.CurrentNodeID
+		}
+		if r.CurrentNodeID != nil && *r.CurrentNodeID != "" {
+			r.CurrentStage = s.pb.NodeWorldID(*r.CurrentNodeID)
+		}
+		if r.CurrentStage == "" {
+			r.CurrentStage = "W1" // Default to first stage
+		}
+		// DEBUG: Log stage calculation
+		fmt.Printf("[MonitorStudents] Student %s: CurrentNodeID=%s -> CurrentStage=%s, DoneCount=%d\n", r.ID, nodeID, r.CurrentStage, r.DoneCount)
 		
 		enriched = append(enriched, r)
+
 	}
 
 	return enriched, nil
@@ -279,6 +289,12 @@ func (s *AdminService) GetStudentDetails(ctx context.Context, studentID, tenantI
 	var lastNodeID string
 	var lastUpdate time.Time
 	
+	// DEBUG: Log instances info
+	fmt.Printf("[GetStudentDetails] studentID=%s, PlaybookVersionID=%s, InstancesCount=%d\n", studentID, s.pb.VersionID, len(instances))
+	for _, inst := range instances {
+		fmt.Printf("[GetStudentDetails]   Instance: NodeID=%s, State=%s, Version=%s\n", inst.NodeID, inst.State, inst.PlaybookVersionID)
+	}
+	
 	// Count done and find last update
 	for _, inst := range instances {
 		// Filter by version ??? Handler uses specific version stats?
@@ -300,6 +316,9 @@ func (s *AdminService) GetStudentDetails(ctx context.Context, studentID, tenantI
 		}
 	}
 	
+	// DEBUG: Log calculated values
+	fmt.Printf("[GetStudentDetails] doneCount=%d, lastNodeID=%s, totalRequired=%d\n", doneCount, lastNodeID, totalRequired)
+	
 	details.OverallProgressPct = 0.0
 	if totalRequired > 0 {
 		details.OverallProgressPct = float64(doneCount) * 100.0 / float64(totalRequired)
@@ -307,9 +326,11 @@ func (s *AdminService) GetStudentDetails(ctx context.Context, studentID, tenantI
 	
 	// Stage logic
 	stage := s.pb.NodeWorldID(lastNodeID)
+	fmt.Printf("[GetStudentDetails] NodeWorldID(%s)=%s\n", lastNodeID, stage)
 	if stage == "" { stage = "W1" }
 	details.CurrentStage = stage
 	details.StageTotal = len(worldNodes[stage])
+
 	
 	// Stage done (only for active version)
 	stageDone := 0

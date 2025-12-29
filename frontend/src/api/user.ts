@@ -15,6 +15,7 @@ export interface UserProfile {
   department?: string;
   cohort?: string;
   role: string;
+  is_active: boolean;
 }
 
 export async function updateProfile(data: Partial<UserProfile> & { current_password?: string }) {

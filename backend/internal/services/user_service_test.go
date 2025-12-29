@@ -92,6 +92,11 @@ func (m *MockUserRepository) LinkAdvisor(ctx context.Context, studentID, advisor
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) ReplaceAdvisors(ctx context.Context, studentID string, advisorIDs []string, tenantID string) error {
+	args := m.Called(ctx, studentID, advisorIDs, tenantID)
+	return args.Error(0)
+}
+
 func (m *MockUserRepository) CreatePasswordResetToken(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error {
 	args := m.Called(ctx, userID, tokenHash, expiresAt)
 	return args.Error(0)

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
@@ -109,6 +110,42 @@ func TestNotificationHandler_MarkAsRead(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, isRead)
 	})
+}
+
+func TestNotificationHandler_List(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	tenantID := "66666666-6666-6666-6666-666666666666"
+	userID := "123e4567-e89b-12d3-a456-426614174000"
+	
+	testutils.CreateTestTenant(t, db, tenantID)
+	// We need to insert user properly for repo
+	_, _ = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'listuser', 'list@ex.com', 'L', 'U', 'student', 'h', true) ON CONFLICT DO NOTHING`, userID)
+
+	_, _ = db.Exec(`INSERT INTO notifications (tenant_id, recipient_id, title, message, type, is_read) 
+		VALUES ($1, $2, 'N1', 'M1', 'info', false)`, tenantID, userID)
+
+	repo := repository.NewSQLNotificationRepository(db)
+	svc := services.NewNotificationService(repo)
+	h := handlers.NewNotificationHandler(svc)
+
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("userID", userID)
+		c.Next()
+	})
+	r.GET("/notifications", h.GetNotifications)
+
+	req, _ := http.NewRequest("GET", "/notifications", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var resp []models.Notification
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.Len(t, resp, 1)
 }
 
 func TestNotificationHandler_MarkAllAsRead(t *testing.T) {

@@ -3,7 +3,9 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -79,13 +81,30 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	maxAge := h.cfg.JWTExpDays * 24 * 60 * 60
 	isSecure := strings.HasPrefix(h.cfg.ServerURL, "https")
 	sameSite := http.SameSiteLaxMode
-	if h.cfg.Env == "development" {
+	
+	// For localhost development, use Lax mode (works with HTTP)
+	// SameSite=None requires Secure=true (HTTPS), which breaks on http://localhost
+	// Only use None+Secure for cross-domain production deployments
+	if h.cfg.Env != "development" && isSecure {
+		// Production with HTTPS: allow cross-domain (if needed)
 		sameSite = http.SameSiteNoneMode
-		isSecure = true 
 	}
+	// For development on localhost, keep SameSite=Lax and Secure=false
 
 	c.SetSameSite(sameSite)
-	c.SetCookie("jwt_token", resp.Token, maxAge, "/", "", isSecure, true)
+	
+	// Determine the domain for the cookie
+	cookieDomain := "" // Using empty string for host-only cookie
+	host := c.Request.Host
+	if strings.Contains(host, ":") {
+		host, _, _ = net.SplitHostPort(host)
+	}
+
+	// For localhost development with subdomains, we stick to host-only cookies (domain="")
+	// as this is the most compatible across different subdomains on the same port.
+	log.Printf("[AuthHandler.Login] Attempting set cookie. host=%s, domain=%q, isSecure=%v, sameSite=%v", host, cookieDomain, isSecure, sameSite)
+
+	c.SetCookie("jwt_token", resp.Token, maxAge, "/", cookieDomain, isSecure, true)
 
 	// Build response with tenant info but WITHOUT token in body
 	response := gin.H{
@@ -149,13 +168,65 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 // Logout clears the http-only cookie
 func (h *AuthHandler) Logout(c *gin.Context) {
 	isSecure := strings.HasPrefix(h.cfg.ServerURL, "https")
-	if h.cfg.Env == "development" {
-		isSecure = true
-		c.SetSameSite(http.SameSiteNoneMode)
-	} else {
-		c.SetSameSite(http.SameSiteLaxMode)
+	sameSite := http.SameSiteLaxMode
+	
+	origin := c.Request.Header.Get("Origin")
+	host := c.Request.Host
+	if strings.Contains(host, ":") {
+		host, _, _ = net.SplitHostPort(host)
 	}
-	c.SetCookie("jwt_token", "", -1, "/", "", isSecure, true)
+	
+	// Match Login cookie settings logic exactly
+	if h.cfg.Env != "development" && isSecure {
+		sameSite = http.SameSiteNoneMode
+	}
+	
+	log.Printf("[AuthHandler.Logout] Attempting logout. host=%s, origin=%s, isSecure=%v, sameSite=%v", c.Request.Host, origin, isSecure, sameSite)
+	
+	// Debug: log all received cookies to identify which one we need to clear
+	cookies := c.Request.Cookies()
+	log.Printf("[AuthHandler.Logout] Received %d cookies", len(cookies))
+	for _, cookie := range cookies {
+		log.Printf("[AuthHandler.Logout]   Cookie in request: name=%s, len(value)=%d", cookie.Name, len(cookie.Value))
+	}
+	
+	c.SetSameSite(sameSite)
+	
+	// Exhaustive clearing for different possible domains and variations
+	// Browsers require exact match of Name, Path, and Domain to clear a cookie.
+	// We also try different SameSite/Secure combinations because if they don't match,
+	// the browser might ignore the clear instruction.
+	domainsToClear := []string{"", host, "localhost", ".localhost"}
+	
+	// Also try the origin domain if it's different
+	if origin != "" {
+		if u, err := url.Parse(origin); err == nil {
+			originHost := u.Hostname()
+			if originHost != "" && originHost != host && originHost != "localhost" {
+				domainsToClear = append(domainsToClear, originHost)
+			}
+		}
+	}
+
+	log.Printf("[AuthHandler.Logout] Clearing jwt_token for domains: %v", domainsToClear)
+	
+	for _, d := range domainsToClear {
+		// Try Lax/Insecure (common for dev)
+		c.SetSameSite(http.SameSiteLaxMode)
+		c.SetCookie("jwt_token", "", -1, "/", d, false, true)
+		
+		// Try None/Secure (what the user's dump shows)
+		c.SetSameSite(http.SameSiteNoneMode)
+		c.SetCookie("jwt_token", "", -1, "/", d, true, true)
+		
+		// Try Strict
+		c.SetSameSite(http.SameSiteStrictMode)
+		c.SetCookie("jwt_token", "", -1, "/", d, false, true)
+	}
+	
+	// Reset SameSite for the final response just in case
+	c.SetSameSite(sameSite)
+	
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 

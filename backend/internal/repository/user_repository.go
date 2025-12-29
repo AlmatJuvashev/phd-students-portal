@@ -36,6 +36,7 @@ type UserRepository interface {
 
 	// Student specific
 	LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error
+	ReplaceAdvisors(ctx context.Context, studentID string, advisorIDs []string, tenantID string) error
 
 	// Security & Audit
 	CheckRateLimit(ctx context.Context, userID, action string, window time.Duration) (int, error)
@@ -193,9 +194,34 @@ func (r *SQLUserRepository) EmailExists(ctx context.Context, email string, exclu
 func (r *SQLUserRepository) LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO student_advisors (student_id, advisor_id, tenant_id)
-		VALUES ($1, $2, $3)
+	VALUES ($1, $2, $3)
 		ON CONFLICT DO NOTHING`, studentID, advisorID, tenantID)
 	return err
+}
+
+func (r *SQLUserRepository) ReplaceAdvisors(ctx context.Context, studentID string, advisorIDs []string, tenantID string) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Delete existing
+	_, err = tx.ExecContext(ctx, `DELETE FROM student_advisors WHERE student_id=$1 AND tenant_id=$2`, studentID, tenantID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Insert new
+	query := `INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`
+	for _, aid := range advisorIDs {
+		_, err = tx.ExecContext(ctx, query, studentID, aid, tenantID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 // List fetches users with filtering and pagination. 

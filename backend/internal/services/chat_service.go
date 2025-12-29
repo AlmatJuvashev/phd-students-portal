@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -17,11 +18,11 @@ import (
 
 type ChatService struct {
 	repo         repository.ChatRepository
-	emailService *EmailService
+	emailService EmailSender
 	cfg          config.AppConfig
 }
 
-func NewChatService(repo repository.ChatRepository, emailService *EmailService, cfg config.AppConfig) *ChatService {
+func NewChatService(repo repository.ChatRepository, emailService EmailSender, cfg config.AppConfig) *ChatService {
 	return &ChatService{
 		repo:         repo,
 		emailService: emailService,
@@ -30,7 +31,7 @@ func NewChatService(repo repository.ChatRepository, emailService *EmailService, 
 }
 
 // CreateRoom creates a new chat room.
-func (s *ChatService) CreateRoom(ctx context.Context, tenantID, name string, roomType models.ChatRoomType, createdBy string, meta []byte) (*models.ChatRoom, error) {
+func (s *ChatService) CreateRoom(ctx context.Context, tenantID, name string, roomType models.ChatRoomType, createdBy string, meta json.RawMessage) (*models.ChatRoom, error) {
 	return s.repo.CreateRoom(ctx, tenantID, name, roomType, createdBy, meta)
 }
 
@@ -75,7 +76,7 @@ func (s *ChatService) ListMembers(ctx context.Context, roomID string) ([]models.
 }
 
 // CreateMessage sends a message.
-func (s *ChatService) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string, meta []byte) (*models.ChatMessage, error) {
+func (s *ChatService) CreateMessage(ctx context.Context, roomID, senderID, body string, attachments models.ChatAttachments, importance *string, meta json.RawMessage) (*models.ChatMessage, error) {
 	return s.repo.CreateMessage(ctx, roomID, senderID, body, attachments, importance, meta)
 }
 

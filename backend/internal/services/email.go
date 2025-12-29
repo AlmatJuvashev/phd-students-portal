@@ -55,6 +55,10 @@ func NewEmailService() *EmailService {
 	}
 }
 
+func (e *EmailService) SetSender(s func(addr string, a smtp.Auth, from string, to []string, msg []byte) error) {
+	e.sender = s
+}
+
 func (e *EmailService) SendEmailVerification(to, token, userName string) error {
 	if !e.enabled {
 		log.Printf("[EMAIL] Skipping verification email to %s (SMTP not configured)", to)

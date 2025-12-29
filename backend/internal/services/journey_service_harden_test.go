@@ -129,7 +129,7 @@ func TestJourneyService_PresignUpload_Hardening(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url, err := svc.PresignUpload(context.Background(), userID, "upload_node", tt.slotKey, "test.file", tt.contentType, tt.sizeBytes)
+			url, _, err := svc.PresignUpload(context.Background(), userID, "upload_node", tt.slotKey, "test.file", tt.contentType, tt.sizeBytes)
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errMsg != "" {
@@ -248,7 +248,7 @@ func TestJourneyService_PresignUpload_StorageFailure(t *testing.T) {
 	storage := &errorStorage{}
 	svc := services.NewJourneyService(repo, pb, cfg, nil, storage, nil)
 
-	_, err := svc.PresignUpload(context.Background(), userID, "node1", "file", "test.pdf", "application/pdf", 1024)
+	_, _, err := svc.PresignUpload(context.Background(), userID, "node1", "file", "test.pdf", "application/pdf", 1024)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "storage error")
 }

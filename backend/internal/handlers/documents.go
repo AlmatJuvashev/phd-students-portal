@@ -145,7 +145,10 @@ func (h *DocumentsHandler) PresignUpload(c *gin.Context) {
 		return
 	}
 	
-	c.JSON(http.StatusOK, gin.H{"url": url, "object_key": key})
+	c.JSON(http.StatusOK, gin.H{
+		"upload_url": url,
+		"object_key": key,
+	})
 }
 
 // Presign GET for latest version (S3) or return 400 if not configured.

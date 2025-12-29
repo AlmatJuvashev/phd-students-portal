@@ -991,7 +991,7 @@ export function StudentDetailPage() {
                     })}
                   </span>
                 </div>
-              ) : nodeFiles.length === 0 ? (
+              ) : nodeFiles?.length === 0 ? (
                 <div className="rounded-xl border-2 border-dashed bg-muted/20 p-12 text-center">
                   <File className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
                   <h4 className="font-semibold text-foreground mb-2">
@@ -1009,7 +1009,7 @@ export function StudentDetailPage() {
               ) : (
                 <div className="space-y-6">
                   {Object.entries(
-                    nodeFiles.reduce(
+                    (nodeFiles || []).reduce(
                       (acc: Record<string, typeof nodeFiles>, f) => {
                         const k = (f as any).slot_key || "default";
                         (acc[k] ||= []).push(f);

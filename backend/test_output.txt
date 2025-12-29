@@ -1,262 +1,1878 @@
-	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/clean_test_data		coverage: 0.0% of statements
-	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/mock		coverage: 0.0% of statements
-	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_demo_progress		coverage: 0.0% of statements
-	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_multitenancy		coverage: 0.0% of statements
-	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_playbook		coverage: 0.0% of statements
-	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/seed_test_users		coverage: 0.0% of statements
-	github.com/AlmatJuvashev/phd-students-portal/backend/cmd/server		coverage: 0.0% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth	1.780s	coverage: 72.0% of statements
-2025/12/24 16:25:04 Config loaded: Port=8280, Env=development, FrontendBase=http://localhost:5173, ServerURL=http://localhost:8080
---- FAIL: TestMustLoad_Defaults (0.00s)
-    config_test.go:27: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/config/config_test.go:27
+=== RUN   TestAuthHandler_Login_Security
+2025/12/28 22:59:15 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/auth_security_test.go, pkgName: handlers
+2025/12/28 22:59:15 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestAuthHandler_Login_Security/HttpOnly_Cookie_Set_on_Success
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/28 22:59:15 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/28 22:59:15 [AuthService.Login] Found user: id=141b69fe-cd3b-4de1-a48e-e48c409e1a81, role=student, isActive=true
+2025/12/28 22:59:15 [AuthService.Login] Password verified for user=security_test_user
+2025/12/28 22:59:15 [AuthService.Login] No tenant context, using user role=student
+2025/12/28 22:59:15 [AuthService.Login] Login successful: userID=141b69fe-cd3b-4de1-a48e-e48c409e1a81, role=student, tenantID=
+2025/12/28 22:59:15 [AuthHandler.Login] Attempting set cookie. host=example.com, domain="", isSecure=false, sameSite=2
+=== RUN   TestAuthHandler_Login_Security/Rate_Limit_Enforced
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/28 22:59:15 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/28 22:59:15 [AuthService.Login] Found user: id=141b69fe-cd3b-4de1-a48e-e48c409e1a81, role=student, isActive=true
+2025/12/28 22:59:15 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$oHL2zI7NuA80RNxcS.Www.t
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/28 22:59:15 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/28 22:59:15 [AuthService.Login] Found user: id=141b69fe-cd3b-4de1-a48e-e48c409e1a81, role=student, isActive=true
+2025/12/28 22:59:15 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$oHL2zI7NuA80RNxcS.Www.t
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/28 22:59:15 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/28 22:59:15 [AuthService.Login] Found user: id=141b69fe-cd3b-4de1-a48e-e48c409e1a81, role=student, isActive=true
+2025/12/28 22:59:15 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$oHL2zI7NuA80RNxcS.Www.t
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/28 22:59:15 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/28 22:59:15 [AuthService.Login] Found user: id=141b69fe-cd3b-4de1-a48e-e48c409e1a81, role=student, isActive=true
+2025/12/28 22:59:15 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$oHL2zI7NuA80RNxcS.Www.t
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/28 22:59:15 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
+2025/12/28 22:59:15 [AuthService.Login] Found user: id=141b69fe-cd3b-4de1-a48e-e48c409e1a81, role=student, isActive=true
+2025/12/28 22:59:15 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$oHL2zI7NuA80RNxcS.Www.t
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+=== RUN   TestAuthHandler_Login_Security/Logout_Clears_Cookie
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+2025/12/28 22:59:15 [AuthHandler.Logout] Attempting logout. host=example.com, origin=, isSecure=false, sameSite=2
+2025/12/28 22:59:15 [AuthHandler.Logout] Received 0 cookies
+2025/12/28 22:59:15 [AuthHandler.Logout] Clearing jwt_token for domains: [ example.com localhost .localhost]
+--- PASS: TestAuthHandler_Login_Security (0.92s)
+    --- PASS: TestAuthHandler_Login_Security/HttpOnly_Cookie_Set_on_Success (0.08s)
+    --- PASS: TestAuthHandler_Login_Security/Rate_Limit_Enforced (0.38s)
+    --- PASS: TestAuthHandler_Login_Security/Logout_Clears_Cookie (0.00s)
+=== RUN   TestAdminHandler_MonitorStudents_Unit
+--- PASS: TestAdminHandler_MonitorStudents_Unit (0.00s)
+=== RUN   TestNotificationsHandler_ListNotifications
+2025/12/28 22:59:16 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationsHandler_ListNotifications/List_All
+2025/12/28 22:59:16 [ListNotifications] Starting - unreadOnly: false
+2025/12/28 22:59:16 [ListNotifications] Found 2 notifications
+=== RUN   TestNotificationsHandler_ListNotifications/List_Unread_Only
+2025/12/28 22:59:16 [ListNotifications] Starting - unreadOnly: true
+2025/12/28 22:59:16 [ListNotifications] Found 1 notifications
+--- PASS: TestNotificationsHandler_ListNotifications (0.42s)
+    --- PASS: TestNotificationsHandler_ListNotifications/List_All (0.01s)
+    --- PASS: TestNotificationsHandler_ListNotifications/List_Unread_Only (0.00s)
+=== RUN   TestNotificationsHandler_GetUnreadCount
+2025/12/28 22:59:16 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationsHandler_GetUnreadCount/Get_Count
+--- PASS: TestNotificationsHandler_GetUnreadCount (0.25s)
+    --- PASS: TestNotificationsHandler_GetUnreadCount/Get_Count (0.00s)
+=== RUN   TestNotificationsHandler_MarkAsRead
+2025/12/28 22:59:16 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationsHandler_MarkAsRead/Mark_As_Read
+--- PASS: TestNotificationsHandler_MarkAsRead (0.23s)
+    --- PASS: TestNotificationsHandler_MarkAsRead/Mark_As_Read (0.00s)
+=== RUN   TestNotificationsHandler_MarkAllAsRead
+2025/12/28 22:59:16 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationsHandler_MarkAllAsRead/Mark_All_As_Read
+--- PASS: TestNotificationsHandler_MarkAllAsRead (0.23s)
+    --- PASS: TestNotificationsHandler_MarkAllAsRead/Mark_All_As_Read (0.00s)
+=== RUN   TestAdminHandler_StudentProgress
+2025/12/28 22:59:17 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_StudentProgress/List_Student_Progress
+--- PASS: TestAdminHandler_StudentProgress (0.33s)
+    --- PASS: TestAdminHandler_StudentProgress/List_Student_Progress (0.00s)
+=== RUN   TestAdminHandler_MonitorStudents
+2025/12/28 22:59:17 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_MonitorStudents/Admin_List_All
+=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Assigned
+=== RUN   TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty)
+=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Program
+=== RUN   TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program
+--- PASS: TestAdminHandler_MonitorStudents (0.27s)
+    --- PASS: TestAdminHandler_MonitorStudents/Admin_List_All (0.01s)
+    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Assigned (0.00s)
+    --- PASS: TestAdminHandler_MonitorStudents/Advisor_List_Unassigned_(Empty) (0.00s)
+    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Program (0.00s)
+    --- PASS: TestAdminHandler_MonitorStudents/Filter_by_Wrong_Program (0.00s)
+=== RUN   TestAdminHandler_GetStudentDetails
+2025/12/28 22:59:17 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Success
+=== RUN   TestAdminHandler_GetStudentDetails/Get_Details_Not_Found
+--- PASS: TestAdminHandler_GetStudentDetails (0.27s)
+    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Success (0.01s)
+    --- PASS: TestAdminHandler_GetStudentDetails/Get_Details_Not_Found (0.00s)
+=== RUN   TestAdminHandler_StudentJourney
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_StudentJourney/Get_Student_Journey
+--- PASS: TestAdminHandler_StudentJourney (0.26s)
+    --- PASS: TestAdminHandler_StudentJourney/Get_Student_Journey (0.00s)
+=== RUN   TestAdminHandler_ListStudentNodeFiles
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files
+2025/12/28 22:59:18 [ListStudentNodeFiles] returning 1 files
+=== RUN   TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files_-_Node_Not_Found
+--- PASS: TestAdminHandler_ListStudentNodeFiles (0.25s)
+    --- PASS: TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files (0.00s)
+    --- PASS: TestAdminHandler_ListStudentNodeFiles/List_Student_Node_Files_-_Node_Not_Found (0.00s)
+=== RUN   TestAdminHandler_ListStudentNodeFiles_Forbidden
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_ListStudentNodeFiles_Forbidden/List_Student_Node_Files_Forbidden
+--- PASS: TestAdminHandler_ListStudentNodeFiles_Forbidden (0.24s)
+    --- PASS: TestAdminHandler_ListStudentNodeFiles_Forbidden/List_Student_Node_Files_Forbidden (0.00s)
+=== RUN   TestAdminHandler_MonitorAnalytics
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_MonitorAnalytics/Get_Analytics
+=== RUN   TestAdminHandler_MonitorAnalytics/Analytics_Filter_Program
+=== RUN   TestAdminHandler_MonitorAnalytics/Analytics_Filter_Search
+--- PASS: TestAdminHandler_MonitorAnalytics (0.25s)
+    --- PASS: TestAdminHandler_MonitorAnalytics/Get_Analytics (0.00s)
+    --- PASS: TestAdminHandler_MonitorAnalytics/Analytics_Filter_Program (0.00s)
+    --- PASS: TestAdminHandler_MonitorAnalytics/Analytics_Filter_Search (0.00s)
+=== RUN   TestAdminHandler_ReviewAttachment
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_ReviewAttachment/Review_Attachment
+2025/12/28 22:59:19 [ActivateNextNodes] Starting for user=10000000-0000-0000-0000-000000000008 node=node1
+--- PASS: TestAdminHandler_ReviewAttachment (0.25s)
+    --- PASS: TestAdminHandler_ReviewAttachment/Review_Attachment (0.00s)
+=== RUN   TestAdminHandler_ListStudentProgress
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_ListStudentProgress/List_Student_Progress
+    admin_progress_test.go:717: Response: [{"email":"s1@ex.com","id":"11111111-1111-1111-1111-111111111111","name":"Student One","progress":{"completed_nodes":1,"current_node_id":"node1","last_submission_at":"2025-12-28T17:59:19Z","percent":100,"total_nodes":1},"role":"student"}]
+--- PASS: TestAdminHandler_ListStudentProgress (0.25s)
+    --- PASS: TestAdminHandler_ListStudentProgress/List_Student_Progress (0.00s)
+=== RUN   TestAdminHandler_UploadReviewedDocument
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_UploadReviewedDocument/Upload_Reviewed_Document
+--- PASS: TestAdminHandler_UploadReviewedDocument (0.26s)
+    --- PASS: TestAdminHandler_UploadReviewedDocument/Upload_Reviewed_Document (0.00s)
+=== RUN   TestAdminHandler_PatchStudentNodeState
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_PatchStudentNodeState/Patch_Node_State
+2025/12/28 22:59:19 [ActivateNextNodes] Starting for user=50000000-0000-0000-0000-000000000000 node=node1
+--- PASS: TestAdminHandler_PatchStudentNodeState (0.26s)
+    --- PASS: TestAdminHandler_PatchStudentNodeState/Patch_Node_State (0.01s)
+=== RUN   TestAdminHandler_PresignReviewedDocumentUpload
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_PresignReviewedDocumentUpload/Presign_Upload_Success
+=== RUN   TestAdminHandler_PresignReviewedDocumentUpload/Presign_Reviewed_Document_Upload_Invalid_JSON
+=== RUN   TestAdminHandler_PresignReviewedDocumentUpload/Presign_Reviewed_Document_Upload_Attachment_Not_Found
+--- PASS: TestAdminHandler_PresignReviewedDocumentUpload (0.23s)
+    --- PASS: TestAdminHandler_PresignReviewedDocumentUpload/Presign_Upload_Success (0.00s)
+    --- PASS: TestAdminHandler_PresignReviewedDocumentUpload/Presign_Reviewed_Document_Upload_Invalid_JSON (0.00s)
+    --- PASS: TestAdminHandler_PresignReviewedDocumentUpload/Presign_Reviewed_Document_Upload_Attachment_Not_Found (0.00s)
+=== RUN   TestAdminHandler_AttachReviewedDocument
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_AttachReviewedDocument/Attach_Reviewed_Document
+--- PASS: TestAdminHandler_AttachReviewedDocument (0.25s)
+    --- PASS: TestAdminHandler_AttachReviewedDocument/Attach_Reviewed_Document (0.00s)
+=== RUN   TestAdminHandler_UploadReviewedDocument_Failures
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_UploadReviewedDocument_Failures/Upload_Reviewed_Document_Invalid_JSON
+=== RUN   TestAdminHandler_UploadReviewedDocument_Failures/Upload_Reviewed_Document_Attachment_Not_Found
+--- PASS: TestAdminHandler_UploadReviewedDocument_Failures (0.28s)
+    --- PASS: TestAdminHandler_UploadReviewedDocument_Failures/Upload_Reviewed_Document_Invalid_JSON (0.00s)
+    --- PASS: TestAdminHandler_UploadReviewedDocument_Failures/Upload_Reviewed_Document_Attachment_Not_Found (0.00s)
+=== RUN   TestAdminHandler_UploadReviewedDocument_Forbidden
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_UploadReviewedDocument_Forbidden/Upload_Reviewed_Document_Forbidden
+--- PASS: TestAdminHandler_UploadReviewedDocument_Forbidden (0.26s)
+    --- PASS: TestAdminHandler_UploadReviewedDocument_Forbidden/Upload_Reviewed_Document_Forbidden (0.00s)
+=== RUN   TestAdminHandler_PostReminders_Extended
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_PostReminders_Extended/Post_Reminder_Success_With_DueAt
+--- PASS: TestAdminHandler_PostReminders_Extended (0.24s)
+    --- PASS: TestAdminHandler_PostReminders_Extended/Post_Reminder_Success_With_DueAt (0.00s)
+=== RUN   TestAdminHandler_PostReminders_Failures
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_PostReminders_Failures/Post_Reminder_Unauthorized
+--- PASS: TestAdminHandler_PostReminders_Failures (0.41s)
+    --- PASS: TestAdminHandler_PostReminders_Failures/Post_Reminder_Unauthorized (0.00s)
+=== RUN   TestAdminHandler_ReviewAttachment_Failures
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_ReviewAttachment_Failures/Review_Attachment_Invalid_Status
+=== RUN   TestAdminHandler_ReviewAttachment_Failures/Review_Attachment_Not_Found
+--- PASS: TestAdminHandler_ReviewAttachment_Failures (0.27s)
+    --- PASS: TestAdminHandler_ReviewAttachment_Failures/Review_Attachment_Invalid_Status (0.00s)
+    --- PASS: TestAdminHandler_ReviewAttachment_Failures/Review_Attachment_Not_Found (0.00s)
+=== RUN   TestAdminHandler_PostReminders
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_progress_test.go, pkgName: handlers
+=== RUN   TestAdminHandler_PostReminders/Post_Reminder_Invalid_JSON
+=== RUN   TestAdminHandler_PostReminders/Post_Reminder_Success
+--- PASS: TestAdminHandler_PostReminders (0.24s)
+    --- PASS: TestAdminHandler_PostReminders/Post_Reminder_Invalid_JSON (0.00s)
+    --- PASS: TestAdminHandler_PostReminders/Post_Reminder_Success (0.00s)
+=== RUN   TestAnalyticsHandler_GetStageStats
+2025/12/28 22:59:22 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/analytics_test.go, pkgName: handlers
+--- PASS: TestAnalyticsHandler_GetStageStats (0.23s)
+=== RUN   TestAnalyticsHandler_GetOverdueStats
+2025/12/28 22:59:22 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/analytics_test.go, pkgName: handlers
+--- PASS: TestAnalyticsHandler_GetOverdueStats (0.26s)
+=== RUN   TestAuthHandler_Login
+2025/12/28 22:59:22 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/auth_test.go, pkgName: handlers
+2025/12/28 22:59:22 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestAuthHandler_Login/Successful_Login
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=testuser, tenantID=
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=123e4567-e89b-12d3-a456-426614174000, role=student, isActive=true
+2025/12/28 22:59:22 [AuthService.Login] Password verified for user=testuser
+2025/12/28 22:59:22 [AuthService.Login] No tenant context, using user role=student
+2025/12/28 22:59:22 [AuthService.Login] Login successful: userID=123e4567-e89b-12d3-a456-426614174000, role=student, tenantID=
+2025/12/28 22:59:22 [AuthHandler.Login] Attempting set cookie. host=, domain="", isSecure=false, sameSite=2
+    auth_test.go:60: Response body: {"is_superadmin":false,"message":"Login successful","role":"student"}
+=== RUN   TestAuthHandler_Login/Invalid_Password
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=testuser, tenantID=
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=123e4567-e89b-12d3-a456-426614174000, role=student, isActive=true
+2025/12/28 22:59:23 [AuthService.Login] Password mismatch for user=testuser, hash_prefix=$2a$10$EuegSSlWBrWqBXPQ5CVBXeY
+=== RUN   TestAuthHandler_Login/User_Not_Found
+2025/12/28 22:59:23 [AuthService.Login] Attempting login for username=nonexistent, tenantID=
+2025/12/28 22:59:23 [AuthService.Login] User not found: username=nonexistent, error=record not found
+--- PASS: TestAuthHandler_Login (0.42s)
+    --- PASS: TestAuthHandler_Login/Successful_Login (0.07s)
+    --- PASS: TestAuthHandler_Login/Invalid_Password (0.07s)
+    --- PASS: TestAuthHandler_Login/User_Not_Found (0.00s)
+=== RUN   TestAuthHandler_Logout
+=== RUN   TestAuthHandler_Logout/Logout_Clears_Cookie_on_Subdomain
+2025/12/28 22:59:23 [AuthHandler.Logout] Attempting logout. host=demo.localhost:8080, origin=, isSecure=false, sameSite=2
+2025/12/28 22:59:23 [AuthHandler.Logout] Received 1 cookies
+2025/12/28 22:59:23 [AuthHandler.Logout]   Cookie in request: name=jwt_token, len(value)=14
+2025/12/28 22:59:23 [AuthHandler.Logout] Clearing jwt_token for domains: [ demo.localhost localhost .localhost]
+--- PASS: TestAuthHandler_Logout (0.00s)
+    --- PASS: TestAuthHandler_Logout/Logout_Clears_Cookie_on_Subdomain (0.00s)
+=== RUN   TestAuthHandler_PasswordReset
+2025/12/28 22:59:23 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/auth_test.go, pkgName: handlers
+2025/12/28 22:59:23 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestAuthHandler_PasswordReset/Request_Reset_Link
+2025/12/28 22:59:23 [EMAIL] Skipping password reset email to reset@example.com (SMTP not configured)
+2025/12/28 22:59:23 ForgotPassword error: email service not configured
+=== RUN   TestAuthHandler_PasswordReset/Reset_Password_Success
+--- PASS: TestAuthHandler_PasswordReset (0.55s)
+    --- PASS: TestAuthHandler_PasswordReset/Request_Reset_Link (0.00s)
+    --- PASS: TestAuthHandler_PasswordReset/Reset_Password_Success (0.17s)
+=== RUN   TestCalendarHandler_CreateEvent
+2025/12/28 22:59:23 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/calendar_test.go, pkgName: handlers
+=== RUN   TestCalendarHandler_CreateEvent/Create_Event_Success
+--- PASS: TestCalendarHandler_CreateEvent (0.34s)
+    --- PASS: TestCalendarHandler_CreateEvent/Create_Event_Success (0.00s)
+=== RUN   TestCalendarHandler_GetEvents
+2025/12/28 22:59:24 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/calendar_test.go, pkgName: handlers
+=== RUN   TestCalendarHandler_GetEvents/Get_Events
+--- PASS: TestCalendarHandler_GetEvents (0.29s)
+    --- PASS: TestCalendarHandler_GetEvents/Get_Events (0.00s)
+=== RUN   TestCalendarHandler_UpdateDelete
+2025/12/28 22:59:24 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/calendar_test.go, pkgName: handlers
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event
+2025/12/28 22:59:24 [UpdateEvent] Updating event 3f8bc932-99d5-44c3-9ddb-a35251b4a2f6 for user 11111111-1111-1111-1111-111111111111
+2025/12/28 22:59:24 [UpdateEvent] Request data: title=New Title, start=2025-12-28T22:59:24+05:00, end=2025-12-28T23:59:24+05:00, type=academic
+2025/12/28 22:59:24 [UpdateEvent] Event 3f8bc932-99d5-44c3-9ddb-a35251b4a2f6 updated successfully
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_Invalid_Time
+2025/12/28 22:59:24 [UpdateEvent] Updating event 3f8bc932-99d5-44c3-9ddb-a35251b4a2f6 for user 11111111-1111-1111-1111-111111111111
+2025/12/28 22:59:24 [UpdateEvent] Request data: title=Invalid Time, start=invalid, end=invalid, type=academic
+2025/12/28 22:59:24 [UpdateEvent] ERROR parsing start_time 'invalid': parsing time "invalid" as "2006-01-02T15:04:05Z07:00": cannot parse "invalid" as "2006"
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_End_Before_Start
+2025/12/28 22:59:24 [UpdateEvent] Updating event 3f8bc932-99d5-44c3-9ddb-a35251b4a2f6 for user 11111111-1111-1111-1111-111111111111
+2025/12/28 22:59:24 [UpdateEvent] Request data: title=End Before Start, start=2025-12-28T23:59:24+05:00, end=2025-12-28T22:59:24+05:00, type=academic
+2025/12/28 22:59:24 [UpdateEvent] ERROR: end_time is before start_time
+=== RUN   TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied
+2025/12/28 22:59:24 [UpdateEvent] Updating event dbde0ea5-071c-46fe-8e2a-92da74a59fb4 for user 11111111-1111-1111-1111-111111111111
+2025/12/28 22:59:24 [UpdateEvent] Request data: title=Hacked Title, start=2025-12-28T22:59:24+05:00, end=2025-12-28T23:59:24+05:00, type=academic
+2025/12/28 22:59:24 [UpdateEvent] Permission denied for user 11111111-1111-1111-1111-111111111111 (role=) to update event dbde0ea5-071c-46fe-8e2a-92da74a59fb4 (creator=99999999-9999-9999-9999-999999999999)
+=== RUN   TestCalendarHandler_UpdateDelete/Delete_Event
+--- PASS: TestCalendarHandler_UpdateDelete (0.31s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event (0.00s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event_Invalid_Time (0.00s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event_End_Before_Start (0.00s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Update_Event_Permission_Denied (0.00s)
+    --- PASS: TestCalendarHandler_UpdateDelete/Delete_Event (0.00s)
+=== RUN   TestChatHandler_AddRoomMembersBatch
+2025/12/28 22:59:24 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:24 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestChatHandler_AddRoomMembersBatch/Add_batch_with_explicit_user_IDs
+=== RUN   TestChatHandler_AddRoomMembersBatch/Add_batch_with_empty_request_causes_400_for_no_users
+--- PASS: TestChatHandler_AddRoomMembersBatch (0.30s)
+    --- PASS: TestChatHandler_AddRoomMembersBatch/Add_batch_with_explicit_user_IDs (0.00s)
+    --- PASS: TestChatHandler_AddRoomMembersBatch/Add_batch_with_empty_request_causes_400_for_no_users (0.00s)
+=== RUN   TestChatHandler_RemoveRoomMembersBatch
+2025/12/28 22:59:24 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:25 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestChatHandler_RemoveRoomMembersBatch/Remove_batch_with_explicit_user_IDs
+2025/12/28 22:59:25 [EMAIL] Skipping room notification email to remove1@ex.com (SMTP not configured)
+=== RUN   TestChatHandler_RemoveRoomMembersBatch/Remove_batch_with_empty_request_returns_OK
+--- PASS: TestChatHandler_RemoveRoomMembersBatch (0.29s)
+    --- PASS: TestChatHandler_RemoveRoomMembersBatch/Remove_batch_with_explicit_user_IDs (0.00s)
+    --- PASS: TestChatHandler_RemoveRoomMembersBatch/Remove_batch_with_empty_request_returns_OK (0.00s)
+=== RUN   TestChatHandler_ListMembers
+2025/12/28 22:59:25 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:25 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestChatHandler_ListMembers/List_members
+--- PASS: TestChatHandler_ListMembers (0.30s)
+    --- PASS: TestChatHandler_ListMembers/List_members (0.00s)
+=== RUN   TestChatHandler_RemoveMember
+2025/12/28 22:59:25 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:25 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestChatHandler_RemoveMember/Remove_member
+--- PASS: TestChatHandler_RemoveMember (0.29s)
+    --- PASS: TestChatHandler_RemoveMember/Remove_member (0.00s)
+=== RUN   TestChatHandler_ListMessages_WithPagination
+2025/12/28 22:59:25 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:25 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestChatHandler_ListMessages_WithPagination/List_messages_with_limit
+=== RUN   TestChatHandler_ListMessages_WithPagination/List_messages_with_invalid_limit
+--- PASS: TestChatHandler_ListMessages_WithPagination (0.30s)
+    --- PASS: TestChatHandler_ListMessages_WithPagination/List_messages_with_limit (0.00s)
+    --- PASS: TestChatHandler_ListMessages_WithPagination/List_messages_with_invalid_limit (0.00s)
+=== RUN   TestChatHandler_CreateRoom_InvalidType
+2025/12/28 22:59:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:26 [EMAIL] SMTP not configured - email features disabled
+--- PASS: TestChatHandler_CreateRoom_InvalidType (0.29s)
+=== RUN   TestChatHandler_AddMember_InvalidRole
+2025/12/28 22:59:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:26 [EMAIL] SMTP not configured - email features disabled
+--- PASS: TestChatHandler_AddMember_InvalidRole (0.28s)
+=== RUN   TestChatHandler_RoomManagement
+2025/12/28 22:59:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_extra_test.go, pkgName: handlers
+=== RUN   TestChatHandler_RoomManagement/Update_Room
+=== RUN   TestChatHandler_RoomManagement/List_Rooms_(Empty_initially)
+--- PASS: TestChatHandler_RoomManagement (0.30s)
+    --- PASS: TestChatHandler_RoomManagement/Update_Room (0.00s)
+    --- PASS: TestChatHandler_RoomManagement/List_Rooms_(Empty_initially) (0.00s)
+=== RUN   TestChatHandler_Members
+2025/12/28 22:59:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_extra_test.go, pkgName: handlers
+=== RUN   TestChatHandler_Members/Add_Member
+=== RUN   TestChatHandler_Members/List_Members
+=== RUN   TestChatHandler_Members/Remove_Member
+--- PASS: TestChatHandler_Members (0.31s)
+    --- PASS: TestChatHandler_Members/Add_Member (0.00s)
+    --- PASS: TestChatHandler_Members/List_Members (0.00s)
+    --- PASS: TestChatHandler_Members/Remove_Member (0.00s)
+=== RUN   TestChatHandler_MessageOperations
+2025/12/28 22:59:27 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_extra_test.go, pkgName: handlers
+=== RUN   TestChatHandler_MessageOperations/Update_Message
+=== RUN   TestChatHandler_MessageOperations/Mark_As_Read
+=== RUN   TestChatHandler_MessageOperations/Delete_Message
+--- PASS: TestChatHandler_MessageOperations (0.31s)
+    --- PASS: TestChatHandler_MessageOperations/Update_Message (0.00s)
+    --- PASS: TestChatHandler_MessageOperations/Mark_As_Read (0.00s)
+    --- PASS: TestChatHandler_MessageOperations/Delete_Message (0.00s)
+=== RUN   TestChatHandler_MessageCreation
+2025/12/28 22:59:27 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_extra_test.go, pkgName: handlers
+=== RUN   TestChatHandler_MessageCreation/Create_Message
+=== RUN   TestChatHandler_MessageCreation/List_Messages
+--- PASS: TestChatHandler_MessageCreation (0.37s)
+    --- PASS: TestChatHandler_MessageCreation/Create_Message (0.00s)
+    --- PASS: TestChatHandler_MessageCreation/List_Messages (0.00s)
+=== RUN   TestChatHandler_FullFlow
+2025/12/28 22:59:27 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/chat_test.go, pkgName: handlers
+2025/12/28 22:59:28 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestChatHandler_FullFlow/Create_Room
+=== RUN   TestChatHandler_FullFlow/Update_Room
+=== RUN   TestChatHandler_FullFlow/List_Rooms
+=== RUN   TestChatHandler_FullFlow/Add_Member
+=== RUN   TestChatHandler_FullFlow/Create_Message
+=== RUN   TestChatHandler_FullFlow/List_Messages
+=== RUN   TestChatHandler_FullFlow/Update_Message
+=== RUN   TestChatHandler_FullFlow/Mark_As_Read
+=== RUN   TestChatHandler_FullFlow/Delete_Message
+--- PASS: TestChatHandler_FullFlow (0.40s)
+    --- PASS: TestChatHandler_FullFlow/Create_Room (0.00s)
+    --- PASS: TestChatHandler_FullFlow/Update_Room (0.00s)
+    --- PASS: TestChatHandler_FullFlow/List_Rooms (0.00s)
+    --- PASS: TestChatHandler_FullFlow/Add_Member (0.00s)
+    --- PASS: TestChatHandler_FullFlow/Create_Message (0.00s)
+    --- PASS: TestChatHandler_FullFlow/List_Messages (0.00s)
+    --- PASS: TestChatHandler_FullFlow/Update_Message (0.00s)
+    --- PASS: TestChatHandler_FullFlow/Mark_As_Read (0.00s)
+    --- PASS: TestChatHandler_FullFlow/Delete_Message (0.00s)
+=== RUN   TestChecklistHandler_ListModules
+2025/12/28 22:59:28 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/checklist_test.go, pkgName: handlers
+--- PASS: TestChecklistHandler_ListModules (0.33s)
+=== RUN   TestChecklistHandler_ListStepsByModule
+2025/12/28 22:59:28 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/checklist_test.go, pkgName: handlers
+--- PASS: TestChecklistHandler_ListStepsByModule (0.36s)
+=== RUN   TestChecklistHandler_ListStudentSteps
+2025/12/28 22:59:29 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/checklist_test.go, pkgName: handlers
+--- PASS: TestChecklistHandler_ListStudentSteps (0.32s)
+=== RUN   TestChecklistHandler_UpdateStudentStep
+2025/12/28 22:59:29 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/checklist_test.go, pkgName: handlers
+--- PASS: TestChecklistHandler_UpdateStudentStep (0.34s)
+=== RUN   TestChecklistHandler_AdvisorInbox
+2025/12/28 22:59:29 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/checklist_test.go, pkgName: handlers
+--- PASS: TestChecklistHandler_AdvisorInbox (0.33s)
+=== RUN   TestChecklistHandler_ApproveStep
+2025/12/28 22:59:30 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/checklist_test.go, pkgName: handlers
+--- PASS: TestChecklistHandler_ApproveStep (0.25s)
+=== RUN   TestChecklistHandler_ReturnStep
+2025/12/28 22:59:30 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/checklist_test.go, pkgName: handlers
+--- PASS: TestChecklistHandler_ReturnStep (0.26s)
+=== RUN   TestCommentsHandler_CreateComment
+2025/12/28 22:59:30 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/comments_test.go, pkgName: handlers
+--- PASS: TestCommentsHandler_CreateComment (0.26s)
+=== RUN   TestCommentsHandler_GetComments
+2025/12/28 22:59:30 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/comments_test.go, pkgName: handlers
+--- PASS: TestCommentsHandler_GetComments (0.26s)
+=== RUN   TestContactsHandler_CRUD
+2025/12/28 22:59:31 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/contacts_test.go, pkgName: handlers
+=== RUN   TestContactsHandler_CRUD/Create_Contact
+=== RUN   TestContactsHandler_CRUD/Public_List
+=== RUN   TestContactsHandler_CRUD/Update_Contact
+=== RUN   TestContactsHandler_CRUD/Admin_List
+=== RUN   TestContactsHandler_CRUD/Delete_Contact
+=== RUN   TestContactsHandler_CRUD/Create_Contact_Missing_Name
+=== RUN   TestContactsHandler_CRUD/Update_Contact_No_Fields
+=== RUN   TestContactsHandler_CRUD/LocalizedMap_Value
+=== RUN   TestContactsHandler_CRUD/Helpers
+--- PASS: TestContactsHandler_CRUD (0.29s)
+    --- PASS: TestContactsHandler_CRUD/Create_Contact (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Public_List (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Update_Contact (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Admin_List (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Delete_Contact (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Create_Contact_Missing_Name (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Update_Contact_No_Fields (0.00s)
+    --- PASS: TestContactsHandler_CRUD/LocalizedMap_Value (0.00s)
+    --- PASS: TestContactsHandler_CRUD/Helpers (0.00s)
+=== RUN   TestDebugSchema
+2025/12/28 22:59:31 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/debug_schema_test.go, pkgName: handlers
+    debug_schema_test.go:19: Columns in users table:
+    debug_schema_test.go:23:  - id (uuid)
+    debug_schema_test.go:23:  - role (USER-DEFINED)
+    debug_schema_test.go:23:  - is_active (boolean)
+    debug_schema_test.go:23:  - created_at (timestamp with time zone)
+    debug_schema_test.go:23:  - updated_at (timestamp with time zone)
+    debug_schema_test.go:23:  - date_of_birth (timestamp with time zone)
+    debug_schema_test.go:23:  - is_superadmin (boolean)
+    debug_schema_test.go:23:  - avatar_url (text)
+    debug_schema_test.go:23:  - bio (text)
+    debug_schema_test.go:23:  - address (text)
+    debug_schema_test.go:23:  - phone (text)
+    debug_schema_test.go:23:  - program (text)
+    debug_schema_test.go:23:  - specialty (text)
+    debug_schema_test.go:23:  - cohort (text)
+    debug_schema_test.go:23:  - username (text)
+    debug_schema_test.go:23:  - email (text)
+    debug_schema_test.go:23:  - first_name (text)
+    debug_schema_test.go:23:  - last_name (text)
+    debug_schema_test.go:23:  - department (text)
+    debug_schema_test.go:23:  - password_hash (text)
+--- PASS: TestDebugSchema (0.25s)
+=== RUN   TestDictionaryHandler_Programs
+2025/12/28 22:59:31 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/dictionaries_test.go, pkgName: handlers
+=== RUN   TestDictionaryHandler_Programs/Create_Program
+=== RUN   TestDictionaryHandler_Programs/Create_Program_Invalid_JSON
+=== RUN   TestDictionaryHandler_Programs/List_Programs
+=== RUN   TestDictionaryHandler_Programs/Update_Program
+=== RUN   TestDictionaryHandler_Programs/Delete_Program
+--- PASS: TestDictionaryHandler_Programs (0.22s)
+    --- PASS: TestDictionaryHandler_Programs/Create_Program (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/Create_Program_Invalid_JSON (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/List_Programs (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/Update_Program (0.00s)
+    --- PASS: TestDictionaryHandler_Programs/Delete_Program (0.00s)
+=== RUN   TestDictionaryHandler_Departments
+2025/12/28 22:59:31 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/dictionaries_test.go, pkgName: handlers
+=== RUN   TestDictionaryHandler_Departments/Create_Department
+=== RUN   TestDictionaryHandler_Departments/List_Departments
+=== RUN   TestDictionaryHandler_Departments/Update_Department
+=== RUN   TestDictionaryHandler_Departments/Delete_Department
+--- PASS: TestDictionaryHandler_Departments (0.23s)
+    --- PASS: TestDictionaryHandler_Departments/Create_Department (0.00s)
+    --- PASS: TestDictionaryHandler_Departments/List_Departments (0.00s)
+    --- PASS: TestDictionaryHandler_Departments/Update_Department (0.00s)
+    --- PASS: TestDictionaryHandler_Departments/Delete_Department (0.00s)
+=== RUN   TestDictionaryHandler_Cohorts
+2025/12/28 22:59:32 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/dictionaries_test.go, pkgName: handlers
+=== RUN   TestDictionaryHandler_Cohorts/Create_Cohort
+=== RUN   TestDictionaryHandler_Cohorts/List_Cohorts
+=== RUN   TestDictionaryHandler_Cohorts/Update_Cohort
+=== RUN   TestDictionaryHandler_Cohorts/Delete_Cohort
+--- PASS: TestDictionaryHandler_Cohorts (0.20s)
+    --- PASS: TestDictionaryHandler_Cohorts/Create_Cohort (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/List_Cohorts (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/Update_Cohort (0.00s)
+    --- PASS: TestDictionaryHandler_Cohorts/Delete_Cohort (0.00s)
+=== RUN   TestDictionaryHandler_Specialties
+2025/12/28 22:59:32 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/dictionaries_test.go, pkgName: handlers
+=== RUN   TestDictionaryHandler_Specialties/List_Specialties
+--- PASS: TestDictionaryHandler_Specialties (0.25s)
+    --- PASS: TestDictionaryHandler_Specialties/List_Specialties (0.00s)
+=== RUN   TestDictionaryHandler_SpecialtyCRUD
+2025/12/28 22:59:32 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/dictionaries_test.go, pkgName: handlers
+=== RUN   TestDictionaryHandler_SpecialtyCRUD/Create_Specialty
+=== RUN   TestDictionaryHandler_SpecialtyCRUD/Create_Specialty_Invalid_JSON
+=== RUN   TestDictionaryHandler_SpecialtyCRUD/Update_Specialty
+=== RUN   TestDictionaryHandler_SpecialtyCRUD/Delete_Specialty
+--- PASS: TestDictionaryHandler_SpecialtyCRUD (0.25s)
+    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Create_Specialty (0.00s)
+    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Create_Specialty_Invalid_JSON (0.00s)
+    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Update_Specialty (0.00s)
+    --- PASS: TestDictionaryHandler_SpecialtyCRUD/Delete_Specialty (0.00s)
+=== RUN   TestDocumentsHandler_List
+2025/12/28 22:59:32 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_List/List_Documents
+--- PASS: TestDocumentsHandler_List (0.23s)
+    --- PASS: TestDocumentsHandler_List/List_Documents (0.00s)
+=== RUN   TestDocumentsHandler_Upload
+2025/12/28 22:59:33 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_Upload/Upload_Document_Version
+--- PASS: TestDocumentsHandler_Upload (0.25s)
+    --- PASS: TestDocumentsHandler_Upload/Upload_Document_Version (0.01s)
+=== RUN   TestDocumentsHandler_Delete
+2025/12/28 22:59:33 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_Delete/Delete_Document
+--- PASS: TestDocumentsHandler_Delete (0.24s)
+    --- PASS: TestDocumentsHandler_Delete/Delete_Document (0.00s)
+=== RUN   TestDocumentsHandler_Get
+2025/12/28 22:59:33 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_Get/Get_Document
+    documents_test.go:192: Response Code: 200
+    documents_test.go:193: Response Body: {"doc":{"id":"052cca85-dc72-48c5-b645-171328f5a6c6","tenant_id":"00000000-0000-0000-0000-000000000001","user_id":"30000000-0000-0000-0000-000000000004","title":"Get Doc","kind":"other","current_version_id":null,"created_at":"2025-12-28T17:59:33.615516Z","updated_at":"2025-12-28T17:59:33.615516Z"},"versions":null}
+--- PASS: TestDocumentsHandler_Get (0.25s)
+    --- PASS: TestDocumentsHandler_Get/Get_Document (0.00s)
+=== RUN   TestDocumentsHandler_Create
+2025/12/28 22:59:33 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_Create/Create_Document
+    documents_test.go:245: Response Code: 200
+    documents_test.go:246: Response Body: {"id":"eb8c4345-c622-4680-a79f-34470c975796"}
+--- PASS: TestDocumentsHandler_Create (0.28s)
+    --- PASS: TestDocumentsHandler_Create/Create_Document (0.00s)
+=== RUN   TestDocumentsHandler_UploadVersion
+2025/12/28 22:59:34 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_UploadVersion/Upload_Version
+--- PASS: TestDocumentsHandler_UploadVersion (0.29s)
+    --- PASS: TestDocumentsHandler_UploadVersion/Upload_Version (0.00s)
+=== RUN   TestDocumentsHandler_PresignUpload
+2025/12/28 22:59:34 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_PresignUpload/Presign_Upload
+--- PASS: TestDocumentsHandler_PresignUpload (0.29s)
+    --- PASS: TestDocumentsHandler_PresignUpload/Presign_Upload (0.00s)
+=== RUN   TestDocumentsHandler_PresignGetLatest
+2025/12/28 22:59:34 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_PresignGetLatest/Presign_Get_Latest
+--- PASS: TestDocumentsHandler_PresignGetLatest (0.25s)
+    --- PASS: TestDocumentsHandler_PresignGetLatest/Presign_Get_Latest (0.00s)
+=== RUN   TestDocumentsHandler_DownloadVersion
+2025/12/28 22:59:34 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/documents_test.go, pkgName: handlers
+=== RUN   TestDocumentsHandler_DownloadVersion/Download_Version
+2025/12/28 22:59:34 [DownloadVersion] version=cf656b3e-a93a-4938-aeef-5e8da1c9ce1f storage_path=path bucket=bucket object_key=key size=100
+--- PASS: TestDocumentsHandler_DownloadVersion (0.25s)
+    --- PASS: TestDocumentsHandler_DownloadVersion/Download_Version (0.00s)
+=== RUN   TestDataIsolation_BetweenTenants
+2025/12/28 22:59:35 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/isolation_test.go, pkgName: handlers
+=== RUN   TestDataIsolation_BetweenTenants/Admin_A_sees_only_Student_A
+=== RUN   TestDataIsolation_BetweenTenants/Admin_B_sees_only_Student_B
+=== RUN   TestDataIsolation_BetweenTenants/Admin_A_accesses_Student_B_details_->_404
+--- PASS: TestDataIsolation_BetweenTenants (0.27s)
+    --- PASS: TestDataIsolation_BetweenTenants/Admin_A_sees_only_Student_A (0.01s)
+    --- PASS: TestDataIsolation_BetweenTenants/Admin_B_sees_only_Student_B (0.01s)
+    --- PASS: TestDataIsolation_BetweenTenants/Admin_A_accesses_Student_B_details_->_404 (0.00s)
+=== RUN   TestJourneyHandler_GetScoreboard
+2025/12/28 22:59:35 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/journey_scoreboard_test.go, pkgName: handlers
+=== RUN   TestJourneyHandler_GetScoreboard/Scoreboard_Ranking
+--- PASS: TestJourneyHandler_GetScoreboard (0.21s)
+    --- PASS: TestJourneyHandler_GetScoreboard/Scoreboard_Ranking (0.00s)
+=== RUN   TestJourneyHandler_GetState
+2025/12/28 22:59:35 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/journey_test.go, pkgName: handlers
+=== RUN   TestJourneyHandler_GetState/Get_State
+--- PASS: TestJourneyHandler_GetState (0.18s)
+    --- PASS: TestJourneyHandler_GetState/Get_State (0.00s)
+=== RUN   TestJourneyHandler_SetState
+2025/12/28 22:59:35 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/journey_test.go, pkgName: handlers
+=== RUN   TestJourneyHandler_SetState/Set_State_Success
+=== RUN   TestJourneyHandler_SetState/Set_State_Invalid
+--- PASS: TestJourneyHandler_SetState (0.18s)
+    --- PASS: TestJourneyHandler_SetState/Set_State_Success (0.00s)
+    --- PASS: TestJourneyHandler_SetState/Set_State_Invalid (0.00s)
+=== RUN   TestJourneyHandler_Reset
+2025/12/28 22:59:35 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/journey_test.go, pkgName: handlers
+=== RUN   TestJourneyHandler_Reset/Reset_Journey
+--- PASS: TestJourneyHandler_Reset (0.20s)
+    --- PASS: TestJourneyHandler_Reset/Reset_Journey (0.00s)
+=== RUN   TestMeHandler_Me
+2025/12/28 22:59:36 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/me_test.go, pkgName: handlers
+=== RUN   TestMeHandler_Me/Get_Me_Success
+=== RUN   TestMeHandler_Me/Get_Me_Not_Found
+--- PASS: TestMeHandler_Me (0.18s)
+    --- PASS: TestMeHandler_Me/Get_Me_Success (0.00s)
+    --- PASS: TestMeHandler_Me/Get_Me_Not_Found (0.00s)
+=== RUN   TestMeHandler_MyTenants
+2025/12/28 22:59:36 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/me_test.go, pkgName: handlers
+=== RUN   TestMeHandler_MyTenants/Get_My_Tenants_Success
+=== RUN   TestMeHandler_MyTenants/Get_My_Tenants_Empty
+--- PASS: TestMeHandler_MyTenants (0.19s)
+    --- PASS: TestMeHandler_MyTenants/Get_My_Tenants_Success (0.00s)
+    --- PASS: TestMeHandler_MyTenants/Get_My_Tenants_Empty (0.00s)
+=== RUN   TestMeHandler_MyTenant
+2025/12/28 22:59:36 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/me_test.go, pkgName: handlers
+=== RUN   TestMeHandler_MyTenant/Get_My_Tenant_Success
+=== RUN   TestMeHandler_MyTenant/Get_My_Tenant_No_Context
+=== RUN   TestMeHandler_MyTenant/Get_My_Tenant_Not_Found
+--- PASS: TestMeHandler_MyTenant (0.19s)
+    --- PASS: TestMeHandler_MyTenant/Get_My_Tenant_Success (0.00s)
+    --- PASS: TestMeHandler_MyTenant/Get_My_Tenant_No_Context (0.00s)
+    --- PASS: TestMeHandler_MyTenant/Get_My_Tenant_Not_Found (0.00s)
+=== RUN   TestInvalidNodeID
+2025/12/28 22:59:36 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_errors_test.go, pkgName: handlers
+2025/12/28 22:59:36 [NodeSubmission] Get error: node not found in playbook
+--- PASS: TestInvalidNodeID (0.19s)
+=== RUN   TestUnauthorizedUser
+2025/12/28 22:59:36 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_errors_test.go, pkgName: handlers
+    node_errors_test.go:111: Unauthorized response: {"error":"unauthorized"}
+--- PASS: TestUnauthorizedUser (0.17s)
+=== RUN   TestMalformedJSON
+2025/12/28 22:59:37 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_errors_test.go, pkgName: handlers
+2025/12/28 22:59:37 [JourneyService] Creating node instance: userID=aaaaaaaa-bbbb-aaaa-aaaa-aaaaaaaaaaaa nodeID=json_node
+    node_errors_test.go:170: Malformed JSON response: {"error":"invalid character 'o' in literal null (expecting 'u')"}
+--- PASS: TestMalformedJSON (0.20s)
+=== RUN   TestInvalidStateTransition
+2025/12/28 22:59:37 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_errors_test.go, pkgName: handlers
+2025/12/28 22:59:37 [JourneyService] Creating node instance: userID=cccccccc-dddd-cccc-cccc-cccccccccccc nodeID=trans_node
+2025/12/28 22:59:37 [NodeSubmission] PatchState error: role student cannot transition from active to fake_state_xyz
+    node_errors_test.go:229: Invalid state transition response: {"error":"role student cannot transition from active to fake_state_xyz"}
+--- PASS: TestInvalidStateTransition (0.18s)
+=== RUN   TestGetProfile
+2025/12/28 22:59:37 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_profile_test.go, pkgName: handlers
+2025/12/28 22:59:37 [JourneyService] Creating node instance: userID=99999999-aaaa-9999-9999-999999999999 nodeID=S1_profile
+--- PASS: TestGetProfile (0.19s)
+=== RUN   TestGetProfile_NotFound
+2025/12/28 22:59:37 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_profile_test.go, pkgName: handlers
+2025/12/28 22:59:37 [JourneyService] Creating node instance: userID=88888888-aaaa-8888-8888-888888888888 nodeID=S1_profile
+--- PASS: TestGetProfile_NotFound (0.20s)
+=== RUN   TestLockedState_CantSubmit
+2025/12/28 22:59:37 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_full_test.go, pkgName: handlers
+2025/12/28 22:59:37 [JourneyService] Creating node instance: userID=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa nodeID=locked_node
+2025/12/28 22:59:37 [NodeSubmission] PatchState error: role student cannot transition from locked to submitted
+    node_state_full_test.go:92: Locked node response: {"error":"role student cannot transition from locked to submitted"}
+--- PASS: TestLockedState_CantSubmit (0.19s)
+=== RUN   TestWaitingState_CantAdvance
+2025/12/28 22:59:38 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_full_test.go, pkgName: handlers
+2025/12/28 22:59:38 [JourneyService] Creating node instance: userID=cccccccc-cccc-cccc-cccc-cccccccccccc nodeID=waiting_node
+2025/12/28 22:59:38 [NodeSubmission] PatchState error: role student cannot transition from waiting to done
+    node_state_full_test.go:162: Waiting node response: {"error":"role student cannot transition from waiting to done"}
+--- PASS: TestWaitingState_CantAdvance (0.50s)
+=== RUN   TestFullStateFlow
+2025/12/28 22:59:38 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_full_test.go, pkgName: handlers
+2025/12/28 22:59:38 [JourneyService] Creating node instance: userID=eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee nodeID=flow_node
+2025/12/28 22:59:38 [ActivateNextNodes] Starting for user=eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee node=flow_node
+    node_state_full_test.go:240: Done transition response: {"ok":true}
+--- PASS: TestFullStateFlow (0.24s)
+=== RUN   TestNeedsFixes_Resubmit
+2025/12/28 22:59:38 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_full_test.go, pkgName: handlers
+2025/12/28 22:59:38 [JourneyService] Creating node instance: userID=11112222-3333-4444-5555-666677778888 nodeID=fix_node
+--- PASS: TestNeedsFixes_Resubmit (0.20s)
+=== RUN   TestNodeStateTransitions_StudentSubmitsNode
+2025/12/28 22:59:38 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_transitions_test.go, pkgName: handlers
+2025/12/28 22:59:39 [JourneyService] Creating node instance: userID=123e4567-e89b-12d3-a456-426614174000 nodeID=test_node
+--- PASS: TestNodeStateTransitions_StudentSubmitsNode (0.19s)
+=== RUN   TestNodeStateTransitions_StudentCannotDirectlyApprove
+2025/12/28 22:59:39 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_transitions_test.go, pkgName: handlers
+2025/12/28 22:59:39 [JourneyService] Creating node instance: userID=123e4567-e89b-12d3-a456-426614174000 nodeID=test_node
+2025/12/28 22:59:39 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174000 node=test_node
+--- PASS: TestNodeStateTransitions_StudentCannotDirectlyApprove (0.24s)
+=== RUN   TestNodeStateTransitions_AdminApprovesNode
+2025/12/28 22:59:39 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_transitions_test.go, pkgName: handlers
+2025/12/28 22:59:39 [JourneyService] Creating node instance: userID=11111111-1111-1111-1111-111111111111 nodeID=test_node
+2025/12/28 22:59:39 [JourneyService] Creating node instance: userID=22222222-2222-2222-2222-222222222222 nodeID=test_node
+2025/12/28 22:59:39 [NodeSubmission] PatchState error: role admin cannot transition from active to done
+    node_state_transitions_test.go:216: Admin approval response: {"error":"role admin cannot transition from active to done"}
+--- PASS: TestNodeStateTransitions_AdminApprovesNode (0.23s)
+=== RUN   TestNodeStateTransitions_AdvisorRequestsFixes
+2025/12/28 22:59:39 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_transitions_test.go, pkgName: handlers
+2025/12/28 22:59:39 [JourneyService] Creating node instance: userID=11111111-1111-1111-1111-111111111111 nodeID=test_node
+--- PASS: TestNodeStateTransitions_AdvisorRequestsFixes (0.20s)
+=== RUN   TestNodeStateTransitions_StudentResubmitsAfterFixes
+2025/12/28 22:59:39 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_transitions_test.go, pkgName: handlers
+2025/12/28 22:59:39 [JourneyService] Creating node instance: userID=44444444-4444-4444-4444-444444444444 nodeID=test_node
+--- PASS: TestNodeStateTransitions_StudentResubmitsAfterFixes (0.23s)
+=== RUN   TestNodeStateTransitions_InvalidStateRejected
+2025/12/28 22:59:40 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_transitions_test.go, pkgName: handlers
+2025/12/28 22:59:40 [JourneyService] Creating node instance: userID=123e4567-e89b-12d3-a456-426614174000 nodeID=test_node
+2025/12/28 22:59:40 [NodeSubmission] PatchState error: role student cannot transition from active to invalid_state
+--- PASS: TestNodeStateTransitions_InvalidStateRejected (0.21s)
+=== RUN   TestNodeStateTransitions_EventsLogged
+2025/12/28 22:59:40 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_state_transitions_test.go, pkgName: handlers
+2025/12/28 22:59:40 [JourneyService] Creating node instance: userID=123e4567-e89b-12d3-a456-426614174000 nodeID=test_node
+--- PASS: TestNodeStateTransitions_EventsLogged (0.21s)
+=== RUN   TestNodeSubmissionHandler_GetSubmission
+2025/12/28 22:59:40 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go, pkgName: handlers
+=== RUN   TestNodeSubmissionHandler_GetSubmission/Get_Submission
+--- PASS: TestNodeSubmissionHandler_GetSubmission (0.22s)
+    --- PASS: TestNodeSubmissionHandler_GetSubmission/Get_Submission (0.00s)
+=== RUN   TestNodeSubmissionHandler_SubmitNode
+2025/12/28 22:59:40 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go, pkgName: handlers
+=== RUN   TestNodeSubmissionHandler_SubmitNode/Submit_Node
+--- PASS: TestNodeSubmissionHandler_SubmitNode (0.21s)
+    --- PASS: TestNodeSubmissionHandler_SubmitNode/Submit_Node (0.01s)
+=== RUN   TestNodeSubmissionHandler_SubmitProfile
+2025/12/28 22:59:40 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_submission_test.go, pkgName: handlers
+=== RUN   TestNodeSubmissionHandler_SubmitProfile/Submit_Profile
+2025/12/28 22:59:40 [syncProfileToUsers] Successfully synced profile data for user 70000000-0000-0000-0000-000000000000
+--- PASS: TestNodeSubmissionHandler_SubmitProfile (0.20s)
+    --- PASS: TestNodeSubmissionHandler_SubmitProfile/Submit_Profile (0.01s)
+=== RUN   TestFormNode_GetSubmission
+2025/12/28 22:59:41 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_types_test.go, pkgName: handlers
+2025/12/28 22:59:41 [JourneyService] Creating node instance: userID=11111111-1111-1111-1111-111111111111 nodeID=form_node
+    node_types_test.go:77: Form node response: map[locale: node_id:form_node playbook_version_id:22222222-2222-2222-2222-222222222222 slots:[] state:active]
+--- PASS: TestFormNode_GetSubmission (0.20s)
+=== RUN   TestConfirmTaskNode_GetSubmission
+2025/12/28 22:59:41 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_types_test.go, pkgName: handlers
+2025/12/28 22:59:41 [JourneyService] Creating node instance: userID=33333333-3333-3333-3333-333333333333 nodeID=confirm_node
+    node_types_test.go:144: ConfirmTask slots: [map[attachments:[] id:d201c345-a309-4d73-9cec-378d71f1f32b key:document mime:[] multiplicity:single required:true]]
+    node_types_test.go:146: ConfirmTask node response: map[locale: node_id:confirm_node playbook_version_id:44444444-4444-4444-4444-444444444444 slots:[map[attachments:[] id:d201c345-a309-4d73-9cec-378d71f1f32b key:document mime:[] multiplicity:single required:true]] state:active]
+--- PASS: TestConfirmTaskNode_GetSubmission (0.20s)
+=== RUN   TestInfoNode_GetSubmission
+2025/12/28 22:59:41 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_types_test.go, pkgName: handlers
+2025/12/28 22:59:41 [JourneyService] Creating node instance: userID=55555555-5555-5555-5555-555555555555 nodeID=info_node
+    node_types_test.go:204: Info node response: map[locale: node_id:info_node playbook_version_id:66666666-6666-6666-6666-666666666666 slots:[] state:active]
+--- PASS: TestInfoNode_GetSubmission (0.20s)
+=== RUN   TestFormNode_PutSubmission
+2025/12/28 22:59:41 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_types_test.go, pkgName: handlers
+2025/12/28 22:59:41 [JourneyService] Creating node instance: userID=77777777-7777-7777-7777-777777777777 nodeID=form_node
+--- PASS: TestFormNode_PutSubmission (0.20s)
+=== RUN   TestPresignUpload_Success
+2025/12/28 22:59:41 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_upload_test.go, pkgName: handlers
+2025/12/28 22:59:41 [JourneyService] Creating node instance: userID=11111111-aaaa-1111-1111-111111111111 nodeID=upload_node
+    node_upload_test.go:100: Presign success: map[object_key:node_uploads/upload_node/doc_slot/e095ac25-b399-4949-92f4-814c980cff4e/test.pdf upload_url:http://mock-s3.com/node_uploads/upload_node/doc_slot/e095ac25-b399-4949-92f4-814c980cff4e/test.pdf]
+--- PASS: TestPresignUpload_Success (0.19s)
+=== RUN   TestUpload_InvalidMime
+2025/12/28 22:59:42 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_upload_test.go, pkgName: handlers
+2025/12/28 22:59:42 [JourneyService] Creating node instance: userID=33333333-aaaa-3333-3333-333333333333 nodeID=mime_node
+2025/12/28 22:59:42 [NodeSubmission] Presign error: mime type image/jpeg not allowed for this slot
+    node_upload_test.go:177: Invalid MIME response: {"error":"mime type image/jpeg not allowed for this slot"}
+--- PASS: TestUpload_InvalidMime (0.20s)
+=== RUN   TestUpload_SizeTooLarge
+2025/12/28 22:59:42 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_upload_test.go, pkgName: handlers
+2025/12/28 22:59:42 [JourneyService] Creating node instance: userID=55555555-aaaa-5555-5555-555555555555 nodeID=size_node
+2025/12/28 22:59:42 [NodeSubmission] Presign error: file size 5242880 bytes is too large (max 1MB)
+    node_upload_test.go:255: Size too large response: {"error":"file size 5242880 bytes is too large (max 1MB)"}
+--- PASS: TestUpload_SizeTooLarge (0.20s)
+=== RUN   TestAttachUpload
+2025/12/28 22:59:42 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/node_upload_test.go, pkgName: handlers
+2025/12/28 22:59:42 [JourneyService] Creating node instance: userID=77777777-aaaa-7777-7777-777777777777 nodeID=attach_node
+2025/12/28 22:59:42 [JourneyService] AttachUpload: Attaching file.pdf to slot 3a49831f-591d-4d00-8586-e54c84b81aaf
+--- PASS: TestAttachUpload (0.23s)
+=== RUN   TestNotificationsHandler_Admin
+2025/12/28 22:59:42 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/notifications_extra_test.go, pkgName: handlers
+=== RUN   TestNotificationsHandler_Admin/List_Notifications
+2025/12/28 22:59:42 [ListNotifications] Starting - unreadOnly: false
+2025/12/28 22:59:42 [ListNotifications] Found 2 notifications
+=== RUN   TestNotificationsHandler_Admin/List_Unread_Only
+2025/12/28 22:59:42 [ListNotifications] Starting - unreadOnly: true
+2025/12/28 22:59:42 [ListNotifications] Found 1 notifications
+=== RUN   TestNotificationsHandler_Admin/Get_Unread_Count
+=== RUN   TestNotificationsHandler_Admin/Mark_As_Read
+=== RUN   TestNotificationsHandler_Admin/Mark_All_As_Read
+--- PASS: TestNotificationsHandler_Admin (0.20s)
+    --- PASS: TestNotificationsHandler_Admin/List_Notifications (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/List_Unread_Only (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Get_Unread_Count (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Mark_As_Read (0.00s)
+    --- PASS: TestNotificationsHandler_Admin/Mark_All_As_Read (0.00s)
+=== RUN   TestNotificationHandler_Student_MarkAllAsRead
+2025/12/28 22:59:42 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/notifications_extra_test.go, pkgName: handlers
+--- PASS: TestNotificationHandler_Student_MarkAllAsRead (0.27s)
+=== RUN   TestNotificationHandler_GetUnread
+2025/12/28 22:59:43 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationHandler_GetUnread/Get_Unread
+2025/12/28 22:59:43 [GetUnread reqID=1766944783288516000] Handler called
+2025/12/28 22:59:43 [GetUnread reqID=1766944783288516000] userID from context: '123e4567-e89b-12d3-a456-426614174000'
+2025/12/28 22:59:43 [GetUnread reqID=1766944783288516000] returning 1 notifications
+--- PASS: TestNotificationHandler_GetUnread (0.23s)
+    --- PASS: TestNotificationHandler_GetUnread/Get_Unread (0.00s)
+=== RUN   TestNotificationHandler_MarkAsRead
+2025/12/28 22:59:43 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationHandler_MarkAsRead/Mark_As_Read
+--- PASS: TestNotificationHandler_MarkAsRead (0.21s)
+    --- PASS: TestNotificationHandler_MarkAsRead/Mark_As_Read (0.00s)
+=== RUN   TestNotificationHandler_List
+2025/12/28 22:59:43 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/notifications_test.go, pkgName: handlers
+--- PASS: TestNotificationHandler_List (0.21s)
+=== RUN   TestNotificationHandler_MarkAllAsRead
+2025/12/28 22:59:43 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationHandler_MarkAllAsRead/Mark_All_As_Read
+--- PASS: TestNotificationHandler_MarkAllAsRead (0.21s)
+    --- PASS: TestNotificationHandler_MarkAllAsRead/Mark_All_As_Read (0.00s)
+=== RUN   TestNotificationHandler_Unauthorized
+2025/12/28 22:59:44 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/notifications_test.go, pkgName: handlers
+=== RUN   TestNotificationHandler_Unauthorized/Get_Unread_Unauthorized
+2025/12/28 22:59:44 [GetUnread reqID=1766944784122927000] Handler called
+2025/12/28 22:59:44 [GetUnread reqID=1766944784122927000] userID from context: ''
+2025/12/28 22:59:44 [GetUnread reqID=1766944784122927000] missing userID. claims_exists=false, current_user_exists=false, claims=<nil>, current_user=<nil>
+=== RUN   TestNotificationHandler_Unauthorized/Mark_As_Read_Unauthorized
+2025/12/28 22:59:44 notifications: missing userID in context
+=== RUN   TestNotificationHandler_Unauthorized/Mark_All_As_Read_Unauthorized
+2025/12/28 22:59:44 notifications: missing userID in context
+--- PASS: TestNotificationHandler_Unauthorized (0.19s)
+    --- PASS: TestNotificationHandler_Unauthorized/Get_Unread_Unauthorized (0.00s)
+    --- PASS: TestNotificationHandler_Unauthorized/Mark_As_Read_Unauthorized (0.00s)
+    --- PASS: TestNotificationHandler_Unauthorized/Mark_All_As_Read_Unauthorized (0.00s)
+=== RUN   TestReviewAttachment_AdvisorApproves
+2025/12/28 22:59:44 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/review_attachment_test.go, pkgName: handlers
+2025/12/28 22:59:44 [ActivateNextNodes] Starting for user=bc8f760e-f5b8-4424-8c51-95a9d7370e6a node=confirm_task
+--- PASS: TestReviewAttachment_AdvisorApproves (0.21s)
+=== RUN   TestReviewAttachment_AdvisorApprovesWithComments
+2025/12/28 22:59:44 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/review_attachment_test.go, pkgName: handlers
+2025/12/28 22:59:44 [ActivateNextNodes] Starting for user=95f4fcdf-915d-40ca-95aa-317a02a0e24d node=n
+--- PASS: TestReviewAttachment_AdvisorApprovesWithComments (0.23s)
+=== RUN   TestReviewAttachment_AdvisorUnassignedStudent_Forbidden
+2025/12/28 22:59:44 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/review_attachment_test.go, pkgName: handlers
+--- PASS: TestReviewAttachment_AdvisorUnassignedStudent_Forbidden (0.24s)
+=== RUN   TestReviewAttachment_AdminApprovesAnyStudent
+2025/12/28 22:59:44 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/review_attachment_test.go, pkgName: handlers
+2025/12/28 22:59:45 [ActivateNextNodes] Starting for user=71da70b3-8a6d-452d-9d21-025bad7f30d0 node=n
+--- PASS: TestReviewAttachment_AdminApprovesAnyStudent (0.19s)
+=== RUN   TestNotifyAdvisorsOnSubmission
+2025/12/28 22:59:45 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/review_attachment_test.go, pkgName: handlers
+2025/12/28 22:59:45 [NotifyAdvisors] Found 2 advisors for student 19e1e510-d37d-489c-bf8e-84f0a23eef66
+2025/12/28 22:59:45 [NotifyAdvisors] Created submission notification for student 19e1e510-d37d-489c-bf8e-84f0a23eef66, node confirm_task, 2 advisors assigned
+--- PASS: TestNotifyAdvisorsOnSubmission (0.20s)
+=== RUN   TestGetAdvisorsForStudent
+2025/12/28 22:59:45 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/review_attachment_test.go, pkgName: handlers
+--- PASS: TestGetAdvisorsForStudent (0.18s)
+=== RUN   TestHasAdvisors
+2025/12/28 22:59:45 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/review_attachment_test.go, pkgName: handlers
+--- PASS: TestHasAdvisors (0.20s)
+=== RUN   TestSearchHandler_GlobalSearch
+2025/12/28 22:59:45 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/search_test.go, pkgName: handlers
+=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Users
+=== RUN   TestSearchHandler_GlobalSearch/Admin_Search_Documents
+=== RUN   TestSearchHandler_GlobalSearch/Student_Search_Own_Document
+=== RUN   TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users
+--- PASS: TestSearchHandler_GlobalSearch (0.20s)
+    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Users (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Admin_Search_Documents (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Student_Search_Own_Document (0.00s)
+    --- PASS: TestSearchHandler_GlobalSearch/Student_Cannot_Search_Users (0.00s)
+=== RUN   TestServiceIsolation
+2025/12/28 22:59:45 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/service_isolation_test.go, pkgName: handlers
+2025/12/28 22:59:45 [EMAIL] SMTP not configured - email features disabled
+=== RUN   TestServiceIsolation/Calendar_Isolation
+=== RUN   TestServiceIsolation/Chat_Isolation
+--- PASS: TestServiceIsolation (0.19s)
+    --- PASS: TestServiceIsolation/Calendar_Isolation (0.01s)
+    --- PASS: TestServiceIsolation/Chat_Isolation (0.01s)
+=== RUN   TestSuperadminAdminsHandler_ListAdmins
+2025/12/28 22:59:46 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_ListAdmins/List_Admins_Success
+--- PASS: TestSuperadminAdminsHandler_ListAdmins (0.18s)
+    --- PASS: TestSuperadminAdminsHandler_ListAdmins/List_Admins_Success (0.00s)
+=== RUN   TestSuperadminAdminsHandler_GetAdmin
+2025/12/28 22:59:46 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_GetAdmin/Get_Admin_Success
+--- PASS: TestSuperadminAdminsHandler_GetAdmin (0.18s)
+    --- PASS: TestSuperadminAdminsHandler_GetAdmin/Get_Admin_Success (0.00s)
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin
+2025/12/28 22:59:46 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success
+--- PASS: TestSuperadminAdminsHandler_CreateAdmin (0.27s)
+    --- PASS: TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success (0.08s)
+=== RUN   TestSuperadminAdminsHandler_DeleteAdmin
+2025/12/28 22:59:46 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_DeleteAdmin/Delete_Success
+--- PASS: TestSuperadminAdminsHandler_DeleteAdmin (0.20s)
+    --- PASS: TestSuperadminAdminsHandler_DeleteAdmin/Delete_Success (0.00s)
+=== RUN   TestSuperadminAdminsHandler_UpdateAdmin
+2025/12/28 22:59:46 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_UpdateAdmin/Update_Admin_Success
+--- PASS: TestSuperadminAdminsHandler_UpdateAdmin (0.26s)
+    --- PASS: TestSuperadminAdminsHandler_UpdateAdmin/Update_Admin_Success (0.00s)
+=== RUN   TestSuperadminAdminsHandler_ResetPassword
+2025/12/28 22:59:47 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_ResetPassword/Reset_Success
+    superadmin_admins_test.go:192: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go:192
         	Error:      	Not equal: 
-        	            	expected: "8080"
-        	            	actual  : "8280"
-        	            	
-        	            	Diff:
-        	            	--- Expected
-        	            	+++ Actual
-        	            	@@ -1 +1 @@
-        	            	-8080
-        	            	+8280
-        	Test:       	TestMustLoad_Defaults
-    config_test.go:29: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/config/config_test.go:29
-        	Error:      	Not equal: 
-        	            	expected: "change-me"
-        	            	actual  : "super-secret-student-portal-data"
-        	            	
-        	            	Diff:
-        	            	--- Expected
-        	            	+++ Actual
-        	            	@@ -1 +1 @@
-        	            	-change-me
-        	            	+super-secret-student-portal-data
-        	Test:       	TestMustLoad_Defaults
-    config_test.go:34: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/config/config_test.go:34
-        	Error:      	Not equal: 
-        	            	expected: "1025"
-        	            	actual  : "1027"
-        	            	
-        	            	Diff:
-        	            	--- Expected
-        	            	+++ Actual
-        	            	@@ -1 +1 @@
-        	            	-1025
-        	            	+1027
-        	Test:       	TestMustLoad_Defaults
-2025/12/24 16:25:04 Config loaded: Port=3000, Env=production, FrontendBase=http://localhost:5173, ServerURL=http://localhost:8080
-2025/12/24 16:25:04 Config loaded: Port=8280, Env=development, FrontendBase=http://localhost:5173, ServerURL=http://localhost:8080
+        	            	expected: 200
+        	            	actual  : 400
+        	Test:       	TestSuperadminAdminsHandler_ResetPassword/Reset_Success
+--- FAIL: TestSuperadminAdminsHandler_ResetPassword (0.20s)
+    --- FAIL: TestSuperadminAdminsHandler_ResetPassword/Reset_Success (0.00s)
+=== RUN   TestSuperadminLogsHandler_ListLogs
+2025/12/28 22:59:47 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_logs_test.go, pkgName: handlers
+=== RUN   TestSuperadminLogsHandler_ListLogs/List_All_Logs
+=== RUN   TestSuperadminLogsHandler_ListLogs/List_Logs_With_Tenant_Filter
+=== RUN   TestSuperadminLogsHandler_ListLogs/List_Logs_With_Action_Filter
+=== RUN   TestSuperadminLogsHandler_ListLogs/List_Logs_With_Pagination
+=== RUN   TestSuperadminLogsHandler_ListLogs/List_Logs_With_Date_Filter
+--- PASS: TestSuperadminLogsHandler_ListLogs (0.19s)
+    --- PASS: TestSuperadminLogsHandler_ListLogs/List_All_Logs (0.00s)
+    --- PASS: TestSuperadminLogsHandler_ListLogs/List_Logs_With_Tenant_Filter (0.00s)
+    --- PASS: TestSuperadminLogsHandler_ListLogs/List_Logs_With_Action_Filter (0.00s)
+    --- PASS: TestSuperadminLogsHandler_ListLogs/List_Logs_With_Pagination (0.00s)
+    --- PASS: TestSuperadminLogsHandler_ListLogs/List_Logs_With_Date_Filter (0.00s)
+=== RUN   TestSuperadminLogsHandler_GetLogStats
+2025/12/28 22:59:47 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_logs_test.go, pkgName: handlers
+=== RUN   TestSuperadminLogsHandler_GetLogStats/Get_Log_Stats
+--- PASS: TestSuperadminLogsHandler_GetLogStats (0.18s)
+    --- PASS: TestSuperadminLogsHandler_GetLogStats/Get_Log_Stats (0.00s)
+=== RUN   TestSuperadminLogsHandler_GetActions
+2025/12/28 22:59:47 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_logs_test.go, pkgName: handlers
+=== RUN   TestSuperadminLogsHandler_GetActions/Get_Distinct_Actions
+--- PASS: TestSuperadminLogsHandler_GetActions (0.21s)
+    --- PASS: TestSuperadminLogsHandler_GetActions/Get_Distinct_Actions (0.00s)
+=== RUN   TestSuperadminLogsHandler_GetEntityTypes
+2025/12/28 22:59:47 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_logs_test.go, pkgName: handlers
+=== RUN   TestSuperadminLogsHandler_GetEntityTypes/Get_Distinct_Entity_Types
+--- PASS: TestSuperadminLogsHandler_GetEntityTypes (0.22s)
+    --- PASS: TestSuperadminLogsHandler_GetEntityTypes/Get_Distinct_Entity_Types (0.00s)
+=== RUN   TestSuperadminSettingsHandler_ListSettings
+2025/12/28 22:59:48 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_settings_test.go, pkgName: handlers
+=== RUN   TestSuperadminSettingsHandler_ListSettings/List_All_Settings
+=== RUN   TestSuperadminSettingsHandler_ListSettings/List_Settings_By_Category
+--- PASS: TestSuperadminSettingsHandler_ListSettings (0.19s)
+    --- PASS: TestSuperadminSettingsHandler_ListSettings/List_All_Settings (0.00s)
+    --- PASS: TestSuperadminSettingsHandler_ListSettings/List_Settings_By_Category (0.00s)
+=== RUN   TestSuperadminSettingsHandler_GetSetting
+2025/12/28 22:59:48 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_settings_test.go, pkgName: handlers
+=== RUN   TestSuperadminSettingsHandler_GetSetting/Get_Setting_Success
+=== RUN   TestSuperadminSettingsHandler_GetSetting/Get_Setting_Not_Found
+--- PASS: TestSuperadminSettingsHandler_GetSetting (0.21s)
+    --- PASS: TestSuperadminSettingsHandler_GetSetting/Get_Setting_Success (0.00s)
+    --- PASS: TestSuperadminSettingsHandler_GetSetting/Get_Setting_Not_Found (0.00s)
+=== RUN   TestSuperadminSettingsHandler_UpdateSetting
+2025/12/28 22:59:48 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_settings_test.go, pkgName: handlers
+=== RUN   TestSuperadminSettingsHandler_UpdateSetting/Create_New_Setting
+=== RUN   TestSuperadminSettingsHandler_UpdateSetting/Update_Existing_Setting
+=== RUN   TestSuperadminSettingsHandler_UpdateSetting/Update_Setting_Missing_Value
+--- PASS: TestSuperadminSettingsHandler_UpdateSetting (0.19s)
+    --- PASS: TestSuperadminSettingsHandler_UpdateSetting/Create_New_Setting (0.00s)
+    --- PASS: TestSuperadminSettingsHandler_UpdateSetting/Update_Existing_Setting (0.00s)
+    --- PASS: TestSuperadminSettingsHandler_UpdateSetting/Update_Setting_Missing_Value (0.00s)
+=== RUN   TestSuperadminSettingsHandler_DeleteSetting
+2025/12/28 22:59:48 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_settings_test.go, pkgName: handlers
+=== RUN   TestSuperadminSettingsHandler_DeleteSetting/Delete_Setting_Success
+=== RUN   TestSuperadminSettingsHandler_DeleteSetting/Delete_Setting_Not_Found
+--- PASS: TestSuperadminSettingsHandler_DeleteSetting (0.22s)
+    --- PASS: TestSuperadminSettingsHandler_DeleteSetting/Delete_Setting_Success (0.00s)
+    --- PASS: TestSuperadminSettingsHandler_DeleteSetting/Delete_Setting_Not_Found (0.00s)
+=== RUN   TestSuperadminSettingsHandler_GetCategories
+2025/12/28 22:59:48 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_settings_test.go, pkgName: handlers
+=== RUN   TestSuperadminSettingsHandler_GetCategories/Get_Categories
+--- PASS: TestSuperadminSettingsHandler_GetCategories (0.20s)
+    --- PASS: TestSuperadminSettingsHandler_GetCategories/Get_Categories (0.00s)
+=== RUN   TestSuperadminSettingsHandler_BulkUpdate
+2025/12/28 22:59:49 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_settings_test.go, pkgName: handlers
+=== RUN   TestSuperadminSettingsHandler_BulkUpdate/Bulk_Update_Multiple_Settings
+=== RUN   TestSuperadminSettingsHandler_BulkUpdate/Bulk_Update_Empty
+--- PASS: TestSuperadminSettingsHandler_BulkUpdate (0.20s)
+    --- PASS: TestSuperadminSettingsHandler_BulkUpdate/Bulk_Update_Multiple_Settings (0.01s)
+    --- PASS: TestSuperadminSettingsHandler_BulkUpdate/Bulk_Update_Empty (0.00s)
+=== RUN   TestSuperadminTenantsHandler_ListTenants
+2025/12/28 22:59:49 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_tenants_test.go, pkgName: handlers
+=== RUN   TestSuperadminTenantsHandler_ListTenants/List_Tenants_Success
+--- PASS: TestSuperadminTenantsHandler_ListTenants (0.20s)
+    --- PASS: TestSuperadminTenantsHandler_ListTenants/List_Tenants_Success (0.00s)
+=== RUN   TestSuperadminTenantsHandler_GetTenant
+2025/12/28 22:59:49 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_tenants_test.go, pkgName: handlers
+=== RUN   TestSuperadminTenantsHandler_GetTenant/Get_Tenant_Success
+=== RUN   TestSuperadminTenantsHandler_GetTenant/Get_Tenant_Not_Found
+--- PASS: TestSuperadminTenantsHandler_GetTenant (0.18s)
+    --- PASS: TestSuperadminTenantsHandler_GetTenant/Get_Tenant_Success (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_GetTenant/Get_Tenant_Not_Found (0.00s)
+=== RUN   TestSuperadminTenantsHandler_CreateTenant
+2025/12/28 22:59:49 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_tenants_test.go, pkgName: handlers
+=== RUN   TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Success
+=== RUN   TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Missing_Required_Fields
+=== RUN   TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Invalid_Type
+=== RUN   TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Duplicate_Slug
+--- PASS: TestSuperadminTenantsHandler_CreateTenant (0.18s)
+    --- PASS: TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Success (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Missing_Required_Fields (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Invalid_Type (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_CreateTenant/Create_Tenant_Duplicate_Slug (0.00s)
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices
+2025/12/28 22:59:49 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_tenants_test.go, pkgName: handlers
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Remove_Calendar
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Enable_Both
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Disable_All_Optional
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Invalid_Service
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Tenant_Not_Found
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Enable_SMTP
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Enable_All_Services
+=== RUN   TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Email_Alias
+--- PASS: TestSuperadminTenantsHandler_UpdateTenantServices (0.24s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Remove_Calendar (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Enable_Both (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Disable_All_Optional (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Invalid_Service (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Tenant_Not_Found (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Enable_SMTP (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Enable_All_Services (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_UpdateTenantServices/Update_Services_Success_-_Email_Alias (0.00s)
+=== RUN   TestSuperadminTenantsHandler_DeleteTenant
+2025/12/28 22:59:50 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_tenants_test.go, pkgName: handlers
+=== RUN   TestSuperadminTenantsHandler_DeleteTenant/Delete_(Deactivate)_Tenant_Success
+=== RUN   TestSuperadminTenantsHandler_DeleteTenant/Delete_Tenant_Not_Found
+--- PASS: TestSuperadminTenantsHandler_DeleteTenant (0.21s)
+    --- PASS: TestSuperadminTenantsHandler_DeleteTenant/Delete_(Deactivate)_Tenant_Success (0.00s)
+    --- PASS: TestSuperadminTenantsHandler_DeleteTenant/Delete_Tenant_Not_Found (0.00s)
+=== RUN   TestUsersHandler_GetPendingEmailVerification
+2025/12/28 22:59:50 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+--- PASS: TestUsersHandler_GetPendingEmailVerification (0.19s)
+=== RUN   TestUsersHandler_UpdateMe_EmailChange
+2025/12/28 22:59:50 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+--- PASS: TestUsersHandler_UpdateMe_EmailChange (0.37s)
+=== RUN   TestUsersHandler_PresignAvatarUpload
+2025/12/28 22:59:50 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+--- PASS: TestUsersHandler_PresignAvatarUpload (0.21s)
+=== RUN   TestUsersHandler_UpdateUser
+2025/12/28 22:59:51 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_UpdateUser/Update_User_Not_Found
+--- PASS: TestUsersHandler_UpdateUser (0.19s)
+    --- PASS: TestUsersHandler_UpdateUser/Update_User_Not_Found (0.00s)
+=== RUN   TestUsersHandler_UpdateMe_Failures
+2025/12/28 22:59:51 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_UpdateMe_Failures/Update_Me_Incorrect_Password
+--- PASS: TestUsersHandler_UpdateMe_Failures (0.32s)
+    --- PASS: TestUsersHandler_UpdateMe_Failures/Update_Me_Incorrect_Password (0.07s)
+=== RUN   TestUsersHandler_ChangeOwnPassword
+2025/12/28 22:59:51 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+--- PASS: TestUsersHandler_ChangeOwnPassword (0.50s)
+=== RUN   TestUsersHandler_ResetPasswordForUser
+2025/12/28 22:59:52 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+--- PASS: TestUsersHandler_ResetPasswordForUser (0.32s)
+=== RUN   TestUsersHandler_CreateUser_Failures
+2025/12/28 22:59:52 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_CreateUser_Failures/Create_User_Invalid_JSON
+--- PASS: TestUsersHandler_CreateUser_Failures (0.17s)
+    --- PASS: TestUsersHandler_CreateUser_Failures/Create_User_Invalid_JSON (0.00s)
+=== RUN   TestUsersHandler_ChangeOwnPassword_Failures
+2025/12/28 22:59:52 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_ChangeOwnPassword_Failures/Change_Password_Invalid_JSON
+--- PASS: TestUsersHandler_ChangeOwnPassword_Failures (0.18s)
+    --- PASS: TestUsersHandler_ChangeOwnPassword_Failures/Change_Password_Invalid_JSON (0.00s)
+=== RUN   TestUsersHandler_UpdateMe_InvalidClaims
+2025/12/28 22:59:52 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_UpdateMe_InvalidClaims/Update_Me_Unauthorized
+--- PASS: TestUsersHandler_UpdateMe_InvalidClaims (0.24s)
+    --- PASS: TestUsersHandler_UpdateMe_InvalidClaims/Update_Me_Unauthorized (0.00s)
+=== RUN   TestUsersHandler_SetActive_Failures
+2025/12/28 22:59:53 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_SetActive_Failures/Set_Active_Invalid_JSON
+--- PASS: TestUsersHandler_SetActive_Failures (0.19s)
+    --- PASS: TestUsersHandler_SetActive_Failures/Set_Active_Invalid_JSON (0.00s)
+=== RUN   TestUsersHandler_ChangeOwnPassword_MissingID
+2025/12/28 22:59:53 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_extra_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_ChangeOwnPassword_MissingID/Change_Password_Missing_ID
+--- PASS: TestUsersHandler_ChangeOwnPassword_MissingID (0.21s)
+    --- PASS: TestUsersHandler_ChangeOwnPassword_MissingID/Change_Password_Missing_ID (0.00s)
+=== RUN   TestUsersHandler_UpdateMe_ProfileFields
+2025/12/28 22:59:53 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_profile_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_UpdateMe_ProfileFields/Update_Bio_and_Address
+--- PASS: TestUsersHandler_UpdateMe_ProfileFields (0.35s)
+    --- PASS: TestUsersHandler_UpdateMe_ProfileFields/Update_Bio_and_Address (0.08s)
+=== RUN   TestUsersHandler_UpdateAvatar
+2025/12/28 22:59:53 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_profile_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_UpdateAvatar/Update_Avatar_Success
+2025/12/28 22:59:53 [UpdateAvatar] Request started
+2025/12/28 22:59:53 [UpdateAvatar] UserID: 89cc41da-2dae-475e-94a8-8a9445b4ac0f
+2025/12/28 22:59:53 [UpdateAvatar] New Avatar URL: https://example.com/new-avatar.jpg
+--- PASS: TestUsersHandler_UpdateAvatar (0.18s)
+    --- PASS: TestUsersHandler_UpdateAvatar/Update_Avatar_Success (0.00s)
+=== RUN   TestUsersHandler_RateLimiting
+2025/12/28 22:59:53 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_profile_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_RateLimiting/Rate_Limit_Exceeded
+--- PASS: TestUsersHandler_RateLimiting (0.69s)
+    --- PASS: TestUsersHandler_RateLimiting/Rate_Limit_Exceeded (0.07s)
+=== RUN   TestUsersHandler_CreateUser
+2025/12/28 22:59:54 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_CreateUser/Create_Student_Success
+2025/12/28 22:59:54 [UserService] Invalidating user list cache
+--- PASS: TestUsersHandler_CreateUser (0.26s)
+    --- PASS: TestUsersHandler_CreateUser/Create_Student_Success (0.08s)
+=== RUN   TestUsersHandler_ListUsers
+2025/12/28 22:59:54 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_ListUsers/List_All_Users
+=== RUN   TestUsersHandler_ListUsers/Filter_by_Role
+--- PASS: TestUsersHandler_ListUsers (0.23s)
+    --- PASS: TestUsersHandler_ListUsers/List_All_Users (0.00s)
+    --- PASS: TestUsersHandler_ListUsers/Filter_by_Role (0.00s)
+=== RUN   TestUsersHandler_UpdateMe_Extended
+2025/12/28 22:59:55 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_UpdateMe_Extended/Update_Me_Extended
+--- PASS: TestUsersHandler_UpdateMe_Extended (0.35s)
+    --- PASS: TestUsersHandler_UpdateMe_Extended/Update_Me_Extended (0.08s)
+=== RUN   TestUsersHandler_PresignAvatar
+2025/12/28 22:59:55 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_PresignAvatar/Presign_Avatar
+--- PASS: TestUsersHandler_PresignAvatar (0.18s)
+    --- PASS: TestUsersHandler_PresignAvatar/Presign_Avatar (0.00s)
+=== RUN   TestUsersHandler_VerifyEmailChange
+2025/12/28 22:59:55 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_VerifyEmailChange/Verify_Email
+    users_test.go:245: Response: {"email":"new@ex.com","message":"email verified and updated successfully"}
+--- PASS: TestUsersHandler_VerifyEmailChange (0.18s)
+    --- PASS: TestUsersHandler_VerifyEmailChange/Verify_Email (0.00s)
+=== RUN   TestUsersHandler_SetActive
+2025/12/28 22:59:55 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/users_test.go, pkgName: handlers
+=== RUN   TestUsersHandler_SetActive/Set_Active_False
+--- PASS: TestUsersHandler_SetActive (0.25s)
+    --- PASS: TestUsersHandler_SetActive/Set_Active_False (0.00s)
 FAIL
-coverage: 91.7% of statements
-FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/config	0.841s
-	github.com/AlmatJuvashev/phd-students-portal/backend/internal/db		coverage: 0.0% of statements
-2025/12/24 16:25:07 [EMAIL] SMTP not configured - email features disabled
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
-2025/12/24 16:25:07 [AuthService.Login] Found user: id=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, isActive=true
-2025/12/24 16:25:07 [AuthService.Login] Password verified for user=security_test_user
-2025/12/24 16:25:07 [AuthService.Login] No tenant context, using user role=student
-2025/12/24 16:25:07 [AuthService.Login] Login successful: userID=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, tenantID=
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
-2025/12/24 16:25:07 [AuthService.Login] Found user: id=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, isActive=true
-2025/12/24 16:25:07 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$hLr3DzTQsyD0kIKe9WrpsOh
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
-2025/12/24 16:25:07 [AuthService.Login] Found user: id=77ab8011-b83a-403f-ad89-bc4023fe90bf, role=student, isActive=true
-2025/12/24 16:25:07 [AuthService.Login] Password mismatch for user=security_test_user, hash_prefix=$2a$10$hLr3DzTQsyD0kIKe9WrpsOh
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
-2025/12/24 16:25:07 [AuthService.Login] User not found: username=security_test_user, error=record not found
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
-2025/12/24 16:25:07 [AuthService.Login] User not found: username=security_test_user, error=record not found
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-2025/12/24 16:25:07 [AuthService.Login] Attempting login for username=security_test_user, tenantID=
-2025/12/24 16:25:07 [AuthService.Login] User not found: username=security_test_user, error=record not found
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-2025/12/24 16:25:18 [ListNotifications] Starting - unreadOnly: false
-2025/12/24 16:25:18 [ListNotifications] Found 2 notifications
-2025/12/24 16:25:18 [ListNotifications] Starting - unreadOnly: true
-2025/12/24 16:25:18 [ListNotifications] Found 0 notifications
---- FAIL: TestNotificationsHandler_ListNotifications (7.28s)
-    --- FAIL: TestNotificationsHandler_ListNotifications/List_Unread_Only (0.09s)
-        admin_notifications_test.go:63: 
-            	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:63
-            	Error:      	"[]" should have 1 item(s), but has 0
-            	Test:       	TestNotificationsHandler_ListNotifications/List_Unread_Only
-panic: runtime error: index out of range [0] with length 0 [recovered]
-	panic: runtime error: index out of range [0] with length 0
-
-goroutine 54 [running]:
-testing.tRunner.func1.2({0x1034ec6a0, 0x14000022f18})
-	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1734 +0x1ac
-testing.tRunner.func1()
-	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1737 +0x334
-panic({0x1034ec6a0?, 0x14000022f18?})
-	/opt/homebrew/Cellar/go/1.24.2/libexec/src/runtime/panic.go:792 +0x124
-github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers_test.TestNotificationsHandler_ListNotifications.func2(0x14000276c40)
-	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/admin_notifications_test.go:64 +0x238
-testing.tRunner(0x14000276c40, 0x14000264df0)
-	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1792 +0xe4
-created by testing.(*T).Run in goroutine 43
-	/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1851 +0x374
-FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	13.509s
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/logging	1.140s	coverage: 100.0% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware	47.557s	coverage: 53.8% of statements
-	github.com/AlmatJuvashev/phd-students-portal/backend/internal/models		coverage: 0.0% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/permissions	1.641s	coverage: 93.5% of statements
-2025/12/24 16:25:12 Failed to truncate table document_versions: pq: deadlock detected
-2025/12/24 16:25:24 Failed to truncate table documents: pq: deadlock detected
-2025/12/24 16:25:25 Failed to truncate table document_versions: pq: deadlock detected
-2025/12/24 16:25:30 Failed to truncate table documents: pq: deadlock detected
-2025/12/24 16:25:31 Failed to truncate table document_versions: pq: deadlock detected
---- FAIL: TestSQLAdminRepository_ListStudentsForMonitor (10.39s)
-    admin_repository_test.go:77: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/admin_repository_test.go:77
-        	Error:      	"[]" should have 1 item(s), but has 0
-        	Test:       	TestSQLAdminRepository_ListStudentsForMonitor
-2025/12/24 16:25:39 Failed to truncate table document_versions: pq: deadlock detected
---- FAIL: TestSQLAdminRepository_GetStudentDetails (9.13s)
-    admin_repository_test.go:105: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/admin_repository_test.go:105
-        	Error:      	Received unexpected error:
-        	            	sql: no rows in result set
-        	Test:       	TestSQLAdminRepository_GetStudentDetails
-2025/12/24 16:25:44 Failed to truncate table document_versions: pq: deadlock detected
-2025/12/24 16:25:46 Failed to truncate table users: pq: deadlock detected
---- FAIL: TestSQLAdminRepository_AdminNotifications (3.60s)
-    admin_repository_test.go:146: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/admin_repository_test.go:146
-        	Error:      	Received unexpected error:
-        	            	pq: insert or update on table "admin_notifications" violates foreign key constraint "admin_notifications_student_id_fkey"
-        	Test:       	TestSQLAdminRepository_AdminNotifications
---- FAIL: TestSQLJourneyRepository_State (2.13s)
-    journey_repository_test.go:36: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/journey_repository_test.go:36
-        	Error:      	Received unexpected error:
-        	            	pq: insert or update on table "journey_states" violates foreign key constraint "journey_states_user_id_fkey"
-        	Test:       	TestSQLJourneyRepository_State
---- FAIL: TestSQLJourneyRepository_NodeInstances (1.84s)
-    journey_repository_test.go:60: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/journey_repository_test.go:60
-        	Error:      	Received unexpected error:
-        	            	pq: insert or update on table "node_instances" violates foreign key constraint "node_instances_user_id_fkey"
-        	Test:       	TestSQLJourneyRepository_NodeInstances
---- FAIL: TestSQLTenantRepository_Stats (2.52s)
-    tenant_repository_test.go:136: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/tenant_repository_test.go:136
-        	Error:      	Received unexpected error:
-        	            	pq: deadlock detected
-        	Test:       	TestSQLTenantRepository_Stats
-2025/12/24 16:26:07 Failed to truncate table users: pq: deadlock detected
---- FAIL: TestChatRepository_ListMembers (1.93s)
-    chat_repository_test.go:163: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/repository/chat_repository_test.go:163
-        	Error:      	"[{00000000-0000-0000-0000-000000000001 d38b0593-f69e-4be9-947f-46a00dbdd04f e9492735-a389-4d84-8725-59fda697ef1e member 2025-12-24 11:26:26.586068 +0000 UTC <nil> Test User chattest10@test.com chattest10}]" should have 2 item(s), but has 1
-        	Test:       	TestChatRepository_ListMembers
-FAIL
-coverage: 13.9% of statements
-FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository	90.422s
-	github.com/AlmatJuvashev/phd-students-portal/backend/internal/seed		coverage: 0.0% of statements
-2025/12/24 16:25:09 [EMAIL] Sent email to student@test.com: Reset Your Password
-2025/12/24 16:25:09 [EMAIL] Skipping password reset email to student@test.com (SMTP not configured)
-2025/12/24 16:25:09 [EMAIL] Failed to send email to new@test.com: smtp down
-2025/12/24 16:25:09 [EMAIL] Sent email to user@test.com: You have been added to chat room: Research Room
-2025/12/24 16:25:24 Failed to truncate table documents: pq: deadlock detected
-2025/12/24 16:25:25 Failed to truncate table document_versions: pq: deadlock detected
---- FAIL: TestCalendarService_GetEvents (2.75s)
-    services_test.go:311: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go:311
-        	Error:      	"[]" should have 1 item(s), but has 0
-        	Test:       	TestCalendarService_GetEvents
---- FAIL: TestCalendarService_GetEvent (3.62s)
-    services_test.go:337: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go:337
-        	Error:      	Received unexpected error:
-        	            	pq: invalid input syntax for type uuid: ""
-        	Test:       	TestCalendarService_GetEvent
---- FAIL: TestCalendarService_UpdateEvent (1.96s)
-    services_test.go:366: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go:366
-        	Error:      	Received unexpected error:
-        	            	event not found or unauthorized
-        	Test:       	TestCalendarService_UpdateEvent
---- FAIL: TestAdminService_ListStudentProgress (2.95s)
-    admin_service_test.go:63: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/admin_service_test.go:63
-        	Error:      	"[]" should have 1 item(s), but has 0
-        	Test:       	TestAdminService_ListStudentProgress
---- FAIL: TestAdminService_MonitorStudents (1.91s)
-    admin_service_test.go:119: 
-        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/admin_service_test.go:119
-        	Error:      	"[]" should have 1 item(s), but has 0
-        	Test:       	TestAdminService_MonitorStudents
-2025/12/24 16:26:23 [AuthService.Login] Attempting login for username=student1, tenantID=
-2025/12/24 16:26:23 [AuthService.Login] Found user: id=u1, role=student, isActive=true
-2025/12/24 16:26:23 [AuthService.Login] Password verified for user=student1
-2025/12/24 16:26:23 [AuthService.Login] No tenant context, using user role=student
-2025/12/24 16:26:23 [AuthService.Login] Login successful: userID=u1, role=student, tenantID=
-2025/12/24 16:26:23 [AuthService.Login] Attempting login for username=advisor1, tenantID=t1
-2025/12/24 16:26:23 [AuthService.Login] Found user: id=u2, role=student, isActive=true
-2025/12/24 16:26:24 [AuthService.Login] Password verified for user=advisor1
-2025/12/24 16:26:24 [AuthService.Login] Checking tenant membership: userID=u2, tenantID=t1
-2025/12/24 16:26:24 [AuthService.Login] Tenant access granted: role=advisor
-2025/12/24 16:26:24 [AuthService.Login] Login successful: userID=u2, role=advisor, tenantID=t1
-2025/12/24 16:26:24 [AuthService.Login] Attempting login for username=user3, tenantID=
-2025/12/24 16:26:24 [AuthService.Login] Found user: id=u3, role=, isActive=true
-2025/12/24 16:26:24 [AuthService.Login] Password mismatch for user=user3, hash_prefix=$2a$10$Gd8zWOd1IHp86lv0.CL6S.J
-2025/12/24 16:26:24 [AuthService.Login] Attempting login for username=user4, tenantID=
-2025/12/24 16:26:24 [AuthService.Login] Found user: id=u4, role=, isActive=false
-2025/12/24 16:26:24 [AuthService.Login] User inactive: id=u4
-2025/12/24 16:26:31 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174000 node=node1
-2025/12/24 16:26:33 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174001 node=fork
-2025/12/24 16:26:35 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174002 node=terminal_node
-2025/12/24 16:26:36 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174003 node=node1
-2025/12/24 16:26:36 Activated existing node node2
-2025/12/24 16:26:37 [ActivateNextNodes] Starting for user=user1 node=node1
-2025/12/24 16:26:38 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174005 node=nonexistent_node
-2025/12/24 16:26:39 [NotifyAdvisors] Found 2 advisors for student 11111111-1111-1111-1111-111111111111
-2025/12/24 16:26:39 [NotifyAdvisors] Created submission notification for student 11111111-1111-1111-1111-111111111111, node node-1, 2 advisors assigned
-2025/12/24 16:26:39 [NotifyAdvisors] Found 0 advisors for student 33333333-3333-3333-3333-333333333333
-2025/12/24 16:26:39 [NotifyAdvisors] Double check existence: false
-2025/12/24 16:26:39 [NotifyAdvisors] No advisors assigned to student 33333333-3333-3333-3333-333333333333, skipping notification
-2025/12/24 16:26:42 Testing HasAdvisors with empty student, likely false
-FAIL
-coverage: 26.6% of statements
-FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services	101.295s
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/debouncer	3.494s	coverage: 59.4% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer	5.082s	coverage: 60.6% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook	41.509s	coverage: 69.1% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/storage	4.335s	coverage: 91.5% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils	18.312s	coverage: 59.6% of statements
-ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/worker	31.291s	coverage: 65.3% of statements
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	42.121s
+=== RUN   TestApp7_NormalizePayload
+--- PASS: TestApp7_NormalizePayload (0.00s)
+=== RUN   TestApp7_Summarize
+--- PASS: TestApp7_Summarize (0.00s)
+=== RUN   TestApp7_ValidateEntry
+=== RUN   TestApp7_ValidateEntry/Valid_Entry
+=== RUN   TestApp7_ValidateEntry/Missing_Title
+=== RUN   TestApp7_ValidateEntry/Title_Too_Long
+=== RUN   TestApp7_ValidateEntry/Invalid_Year
+=== RUN   TestApp7_ValidateEntry/Invalid_ISSN
+=== RUN   TestApp7_ValidateEntry/Missing_IP_Type
+--- PASS: TestApp7_ValidateEntry (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Valid_Entry (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Missing_Title (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Title_Too_Long (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Invalid_Year (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Invalid_ISSN (0.00s)
+    --- PASS: TestApp7_ValidateEntry/Missing_IP_Type (0.00s)
+=== RUN   TestEmailService_SendPasswordResetEmail
+2025/12/28 22:59:17 [EMAIL] Sent email to student@test.com: Reset Your Password
+2025/12/28 22:59:17 [EMAIL] Skipping password reset email to student@test.com (SMTP not configured)
+--- PASS: TestEmailService_SendPasswordResetEmail (0.00s)
+=== RUN   TestEmailService_SendEmailVerification
+2025/12/28 22:59:17 [EMAIL] Failed to send email to new@test.com: smtp down
+--- PASS: TestEmailService_SendEmailVerification (0.00s)
+=== RUN   TestEmailService_SendAddedToRoomNotification
+2025/12/28 22:59:17 [EMAIL] Sent email to user@test.com: You have been added to chat room: Research Room
+--- PASS: TestEmailService_SendAddedToRoomNotification (0.00s)
+=== RUN   TestNewS3FromEnv_NoBucket
+--- PASS: TestNewS3FromEnv_NoBucket (0.00s)
+=== RUN   TestNewS3FromEnv_MissingCredentials
+--- PASS: TestNewS3FromEnv_MissingCredentials (0.00s)
+=== RUN   TestNewS3FromEnv_WithConfig
+--- PASS: TestNewS3FromEnv_WithConfig (0.00s)
+=== RUN   TestS3Client_Bucket_NilClient
+--- PASS: TestS3Client_Bucket_NilClient (0.00s)
+=== RUN   TestS3Client_Client_NilClient
+--- PASS: TestS3Client_Client_NilClient (0.00s)
+=== RUN   TestS3Client_PresignPut_NilClient
+--- PASS: TestS3Client_PresignPut_NilClient (0.00s)
+=== RUN   TestS3Client_PresignGet_NilClient
+--- PASS: TestS3Client_PresignGet_NilClient (0.00s)
+=== RUN   TestS3Client_ObjectExists_NilClient
+--- PASS: TestS3Client_ObjectExists_NilClient (0.00s)
+=== RUN   TestValidateContentType_Allowed
+--- PASS: TestValidateContentType_Allowed (0.00s)
+=== RUN   TestValidateContentType_NotAllowed
+--- PASS: TestValidateContentType_NotAllowed (0.00s)
+=== RUN   TestValidateFileSize_Valid
+--- PASS: TestValidateFileSize_Valid (0.00s)
+=== RUN   TestValidateFileSize_TooLarge
+--- PASS: TestValidateFileSize_TooLarge (0.00s)
+=== RUN   TestValidateFileSize_Invalid
+--- PASS: TestValidateFileSize_Invalid (0.00s)
+=== RUN   TestGetPresignExpires_Default
+--- PASS: TestGetPresignExpires_Default (0.00s)
+=== RUN   TestGetPresignExpires_Custom
+--- PASS: TestGetPresignExpires_Custom (0.00s)
+=== RUN   TestFirstNonEmpty
+--- PASS: TestFirstNonEmpty (0.00s)
+=== RUN   TestNewNotificationService
+2025/12/28 22:59:17 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNewNotificationService (0.33s)
+=== RUN   TestNotificationService_CreateNotification
+2025/12/28 22:59:17 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNotificationService_CreateNotification (0.24s)
+=== RUN   TestNotificationService_GetUnreadNotifications
+2025/12/28 22:59:17 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNotificationService_GetUnreadNotifications (0.24s)
+=== RUN   TestNotificationService_MarkAsRead
+2025/12/28 22:59:17 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNotificationService_MarkAsRead (0.28s)
+=== RUN   TestNotificationService_MarkAsRead_NotFound
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNotificationService_MarkAsRead_NotFound (0.24s)
+=== RUN   TestNotificationService_MarkAllAsRead
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNotificationService_MarkAllAsRead (0.24s)
+=== RUN   TestNewAnalyticsService
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNewAnalyticsService (0.22s)
+=== RUN   TestAnalyticsService_GetStudentsByStage
+2025/12/28 22:59:18 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestAnalyticsService_GetStudentsByStage (0.24s)
+=== RUN   TestAnalyticsService_GetAdvisorLoad
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestAnalyticsService_GetAdvisorLoad (0.23s)
+=== RUN   TestAnalyticsService_GetOverdueTasks
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestAnalyticsService_GetOverdueTasks (0.23s)
+=== RUN   TestNewCalendarService
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestNewCalendarService (0.25s)
+=== RUN   TestCalendarService_CreateEvent
+2025/12/28 22:59:19 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_CreateEvent (0.23s)
+=== RUN   TestCalendarService_CreateEventWithAttendees
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_CreateEventWithAttendees (0.23s)
+=== RUN   TestCalendarService_GetEvents
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_GetEvents (0.23s)
+=== RUN   TestCalendarService_GetEvent
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_GetEvent (0.27s)
+=== RUN   TestCalendarService_UpdateEvent
+2025/12/28 22:59:20 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_UpdateEvent (0.25s)
+=== RUN   TestCalendarService_UpdateEvent_Unauthorized
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_UpdateEvent_Unauthorized (0.25s)
+=== RUN   TestCalendarService_DeleteEvent
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_DeleteEvent (0.41s)
+=== RUN   TestCalendarService_DeleteEvent_Unauthorized
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/services_test.go, pkgName: services
+--- PASS: TestCalendarService_DeleteEvent_Unauthorized (0.27s)
+=== RUN   TestAdminService_ListStudentProgress
+2025/12/28 22:59:21 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/admin_service_test.go, pkgName: services
+--- PASS: TestAdminService_ListStudentProgress (0.24s)
+=== RUN   TestAdminService_MonitorStudents
+2025/12/28 22:59:22 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/admin_service_test.go, pkgName: services
+--- PASS: TestAdminService_MonitorStudents (0.24s)
+=== RUN   TestAdminService_ListStudentProgress_Unit
+--- PASS: TestAdminService_ListStudentProgress_Unit (0.00s)
+=== RUN   TestAdminService_ReviewAttachment_Unit
+=== RUN   TestAdminService_ReviewAttachment_Unit/Review_Rejected
+--- PASS: TestAdminService_ReviewAttachment_Unit (0.00s)
+    --- PASS: TestAdminService_ReviewAttachment_Unit/Review_Rejected (0.00s)
+=== RUN   TestAdminService_MonitorStudents_Unit
+--- PASS: TestAdminService_MonitorStudents_Unit (0.00s)
+=== RUN   TestAdminService_GetStudentDetails_Unit
+--- PASS: TestAdminService_GetStudentDetails_Unit (0.00s)
+=== RUN   TestAdminService_UploadReviewedDocument_Unit
+=== RUN   TestAdminService_UploadReviewedDocument_Unit/Advisor_forbidden
+--- PASS: TestAdminService_UploadReviewedDocument_Unit (0.00s)
+    --- PASS: TestAdminService_UploadReviewedDocument_Unit/Advisor_forbidden (0.00s)
+=== RUN   TestAdminService_MonitorAnalytics_Unit
+=== RUN   TestAdminService_MonitorAnalytics_Unit/MonitorAnalytics_Even_Durations
+=== RUN   TestAdminService_MonitorAnalytics_Unit/MonitorAnalytics_Empty_List
+--- PASS: TestAdminService_MonitorAnalytics_Unit (0.00s)
+    --- PASS: TestAdminService_MonitorAnalytics_Unit/MonitorAnalytics_Even_Durations (0.00s)
+    --- PASS: TestAdminService_MonitorAnalytics_Unit/MonitorAnalytics_Empty_List (0.00s)
+=== RUN   TestAdminService_StudentOps_Unit
+=== RUN   TestAdminService_StudentOps_Unit/GetStudentJourney_Advisor_Access_denied
+=== RUN   TestAdminService_StudentOps_Unit/ListStudentNodeFiles_Permission_Denied
+=== RUN   TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_Success
+=== RUN   TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_No_Storage
+=== RUN   TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_Repo_Error
+=== RUN   TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_Storage_Error
+=== RUN   TestAdminService_StudentOps_Unit/GetStudentJourney_Success
+--- PASS: TestAdminService_StudentOps_Unit (0.00s)
+    --- PASS: TestAdminService_StudentOps_Unit/GetStudentJourney_Advisor_Access_denied (0.00s)
+    --- PASS: TestAdminService_StudentOps_Unit/ListStudentNodeFiles_Permission_Denied (0.00s)
+    --- PASS: TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_Success (0.00s)
+    --- PASS: TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_No_Storage (0.00s)
+    --- PASS: TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_Repo_Error (0.00s)
+    --- PASS: TestAdminService_StudentOps_Unit/PresignReviewedDocumentUpload_Storage_Error (0.00s)
+    --- PASS: TestAdminService_StudentOps_Unit/GetStudentJourney_Success (0.00s)
+=== RUN   TestAdminService_BasicMethods
+--- PASS: TestAdminService_BasicMethods (0.00s)
+=== RUN   TestAdminService_AttachReviewedDocument_Unit
+--- PASS: TestAdminService_AttachReviewedDocument_Unit (0.00s)
+=== RUN   TestAuthService_Login
+=== RUN   TestAuthService_Login/Success_-_Student_Role
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=student1, tenantID=
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=u1, role=student, isActive=true
+2025/12/28 22:59:22 [AuthService.Login] Password verified for user=student1
+2025/12/28 22:59:22 [AuthService.Login] No tenant context, using user role=student
+2025/12/28 22:59:22 [AuthService.Login] Login successful: userID=u1, role=student, tenantID=
+=== RUN   TestAuthService_Login/Success_-_Tenant_Role
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=advisor1, tenantID=t1
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=u2, role=student, isActive=true
+2025/12/28 22:59:22 [AuthService.Login] Password verified for user=advisor1
+2025/12/28 22:59:22 [AuthService.Login] Checking tenant membership: userID=u2, tenantID=t1
+2025/12/28 22:59:22 [AuthService.Login] Tenant access granted: role=advisor
+2025/12/28 22:59:22 [AuthService.Login] Login successful: userID=u2, role=advisor, tenantID=t1
+=== RUN   TestAuthService_Login/Fail_-_Wrong_Password
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=user3, tenantID=
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=u3, role=, isActive=true
+2025/12/28 22:59:22 [AuthService.Login] Password mismatch for user=user3, hash_prefix=$2a$10$9dRH6HQ6DD69lP2yFjjsV.7
+=== RUN   TestAuthService_Login/Fail_-_Inactive
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=user4, tenantID=
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=u4, role=, isActive=false
+2025/12/28 22:59:22 [AuthService.Login] User inactive: id=u4
+--- PASS: TestAuthService_Login (0.29s)
+    --- PASS: TestAuthService_Login/Success_-_Student_Role (0.08s)
+    --- PASS: TestAuthService_Login/Success_-_Tenant_Role (0.08s)
+    --- PASS: TestAuthService_Login/Fail_-_Wrong_Password (0.07s)
+    --- PASS: TestAuthService_Login/Fail_-_Inactive (0.00s)
+=== RUN   TestAuthService_RequestPasswordReset
+=== RUN   TestAuthService_RequestPasswordReset/Success
+--- PASS: TestAuthService_RequestPasswordReset (0.00s)
+    --- PASS: TestAuthService_RequestPasswordReset/Success (0.00s)
+=== RUN   TestAuthService_ResetPassword
+=== RUN   TestAuthService_ResetPassword/Success
+--- PASS: TestAuthService_ResetPassword (0.07s)
+    --- PASS: TestAuthService_ResetPassword/Success (0.07s)
+=== RUN   TestAuthService_Login_Unit
+=== RUN   TestAuthService_Login_Unit/Success_Normal_User
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=john, tenantID=t1
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=u1, role=student, isActive=true
+2025/12/28 22:59:22 [AuthService.Login] Password verified for user=john
+2025/12/28 22:59:22 [AuthService.Login] Checking tenant membership: userID=u1, tenantID=t1
+2025/12/28 22:59:22 [AuthService.Login] Tenant access granted: role=student
+2025/12/28 22:59:22 [AuthService.Login] Login successful: userID=u1, role=student, tenantID=t1
+=== RUN   TestAuthService_Login_Unit/Success_Superadmin
+2025/12/28 22:59:22 [AuthService.Login] Attempting login for username=admin, tenantID=t1
+2025/12/28 22:59:22 [AuthService.Login] Found user: id=adm1, role=superadmin, isActive=true
+2025/12/28 22:59:23 [AuthService.Login] Password verified for user=admin
+2025/12/28 22:59:23 [AuthService.Login] User is superadmin, bypassing tenant check
+2025/12/28 22:59:23 [AuthService.Login] Login successful: userID=adm1, role=superadmin, tenantID=t1
+=== RUN   TestAuthService_Login_Unit/User_Not_Found
+2025/12/28 22:59:23 [AuthService.Login] Attempting login for username=ghost, tenantID=t1
+2025/12/28 22:59:23 [AuthService.Login] User not found: username=ghost, error=record not found
+=== RUN   TestAuthService_Login_Unit/Tenant_Denied
+2025/12/28 22:59:23 [AuthService.Login] Attempting login for username=john, tenantID=t1
+2025/12/28 22:59:23 [AuthService.Login] Found user: id=u1, role=student, isActive=true
+2025/12/28 22:59:23 [AuthService.Login] Password verified for user=john
+2025/12/28 22:59:23 [AuthService.Login] Checking tenant membership: userID=u1, tenantID=t1
+2025/12/28 22:59:23 [AuthService.Login] Tenant access denied: userID=u1, tenantID=t1, error=not member
+=== RUN   TestAuthService_Login_Unit/User_Inactive
+2025/12/28 22:59:23 [AuthService.Login] Attempting login for username=john, tenantID=t1
+2025/12/28 22:59:23 [AuthService.Login] Found user: id=u1, role=, isActive=false
+2025/12/28 22:59:23 [AuthService.Login] User inactive: id=u1
+=== RUN   TestAuthService_Login_Unit/No_Tenant_Success
+2025/12/28 22:59:23 [AuthService.Login] Attempting login for username=john, tenantID=
+2025/12/28 22:59:23 [AuthService.Login] Found user: id=u1, role=student, isActive=true
+2025/12/28 22:59:23 [AuthService.Login] Password verified for user=john
+2025/12/28 22:59:23 [AuthService.Login] No tenant context, using user role=student
+2025/12/28 22:59:23 [AuthService.Login] Login successful: userID=u1, role=student, tenantID=
+--- PASS: TestAuthService_Login_Unit (0.33s)
+    --- PASS: TestAuthService_Login_Unit/Success_Normal_User (0.07s)
+    --- PASS: TestAuthService_Login_Unit/Success_Superadmin (0.07s)
+    --- PASS: TestAuthService_Login_Unit/User_Not_Found (0.00s)
+    --- PASS: TestAuthService_Login_Unit/Tenant_Denied (0.07s)
+    --- PASS: TestAuthService_Login_Unit/User_Inactive (0.00s)
+    --- PASS: TestAuthService_Login_Unit/No_Tenant_Success (0.07s)
+=== RUN   TestAuthService_PasswordReset_Unit
+=== RUN   TestAuthService_PasswordReset_Unit/ResetPassword_Expired
+=== RUN   TestAuthService_PasswordReset_Unit/ResetPassword_Invalid
+=== RUN   TestAuthService_PasswordReset_Unit/RequestPasswordReset_Repo_Error
+=== RUN   TestAuthService_PasswordReset_Unit/ResetPassword_Repo_Errors
+--- PASS: TestAuthService_PasswordReset_Unit (0.22s)
+    --- PASS: TestAuthService_PasswordReset_Unit/ResetPassword_Expired (0.00s)
+    --- PASS: TestAuthService_PasswordReset_Unit/ResetPassword_Invalid (0.00s)
+    --- PASS: TestAuthService_PasswordReset_Unit/RequestPasswordReset_Repo_Error (0.00s)
+    --- PASS: TestAuthService_PasswordReset_Unit/ResetPassword_Repo_Errors (0.16s)
+=== RUN   TestCalendarService_CreateEvent
+2025/12/28 22:59:23 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/calendar_service_test.go, pkgName: services
+--- PASS: TestCalendarService_CreateEvent (0.35s)
+=== RUN   TestCalendarService_GetEvents
+2025/12/28 22:59:23 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/calendar_service_test.go, pkgName: services
+--- PASS: TestCalendarService_GetEvents (0.33s)
+=== RUN   TestChatService_SaveFile_Unit
+--- PASS: TestChatService_SaveFile_Unit (0.00s)
+=== RUN   TestChatService_Unit
+=== RUN   TestChatService_Unit/Basic_Room_Ops
+=== RUN   TestChatService_Unit/Member_Ops
+=== RUN   TestChatService_Unit/Message_Ops
+=== RUN   TestChatService_Unit/Batch_Ops_Success
+=== RUN   TestChatService_Unit/File_Ops
+=== RUN   TestChatService_Unit/RemoveRoomMembersBatch
+=== RUN   TestChatService_Unit/Batch_Ops_Failures
+=== RUN   TestChatService_Unit/Batch_Notification_failures
+Failed to fetch room for notifications: assert.AnError general error for testing
+Failed to fetch users for notifications: assert.AnError general error for testing
+Failed to send notification to e@e.com: assert.AnError general error for testing
+=== RUN   TestChatService_Unit/SaveFile_Path_Error
+--- PASS: TestChatService_Unit (0.05s)
+    --- PASS: TestChatService_Unit/Basic_Room_Ops (0.00s)
+    --- PASS: TestChatService_Unit/Member_Ops (0.00s)
+    --- PASS: TestChatService_Unit/Message_Ops (0.00s)
+    --- PASS: TestChatService_Unit/Batch_Ops_Success (0.01s)
+    --- PASS: TestChatService_Unit/File_Ops (0.00s)
+    --- PASS: TestChatService_Unit/RemoveRoomMembersBatch (0.00s)
+    --- PASS: TestChatService_Unit/Batch_Ops_Failures (0.00s)
+    --- PASS: TestChatService_Unit/Batch_Notification_failures (0.03s)
+    --- PASS: TestChatService_Unit/SaveFile_Path_Error (0.00s)
+=== RUN   TestChecklistService_GetAdvisorInbox
+2025/12/28 22:59:24 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/checklist_service_test.go, pkgName: services
+--- PASS: TestChecklistService_GetAdvisorInbox (0.30s)
+=== RUN   TestChecklistService_ApproveStep
+2025/12/28 22:59:24 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/checklist_service_test.go, pkgName: services
+--- PASS: TestChecklistService_ApproveStep (0.31s)
+=== RUN   TestChecklistService_Unit
+=== RUN   TestChecklistService_Unit/GetModules
+=== RUN   TestChecklistService_Unit/GetStepsByModule
+=== RUN   TestChecklistService_Unit/GetStudentSteps
+=== RUN   TestChecklistService_Unit/UpdateStudentStep
+=== RUN   TestChecklistService_Unit/GetAdvisorInbox
+=== RUN   TestChecklistService_Unit/ApproveStep
+=== RUN   TestChecklistService_Unit/ReturnStep
+=== RUN   TestChecklistService_Unit/Errors
+--- PASS: TestChecklistService_Unit (0.00s)
+    --- PASS: TestChecklistService_Unit/GetModules (0.00s)
+    --- PASS: TestChecklistService_Unit/GetStepsByModule (0.00s)
+    --- PASS: TestChecklistService_Unit/GetStudentSteps (0.00s)
+    --- PASS: TestChecklistService_Unit/UpdateStudentStep (0.00s)
+    --- PASS: TestChecklistService_Unit/GetAdvisorInbox (0.00s)
+    --- PASS: TestChecklistService_Unit/ApproveStep (0.00s)
+    --- PASS: TestChecklistService_Unit/ReturnStep (0.00s)
+    --- PASS: TestChecklistService_Unit/Errors (0.00s)
+=== RUN   TestCommentService_Unit
+=== RUN   TestCommentService_Unit/Create
+=== RUN   TestCommentService_Unit/GetByDocumentID
+--- PASS: TestCommentService_Unit (0.00s)
+    --- PASS: TestCommentService_Unit/Create (0.00s)
+    --- PASS: TestCommentService_Unit/GetByDocumentID (0.00s)
+=== RUN   TestContactService_Unit
+=== RUN   TestContactService_Unit/ListPublic
+=== RUN   TestContactService_Unit/ListAdmin
+=== RUN   TestContactService_Unit/Create
+=== RUN   TestContactService_Unit/Update
+=== RUN   TestContactService_Unit/Delete
+--- PASS: TestContactService_Unit (0.00s)
+    --- PASS: TestContactService_Unit/ListPublic (0.00s)
+    --- PASS: TestContactService_Unit/ListAdmin (0.00s)
+    --- PASS: TestContactService_Unit/Create (0.00s)
+    --- PASS: TestContactService_Unit/Update (0.00s)
+    --- PASS: TestContactService_Unit/Delete (0.00s)
+=== RUN   TestDictionaryService_Unit
+=== RUN   TestDictionaryService_Unit/Programs
+=== RUN   TestDictionaryService_Unit/Specialties
+=== RUN   TestDictionaryService_Unit/Cohorts
+=== RUN   TestDictionaryService_Unit/Departments
+--- PASS: TestDictionaryService_Unit (0.00s)
+    --- PASS: TestDictionaryService_Unit/Programs (0.00s)
+    --- PASS: TestDictionaryService_Unit/Specialties (0.00s)
+    --- PASS: TestDictionaryService_Unit/Cohorts (0.00s)
+    --- PASS: TestDictionaryService_Unit/Departments (0.00s)
+=== RUN   TestDocumentService_Unit
+=== RUN   TestDocumentService_Unit/CreateMetadata
+=== RUN   TestDocumentService_Unit/CreateVersion
+=== RUN   TestDocumentService_Unit/Details
+=== RUN   TestDocumentService_Unit/Presign_Errors
+=== RUN   TestDocumentService_Unit/Presign
+=== RUN   TestDocumentService_Unit/Helpers
+--- PASS: TestDocumentService_Unit (0.00s)
+    --- PASS: TestDocumentService_Unit/CreateMetadata (0.00s)
+    --- PASS: TestDocumentService_Unit/CreateVersion (0.00s)
+    --- PASS: TestDocumentService_Unit/Details (0.00s)
+    --- PASS: TestDocumentService_Unit/Presign_Errors (0.00s)
+    --- PASS: TestDocumentService_Unit/Presign (0.00s)
+    --- PASS: TestDocumentService_Unit/Helpers (0.00s)
+=== RUN   TestEmailService_Unit
+=== RUN   TestEmailService_Unit/SendVerification
+2025/12/28 22:59:24 [EMAIL] Sent email to to@ex.com: Verify Your New Email Address
+=== RUN   TestEmailService_Unit/SendEmailChange
+2025/12/28 22:59:24 [EMAIL] Sent email to to@ex.com: Your Email Address Has Been Changed
+=== RUN   TestEmailService_Unit/SendAddedToRoom
+2025/12/28 22:59:24 [EMAIL] Sent email to to@ex.com: You have been added to chat room: Room
+=== RUN   TestEmailService_Unit/SendPasswordReset
+2025/12/28 22:59:24 [EMAIL] Sent email to to@ex.com: Reset Your Password
+--- PASS: TestEmailService_Unit (0.00s)
+    --- PASS: TestEmailService_Unit/SendVerification (0.00s)
+    --- PASS: TestEmailService_Unit/SendEmailChange (0.00s)
+    --- PASS: TestEmailService_Unit/SendAddedToRoom (0.00s)
+    --- PASS: TestEmailService_Unit/SendPasswordReset (0.00s)
+=== RUN   TestEmailService_Disabled
+2025/12/28 22:59:24 [EMAIL] SMTP not configured - email features disabled
+2025/12/28 22:59:24 [EMAIL] Skipping verification email to a (SMTP not configured)
+2025/12/28 22:59:24 [EMAIL] Skipping password reset email to a (SMTP not configured)
+2025/12/28 22:59:24 [EMAIL] Skipping notification email to a (SMTP not configured)
+2025/12/28 22:59:24 [EMAIL] Skipping room notification email to a (SMTP not configured)
+--- PASS: TestEmailService_Disabled (0.00s)
+=== RUN   TestEmailService_SendFail
+2025/12/28 22:59:24 [EMAIL] Failed to send email to to@ex.com: assert.AnError general error for testing
+--- PASS: TestEmailService_SendFail (0.00s)
+=== RUN   TestJourneyService_ConcurrentTransitions
+2025/12/28 22:59:24 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_concurrency_test.go, pkgName: services
+2025/12/28 22:59:24 [ActivateNextNodes] Starting for user=0bfb8319-8d9f-437c-be1c-79d448f2bc3f node=node1
+--- PASS: TestJourneyService_ConcurrentTransitions (0.28s)
+=== RUN   TestJourneyService_PresignUpload_Hardening
+2025/12/28 22:59:25 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_harden_test.go, pkgName: services
+=== RUN   TestJourneyService_PresignUpload_Hardening/Valid_PDF
+=== RUN   TestJourneyService_PresignUpload_Hardening/Invalid_MIME_for_PDF_slot
+=== RUN   TestJourneyService_PresignUpload_Hardening/Valid_JPEG
+=== RUN   TestJourneyService_PresignUpload_Hardening/Valid_PNG
+=== RUN   TestJourneyService_PresignUpload_Hardening/Invalid_slot_key
+=== RUN   TestJourneyService_PresignUpload_Hardening/File_too_large
+--- PASS: TestJourneyService_PresignUpload_Hardening (0.28s)
+    --- PASS: TestJourneyService_PresignUpload_Hardening/Valid_PDF (0.00s)
+    --- PASS: TestJourneyService_PresignUpload_Hardening/Invalid_MIME_for_PDF_slot (0.00s)
+    --- PASS: TestJourneyService_PresignUpload_Hardening/Valid_JPEG (0.00s)
+    --- PASS: TestJourneyService_PresignUpload_Hardening/Valid_PNG (0.00s)
+    --- PASS: TestJourneyService_PresignUpload_Hardening/Invalid_slot_key (0.00s)
+    --- PASS: TestJourneyService_PresignUpload_Hardening/File_too_large (0.00s)
+=== RUN   TestJourneyService_AttachUpload_Multiplicity
+2025/12/28 22:59:25 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_harden_test.go, pkgName: services
+2025/12/28 22:59:25 [JourneyService] Creating node instance: userID=11111111-1111-1111-1111-111111111111 nodeID=node1
+2025/12/28 22:59:25 [JourneyService] AttachUpload: Attaching file1.pdf to slot 37fe83d2-df0b-4775-811c-6050268afb60
+2025/12/28 22:59:25 [JourneyService] AttachUpload: Attaching file2.pdf to slot 37fe83d2-df0b-4775-811c-6050268afb60
+--- PASS: TestJourneyService_AttachUpload_Multiplicity (0.32s)
+=== RUN   TestJourneyService_PresignUpload_StorageFailure
+2025/12/28 22:59:25 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_harden_test.go, pkgName: services
+--- PASS: TestJourneyService_PresignUpload_StorageFailure (0.26s)
+=== RUN   TestJourneyService_AttachUpload_RepoFailure
+--- PASS: TestJourneyService_AttachUpload_RepoFailure (0.00s)
+=== RUN   TestJourneyService_RequirementEnforcement
+2025/12/28 22:59:25 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_integration_test.go, pkgName: services
+2025/12/28 22:59:26 [ActivateNextNodes] Starting for user=ea1094f1-093a-4f08-948c-ca90fe93c310 node=node1
+--- PASS: TestJourneyService_RequirementEnforcement (0.32s)
+=== RUN   TestJourneyService_PrerequisiteActivation
+2025/12/28 22:59:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_integration_test.go, pkgName: services
+2025/12/28 22:59:26 [ActivateNextNodes] Starting for user=b73d400f-194d-4cf9-9930-dcabc96adc78 node=A
+2025/12/28 22:59:26 [ActivateNextNodes] Node C prerequisites not yet met
+2025/12/28 22:59:26 [ActivateNextNodes] Starting for user=b73d400f-194d-4cf9-9930-dcabc96adc78 node=B
+2025/12/28 22:59:26 [ActivateNextNodes] Created new node instance 56f42188-489d-4b41-8bcc-553ef8fe3ec9 for node C
+--- PASS: TestJourneyService_PrerequisiteActivation (0.29s)
+=== RUN   TestJourneyService_InvalidTransitions
+2025/12/28 22:59:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_integration_test.go, pkgName: services
+--- PASS: TestJourneyService_InvalidTransitions (0.29s)
+=== RUN   TestActivateNextNodes_SingleNext
+2025/12/28 22:59:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_test.go, pkgName: services
+2025/12/28 22:59:26 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174000 node=node1
+2025/12/28 22:59:26 [ActivateNextNodes] Created new node instance 22151d4a-9849-4795-9197-da5f777e72e7 for node node2
+--- PASS: TestActivateNextNodes_SingleNext (0.30s)
+=== RUN   TestActivateNextNodes_MultipleNext
+2025/12/28 22:59:27 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_test.go, pkgName: services
+2025/12/28 22:59:27 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174001 node=fork
+2025/12/28 22:59:27 [ActivateNextNodes] Created new node instance 69fefca6-4408-497a-9acb-9d8b646b6f3e for node branch_a
+2025/12/28 22:59:27 [ActivateNextNodes] Created new node instance c46a1755-21d1-480b-9d4e-3ecb43583c92 for node branch_b
+--- PASS: TestActivateNextNodes_MultipleNext (0.33s)
+=== RUN   TestActivateNextNodes_NoNext
+2025/12/28 22:59:27 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_test.go, pkgName: services
+2025/12/28 22:59:27 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174002 node=terminal_node
+--- PASS: TestActivateNextNodes_NoNext (0.32s)
+=== RUN   TestActivateNextNodes_AlreadyExists
+2025/12/28 22:59:27 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_test.go, pkgName: services
+2025/12/28 22:59:27 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174003 node=node1
+2025/12/28 22:59:27 Activated existing node node2
+--- PASS: TestActivateNextNodes_AlreadyExists (0.38s)
+=== RUN   TestActivateNextNodes_InvalidPlaybookJSON
+2025/12/28 22:59:28 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_test.go, pkgName: services
+2025/12/28 22:59:28 [ActivateNextNodes] Starting for user=user1 node=node1
+--- PASS: TestActivateNextNodes_InvalidPlaybookJSON (0.37s)
+=== RUN   TestActivateNextNodes_NodeNotFound
+2025/12/28 22:59:28 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/journey_service_test.go, pkgName: services
+2025/12/28 22:59:28 [ActivateNextNodes] Starting for user=123e4567-e89b-12d3-a456-426614174005 node=nonexistent_node
+--- PASS: TestActivateNextNodes_NodeNotFound (0.35s)
+=== RUN   TestJourneyService_GetSubmission_Unit
+=== RUN   TestJourneyService_GetSubmission_Unit/Publications_List_with_App7
+--- PASS: TestJourneyService_GetSubmission_Unit (0.00s)
+    --- PASS: TestJourneyService_GetSubmission_Unit/Publications_List_with_App7 (0.00s)
+=== RUN   TestJourneyService_GetSubmission_NotFound
+2025/12/28 22:59:28 [JourneyService] Creating node instance: userID=u1 nodeID=node1
+--- PASS: TestJourneyService_GetSubmission_NotFound (0.00s)
+=== RUN   TestJourneyService_GetSubmission_RepoError
+--- PASS: TestJourneyService_GetSubmission_RepoError (0.00s)
+=== RUN   TestJourneyService_PutSubmission_Unit
+=== RUN   TestJourneyService_PutSubmission_Unit/Standard_Node
+=== RUN   TestJourneyService_PutSubmission_Unit/Profile_Node_Sync
+--- PASS: TestJourneyService_PutSubmission_Unit (0.00s)
+    --- PASS: TestJourneyService_PutSubmission_Unit/Standard_Node (0.00s)
+    --- PASS: TestJourneyService_PutSubmission_Unit/Profile_Node_Sync (0.00s)
+=== RUN   TestJourneyService_PatchState_Unit
+--- PASS: TestJourneyService_PatchState_Unit (0.00s)
+=== RUN   TestJourneyService_GetState_Unit
+--- PASS: TestJourneyService_GetState_Unit (0.00s)
+=== RUN   TestJourneyService_SetState_Unit
+--- PASS: TestJourneyService_SetState_Unit (0.00s)
+=== RUN   TestJourneyService_Reset_Unit
+--- PASS: TestJourneyService_Reset_Unit (0.00s)
+=== RUN   TestJourneyService_GetScoreboard_Unit
+--- PASS: TestJourneyService_GetScoreboard_Unit (0.00s)
+=== RUN   TestJourneyService_GetSubmission_Unit_New
+--- PASS: TestJourneyService_GetSubmission_Unit_New (0.00s)
+=== RUN   TestJourneyService_SyncProfileToUsers_Unit
+2025/12/28 22:59:28 [syncProfileToUsers] Successfully synced profile data for user u1
+--- PASS: TestJourneyService_SyncProfileToUsers_Unit (0.00s)
+=== RUN   TestJourneyService_ActivateNextNodes_Unit
+2025/12/28 22:59:28 [ActivateNextNodes] Starting for user=u1 node=node1
+2025/12/28 22:59:28 [ActivateNextNodes] Created new node instance inst_node2 for node node2
+2025/12/28 22:59:28 [ActivateNextNodes] Created new node instance inst_node3 for node node3
+--- PASS: TestJourneyService_ActivateNextNodes_Unit (0.00s)
+=== RUN   TestJourneyService_PresignUpload_Unit
+--- PASS: TestJourneyService_PresignUpload_Unit (0.00s)
+=== RUN   TestJourneyService_AttachUpload_Unit
+2025/12/28 22:59:28 [JourneyService] AttachUpload: Attaching original.pdf to slot slot1
+--- PASS: TestJourneyService_AttachUpload_Unit (0.00s)
+=== RUN   TestJourneyService_Transitions_Unit
+=== RUN   TestJourneyService_Transitions_Unit/transitionState_triggers_email
+=== RUN   TestJourneyService_Transitions_Unit/GetSubmission_Errors
+=== RUN   TestJourneyService_Transitions_Unit/GetScoreboard_Errors
+=== RUN   TestJourneyService_Transitions_Unit/PutSubmission_Errors
+=== RUN   TestJourneyService_Transitions_Unit/AttachUpload_Errors
+2025/12/28 22:59:28 [JourneyService] Sending email: Node Status Change: n1 (active -> submitted)
+--- PASS: TestJourneyService_Transitions_Unit (0.00s)
+    --- PASS: TestJourneyService_Transitions_Unit/transitionState_triggers_email (0.00s)
+    --- PASS: TestJourneyService_Transitions_Unit/GetSubmission_Errors (0.00s)
+    --- PASS: TestJourneyService_Transitions_Unit/GetScoreboard_Errors (0.00s)
+    --- PASS: TestJourneyService_Transitions_Unit/PutSubmission_Errors (0.00s)
+    --- PASS: TestJourneyService_Transitions_Unit/AttachUpload_Errors (0.00s)
+=== RUN   TestMockStorageClient
+--- PASS: TestMockStorageClient (0.00s)
+=== RUN   TestNotificationService_Unit
+=== RUN   TestNotificationService_Unit/CreateNotification
+=== RUN   TestNotificationService_Unit/GetUnreadNotifications
+=== RUN   TestNotificationService_Unit/MarkAsRead
+=== RUN   TestNotificationService_Unit/MarkAllAsRead
+=== RUN   TestNotificationService_Unit/ListNotifications
+--- PASS: TestNotificationService_Unit (0.00s)
+    --- PASS: TestNotificationService_Unit/CreateNotification (0.00s)
+    --- PASS: TestNotificationService_Unit/GetUnreadNotifications (0.00s)
+    --- PASS: TestNotificationService_Unit/MarkAsRead (0.00s)
+    --- PASS: TestNotificationService_Unit/MarkAllAsRead (0.00s)
+    --- PASS: TestNotificationService_Unit/ListNotifications (0.00s)
+=== RUN   TestNotifyAdvisorsOnSubmission
+2025/12/28 22:59:28 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/notify_advisors_test.go, pkgName: services
+2025/12/28 22:59:29 [NotifyAdvisors] Found 2 advisors for student 11111111-1111-1111-1111-111111111111
+2025/12/28 22:59:29 [NotifyAdvisors] Created submission notification for student 11111111-1111-1111-1111-111111111111, node node-1, 2 advisors assigned
+2025/12/28 22:59:29 [NotifyAdvisors] Found 0 advisors for student 33333333-3333-3333-3333-333333333333
+2025/12/28 22:59:29 [NotifyAdvisors] Double check existence: false
+2025/12/28 22:59:29 [NotifyAdvisors] No advisors assigned to student 33333333-3333-3333-3333-333333333333, skipping notification
+--- PASS: TestNotifyAdvisorsOnSubmission (0.36s)
+=== RUN   TestGetAdvisorsForStudent
+2025/12/28 22:59:29 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/notify_advisors_test.go, pkgName: services
+--- PASS: TestGetAdvisorsForStudent (0.33s)
+=== RUN   TestHasAdvisors
+2025/12/28 22:59:29 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/notify_advisors_test.go, pkgName: services
+2025/12/28 22:59:29 Testing HasAdvisors with empty student, likely false
+--- PASS: TestHasAdvisors (0.32s)
+=== RUN   TestNotifyAdvisorsOnSubmission_Unit
+=== RUN   TestNotifyAdvisorsOnSubmission_Unit/DB_Error_on_Student_Name
+2025/12/28 22:59:29 [NotifyAdvisors] Failed to get student name: db error
+2025/12/28 22:59:29 [NotifyAdvisors] Found 1 advisors for student s1
+2025/12/28 22:59:29 [NotifyAdvisors] Created submission notification for student s1, node n1, 1 advisors assigned
+=== RUN   TestNotifyAdvisorsOnSubmission_Unit/DB_Error_on_Advisors_List
+2025/12/28 22:59:29 [NotifyAdvisors] Failed to get advisors: db error
+=== RUN   TestNotifyAdvisorsOnSubmission_Unit/DB_Error_on_Notification_Insert
+2025/12/28 22:59:29 [NotifyAdvisors] Found 1 advisors for student s1
+2025/12/28 22:59:29 [NotifyAdvisors] Failed to insert notification: insert error
+--- PASS: TestNotifyAdvisorsOnSubmission_Unit (0.00s)
+    --- PASS: TestNotifyAdvisorsOnSubmission_Unit/DB_Error_on_Student_Name (0.00s)
+    --- PASS: TestNotifyAdvisorsOnSubmission_Unit/DB_Error_on_Advisors_List (0.00s)
+    --- PASS: TestNotifyAdvisorsOnSubmission_Unit/DB_Error_on_Notification_Insert (0.00s)
+=== RUN   TestGetAdvisorsForStudent_Unit
+--- PASS: TestGetAdvisorsForStudent_Unit (0.00s)
+=== RUN   TestHasAdvisors_Unit
+--- PASS: TestHasAdvisors_Unit (0.00s)
+=== RUN   TestNewRedis
+--- PASS: TestNewRedis (0.00s)
+=== RUN   TestS3Helpers
+=== RUN   TestS3Helpers/ValidateContentType
+=== RUN   TestS3Helpers/ValidateFileSize
+=== RUN   TestS3Helpers/GetPresignExpires
+=== RUN   TestS3Helpers/S3Client_NilMethods
+--- PASS: TestS3Helpers (0.00s)
+    --- PASS: TestS3Helpers/ValidateContentType (0.00s)
+    --- PASS: TestS3Helpers/ValidateFileSize (0.00s)
+    --- PASS: TestS3Helpers/GetPresignExpires (0.00s)
+    --- PASS: TestS3Helpers/S3Client_NilMethods (0.00s)
+=== RUN   TestS3Client_EnvMissing
+--- PASS: TestS3Client_EnvMissing (0.00s)
+=== RUN   TestS3Client_PathStyle
+=== RUN   TestS3Client_PathStyle/PathStyle_True
+=== RUN   TestS3Client_PathStyle/Default_PathStyle_with_Endpoint
+--- PASS: TestS3Client_PathStyle (0.00s)
+    --- PASS: TestS3Client_PathStyle/PathStyle_True (0.00s)
+    --- PASS: TestS3Client_PathStyle/Default_PathStyle_with_Endpoint (0.00s)
+=== RUN   TestS3Helpers_Int
+=== RUN   TestS3Helpers_Int/getEnvInt_Defaults
+--- PASS: TestS3Helpers_Int (0.00s)
+    --- PASS: TestS3Helpers_Int/getEnvInt_Defaults (0.00s)
+=== RUN   TestSearchService_GlobalSearch
+2025/12/28 22:59:29 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/search_service_test.go, pkgName: services
+--- PASS: TestSearchService_GlobalSearch (0.31s)
+=== RUN   TestSuperAdminService_Unit
+=== RUN   TestSuperAdminService_Unit/Admins
+=== RUN   TestSuperAdminService_Unit/Logs
+=== RUN   TestSuperAdminService_Unit/Settings
+--- PASS: TestSuperAdminService_Unit (0.00s)
+    --- PASS: TestSuperAdminService_Unit/Admins (0.00s)
+    --- PASS: TestSuperAdminService_Unit/Logs (0.00s)
+    --- PASS: TestSuperAdminService_Unit/Settings (0.00s)
+=== RUN   TestTenantService_GetTenants
+2025/12/28 22:59:30 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/tenant_service_test.go, pkgName: services
+--- PASS: TestTenantService_GetTenants (0.25s)
+=== RUN   TestTenantService_UserMembership
+2025/12/28 22:59:30 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/tenant_service_test.go, pkgName: services
+--- PASS: TestTenantService_UserMembership (0.26s)
+=== RUN   TestTenantService_Unit
+=== RUN   TestTenantService_Unit/GetTenantByID
+=== RUN   TestTenantService_Unit/GetTenantBySlug
+=== RUN   TestTenantService_Unit/ListForUser
+=== RUN   TestTenantService_Unit/GetPrimaryTenant
+=== RUN   TestTenantService_Unit/Admin_Ops
+=== RUN   TestTenantService_Unit/Membership
+=== RUN   TestTenantService_Unit/CanAccessTenant
+--- PASS: TestTenantService_Unit (0.00s)
+    --- PASS: TestTenantService_Unit/GetTenantByID (0.00s)
+    --- PASS: TestTenantService_Unit/GetTenantBySlug (0.00s)
+    --- PASS: TestTenantService_Unit/ListForUser (0.00s)
+    --- PASS: TestTenantService_Unit/GetPrimaryTenant (0.00s)
+    --- PASS: TestTenantService_Unit/Admin_Ops (0.00s)
+    --- PASS: TestTenantService_Unit/Membership (0.00s)
+    --- PASS: TestTenantService_Unit/CanAccessTenant (0.00s)
+=== RUN   TestTenantService_Errors_Unit
+=== RUN   TestTenantService_Errors_Unit/GetPrimaryTenant_Repo_Error
+=== RUN   TestTenantService_Errors_Unit/CanAccessTenant_Repo_Error
+--- PASS: TestTenantService_Errors_Unit (0.00s)
+    --- PASS: TestTenantService_Errors_Unit/GetPrimaryTenant_Repo_Error (0.00s)
+    --- PASS: TestTenantService_Errors_Unit/CanAccessTenant_Repo_Error (0.00s)
+=== RUN   TestUserService_CreateUser
+2025/12/28 22:59:30 [UserService] Invalidating user list cache
+--- PASS: TestUserService_CreateUser (0.07s)
+=== RUN   TestUserService_ListUsers
+--- PASS: TestUserService_ListUsers (0.00s)
+=== RUN   TestUserService_CreateUser_Unit
+2025/12/28 22:59:30 [UserService] Invalidating user list cache
+--- PASS: TestUserService_CreateUser_Unit (0.08s)
+=== RUN   TestUserService_UpdateProfile_Unit
+=== RUN   TestUserService_UpdateProfile_Unit/Success_Basic
+=== RUN   TestUserService_UpdateProfile_Unit/Email_Change
+=== RUN   TestUserService_UpdateProfile_Unit/Rate_Limit
+=== RUN   TestUserService_UpdateProfile_Unit/Incorrect_Password
+=== RUN   TestUserService_UpdateProfile_Unit/Email_Taken
+--- PASS: TestUserService_UpdateProfile_Unit (0.41s)
+    --- PASS: TestUserService_UpdateProfile_Unit/Success_Basic (0.07s)
+    --- PASS: TestUserService_UpdateProfile_Unit/Email_Change (0.07s)
+    --- PASS: TestUserService_UpdateProfile_Unit/Rate_Limit (0.07s)
+    --- PASS: TestUserService_UpdateProfile_Unit/Incorrect_Password (0.07s)
+    --- PASS: TestUserService_UpdateProfile_Unit/Email_Taken (0.07s)
+=== RUN   TestUserService_UsernameGen_Unit
+=== RUN   TestUserService_UsernameGen_Unit/Collision_Case
+2025/12/28 22:59:31 [UserService] Invalidating user list cache
+=== RUN   TestUserService_UsernameGen_Unit/Foreign_Characters
+2025/12/28 22:59:31 [UserService] Invalidating user list cache
+--- PASS: TestUserService_UsernameGen_Unit (0.14s)
+    --- PASS: TestUserService_UsernameGen_Unit/Collision_Case (0.07s)
+    --- PASS: TestUserService_UsernameGen_Unit/Foreign_Characters (0.07s)
+=== RUN   TestUserService_ResetPassword_Unit
+=== RUN   TestUserService_ResetPassword_Unit/ResetPasswordForUser_Success
+=== RUN   TestUserService_ResetPassword_Unit/ResetPasswordForUser_Repo_Error
+--- PASS: TestUserService_ResetPassword_Unit (0.07s)
+    --- PASS: TestUserService_ResetPassword_Unit/ResetPasswordForUser_Success (0.07s)
+    --- PASS: TestUserService_ResetPassword_Unit/ResetPasswordForUser_Repo_Error (0.00s)
+=== RUN   TestUserService_BasicMethods
+=== RUN   TestUserService_BasicMethods/ChangePassword
+=== RUN   TestUserService_BasicMethods/SyncProfileSubmissions
+=== RUN   TestUserService_BasicMethods/GetPendingEmailVerification
+=== RUN   TestUserService_BasicMethods/UpdateUser_Success
+2025/12/28 22:59:31 [UserService] Invalidating user list cache
+=== RUN   TestUserService_BasicMethods/UpdateUser_Error
+=== RUN   TestUserService_BasicMethods/SetActive_Success
+=== RUN   TestUserService_BasicMethods/SetActive_Error
+=== RUN   TestUserService_BasicMethods/ChangePassword_Failures
+=== RUN   TestUserService_BasicMethods/ForceUpdatePassword_Error
+=== RUN   TestUserService_BasicMethods/ResetPassword_Error
+--- PASS: TestUserService_BasicMethods (0.94s)
+    --- PASS: TestUserService_BasicMethods/ChangePassword (0.28s)
+    --- PASS: TestUserService_BasicMethods/SyncProfileSubmissions (0.00s)
+    --- PASS: TestUserService_BasicMethods/GetPendingEmailVerification (0.00s)
+    --- PASS: TestUserService_BasicMethods/UpdateUser_Success (0.00s)
+    --- PASS: TestUserService_BasicMethods/UpdateUser_Error (0.00s)
+    --- PASS: TestUserService_BasicMethods/SetActive_Success (0.00s)
+    --- PASS: TestUserService_BasicMethods/SetActive_Error (0.00s)
+    --- PASS: TestUserService_BasicMethods/ChangePassword_Failures (0.33s)
+    --- PASS: TestUserService_BasicMethods/ForceUpdatePassword_Error (0.07s)
+    --- PASS: TestUserService_BasicMethods/ResetPassword_Error (0.06s)
+=== RUN   TestUserService_AdminUpdateUser_Unit
+=== RUN   TestUserService_AdminUpdateUser_Unit/Update_Role_and_Info
+=== RUN   TestUserService_AdminUpdateUser_Unit/Repo_Error
+--- PASS: TestUserService_AdminUpdateUser_Unit (0.00s)
+    --- PASS: TestUserService_AdminUpdateUser_Unit/Update_Role_and_Info (0.00s)
+    --- PASS: TestUserService_AdminUpdateUser_Unit/Repo_Error (0.00s)
+=== RUN   TestUserService_Avatar_Unit
+=== RUN   TestUserService_Avatar_Unit/Presign_Success
+=== RUN   TestUserService_Avatar_Unit/UpdateAvatar_Success
+--- PASS: TestUserService_Avatar_Unit (0.00s)
+    --- PASS: TestUserService_Avatar_Unit/Presign_Success (0.00s)
+    --- PASS: TestUserService_Avatar_Unit/UpdateAvatar_Success (0.00s)
+=== RUN   TestUserService_VerifyEmail_Unit
+=== RUN   TestUserService_VerifyEmail_Unit/Success
+=== RUN   TestUserService_VerifyEmail_Unit/Token_Fail
+=== RUN   TestUserService_VerifyEmail_Unit/Get_User_Fail
+--- PASS: TestUserService_VerifyEmail_Unit (0.00s)
+    --- PASS: TestUserService_VerifyEmail_Unit/Success (0.00s)
+    --- PASS: TestUserService_VerifyEmail_Unit/Token_Fail (0.00s)
+    --- PASS: TestUserService_VerifyEmail_Unit/Get_User_Fail (0.00s)
+=== RUN   TestIsDuplicateKeyError
+--- PASS: TestIsDuplicateKeyError (0.00s)
+PASS
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services	18.345s
+=== RUN   TestNewNotificationDebouncer
+--- PASS: TestNewNotificationDebouncer (0.01s)
+=== RUN   TestBuildKey
+--- PASS: TestBuildKey (0.00s)
+=== RUN   TestShouldNotify_DisabledDebouncer
+--- PASS: TestShouldNotify_DisabledDebouncer (0.00s)
+=== RUN   TestClose_NilClient
+--- PASS: TestClose_NilClient (0.00s)
+PASS
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/debouncer	(cached)
+=== RUN   TestNewMailer
+--- PASS: TestNewMailer (0.00s)
+=== RUN   TestNewMailer_EmptyEnv
+--- PASS: TestNewMailer_EmptyEnv (0.00s)
+=== RUN   TestMailer_SendNotificationEmail_NoSMTP
+2025/12/28 22:59:16 SMTP not configured, skipping email to test@example.com
+--- PASS: TestMailer_SendNotificationEmail_NoSMTP (0.00s)
+=== RUN   TestMailer_BuildMessage
+--- PASS: TestMailer_BuildMessage (0.00s)
+=== RUN   TestMailer_SendStateChangeNotification_NoSMTP
+2025/12/28 22:59:16 SMTP not configured, skipping email to student@test.com
+--- PASS: TestMailer_SendStateChangeNotification_NoSMTP (0.00s)
+=== RUN   TestMailer_SendStateChangeNotification_TemplateRendering
+2025/12/28 22:59:16 SMTP not configured, skipping email to student@test.com
+--- PASS: TestMailer_SendStateChangeNotification_TemplateRendering (0.00s)
+=== RUN   TestMailer_BuildMessage_Format
+--- PASS: TestMailer_BuildMessage_Format (0.00s)
+=== RUN   TestMailer_SendStateChangeNotification_Approved
+2025/12/28 22:59:16 SMTP not configured, skipping email to student@test.com
+--- PASS: TestMailer_SendStateChangeNotification_Approved (0.00s)
+=== RUN   TestMailer_SendStateChangeNotification_ChangesRequested
+2025/12/28 22:59:16 SMTP not configured, skipping email to student@test.com
+--- PASS: TestMailer_SendStateChangeNotification_ChangesRequested (0.00s)
+=== RUN   TestMailer_SendStateChangeNotification_EmptyOldState
+2025/12/28 22:59:16 SMTP not configured, skipping email to student@test.com
+--- PASS: TestMailer_SendStateChangeNotification_EmptyOldState (0.00s)
+=== RUN   TestMailer_SendNotificationEmail_WithAuth
+2025/12/28 22:59:16 SMTP not configured, skipping email to test@example.com
+--- PASS: TestMailer_SendNotificationEmail_WithAuth (0.00s)
+=== RUN   TestMailer_BuildMessage_EmptyFrom
+--- PASS: TestMailer_BuildMessage_EmptyFrom (0.00s)
+=== RUN   TestMailer_BuildMessage_HTMLContent
+--- PASS: TestMailer_BuildMessage_HTMLContent (0.00s)
+PASS
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer	2.479s
+=== RUN   TestEnsureActive_NewPlaybook
+2025/12/28 22:59:15 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/playbook/manager_test.go, pkgName: playbook
+--- PASS: TestEnsureActive_NewPlaybook (0.33s)
+=== RUN   TestEnsureActive_ExistingChecksum
+2025/12/28 22:59:16 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/playbook/manager_test.go, pkgName: playbook
+--- PASS: TestEnsureActive_ExistingChecksum (0.40s)
+=== RUN   TestEnsureActive_InvalidJSON
+2025/12/28 22:59:16 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/playbook/manager_test.go, pkgName: playbook
+--- PASS: TestEnsureActive_InvalidJSON (0.24s)
+=== RUN   TestEnsureActive_FileNotFound
+2025/12/28 22:59:16 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/services/playbook/manager_test.go, pkgName: playbook
+--- PASS: TestEnsureActive_FileNotFound (0.24s)
+=== RUN   TestNodeDefinition_Found
+--- PASS: TestNodeDefinition_Found (0.00s)
+=== RUN   TestNodeDefinition_NotFound
+--- PASS: TestNodeDefinition_NotFound (0.00s)
+=== RUN   TestIndexNodes
+--- PASS: TestIndexNodes (0.00s)
+=== RUN   TestNodeWithRequirements
+--- PASS: TestNodeWithRequirements (0.00s)
+PASS
+ok  	github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook	3.008s
 FAIL

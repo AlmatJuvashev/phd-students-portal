@@ -384,9 +384,7 @@ export function NodeAttachmentsSection({
       )}
       <div className="space-y-4">
         {slots.map((slot) => {
-          const attachments = (slot.attachments || []).filter(
-            (att) => att.is_active
-          );
+const attachments = slot.attachments || [];
           const canUpload =
             canEdit &&
             (slot.multiplicity === "multiple" || attachments.length === 0);
@@ -693,9 +691,7 @@ export function NodeAttachmentsSection({
       {/* Floating Action Button - appears when there are attachments */}
       {canEdit &&
         slots.some((slot) => {
-          const activeAttachments = (slot.attachments || []).filter(
-            (att) => att.is_active
-          );
+          const activeAttachments = slot.attachments || [];
           return activeAttachments.length > 0;
         }) && (
           <button
