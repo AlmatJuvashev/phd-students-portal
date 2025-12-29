@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"sync"
 
@@ -19,6 +20,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var (
@@ -30,6 +34,65 @@ var (
 // It assumes TEST_DATABASE_URL is set, or defaults to a local test DB.
 // It returns a cleanup function that should be deferred.
 func SetupTestDB() (*sqlx.DB, func()) {
+	// Check if running in CI or explicitly requested to use Testcontainers
+	useContainer := os.Getenv("USE_TESTCONTAINERS") == "true"
+	
+	if useContainer {
+		ctx := context.Background()
+		dbUser := "postgres"
+		dbPassword := "postgres"
+		dbName := "phd_test"
+
+		pgContainer, err := postgres.Run(ctx,
+			"postgres:15-alpine",
+			postgres.WithDatabase(dbName),
+			postgres.WithUsername(dbUser),
+			postgres.WithPassword(dbPassword),
+			testcontainers.WithWaitStrategy(
+				wait.ForLog("database system is ready to accept connections").
+					WithOccurrence(2).
+					WithStartupTimeout(5*time.Minute)),
+		)
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to start postgres container: %v", err)
+		}
+
+		connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to get connection string: %v", err)
+		}
+
+		db, err := sqlx.Connect("postgres", connStr)
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to connect to container DB: %v", err)
+		}
+
+		// Run migrations
+		// We need to construct file source url
+		_, b, _, _ := runtime.Caller(0)
+		migrationsPath := filepath.Join(filepath.Dir(b), "../../db/migrations")
+		
+		m, err := migrate.New("file://"+migrationsPath, connStr)
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to init migrate: %v", err)
+		}
+		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+			log.Fatalf("[SetupTestDB] Migration failed: %v", err)
+		}
+		m.Close()
+
+		testDB = db
+		
+		return db, func() {
+			db.Close()
+			if err := pgContainer.Terminate(ctx); err != nil {
+				log.Printf("[SetupTestDB] Failed to terminate container: %v", err)
+			}
+		}
+	}
+
+	// Fallback to local DB (Original Logic) or if useContainer is false
+	// ... (Existing implementation for local DB)
 	dbURL := os.Getenv("TEST_DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgres://postgres:postgres@localhost:5435/phd_test?sslmode=disable"
