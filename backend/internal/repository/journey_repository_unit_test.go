@@ -112,3 +112,67 @@ func TestSQLJourneyRepository_WithTx_Unit(t *testing.T) {
 		assert.Equal(t, sql.ErrConnDone, err)
 	})
 }
+
+func TestSQLJourneyRepository_NodeInstance_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLJourneyRepository(sqlx.NewDb(db, "sqlmock"))
+
+	tenantID := "t-1"
+	userID := "u-1"
+	versionID := "v-1"
+	nodeID := "n-1"
+	state := "active"
+	locale := "en"
+
+	t.Run("CreateNodeInstance", func(t *testing.T) {
+		mock.ExpectQuery(`INSERT INTO node_instances`).
+			WithArgs(tenantID, userID, versionID, nodeID, state, &locale).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("inst-1"))
+
+		id, err := repo.CreateNodeInstance(context.Background(), tenantID, userID, versionID, nodeID, state, &locale)
+		assert.NoError(t, err)
+		assert.Equal(t, "inst-1", id)
+	})
+
+	t.Run("UpdateNodeInstanceState_Success", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE node_instances SET state=\$1, updated_at=now\(\) WHERE id=\$2 AND state=\$3`).
+			WithArgs("done", "inst-1", "active").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.UpdateNodeInstanceState(context.Background(), "inst-1", "active", "done")
+		assert.NoError(t, err)
+	})
+
+	t.Run("UpdateNodeInstanceState_NoRows", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE node_instances`).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		err := repo.UpdateNodeInstanceState(context.Background(), "inst-1", "active", "done")
+		assert.ErrorIs(t, err, sql.ErrNoRows)
+	})
+}
+
+func TestSQLJourneyRepository_GetAllowedTransitionRoles_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLJourneyRepository(sqlx.NewDb(db, "sqlmock"))
+
+	t.Run("Success", func(t *testing.T) {
+		// Mock postgres array return
+		mock.ExpectQuery(`SELECT allowed_roles FROM node_state_transitions WHERE from_state=\$1 AND to_state=\$2`).
+			WithArgs("active", "done").
+			WillReturnRows(sqlmock.NewRows([]string{"allowed_roles"}).AddRow("{student,advisor}"))
+
+		roles, err := repo.GetAllowedTransitionRoles(context.Background(), "active", "done")
+		assert.NoError(t, err)
+		assert.Len(t, roles, 2)
+		assert.Contains(t, roles, "student")
+	})
+}
