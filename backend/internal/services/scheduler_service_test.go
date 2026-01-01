@@ -33,22 +33,68 @@ func (m *MockSchedulerRepo) GetOffering(ctx context.Context, id string) (*models
 	if args.Get(0) == nil { return nil, args.Error(1) }
 	return args.Get(0).(*models.CourseOffering), args.Error(1)
 }
-// Stub unused
-func (m *MockSchedulerRepo) CreateTerm(ctx context.Context, term *models.AcademicTerm) error { return nil }
-func (m *MockSchedulerRepo) GetTerm(ctx context.Context, id string) (*models.AcademicTerm, error) { return nil, nil }
-func (m *MockSchedulerRepo) ListTerms(ctx context.Context, tenantID string) ([]models.AcademicTerm, error) { return nil, nil }
-func (m *MockSchedulerRepo) UpdateTerm(ctx context.Context, term *models.AcademicTerm) error { return nil }
-func (m *MockSchedulerRepo) DeleteTerm(ctx context.Context, id string) error { return nil }
-func (m *MockSchedulerRepo) CreateOffering(ctx context.Context, offering *models.CourseOffering) error { return nil }
-func (m *MockSchedulerRepo) ListOfferings(ctx context.Context, tenantID string, termID string) ([]models.CourseOffering, error) { return nil, nil }
-func (m *MockSchedulerRepo) UpdateOffering(ctx context.Context, offering *models.CourseOffering) error { return nil }
-func (m *MockSchedulerRepo) AddStaff(ctx context.Context, staff *models.CourseStaff) error { return nil }
-func (m *MockSchedulerRepo) ListStaff(ctx context.Context, offeringID string) ([]models.CourseStaff, error) { return nil, nil }
-func (m *MockSchedulerRepo) RemoveStaff(ctx context.Context, id string) error { return nil }
-func (m *MockSchedulerRepo) ListSessions(ctx context.Context, oID string, s, e time.Time) ([]models.ClassSession, error) { return nil, nil }
-func (m *MockSchedulerRepo) UpdateSession(ctx context.Context, s *models.ClassSession) error { return nil }
-func (m *MockSchedulerRepo) DeleteSession(ctx context.Context, id string) error { return nil }
-func (m *MockSchedulerRepo) ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error) { return nil, nil }
+// MockSchedulerRepo methods with proper mock behavior
+func (m *MockSchedulerRepo) CreateTerm(ctx context.Context, term *models.AcademicTerm) error {
+	args := m.Called(ctx, term)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) GetTerm(ctx context.Context, id string) (*models.AcademicTerm, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.AcademicTerm), args.Error(1)
+}
+func (m *MockSchedulerRepo) ListTerms(ctx context.Context, tenantID string) ([]models.AcademicTerm, error) {
+	args := m.Called(ctx, tenantID)
+	return args.Get(0).([]models.AcademicTerm), args.Error(1)
+}
+func (m *MockSchedulerRepo) UpdateTerm(ctx context.Context, term *models.AcademicTerm) error {
+	args := m.Called(ctx, term)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) DeleteTerm(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) CreateOffering(ctx context.Context, offering *models.CourseOffering) error {
+	args := m.Called(ctx, offering)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) ListOfferings(ctx context.Context, tenantID string, termID string) ([]models.CourseOffering, error) {
+	args := m.Called(ctx, tenantID, termID)
+	return args.Get(0).([]models.CourseOffering), args.Error(1)
+}
+func (m *MockSchedulerRepo) UpdateOffering(ctx context.Context, offering *models.CourseOffering) error {
+	args := m.Called(ctx, offering)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) AddStaff(ctx context.Context, staff *models.CourseStaff) error {
+	args := m.Called(ctx, staff)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) ListStaff(ctx context.Context, offeringID string) ([]models.CourseStaff, error) {
+	args := m.Called(ctx, offeringID)
+	return args.Get(0).([]models.CourseStaff), args.Error(1)
+}
+func (m *MockSchedulerRepo) RemoveStaff(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) ListSessions(ctx context.Context, oID string, s, e time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, oID, s, e)
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
+func (m *MockSchedulerRepo) UpdateSession(ctx context.Context, s *models.ClassSession) error {
+	args := m.Called(ctx, s)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) DeleteSession(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error) {
+	args := m.Called(ctx, termID)
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
 
 // MockSchedResourceRepo
 type MockSchedResourceRepo struct {
@@ -247,4 +293,179 @@ func TestSchedulerService_ScheduleSession_Notification(t *testing.T) {
 	// Verify Mailer was called (async, so give it a split second or assert specifically)
 	time.Sleep(50 * time.Millisecond) // Wait for goroutine
 	mockMailer.AssertCalled(t, "SendNotificationEmail", instEmail, mock.Anything, mock.Anything)
+}
+
+// TestSchedulerService_CreateTerm tests the CreateTerm function
+func TestSchedulerService_CreateTerm(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		term := &models.AcademicTerm{
+			Code:      "FALL2025",
+			Name:      "Fall 2025",
+			StartDate: time.Now(),
+			EndDate:   time.Now().Add(120 * 24 * time.Hour),
+			TenantID:  "tenant1",
+		}
+		mockRepo.On("CreateTerm", ctx, mock.AnythingOfType("*models.AcademicTerm")).Return(nil)
+
+		err := svc.CreateTerm(ctx, term)
+		assert.NoError(t, err)
+		mockRepo.AssertCalled(t, "CreateTerm", ctx, mock.Anything)
+	})
+
+	t.Run("Error - Missing Code", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		term := &models.AcademicTerm{
+			Name:      "Fall 2025",
+			StartDate: time.Now(),
+			EndDate:   time.Now().Add(120 * 24 * time.Hour),
+		}
+
+		err := svc.CreateTerm(ctx, term)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "code and name are required")
+	})
+
+	t.Run("Error - End before Start", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		term := &models.AcademicTerm{
+			Code:      "INVALID",
+			Name:      "Invalid",
+			StartDate: time.Now().Add(30 * 24 * time.Hour),
+			EndDate:   time.Now(), // End before start
+		}
+
+		err := svc.CreateTerm(ctx, term)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "end date must be after start date")
+	})
+}
+
+// TestSchedulerService_ListTerms tests the ListTerms function
+func TestSchedulerService_ListTerms(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		terms := []models.AcademicTerm{
+			{ID: "t1", Code: "FALL2025"},
+			{ID: "t2", Code: "SPRING2026"},
+		}
+		mockRepo.On("ListTerms", ctx, "tenant1").Return(terms, nil)
+
+		result, err := svc.ListTerms(ctx, "tenant1")
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+	})
+
+	t.Run("Empty list", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		mockRepo.On("ListTerms", ctx, "tenant2").Return([]models.AcademicTerm{}, nil)
+
+		result, err := svc.ListTerms(ctx, "tenant2")
+		assert.NoError(t, err)
+		assert.Len(t, result, 0)
+	})
+}
+
+// TestSchedulerService_AddStaff tests the AddStaff function
+func TestSchedulerService_AddStaff(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		staff := &models.CourseStaff{
+			CourseOfferingID: "offering1",
+			UserID:           "user1",
+			Role:             "instructor",
+		}
+		mockRepo.On("AddStaff", ctx, mock.AnythingOfType("*models.CourseStaff")).Return(nil)
+
+		err := svc.AddStaff(ctx, staff)
+		assert.NoError(t, err)
+		assert.NotEqual(t, time.Time{}, staff.CreatedAt, "CreatedAt should be set")
+	})
+
+	t.Run("Repo error", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		staff := &models.CourseStaff{
+			CourseOfferingID: "offering1",
+			UserID:           "user1",
+			Role:             "instructor",
+		}
+		mockRepo.On("AddStaff", ctx, mock.Anything).Return(assert.AnError)
+
+		err := svc.AddStaff(ctx, staff)
+		assert.Error(t, err)
+	})
+}
+
+// TestSchedulerService_ListSessions tests the ListSessions function
+func TestSchedulerService_ListSessions(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		startDate := time.Now()
+		endDate := time.Now().Add(7 * 24 * time.Hour)
+		sessions := []models.ClassSession{
+			{ID: "s1", CourseOfferingID: "off1"},
+			{ID: "s2", CourseOfferingID: "off1"},
+		}
+		mockRepo.On("ListSessions", ctx, "off1", startDate, endDate).Return(sessions, nil)
+
+		result, err := svc.ListSessions(ctx, "off1", startDate, endDate)
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+	})
 }

@@ -53,6 +53,7 @@ func (s *AnalyticsService) GetMonitorMetrics(ctx context.Context, filter models.
 	if err != nil {
 		return nil, err
 	}
+	metrics.TotalStudentsCount = total
 	if total == 0 {
 		return metrics, nil // Empty metrics
 	}
