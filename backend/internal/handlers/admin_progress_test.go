@@ -1474,9 +1474,50 @@ func TestAdminHandler_PostReminders(t *testing.T) {
 	})
 }
 
+func TestAdminHandler_GetStudentDeadlines(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
 
+	studentID := "66666666-6666-6666-6666-666666666666"
+	tenantID := "77777777-7777-7777-7777-777777777777"
 
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-deadlines') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
 
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'deadlineuser', 'deadline@ex.com', 'Deadline', 'User', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, studentID, tenantID)
+	require.NoError(t, err)
+
+	pbm := &pb.Manager{}
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Next()
+	})
+	r.GET("/admin/students/:id/deadlines", h.GetStudentDeadlines)
+
+	t.Run("Get Deadlines - Returns Empty", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/admin/students/"+studentID+"/deadlines", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp []map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.Len(t, resp, 0) // Stub returns empty
+	})
+}
 
 
 

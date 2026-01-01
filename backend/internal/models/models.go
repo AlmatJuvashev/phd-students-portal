@@ -9,6 +9,7 @@ const (
 	RoleAdmin      Role = "admin"
 	RoleStudent    Role = "student"
 	RoleAdvisor    Role = "advisor"
+	RoleSecretary  Role = "secretary"
 	RoleChair      Role = "chair"
 )
 
@@ -60,6 +61,8 @@ type Event struct {
 	StartTime       time.Time `db:"start_time" json:"start_time"`
 	EndTime         time.Time `db:"end_time" json:"end_time"`
 	EventType       EventType `db:"event_type" json:"event_type"`
+	RecurrenceType  *string   `db:"recurrence_type" json:"recurrence_type,omitempty"` // daily, weekly, monthly, none
+	RecurrenceEnd   *time.Time `db:"recurrence_end" json:"recurrence_end,omitempty"`
 	Location        string    `db:"location" json:"location"`
 	MeetingType     *string   `db:"meeting_type" json:"meeting_type,omitempty"`       // "online" or "offline"
 	MeetingURL      *string   `db:"meeting_url" json:"meeting_url,omitempty"`         // Zoom/Google Meet link for online

@@ -180,6 +180,19 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	analyticsService := services.NewAnalyticsService(analyticsRepo)
 	analyticsHandler := NewAnalyticsHandler(analyticsService)
 
+	// Scheduler
+	schedulerRepo := repository.NewSQLSchedulerRepository(db)
+	// Reuse existing ResourceRepo (resourceRepo) which was defined above. Wait, resourceRepo is "resources := ..." or similar? 
+	// I need to find where ResourceRepo is defined. It's likely in "resources".
+	// Let's create it fresh to be safe or look up slightly higher in file.
+	// Oh, I can see "resourceHandler := ..." in previous context? No.
+	// Let's instantiate SQLResourceRepository here again, it's cheap (just a struct with db pointer).
+	resourceRepo := repository.NewSQLResourceRepository(db)
+	schedulerService := services.NewSchedulerService(schedulerRepo, resourceRepo)
+	schedulerHandler := NewSchedulerHandler(schedulerService)
+
+
+
 	// ===========================================
 	// SUPERADMIN ROUTES (global platform admin)
 	// ===========================================
@@ -229,6 +242,18 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			check.GET("/modules", checklistHandler.ListModules)
 		}
 
+		// Scheduler
+		sched := protected.Group("/scheduling")
+		{
+			sched.GET("/terms", schedulerHandler.ListTerms)
+			sched.POST("/terms", schedulerHandler.CreateTerm)
+			
+			sched.POST("/offerings", schedulerHandler.CreateOffering)
+			
+			sched.GET("/sessions", schedulerHandler.ListSessions)
+			sched.POST("/sessions", schedulerHandler.CreateSession)
+		}
+
 		// Search
 		protected.GET("/search", searchHandler.GlobalSearch)
 
@@ -239,6 +264,46 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			dict.GET("/specialties", dictionaryHandler.ListSpecialties)
 			dict.GET("/cohorts", dictionaryHandler.ListCohorts)
 			dict.GET("/departments", dictionaryHandler.ListDepartments)
+		}
+
+		// Grading Module
+		gradingRepo := repository.NewSQLGradingRepository(db)
+		gradingService := services.NewGradingService(gradingRepo)
+		gradingHandler := NewGradingHandler(gradingService)
+		
+		gr := protected.Group("/grading")
+		{
+			gr.GET("/schemas", gradingHandler.ListSchemas)
+			gr.POST("/schemas", gradingHandler.CreateSchema)
+			gr.POST("/entries", gradingHandler.SubmitGrade)
+			gr.GET("/student/:studentId", gradingHandler.ListStudentGrades)
+		}
+
+		// Item Bank Module
+		ibRepo := repository.NewSQLItemBankRepository(db)
+		ibService := services.NewItemBankService(ibRepo)
+		ibHandler := NewItemBankHandler(ibService)
+
+		ib := protected.Group("/item-banks")
+		{
+			ib.GET("/banks", ibHandler.ListBanks)
+			ib.POST("/banks", ibHandler.CreateBank)
+			ib.GET("/banks/:bankId/items", ibHandler.ListItems)
+			ib.POST("/banks/:bankId/items", ibHandler.CreateItem)
+		}
+
+		// Governance Module (Phase 5)
+		govRepo := repository.NewSQLGovernanceRepository(db)
+		govService := services.NewGovernanceService(govRepo)
+		govHandler := NewGovernanceHandler(govService)
+
+		gov := protected.Group("/governance")
+		{
+			gov.POST("/proposals", govHandler.SubmitProposal)
+			gov.GET("/proposals", govHandler.ListProposals)
+			gov.GET("/proposals/:id", govHandler.GetProposal)
+			gov.POST("/proposals/:id/review", govHandler.ReviewProposal) // Approve/Reject
+			gov.GET("/proposals/:id/reviews", govHandler.ListReviews)
 		}
 
 		// Notifications

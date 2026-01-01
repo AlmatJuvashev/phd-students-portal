@@ -227,4 +227,31 @@ func TestAuthHandler_PasswordReset(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 0, count)
 	})
+
+	t.Run("Reset Password Invalid Token", func(t *testing.T) {
+		reqBody := map[string]string{
+			"token":        "invalid-token",
+			"new_password": "newpassword123",
+		}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("POST", "/reset-password", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("Reset Password Missing Fields", func(t *testing.T) {
+		reqBody := map[string]string{}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("POST", "/reset-password", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }

@@ -169,6 +169,9 @@ func (s *UserService) ResetPasswordForUser(ctx context.Context, id string) (stri
 	hash, _ := auth.HashPassword(tempPass)
 	
 	err = s.repo.UpdatePassword(ctx, id, hash)
+	if err != nil {
+		return "", "", fmt.Errorf("update pass failed: %w", err)
+	}
 	if s.rds != nil { s.rds.Del(ctx, "user:"+id) }
 	return user.Username, tempPass, nil
 }

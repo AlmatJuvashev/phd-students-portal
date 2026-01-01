@@ -326,3 +326,215 @@ func TestChatHandler_MessageCreation(t *testing.T) {
 		assert.Equal(t, "Hello World", msgs[0].(map[string]interface{})["body"])
 	})
 }
+
+func TestChatHandler_ListAllRooms(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	adminID := "11111111-1111-1111-1111-111111111111"
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'listadmin', 'listadmin@ex.com', 'List', 'Admin', 'admin', 'hash', true)`, adminID)
+	require.NoError(t, err)
+
+	// Create rooms
+	_, err = db.Exec(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES 
+		('Room 1', 'cohort', $1, 'admin', $2),
+		('Room 2', 'group', $1, 'admin', $2)`, adminID, tenantID)
+	require.NoError(t, err)
+
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, nil, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("claims", jwt.MapClaims{"sub": adminID})
+		c.Set("tenant_id", tenantID)
+		c.Set("role", "admin")
+		c.Next()
+	})
+	r.GET("/admin/chat/rooms", h.ListAllRooms)
+
+	t.Run("Success", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/admin/chat/rooms", nil)
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		rooms := resp["rooms"].([]interface{})
+		assert.Len(t, rooms, 2)
+	})
+
+	t.Run("No Tenant", func(t *testing.T) {
+		r2 := gin.New()
+		r2.Use(func(c *gin.Context) {
+			c.Set("claims", jwt.MapClaims{"sub": adminID})
+			// No tenant_id set
+			c.Next()
+		})
+		r2.GET("/admin/chat/rooms", h.ListAllRooms)
+
+		req, _ := http.NewRequest("GET", "/admin/chat/rooms", nil)
+		w := httptest.NewRecorder()
+		r2.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+func TestChatHandler_FileOperations(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	userID := "22222222-2222-2222-2222-222222222222"
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'fileuser', 'file@ex.com', 'File', 'User', 'student', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	var roomID string
+	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES ('File Room', 'group', $1, 'student', $2) RETURNING id`, userID, tenantID).Scan(&roomID)
+	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id) VALUES ($1, $2, 'member', $3)`, roomID, userID, tenantID)
+	require.NoError(t, err)
+
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, nil, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Next()
+	})
+	r.POST("/chat/rooms/:roomId/files", h.UploadFile)
+	r.GET("/chat/rooms/:roomId/files/:filename", h.DownloadFile)
+
+	t.Run("UploadFile - Missing File", func(t *testing.T) {
+		req, _ := http.NewRequest("POST", "/chat/rooms/"+roomID+"/files", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("DownloadFile - Not Member", func(t *testing.T) {
+		otherUserID := "33333333-3333-3333-3333-333333333333"
+		_, _ = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+			VALUES ($1, 'other', 'other@ex.com', 'Other', 'User', 'student', 'hash', true)`, otherUserID)
+
+		r2 := gin.New()
+		r2.Use(func(c *gin.Context) {
+			c.Set("claims", jwt.MapClaims{"sub": otherUserID})
+			c.Next()
+		})
+		r2.GET("/chat/rooms/:roomId/files/:filename", h.DownloadFile)
+
+		req, _ := http.NewRequest("GET", "/chat/rooms/"+roomID+"/files/test.pdf", nil)
+		w := httptest.NewRecorder()
+		r2.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("DownloadFile - File Not Found", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/chat/rooms/"+roomID+"/files/nonexistent.pdf", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		// File path doesn't exist
+		assert.Contains(t, []int{http.StatusNotFound, http.StatusInternalServerError}, w.Code)
+	})
+}
+
+func TestChatHandler_MessageErrors(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	userID := "44444444-4444-4444-4444-444444444444"
+	tenantID := "00000000-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'erruser', 'err@ex.com', 'Err', 'User', 'student', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	var roomID string
+	err = db.QueryRow(`INSERT INTO chat_rooms (name, type, created_by, created_by_role, tenant_id) VALUES ('Err Room', 'group', $1, 'student', $2) RETURNING id`, userID, tenantID).Scan(&roomID)
+	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO chat_room_members (room_id, user_id, role_in_room, tenant_id) VALUES ($1, $2, 'member', $3)`, roomID, userID, tenantID)
+	require.NoError(t, err)
+
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLChatRepository(db)
+	svc := services.NewChatService(repo, nil, cfg)
+	h := handlers.NewChatHandler(svc, cfg)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("claims", jwt.MapClaims{"sub": userID})
+		c.Next()
+	})
+	r.POST("/chat/rooms/:roomId/messages", h.CreateMessage)
+	r.PATCH("/chat/messages/:messageId", h.UpdateMessage)
+	r.DELETE("/chat/messages/:messageId", h.DeleteMessage)
+
+	t.Run("CreateMessage - Empty Body and Attachments", func(t *testing.T) {
+		reqBody := map[string]interface{}{}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("POST", "/chat/rooms/"+roomID+"/messages", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("CreateMessage - Non Member", func(t *testing.T) {
+		otherUserID := "55555555-5555-5555-5555-555555555555"
+		_, _ = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+			VALUES ($1, 'nonmember', 'nm@ex.com', 'Non', 'Member', 'student', 'hash', true)`, otherUserID)
+
+		r2 := gin.New()
+		r2.Use(func(c *gin.Context) {
+			c.Set("claims", jwt.MapClaims{"sub": otherUserID})
+			c.Next()
+		})
+		r2.POST("/chat/rooms/:roomId/messages", h.CreateMessage)
+
+		reqBody := map[string]interface{}{"body": "test"}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("POST", "/chat/rooms/"+roomID+"/messages", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r2.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("UpdateMessage - Not Found", func(t *testing.T) {
+		reqBody := map[string]interface{}{"body": "updated"}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("PATCH", "/chat/messages/00000000-0000-0000-0000-000000000000", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("DeleteMessage - Not Found", func(t *testing.T) {
+		req, _ := http.NewRequest("DELETE", "/chat/messages/00000000-0000-0000-0000-000000000000", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+}

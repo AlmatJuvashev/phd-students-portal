@@ -28,12 +28,7 @@ func NewAdminHandler(cfg config.AppConfig, pbm *pb.Manager, svc *services.AdminS
 	return &AdminHandler{cfg: cfg, pb: pbm, svc: svc, journeySvc: journeySvc}
 }
 
-type studentRow struct {
-	ID    string `db:"id" json:"id"`
-	Name  string `db:"name" json:"name"`
-	Email string `db:"email" json:"email"`
-	Role  string `db:"role" json:"role"`
-}
+
 
 // GET /api/admin/student-progress
 func (h *AdminHandler) StudentProgress(c *gin.Context) {

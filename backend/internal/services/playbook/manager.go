@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -21,7 +22,13 @@ type UploadRequirement struct {
 }
 
 type Requirements struct {
-	Uploads []UploadRequirement `json:"uploads"`
+	Uploads   []UploadRequirement `json:"uploads,omitempty"`
+	CourseID  string              `json:"courseId,omitempty"`
+	Amount    int                 `json:"amount,omitempty"`
+	Currency  string              `json:"currency,omitempty"`
+	Role      string              `json:"role,omitempty"`
+	Action    string              `json:"action,omitempty"`
+	Fields    []any               `json:"fields,omitempty"`
 }
 
 type Node struct {
@@ -64,7 +71,7 @@ func EnsureActiveForTenant(db *sqlx.DB, path string, tenantID string) (*Manager,
 }
 
 func ensureActiveCommon(db *sqlx.DB, path string, tenantID string) (*Manager, error) {
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("read playbook: %w", err)
 	}

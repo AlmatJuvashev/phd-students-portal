@@ -260,9 +260,9 @@ func TestSQLUserRepository_RateLimit_Unit(t *testing.T) {
 	repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
 
 	t.Run("CheckRateLimit", func(t *testing.T) {
-		// Matches: SELECT COUNT(*) FROM rate_limit_events WHERE user_id=$1 AND action=$2 AND occurred_at > NOW() - $3::interval
+		// Mock needs to expect strict string match for "60 seconds" constructed in repository
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM rate_limit_events WHERE user_id=\$1 AND action=\$2 AND occurred_at > NOW\(\) - \$3::interval`).
-			WithArgs("u-1", "login", time.Minute).
+			WithArgs("u-1", "login", "60 seconds").
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
 
 		count, err := repo.CheckRateLimit(context.Background(), "u-1", "login", time.Minute)
@@ -277,5 +277,167 @@ func TestSQLUserRepository_RateLimit_Unit(t *testing.T) {
 
 		err := repo.RecordRateLimit(context.Background(), "u-1", "login")
 		assert.NoError(t, err)
+	})
+}
+
+func TestSQLUserRepository_PasswordReset_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
+
+	userID := "u1"
+	token := "hashedtoken"
+	expires := time.Now().Add(time.Hour)
+
+	t.Run("CreateToken", func(t *testing.T) {
+		mock.ExpectExec(`INSERT INTO password_reset_tokens`).
+			WithArgs(userID, token, expires).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		
+		err := repo.CreatePasswordResetToken(context.Background(), userID, token, expires)
+		assert.NoError(t, err)
+	})
+
+	t.Run("GetToken", func(t *testing.T) {
+		mock.ExpectQuery(`SELECT user_id, expires_at FROM password_reset_tokens WHERE token_hash = \$1`).
+			WithArgs(token).
+			WillReturnRows(sqlmock.NewRows([]string{"user_id", "expires_at"}).AddRow(userID, expires))
+
+		uid, exp, err := repo.GetPasswordResetToken(context.Background(), token)
+		assert.NoError(t, err)
+		assert.Equal(t, userID, uid)
+		assert.WithinDuration(t, expires, exp, time.Second)
+	})
+
+	t.Run("DeleteToken", func(t *testing.T) {
+		mock.ExpectExec(`DELETE FROM password_reset_tokens WHERE token_hash = \$1`).
+			WithArgs(token).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		
+		err := repo.DeletePasswordResetToken(context.Background(), token)
+		assert.NoError(t, err)
+	})
+}
+
+func TestSQLUserRepository_MiscUpdates_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
+	
+	id := "u1"
+
+	t.Run("UpdatePassword", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE users SET password_hash=\$1, updated_at=NOW\(\) WHERE id=\$2`).
+			WithArgs("newhash", id).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		assert.NoError(t, repo.UpdatePassword(context.Background(), id, "newhash"))
+	})
+
+	t.Run("UpdateAvatar", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE users SET avatar_url=\$1, updated_at=NOW\(\) WHERE id=\$2`).
+			WithArgs("http://img.com", id).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		assert.NoError(t, repo.UpdateAvatar(context.Background(), id, "http://img.com"))
+	})
+
+	t.Run("SetActive", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE users SET is_active=\$1 WHERE id=\$2`).
+			WithArgs(false, id).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		assert.NoError(t, repo.SetActive(context.Background(), id, false))
+	})
+	
+	t.Run("GetByUsername", func(t *testing.T) {
+		mock.ExpectQuery(`SELECT (.+) FROM users WHERE username = \$1`).
+			WithArgs("user1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "username"}).AddRow(id, "user1"))
+		u, err := repo.GetByUsername(context.Background(), "user1")
+		assert.NoError(t, err)
+		assert.Equal(t, "user1", u.Username)
+	})
+
+	t.Run("EmailExists", func(t *testing.T) {
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM users WHERE email=\$1`).
+			WithArgs("test@ex.com").
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+		exists, err := repo.EmailExists(context.Background(), "test@ex.com", "")
+		assert.NoError(t, err)
+		assert.True(t, exists)
+	})
+}
+
+func TestSQLUserRepository_Cleanup_Unit(t *testing.T) {
+	t.Run("Exists", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("stub open error: %s", err)
+		}
+		defer db.Close()
+		repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
+
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM users WHERE username=\$1\)`).
+			WithArgs("u1").
+			WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+		
+		exists, err := repo.Exists(context.Background(), "u1")
+		assert.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("SyncProfileSubmissions", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("stub open error: %s", err)
+		}
+		defer db.Close()
+		repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
+
+		data := map[string]string{"program": "PhD"}
+		
+		mock.ExpectExec(`INSERT INTO profile_submissions`).
+			WithArgs("u1", sqlmock.AnyArg(), "t1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err = repo.SyncProfileSubmissions(context.Background(), "u1", data, "t1")
+		assert.NoError(t, err)
+	})
+
+	t.Run("EmailVerification", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("stub open error: %s", err)
+		}
+		defer db.Close()
+		repo := NewSQLUserRepository(sqlx.NewDb(db, "sqlmock"))
+
+		// LogProfileAudit
+		mock.ExpectExec(`INSERT INTO profile_audit_log`).
+			WithArgs("u1", "t1", "update", "newVal", "admin1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		
+		err = repo.LogProfileAudit(context.Background(), "u1", "t1", "update", "newVal", "admin1")
+		assert.NoError(t, err)
+
+		// Email Verification Tokens
+		mock.ExpectExec(`INSERT INTO email_verification_tokens`).
+			WithArgs("u1", "new@ex.com", "tok", sqlmock.AnyArg()).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		
+		err = repo.CreateEmailVerificationToken(context.Background(), "u1", "new@ex.com", "tok", time.Now().Add(time.Hour))
+		assert.NoError(t, err)
+
+		mock.ExpectQuery(`SELECT .* FROM email_verification_tokens WHERE user_id=\$1`).
+			WithArgs("u1").
+			WillReturnRows(sqlmock.NewRows([]string{"new_email"}).AddRow("new@ex.com"))
+		
+		email, err := repo.GetPendingEmailVerification(context.Background(), "u1")
+		assert.NoError(t, err)
+		assert.Equal(t, "new@ex.com", email)
 	})
 }

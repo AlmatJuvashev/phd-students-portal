@@ -183,7 +183,7 @@ func TestSuperadminAdminsHandler_ResetPassword(t *testing.T) {
 	r.POST("/superadmin/admins/:id/reset-password", h.ResetPassword)
 
 	t.Run("Reset Success", func(t *testing.T) {
-		body := map[string]interface{}{"new_password": "NewPassword123!"}
+		body := map[string]interface{}{"password": "NewPassword123!"}
 		jb, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/superadmin/admins/"+userID+"/reset-password", bytes.NewBuffer(jb))
 		req.Header.Set("Content-Type", "application/json")

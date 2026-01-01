@@ -197,7 +197,7 @@ func (s *ChatService) SaveFile(fileHeader *multipart.FileHeader, roomID string) 
 
 	// Directory setup
 	uploadDir := filepath.Join(s.cfg.UploadDir, "chat", roomID)
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+	if err := os.MkdirAll(uploadDir, 0750); err != nil {
 		return "", fmt.Errorf("failed to create upload dir: %w", err)
 	}
 
@@ -212,7 +212,7 @@ func (s *ChatService) SaveFile(fileHeader *multipart.FileHeader, roomID string) 
 	}
 	defer src.Close()
 
-	dst, err := os.Create(destPath)
+	dst, err := os.Create(filepath.Clean(destPath))
 	if err != nil {
 		return "", err
 	}

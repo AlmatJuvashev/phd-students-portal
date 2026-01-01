@@ -43,6 +43,31 @@ func TestSQLUserRepository_CreateUser(t *testing.T) {
 	assert.Equal(t, user.Role, fetched.Role)
 }
 
+func TestSQLUserRepository_CreateSecretary(t *testing.T) {
+	db, cleanup := testutils.SetupTestDB()
+	defer cleanup()
+
+	repo := NewSQLUserRepository(db)
+	
+	user := &models.User{
+		Username:     "sec1",
+		Email:        "sec@example.com",
+		FirstName:    "Elena",
+		LastName:     "Petrovna",
+		Role:         models.RoleSecretary, // Test new role
+		PasswordHash: "hash",
+		IsActive:     true,
+	}
+
+	id, err := repo.Create(context.Background(), user)
+	require.NoError(t, err)
+	assert.NotEmpty(t, id)
+
+	fetched, err := repo.GetByID(context.Background(), id)
+	require.NoError(t, err)
+	assert.Equal(t, models.RoleSecretary, fetched.Role)
+}
+
 func TestSQLUserRepository_UpdateUser(t *testing.T) {
 	db, cleanup := testutils.SetupTestDB()
 	defer cleanup()

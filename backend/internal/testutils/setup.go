@@ -131,40 +131,56 @@ func SetupTestDB() (*sqlx.DB, func()) {
 
 		// 2. Ensure base template exists and is migrated
 		baseDB := "phd_test_base"
+
+		// Check for base template
 		var baseExists bool
 		conn.GetContext(ctx, &baseExists, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", baseDB)
+
+		if baseExists {
+			log.Printf("[SetupTestDB] Dropping stale base template: %s", baseDB)
+			conn.ExecContext(ctx, fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s' AND pid <> pg_backend_pid()", baseDB))
+			conn.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s", baseDB))
+			baseExists = false
+		}
 		
 		if !baseExists {
 			log.Printf("[SetupTestDB] Creating base template database: %s", baseDB)
 			conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", baseDB))
-			
-			// Migrate base template
-			baseURL := strings.ReplaceAll(dbURL, "phd_test", baseDB)
-			_, b, _, _ := runtime.Caller(0)
-			migrationsPath := filepath.Join(filepath.Dir(b), "../../db/migrations")
-			
-			m, err := migrate.New("file://"+migrationsPath, baseURL)
-			if err != nil {
-				log.Fatalf("[SetupTestDB] Failed to migrate base template: %v", err)
-			}
-			if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-				log.Fatalf("[SetupTestDB] Migration failed on base template: %v", err)
-			}
-			m.Close()
 		}
 
-		// 3. Create target DB from template if it doesn't exist
+		// Always migrate base template to ensure it's up to date
+		baseURL := strings.ReplaceAll(dbURL, "phd_test", baseDB)
+		_, b, _, _ := runtime.Caller(0)
+		migrationsPath := filepath.Join(filepath.Dir(b), "../../db/migrations")
+		
+		m, err := migrate.New("file://"+migrationsPath, baseURL)
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to migrate base template: %v", err)
+		}
+		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+			log.Fatalf("[SetupTestDB] Migration failed on base template: %v", err)
+		}
+		m.Close()
+
+		// 3. Create target DB from template
+		// Always drop if exists to ensure fresh clone from updated base
 		var targetExists bool
 		conn.GetContext(ctx, &targetExists, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", targetDB)
 		
-		if !targetExists {
-			log.Printf("[SetupTestDB] Cloning database %s from template %s", targetDB, baseDB)
-			// Ensure no active connections to template (Postgres requirement for cloning)
-			conn.ExecContext(ctx, fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s' AND pid <> pg_backend_pid()", baseDB))
-			_, err = conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s", targetDB, baseDB))
-			if err != nil {
-				log.Fatalf("[SetupTestDB] Failed to clone database %s: %v", targetDB, err)
-			}
+		if targetExists {
+			log.Printf("[SetupTestDB] Dropping stale database %s", targetDB)
+			// Terminate connections
+			conn.ExecContext(ctx, fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s' AND pid <> pg_backend_pid()", targetDB))
+			conn.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s", targetDB))
+		}
+
+		log.Printf("[SetupTestDB] Cloning database %s from template %s", targetDB, baseDB)
+		// Ensure no active connections to template (Postgres requirement for cloning) or wait/retry?
+		// We can terminate connections on baseDB too just in case
+		conn.ExecContext(ctx, fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s' AND pid <> pg_backend_pid()", baseDB))
+		_, err = conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s", targetDB, baseDB))
+		if err != nil {
+			log.Fatalf("[SetupTestDB] Failed to clone database %s: %v", targetDB, err)
 		}
 
 		// 4. Connect to the isolated database

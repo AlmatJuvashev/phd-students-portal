@@ -131,4 +131,43 @@ func TestSQLChecklistRepository_AdvisorInbox(t *testing.T) {
 	assert.Equal(t, "S C", inbox[0].StudentName)
 }
 
+func TestSQLChecklistRepository_AddComment(t *testing.T) {
+	db, cleanup := testutils.SetupTestDB()
+	defer cleanup()
 
+	repo := NewSQLChecklistRepository(db)
+	userRepo := NewSQLUserRepository(db)
+
+	// 1. Create Student
+	studentID, err := userRepo.Create(context.Background(), &models.User{Username: "student_comm", Email: "student_comm@test.com", Role: "student"})
+	require.NoError(t, err)
+
+	// 2. Create Author (Advisor)
+	advisorID, err := userRepo.Create(context.Background(), &models.User{Username: "advisor_comm", Email: "advisor_comm@test.com", Role: "advisor"})
+	require.NoError(t, err)
+
+	// 3. Create Document for Student (requires documents table)
+	// We need to fetch ID to verify comment linkage
+	var docID string
+	tenantID := uuid.New().String()
+	
+	// Create Tenant
+	_, err = db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', $2)`, tenantID, "test-tenant-"+uuid.New().String()[:8])
+	require.NoError(t, err, "failed to create tenant")
+	
+	err = db.QueryRow(`INSERT INTO documents (user_id, kind, title, tenant_id) VALUES ($1, 'dissertation', 'Test Doc', $2) RETURNING id`, studentID, tenantID).Scan(&docID)
+	require.NoError(t, err, "failed to create document")
+
+	// 4. Add Comment
+	content := "Great progress!"
+	mentions := []string{uuid.New().String(), uuid.New().String()}
+	
+	err = repo.AddCommentToLatestDocument(context.Background(), studentID, content, advisorID, tenantID, mentions)
+	require.NoError(t, err)
+
+	// 5. Verify Comment
+	var count int
+	err = db.QueryRow(`SELECT count(*) FROM comments WHERE document_id=$1 AND content=$2 AND user_id=$3`, docID, content, advisorID).Scan(&count)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count, "Comment should be inserted linked to document and advisor")
+}

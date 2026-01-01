@@ -79,3 +79,33 @@ func TestSlugify(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateSecureToken(t *testing.T) {
+	token, err := GenerateSecureToken(32)
+	require.NoError(t, err)
+	assert.Len(t, token, 64) // hex string is 2x bytes
+
+	token2, err := GenerateSecureToken(32)
+	require.NoError(t, err)
+	assert.NotEqual(t, token, token2)
+}
+
+func TestIsImageMimeType(t *testing.T) {
+	tests := []struct {
+		contentType string
+		expected    bool
+	}{
+		{"image/jpeg", true},
+		{"image/png", true},
+		{"image/gif", true},
+		{"application/pdf", false},
+		{"text/plain", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.contentType, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsImageMimeType(tt.contentType))
+		})
+	}
+}

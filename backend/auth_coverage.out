@@ -1,0 +1,15 @@
+mode: set
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/jwt.go:10.87,19.2 3 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/jwt.go:22.119,33.2 3 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:18.28,19.21 1 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:19.21,22.3 2 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:23.2,24.65 2 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:28.46,31.2 2 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:34.42,36.2 1 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:39.31,44.2 4 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:47.54,49.40 2 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:49.40,51.3 1 0
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:52.2,52.34 1 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:56.47,57.21 1 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:58.46,59.14 1 1
+github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth/password.go:60.10,61.15 1 1

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/jmoiron/sqlx"
@@ -137,7 +138,6 @@ func (r *SQLDictionaryRepository) ListSpecialties(ctx context.Context, tenantID 
 	if programID != "" {
 		query += ` AND EXISTS (SELECT 1 FROM specialty_programs WHERE specialty_id = specialties.id AND program_id = $` + itoa(nextArg) + `)`
 		args = append(args, programID)
-		nextArg++
 	}
 	query += ` ORDER BY name`
 
@@ -267,12 +267,7 @@ func (r *SQLDictionaryRepository) DeleteSpecialty(ctx context.Context, tenantID,
 // --- Cohorts ---
 
 func (r *SQLDictionaryRepository) ListCohorts(ctx context.Context, tenantID string, activeOnly bool) ([]models.Cohort, error) {
-	query := `SELECT id, name, 
-              COALESCE(to_char(start_date, 'YYYY-MM-DD'), '') as start_date,
-              COALESCE(to_char(end_date, 'YYYY-MM-DD'), '') as end_date,
-              is_active, 
-              to_char(created_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as created_at,
-              to_char(updated_at,'YYYY-MM-DD"T"HH24:MI:SSZ') as updated_at 
+	query := `SELECT id, name, start_date, end_date, is_active, created_at, updated_at 
               FROM cohorts WHERE tenant_id = $1`
 	args := []interface{}{tenantID}
 
@@ -281,10 +276,39 @@ func (r *SQLDictionaryRepository) ListCohorts(ctx context.Context, tenantID stri
 	}
 	query += ` ORDER BY name DESC`
 
-	var cohorts []models.Cohort
-	if err := r.db.SelectContext(ctx, &cohorts, query, args...); err != nil {
+	type dbCohort struct {
+		ID        string     `db:"id"`
+		Name      string     `db:"name"`
+		StartDate *time.Time `db:"start_date"`
+		EndDate   *time.Time `db:"end_date"`
+		IsActive  bool       `db:"is_active"`
+		CreatedAt time.Time  `db:"created_at"`
+		UpdatedAt time.Time  `db:"updated_at"`
+	}
+
+	var dbCohorts []dbCohort
+	if err := r.db.SelectContext(ctx, &dbCohorts, query, args...); err != nil {
 		return nil, err
 	}
+
+	cohorts := make([]models.Cohort, len(dbCohorts))
+	for i, dc := range dbCohorts {
+		c := models.Cohort{
+			ID:        dc.ID,
+			Name:      dc.Name,
+			IsActive:  dc.IsActive,
+			CreatedAt: dc.CreatedAt,
+			UpdatedAt: dc.UpdatedAt,
+		}
+		if dc.StartDate != nil {
+			c.StartDate = *dc.StartDate
+		}
+		if dc.EndDate != nil {
+			c.EndDate = *dc.EndDate
+		}
+		cohorts[i] = c
+	}
+	
 	if cohorts == nil {
 		return []models.Cohort{}, nil
 	}

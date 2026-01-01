@@ -20,15 +20,18 @@ type SMTPMailer struct {
 	user     string
 	password string
 	from     string
+	// sendMailFunc allows mocking smtp.SendMail in tests
+	sendMailFunc func(addr string, a smtp.Auth, from string, to []string, msg []byte) error
 }
 
 func NewMailer() Mailer {
 	return &SMTPMailer{
-		host:     os.Getenv("SMTP_HOST"),
-		port:     os.Getenv("SMTP_PORT"),
-		user:     os.Getenv("SMTP_USER"),
-		password: os.Getenv("SMTP_PASSWORD"),
-		from:     os.Getenv("SMTP_FROM"),
+		host:         os.Getenv("SMTP_HOST"),
+		port:         os.Getenv("SMTP_PORT"),
+		user:         os.Getenv("SMTP_USER"),
+		password:     os.Getenv("SMTP_PASSWORD"),
+		from:         os.Getenv("SMTP_FROM"),
+		sendMailFunc: smtp.SendMail,
 	}
 }
 
@@ -46,7 +49,7 @@ func (m *SMTPMailer) SendNotificationEmail(to, subject, body string) error {
 		auth = smtp.PlainAuth("", m.user, m.password, m.host)
 	}
 
-	err := smtp.SendMail(addr, auth, m.from, []string{to}, []byte(msg))
+	err := m.sendMailFunc(addr, auth, m.from, []string{to}, []byte(msg))
 	if err != nil {
 		log.Printf("Failed to send email to %s: %v", to, err)
 		return err
