@@ -186,10 +186,17 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// I need to find where ResourceRepo is defined. It's likely in "resources".
 	// Let's create it fresh to be safe or look up slightly higher in file.
 	// Oh, I can see "resourceHandler := ..." in previous context? No.
-	// Let's instantiate SQLResourceRepository here again, it's cheap (just a struct with db pointer).
 	resourceRepo := repository.NewSQLResourceRepository(db)
 	curriculumRepo := repository.NewSQLCurriculumRepository(db)
-	schedulerService := services.NewSchedulerService(schedulerRepo, resourceRepo, curriculumRepo)
+	
+	// Program Builder
+	programBuilderService := services.NewProgramBuilderService(curriculumRepo)
+	programBuilderHandler := NewProgramBuilderHandler(programBuilderService)
+
+	// Mailer for Scheduler
+	smtpMailer := mailer.NewMailer()
+
+	schedulerService := services.NewSchedulerService(schedulerRepo, resourceRepo, curriculumRepo, userRepo, smtpMailer)
 	schedulerHandler := NewSchedulerHandler(schedulerService)
 
 
@@ -392,6 +399,14 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 				admDict.PUT("/departments/:id", dictionaryHandler.UpdateDepartment)
 				admDict.DELETE("/departments/:id", dictionaryHandler.DeleteDepartment)
 			}
+
+			// Program Builder (Components)
+			admBuilder := adm.Group("/programs/:id/builder")
+			{
+				admBuilder.GET("/nodes", programBuilderHandler.GetNodes)
+				admBuilder.POST("/nodes", programBuilderHandler.CreateNode)
+				admBuilder.PUT("/nodes/:nodeId", programBuilderHandler.UpdateNode)
+			}
 			
 			// Admin notifications (duplicated from protected for admin panel access)
 			admNotif := adm.Group("/notifications")
@@ -448,6 +463,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		{
 			an.GET("/stages", analyticsHandler.GetStageStats)
 			an.GET("/overdue", analyticsHandler.GetOverdueStats)
+			an.GET("/monitor", analyticsHandler.GetMonitorMetrics)
 		}
 	}
 	

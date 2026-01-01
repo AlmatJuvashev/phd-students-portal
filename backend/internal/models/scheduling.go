@@ -4,6 +4,29 @@ import (
 	"time"
 )
 
+// Delivery Format Constants
+const (
+	DeliveryInPerson    = "IN_PERSON"     // Traditional classroom
+	DeliveryOnlineSync  = "ONLINE_SYNC"   // Live virtual class (Zoom, Teams)
+	DeliveryOnlineAsync = "ONLINE_ASYNC"  // Self-paced, no scheduled time
+	DeliveryHybrid      = "HYBRID"        // Mixed in-person and online sessions
+)
+
+// ValidDeliveryFormats returns all valid delivery format values
+func ValidDeliveryFormats() []string {
+	return []string{DeliveryInPerson, DeliveryOnlineSync, DeliveryOnlineAsync, DeliveryHybrid}
+}
+
+// IsValidDeliveryFormat checks if a format string is valid
+func IsValidDeliveryFormat(format string) bool {
+	for _, f := range ValidDeliveryFormats() {
+		if f == format {
+			return true
+		}
+	}
+	return false
+}
+
 // AcademicTerm represents a semester or trimester (e.g., "Fall 2025")
 type AcademicTerm struct {
 	ID        string    `db:"id" json:"id"`
@@ -20,17 +43,20 @@ type AcademicTerm struct {
 // CourseOffering represents an instance of a Course running in a specific Term.
 // This supports the "Course Template" vs "Course Instance" architecture.
 type CourseOffering struct {
-	ID            string    `db:"id" json:"id"`
-	CourseID      string    `db:"course_id" json:"course_id"`           // Link to the Template
-	TermID        string    `db:"term_id" json:"term_id"`               // Link to the Term
-	TenantID      string    `db:"tenant_id" json:"tenant_id"`
-	Section       string    `db:"section" json:"section"`               // e.g., "01", "A"
-	MaxCapacity   int       `db:"max_capacity" json:"max_capacity"`
-	CurrentEnrolled int     `db:"current_enrolled" json:"current_enrolled"`
-	IsActive      bool      `db:"is_active" json:"is_active"`
-	Status        string    `db:"status" json:"status"`                 // DRAFT, PUBLISHED, ARCHIVED
-	CreatedAt     time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+	ID              string    `db:"id" json:"id"`
+	CourseID        string    `db:"course_id" json:"course_id"`           // Link to the Template
+	TermID          string    `db:"term_id" json:"term_id"`               // Link to the Term
+	TenantID        string    `db:"tenant_id" json:"tenant_id"`
+	Section         string    `db:"section" json:"section"`               // e.g., "01", "A"
+	DeliveryFormat  string    `db:"delivery_format" json:"delivery_format"` // IN_PERSON, ONLINE_SYNC, ONLINE_ASYNC, HYBRID
+	MaxCapacity     int       `db:"max_capacity" json:"max_capacity"`     // Physical capacity for IN_PERSON
+	VirtualCapacity *int      `db:"virtual_capacity" json:"virtual_capacity,omitempty"` // Optional cap for online
+	CurrentEnrolled int       `db:"current_enrolled" json:"current_enrolled"`
+	MeetingURL      *string   `db:"meeting_url" json:"meeting_url,omitempty"` // Default meeting link for online
+	IsActive        bool      `db:"is_active" json:"is_active"`
+	Status          string    `db:"status" json:"status"`                 // DRAFT, PUBLISHED, ARCHIVED
+	CreatedAt       time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at" json:"updated_at"`
 }
 
 // CourseStaff links a User to a CourseOffering with a specific role.
@@ -55,6 +81,8 @@ type ClassSession struct {
 	RoomID         *string   `db:"room_id" json:"room_id,omitempty"`
 	InstructorID   *string   `db:"instructor_id" json:"instructor_id,omitempty"` // Override default instructor if needed
 	Type           string    `db:"type" json:"type"`         // LECTURE, LAB, SEMINAR, EXAM
+	SessionFormat  *string   `db:"session_format" json:"session_format,omitempty"` // Override for HYBRID courses
+	MeetingURL     *string   `db:"meeting_url" json:"meeting_url,omitempty"`       // Session-specific meeting link
 	IsCancelled    bool      `db:"is_cancelled" json:"is_cancelled"`
 	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`

@@ -73,12 +73,13 @@ func TestResourceHandler_CreateRoom_Success(t *testing.T) {
 	svc := services.NewResourceService(repo)
 	handler := NewResourceHandler(svc)
 
+	// 8 args: building_id, name, capacity, floor, department_id, type, features, is_active
 	mock.ExpectQuery(`INSERT INTO rooms`).
-		WithArgs("b1", "101", 30, "lab", "[]", true).
+		WithArgs("b1", "101", 30, 1, nil, "lab", "[]", true).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
 			AddRow("r1", time.Now(), time.Now()))
 
-	r := models.Room{BuildingID: "b1", Name: "101", Capacity: 30, Type: "lab", Features: "[]", IsActive: true}
+	r := models.Room{BuildingID: "b1", Name: "101", Capacity: 30, Floor: 1, Type: "lab", Features: "[]", IsActive: true}
 	body, _ := json.Marshal(r)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

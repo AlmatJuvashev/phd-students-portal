@@ -57,6 +57,37 @@ func (s *SchedulerSolver) CalculateCost(sol *Solution, instance ProblemInstance)
 		byRoom[assign.RoomID] = append(byRoom[assign.RoomID], assign)
 		if session.InstructorID != "" {
 			byInstructor[session.InstructorID] = append(byInstructor[session.InstructorID], assign)
+			
+			// Check Unavailability
+			if unavailList, exists := instance.Unavailability[session.InstructorID]; exists {
+				for _, slot := range unavailList {
+					// Check Day of Week
+					// assignment.StartTime is full Time.Time. Need to extract Day/WebDay (0=Sun, 1=Mon)
+					// Go's time.Weekday(): Sunday=0
+					if int(assign.StartTime.Weekday()) == slot.DayOfWeek {
+						// Check Time Overlap
+						// We need to parse slot.StartTime "HH:MM:SS" -> time.Time for comparison on that day
+						// Or compare hours/minutes
+						// Assuming standard day, let's compare HH*60+MM
+						
+						sH, sM, _ := assign.StartTime.Clock()
+						eH, eM, _ := assign.EndTime.Clock()
+						sMins := sH*60 + sM
+						eMins := eH*60 + eM
+						
+						// Parse Slot time (naive string parse "HH:MM")
+						uStartMins := parseTimeMins(slot.StartTime)
+						uEndMins := parseTimeMins(slot.EndTime)
+						
+						if sMins < uEndMins && eMins > uStartMins {
+							// Overlap with unavailable slot
+							if slot.IsUnavailable {
+								softPenalties += s.Config.WeightInstructor
+							}
+						}
+					}
+				}
+			}
 		}
 		
 		// Soft: Utilization

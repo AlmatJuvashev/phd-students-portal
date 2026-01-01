@@ -1521,3 +1521,200 @@ func TestAdminHandler_GetStudentDeadlines(t *testing.T) {
 
 
 
+// TestAdminHandler_StudentJourney_Failures tests error paths for StudentJourney handler
+func TestAdminHandler_StudentJourney_Failures(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	tenantID := "88888888-0000-0000-0000-000000000001"
+	advisorID := "88888888-0000-0000-0000-000000000002"
+	unassignedStudentID := "88888888-0000-0000-0000-000000000003"
+	
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-journey') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'advisor', 'advisor@ex.com', 'Advisor', 'One', 'advisor', 'hash', true)`, advisorID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'studentX', 'studentX@ex.com', 'Student', 'Unassigned', 'student', 'hash', true)`, unassignedStudentID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, unassignedStudentID, tenantID)
+	require.NoError(t, err)
+
+	pbm := &pb.Manager{
+		VersionID: "88888888-1111-1111-1111-111111111111",
+		Nodes:     map[string]pb.Node{"node1": {}},
+	}
+
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Set("claims", jwt.MapClaims{"sub": advisorID, "role": "advisor"})
+		c.Next()
+	})
+	r.GET("/admin/students/:id/journey", h.StudentJourney)
+
+	t.Run("Advisor forbidden for unassigned student", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/admin/students/"+unassignedStudentID+"/journey", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("Journey returns empty nodes array when no nodes", func(t *testing.T) {
+		// Create a student assigned to advisor without progress
+		assignedStudentID := uuid.NewString()
+		_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+			VALUES ($1, 'studentY', 'studentY@ex.com', 'Student', 'Assigned', 'student', 'hash', true)`, assignedStudentID)
+		require.NoError(t, err)
+		_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'student', true)`, assignedStudentID, tenantID)
+		require.NoError(t, err)
+		_, err = db.Exec(`INSERT INTO student_advisors (student_id, advisor_id, tenant_id) VALUES ($1, $2, $3)`, assignedStudentID, advisorID, tenantID)
+		require.NoError(t, err)
+
+		req, _ := http.NewRequest("GET", "/admin/students/"+assignedStudentID+"/journey", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		nodes := resp["nodes"].([]interface{})
+		assert.NotNil(t, nodes) // Should be [] not nil
+		assert.Len(t, nodes, 0)
+	})
+}
+
+// TestAdminHandler_MonitorAnalytics_Failures tests error paths for MonitorAnalytics handler
+func TestAdminHandler_MonitorAnalytics_Failures(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	tenantID := "99999999-0000-0000-0000-000000000001"
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-analytics') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	pbm := &pb.Manager{
+		VersionID: "99999999-1111-1111-1111-111111111111",
+		Nodes:     map[string]pb.Node{"node1": {}},
+	}
+
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Set("claims", jwt.MapClaims{"sub": "admin-id", "role": "admin"})
+		c.Next()
+	})
+	r.GET("/admin/analytics", h.MonitorAnalytics)
+
+	t.Run("Analytics with multiple filters", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/admin/analytics?q=test&program=CS&department=Eng&cohort=2024&rp_required=1&overdue=1", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("Analytics with date range filters", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/admin/analytics?due_from=2024-01-01&due_to=2024-12-31", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+// TestAdminHandler_AttachReviewedDocument_Failures tests error paths for AttachReviewedDocument
+func TestAdminHandler_AttachReviewedDocument_Failures(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	tenantID := "aaaaaaaa-0000-0000-0000-000000000001"
+	adminID := "aaaaaaaa-0000-0000-0000-000000000002"
+
+	_, err := db.Exec(`INSERT INTO tenants (id, name, slug) VALUES ($1, 'Test Tenant', 'test-attach') ON CONFLICT DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) 
+		VALUES ($1, 'admin', 'admin@ex.com', 'Admin', 'User', 'admin', 'hash', true)`, adminID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary) VALUES ($1, $2, 'admin', true)`, adminID, tenantID)
+	require.NoError(t, err)
+
+	pbm := &pb.Manager{}
+	cfg := config.AppConfig{}
+	repo := repository.NewSQLAdminRepository(db)
+	svc := services.NewAdminService(repo, pbm, cfg, nil)
+	jRepo := repository.NewSQLJourneyRepository(db)
+	jSvc := services.NewJourneyService(jRepo, pbm, cfg, nil, nil, nil)
+	h := handlers.NewAdminHandler(cfg, pbm, svc, jSvc)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("tenant_id", tenantID)
+		c.Set("claims", jwt.MapClaims{"sub": adminID, "role": "admin"})
+		c.Next()
+	})
+	r.POST("/admin/attachments/:attachmentId/attach-reviewed", h.AttachReviewedDocument)
+
+	t.Run("Attach with missing fields", func(t *testing.T) {
+		reqBody := map[string]interface{}{
+			"object_key": "key",
+			// Missing filename, content_type, size_bytes
+		}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("POST", "/admin/attachments/fake-id/attach-reviewed", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("Attach unauthorized (no claims)", func(t *testing.T) {
+		gin.SetMode(gin.TestMode)
+		rNoAuth := gin.New()
+		rNoAuth.Use(func(c *gin.Context) {
+			c.Set("tenant_id", tenantID)
+			// No claims set
+			c.Next()
+		})
+		rNoAuth.POST("/admin/attachments/:attachmentId/attach-reviewed", h.AttachReviewedDocument)
+
+		reqBody := map[string]interface{}{
+			"object_key":   "key",
+			"filename":     "test.pdf",
+			"content_type": "application/pdf",
+			"size_bytes":   1024,
+		}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("POST", "/admin/attachments/fake-id/attach-reviewed", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		rNoAuth.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+}

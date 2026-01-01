@@ -28,3 +28,14 @@ type Room struct {
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
+
+// InstructorAvailability represents a time block where an instructor is unavailable (or preferred)
+type InstructorAvailability struct {
+	ID            string    `json:"id" db:"id"`
+	InstructorID  string    `json:"instructor_id" db:"instructor_id"`
+	DayOfWeek     int       `json:"day_of_week" db:"day_of_week"` // 0=Sunday
+	StartTime     string    `json:"start_time" db:"start_time"`   // "HH:MM:SS" or "HH:MM"
+	EndTime       string    `json:"end_time" db:"end_time"`       // "HH:MM:SS" or "HH:MM"
+	IsUnavailable bool      `json:"is_unavailable" db:"is_unavailable"`
+	CreatedAt     time.Time `json:"created_at" db:"created_at"`
+}

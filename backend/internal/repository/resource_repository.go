@@ -21,6 +21,10 @@ type ResourceRepository interface {
 	ListRooms(ctx context.Context, buildingID string) ([]models.Room, error)
 	UpdateRoom(ctx context.Context, r *models.Room) error
 	DeleteRoom(ctx context.Context, id string) error
+
+	// Availability
+	SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error
+	GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error)
 }
 
 type SQLResourceRepository struct {
@@ -101,4 +105,28 @@ func (r *SQLResourceRepository) UpdateRoom(ctx context.Context, rm *models.Room)
 func (r *SQLResourceRepository) DeleteRoom(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM rooms WHERE id=$1`, id)
 	return err
+}
+
+// --- Availability ---
+
+func (r *SQLResourceRepository) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error {
+	// Upsert logic or simple insert? For simplicity, we'll just insert/update on conflict if checking ID, 
+	// but here we might want to just create new entries.
+	// Let's assume frontend manages IDs or we wipe and replace.
+	// For now: Simple Create. logic for overlap check should be in service or FE.
+	return r.db.QueryRowxContext(ctx, `
+		INSERT INTO instructor_availability (instructor_id, day_of_week, start_time, end_time, is_unavailable)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, created_at`,
+		avail.InstructorID, avail.DayOfWeek, avail.StartTime, avail.EndTime, avail.IsUnavailable,
+	).Scan(&avail.ID, &avail.CreatedAt)
+}
+
+func (r *SQLResourceRepository) GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error) {
+	var list []models.InstructorAvailability
+	err := sqlx.SelectContext(ctx, r.db, &list, `
+		SELECT * FROM instructor_availability 
+		WHERE instructor_id=$1 
+		ORDER BY day_of_week, start_time`, instructorID)
+	return list, err
 }

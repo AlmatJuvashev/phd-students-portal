@@ -92,8 +92,8 @@ func (r *SQLSchedulerRepository) DeleteTerm(ctx context.Context, id string) erro
 // --- Offerings ---
 
 func (r *SQLSchedulerRepository) CreateOffering(ctx context.Context, o *models.CourseOffering) error {
-	query := `INSERT INTO course_offerings (course_id, term_id, tenant_id, section, max_capacity, status) 
-              VALUES (:course_id, :term_id, :tenant_id, :section, :max_capacity, :status) 
+	query := `INSERT INTO course_offerings (course_id, term_id, tenant_id, section, delivery_format, max_capacity, virtual_capacity, meeting_url, status) 
+              VALUES (:course_id, :term_id, :tenant_id, :section, :delivery_format, :max_capacity, :virtual_capacity, :meeting_url, :status) 
               RETURNING id, created_at, updated_at`
 	rows, err := r.db.NamedQueryContext(ctx, query, o)
 	if err != nil {
@@ -127,8 +127,8 @@ func (r *SQLSchedulerRepository) ListOfferings(ctx context.Context, tenantID str
 
 func (r *SQLSchedulerRepository) UpdateOffering(ctx context.Context, o *models.CourseOffering) error {
 	o.UpdatedAt = time.Now()
-	query := `UPDATE course_offerings SET section=:section, max_capacity=:max_capacity, 
-              status=:status, updated_at=:updated_at WHERE id=:id`
+	query := `UPDATE course_offerings SET section=:section, delivery_format=:delivery_format, max_capacity=:max_capacity, 
+              virtual_capacity=:virtual_capacity, meeting_url=:meeting_url, status=:status, updated_at=:updated_at WHERE id=:id`
 	_, err := r.db.NamedExecContext(ctx, query, o)
 	return err
 }
@@ -164,8 +164,8 @@ func (r *SQLSchedulerRepository) RemoveStaff(ctx context.Context, id string) err
 // --- Sessions ---
 
 func (r *SQLSchedulerRepository) CreateSession(ctx context.Context, s *models.ClassSession) error {
-	query := `INSERT INTO class_sessions (course_offering_id, title, date, start_time, end_time, room_id, instructor_id, type) 
-              VALUES (:course_offering_id, :title, :date, :start_time, :end_time, :room_id, :instructor_id, :type) 
+	query := `INSERT INTO class_sessions (course_offering_id, title, date, start_time, end_time, room_id, instructor_id, type, session_format, meeting_url) 
+              VALUES (:course_offering_id, :title, :date, :start_time, :end_time, :room_id, :instructor_id, :type, :session_format, :meeting_url) 
               RETURNING id, created_at, updated_at`
 	rows, err := r.db.NamedQueryContext(ctx, query, s)
 	if err != nil {

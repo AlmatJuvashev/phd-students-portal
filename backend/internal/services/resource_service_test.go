@@ -56,6 +56,14 @@ func (m *MockResourceRepo) DeleteRoom(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
+func (m *MockResourceRepo) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error {
+	args := m.Called(ctx, avail)
+	return args.Error(0)
+}
+func (m *MockResourceRepo) GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error) {
+	args := m.Called(ctx, instructorID)
+	return args.Get(0).([]models.InstructorAvailability), args.Error(1)
+}
 
 // Ensure mock implements interface
 var _ repository.ResourceRepository = (*MockResourceRepo)(nil)

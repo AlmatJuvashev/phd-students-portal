@@ -42,6 +42,7 @@ func (m *MockCurriculumRepo) CreateCourse(ctx context.Context, c *models.Course)
 }
 func (m *MockCurriculumRepo) GetCourse(ctx context.Context, id string) (*models.Course, error) {
 	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
 	return args.Get(0).(*models.Course), args.Error(1)
 }
 func (m *MockCurriculumRepo) ListCourses(ctx context.Context, tenantID string, programID *string) ([]models.Course, error) {
@@ -78,6 +79,17 @@ func (m *MockCurriculumRepo) GetNodeDefinitions(ctx context.Context, jMapID stri
 }
 func (m *MockCurriculumRepo) DeleteNodeDefinition(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+func (m *MockCurriculumRepo) GetNodeDefinition(ctx context.Context, id string) (*models.JourneyNodeDefinition, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.JourneyNodeDefinition), args.Error(1)
+}
+func (m *MockCurriculumRepo) UpdateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error {
+	args := m.Called(ctx, nd)
 	return args.Error(0)
 }
 func (m *MockCurriculumRepo) CreateCohort(ctx context.Context, c *models.Cohort) error {

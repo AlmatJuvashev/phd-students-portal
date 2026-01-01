@@ -99,7 +99,7 @@ func TestCurriculumRepository_CreateCourse(t *testing.T) {
 	}
 
 	mock.ExpectQuery(`INSERT INTO courses`).
-		WithArgs(c.TenantID, c.ProgramID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive).
+		WithArgs(c.TenantID, c.ProgramID, c.DepartmentID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
 			AddRow("course-1", time.Now(), time.Now()))
 
@@ -129,7 +129,7 @@ func TestCurriculumRepository_GetUpdateDeleteCourse(t *testing.T) {
 	// UpdateCourse
 	c.Code = "C2"
 	mock.ExpectExec(`UPDATE courses SET program_id=\$1`).
-		WithArgs(c.ProgramID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive, c.ID).
+		WithArgs(c.ProgramID, c.DepartmentID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive, c.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = repo.UpdateCourse(ctx, c)
