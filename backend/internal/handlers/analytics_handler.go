@@ -45,6 +45,7 @@ func (h *AnalyticsHandler) GetMonitorMetrics(c *gin.Context) {
 
 	// Map Agnostic Metrics to Frontend-Specific keys
 	response := gin.H{
+		"total_students_count":  metrics.TotalStudentsCount,
 		"antiplag_done_percent": metrics.ComplianceRate,
 		"w2_median_days":        metrics.StageMedianDays,
 		"bottleneck_node_id":    metrics.BottleneckNodeID,
