@@ -19,6 +19,7 @@ type ProblemInstance struct {
 	Rooms        map[string]models.Room // RoomID -> Room Model
 	Instructors  map[string]models.User // InstructorID -> User Model (optional)
 	Dependencies map[string][]string    // SessionID -> List of prerequisite SessionIDs
+	Unavailability map[string][]models.InstructorAvailability // InstructorID -> List of unavailable slots
 }
 
 // SessionData is a flattened representation of a session for the solver.

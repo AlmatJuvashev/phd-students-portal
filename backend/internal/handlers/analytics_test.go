@@ -101,3 +101,41 @@ func TestAnalyticsHandler_GetOverdueStats(t *testing.T) {
 	assert.Equal(t, "node1", resp[0]["node_id"])
 	assert.Equal(t, float64(1), resp[0]["count"])
 }
+
+func TestAnalyticsHandler_GetMonitorMetrics(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	// Seed some monitor data
+	// e.g. 1 student, 1 node completion
+	studentID := uuid.NewString()
+	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active) VALUES 
+		($1, 'student1', 'student1@ex.com', 'S', '1', 'student', 'hash', true)`, studentID)
+	require.NoError(t, err)
+
+	repo := repository.NewSQLAnalyticsRepository(db)
+	svc := services.NewAnalyticsService(repo)
+	h := handlers.NewAnalyticsHandler(svc)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.GET("/analytics/monitor", h.GetMonitorMetrics)
+
+	// Use a valid UUID, even if it doesn't exist in DB it's fine for query params unless FK check
+	// But let's use a dummy UUID
+	progID := "33333333-3333-3333-3333-333333333333"
+	req, _ := http.NewRequest("GET", "/analytics/monitor?program_id="+progID, nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	
+	var resp map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+
+	// Check for Phase 9 keys
+	assert.Contains(t, resp, "total_students_count")
+	assert.Contains(t, resp, "antiplag_done_percent") // Mapped from GetNodeCompletionCount
+	assert.Contains(t, resp, "w2_median_days")        // Mapped from GetDurationForNodes
+}

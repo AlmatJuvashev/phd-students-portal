@@ -72,18 +72,21 @@ func TestResourceRepository_Rooms(t *testing.T) {
 	repo := NewSQLResourceRepository(sqlxDB)
 	ctx := context.Background()
 
+	deptID := "dept-1"
 	r := &models.Room{
-		BuildingID: "b1",
-		Name:       "101",
-		Capacity:   50,
-		Type:       "lecture",
-		Features:   "[]",
-		IsActive:   true,
+		BuildingID:   "b1",
+		Name:         "101",
+		Capacity:     50,
+		Floor:        1,
+		DepartmentID: &deptID,
+		Type:         "lecture",
+		Features:     "[]",
+		IsActive:     true,
 	}
 
-	// Create
+	// Create - 8 args: building_id, name, capacity, floor, department_id, type, features, is_active
 	mock.ExpectQuery(`INSERT INTO rooms`).
-		WithArgs(r.BuildingID, r.Name, r.Capacity, r.Type, r.Features, r.IsActive).
+		WithArgs(r.BuildingID, r.Name, r.Capacity, r.Floor, r.DepartmentID, r.Type, r.Features, r.IsActive).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
 			AddRow("r1", time.Now(), time.Now()))
 
@@ -100,10 +103,10 @@ func TestResourceRepository_Rooms(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, list, 1)
 
-	// Update
+	// Update - 8 args: name, capacity, floor, department_id, type, features, is_active, id
 	r.Capacity = 60
 	mock.ExpectExec(`UPDATE rooms`).
-		WithArgs(r.Name, r.Capacity, r.Type, r.Features, r.IsActive, r.ID).
+		WithArgs(r.Name, r.Capacity, r.Floor, r.DepartmentID, r.Type, r.Features, r.IsActive, r.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	err = repo.UpdateRoom(ctx, r)
 	assert.NoError(t, err)

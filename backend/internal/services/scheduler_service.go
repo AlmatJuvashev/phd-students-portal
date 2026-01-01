@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/mailer"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/scheduler/solver"
 )
 
@@ -15,13 +16,17 @@ type SchedulerService struct {
 	repo           repository.SchedulerRepository
 	resourceRepo   repository.ResourceRepository
 	curriculumRepo repository.CurriculumRepository
+	userRepo       repository.UserRepository
+	mailer         mailer.Mailer
 }
 
-func NewSchedulerService(repo repository.SchedulerRepository, resourceRepo repository.ResourceRepository, curriculumRepo repository.CurriculumRepository) *SchedulerService {
+func NewSchedulerService(repo repository.SchedulerRepository, resourceRepo repository.ResourceRepository, curriculumRepo repository.CurriculumRepository, userRepo repository.UserRepository, mailer mailer.Mailer) *SchedulerService {
 	return &SchedulerService{
 		repo:           repo,
 		resourceRepo:   resourceRepo,
 		curriculumRepo: curriculumRepo,
+		userRepo:       userRepo,
+		mailer:         mailer,
 	}
 }
 
@@ -46,6 +51,13 @@ func (s *SchedulerService) ListTerms(ctx context.Context, tenantID string) ([]mo
 func (s *SchedulerService) CreateOffering(ctx context.Context, o *models.CourseOffering) error {
 	if o.CourseID == "" || o.TermID == "" {
 		return errors.New("course_id and term_id are required")
+	}
+	// Validate and default delivery format
+	if o.DeliveryFormat == "" {
+		o.DeliveryFormat = models.DeliveryInPerson
+	}
+	if !models.IsValidDeliveryFormat(o.DeliveryFormat) {
+		return fmt.Errorf("invalid delivery_format: %s (must be one of: %v)", o.DeliveryFormat, models.ValidDeliveryFormats())
 	}
 	o.CreatedAt = time.Now()
 	o.UpdatedAt = time.Now()
@@ -90,23 +102,56 @@ func (s *SchedulerService) ScheduleSession(ctx context.Context, session *models.
 		return nil, err
 	}
 	
+	// Notify Instructor
+	if session.InstructorID != nil {
+		go func() {
+			instructor, err := s.userRepo.GetByID(context.Background(), *session.InstructorID)
+			if err == nil && instructor != nil && instructor.Email != "" {
+				subject := "New Class Session Scheduled"
+				body := fmt.Sprintf("Hello %s,<br><br>You have been scheduled for a new session:<br>Date: %s<br>Time: %s - %s<br>Room: %s<br>", 
+					instructor.FirstName, session.Date.Format("2006-01-02"), session.StartTime, session.EndTime, *session.RoomID)
+				_ = s.mailer.SendNotificationEmail(instructor.Email, subject, body)
+			}
+		}()
+	}
+	
 	return warnings, nil
 }
 
 // CheckConflicts checks Room and Instructor availability + Capacity + Dept Constraints
 // Returns warnings ([]string) and error (if Critical Conflict)
+// Respects delivery format: ONLINE_ASYNC has no scheduling constraints,
+// ONLINE_SYNC skips room constraints but checks instructor conflicts
 func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.ClassSession) ([]string, error) {
 	var warnings []string
 	cfg := solver.DefaultConfig() // Use defaults for Manual Entry
 
-	// Fetch offering for capacity check
+	// Fetch offering for capacity check and delivery format
 	offering, err := s.repo.GetOffering(ctx, session.CourseOfferingID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get offering: %w", err)
 	}
 
-	// 1. Room Conflict & Capacity Check
-	if session.RoomID != nil {
+	// Determine effective format (session override > offering default)
+	format := offering.DeliveryFormat
+	if session.SessionFormat != nil && *session.SessionFormat != "" {
+		format = *session.SessionFormat
+	}
+	// Default to IN_PERSON if format is empty (legacy data)
+	if format == "" {
+		format = models.DeliveryInPerson
+	}
+
+	// ONLINE_ASYNC: No scheduling constraints at all (self-paced)
+	if format == models.DeliveryOnlineAsync {
+		return warnings, nil
+	}
+
+	// For ONLINE_SYNC: Skip room constraints but check instructor
+	isOnline := (format == models.DeliveryOnlineSync)
+
+	// 1. Room Conflict & Capacity Check (Skip for online formats)
+	if session.RoomID != nil && !isOnline {
 		room, err := s.resourceRepo.GetRoom(ctx, *session.RoomID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get room: %w", err)
@@ -156,14 +201,41 @@ func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.C
 		}
 	}
 
-	// 2. Instructor Conflict
+	// 2. Instructor Conflict & Availability
 	if session.InstructorID != nil {
+		// A. Overlap with Existing Sessions
 		sessions, err := s.repo.ListSessionsByInstructor(ctx, *session.InstructorID, session.Date, session.Date)
 		if err != nil {
 			return nil, err
 		}
 		if hasOverlap(session, sessions) {
 			return nil, &ConflictError{Reason: "Instructor is already teaching another class at this time"}
+		}
+
+		// B. Unavailability Check (Resource Repo)
+		// We need to fetch unavailability for this instructor
+		availList, err := s.resourceRepo.GetAvailability(ctx, *session.InstructorID)
+		if err == nil { // Ignore error for now, treat as no constraints
+			sessionDay := int(session.Date.Weekday()) // 0=Sun
+			sMins := parseTime(session.StartTime)
+			eMins := parseTime(session.EndTime)
+
+			for _, slot := range availList {
+				if slot.DayOfWeek == sessionDay && slot.IsUnavailable {
+					uStart := parseTime(slot.StartTime)
+					uEnd := parseTime(slot.EndTime)
+
+					if sMins < uEnd && eMins > uStart {
+						// Overlap
+						msg := "Instructor is unavailable during this time"
+						if cfg.TimeConflictConstraint == "HARD" { // Treat as Time Conflict
+							return nil, &ConflictError{Reason: msg}
+						} else {
+							warnings = append(warnings, "Warning: "+msg)
+						}
+					}
+				}
+			}
 		}
 	}
 

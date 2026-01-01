@@ -10,26 +10,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Mocks (Simplified for this test file, or reuse existing mocks if exported)
-// Assuming we have mocks in the package based on previous `scheduler_service_test.go`.
-// If not available here, I will define minimal mocks.
-
-// Mocks are assumed to be available in the package (defined in other test files)
-// If running isolated tests, these would need to be defined. But we run as package.
-
-
 func TestManualConstraints(t *testing.T) {
 	// Setup Mocks
-	mockSchedRepo := new(MockSchedulerRepo) // From other test file
-	mockResRepo := new(MockSchedResourceRepo) // From other test file
+	mockSchedRepo := new(MockSchedulerRepo)
+	mockResRepo := new(MockSchedResourceRepo)
 	mockCurrRepo := new(MockCurriculumRepo)
 
-	// Since we cannot easily change DefaultConfig (global function), 
-	// we test the default behavior which is HARD constraints.
-	// To test SOFT, we would need to be able to inject config into CheckConflicts.
-	// Solution: Update CheckConflicts to accept optional config or rely on Defaults being HARD.
-	
-	svc := NewSchedulerService(mockSchedRepo, mockResRepo, mockCurrRepo)
+	svc := NewSchedulerService(mockSchedRepo, mockResRepo, mockCurrRepo, new(MockUserRepository), new(MockMailer))
 	ctx := context.Background()
 
 	// Data

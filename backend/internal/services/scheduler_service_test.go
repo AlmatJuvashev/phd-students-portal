@@ -68,13 +68,20 @@ func (m *MockSchedResourceRepo) CreateRoom(ctx context.Context, r *models.Room) 
 func (m *MockSchedResourceRepo) ListRooms(ctx context.Context, buildingID string) ([]models.Room, error) { return nil, nil }
 func (m *MockSchedResourceRepo) UpdateRoom(ctx context.Context, r *models.Room) error { return nil }
 func (m *MockSchedResourceRepo) DeleteRoom(ctx context.Context, id string) error { return nil }
+func (m *MockSchedResourceRepo) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error { return nil }
+func (m *MockSchedResourceRepo) GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error) {
+	args := m.Called(ctx, instructorID)
+	// Return empty list by default if not mocked otherwise
+	if args.Get(0) == nil { return []models.InstructorAvailability{}, args.Error(1) }
+	return args.Get(0).([]models.InstructorAvailability), args.Error(1)
+}
 
 
 func TestSchedulerService_ConflictDetection(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
 	mockResource := new(MockSchedResourceRepo)
 	mockCurriculum := new(MockCurriculumRepo)
-	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, new(MockUserRepository), new(MockMailer))
 	ctx := context.Background()
 
 	testDate := time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC)
@@ -108,7 +115,7 @@ func TestSchedulerService_CapacityConflict(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
 	mockResource := new(MockSchedResourceRepo)
 	mockCurriculum := new(MockCurriculumRepo)
-	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, new(MockUserRepository), new(MockMailer))
 	ctx := context.Background()
 	
 	offeringID := "off-big"
@@ -132,7 +139,7 @@ func TestSchedulerService_InstructorConflict(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
 	mockResource := new(MockSchedResourceRepo)
 	mockCurriculum := new(MockCurriculumRepo)
-	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, new(MockUserRepository), new(MockMailer))
 	ctx := context.Background()
 	testDate := time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC)
 	instID := "prof-X"
@@ -150,4 +157,94 @@ func TestSchedulerService_InstructorConflict(t *testing.T) {
 	_, err := svc.CheckConflicts(ctx, newSession)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Instructor is already teaching")
+}
+
+func TestSchedulerService_InstructorUnavailability(t *testing.T) {
+	mockRepo := new(MockSchedulerRepo)
+	mockResource := new(MockSchedResourceRepo)
+	mockCurriculum := new(MockCurriculumRepo)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, new(MockUserRepository), new(MockMailer))
+	ctx := context.Background()
+	testDate := time.Date(2025, 10, 2, 0, 0, 0, 0, time.UTC) // Thursday
+	instID := "prof-Unavail"
+	offeringID := "off-3"
+
+	mockRepo.On("GetOffering", ctx, offeringID).Return(&models.CourseOffering{ID: offeringID, MaxCapacity: 10}, nil)
+	// No existing sessions
+	mockRepo.On("ListSessionsByInstructor", ctx, instID, testDate, testDate).Return([]models.ClassSession{}, nil)
+
+	// Mock Availability: Unavailable on Thursdays 14:00-16:00
+	avail := []models.InstructorAvailability{
+		{
+			InstructorID:  instID,
+			DayOfWeek:     int(testDate.Weekday()), // 4 = Thursday
+			StartTime:     "14:00",
+			EndTime:       "16:00",
+			IsUnavailable: true,
+		},
+	}
+	mockResource.On("GetAvailability", ctx, instID).Return(avail, nil)
+
+	// Try to schedule 14:30 - 15:30 -> Conflict
+	newSession := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "14:30", EndTime: "15:30", InstructorID: &instID}
+
+	// Default Config is HARD constraints for Time? Check ConflictError
+	_, err := svc.CheckConflicts(ctx, newSession)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Instructor is unavailable")
+}
+
+func TestSchedulerService_ScheduleSession_Notification(t *testing.T) {
+	mockRepo := new(MockSchedulerRepo)
+	mockResource := new(MockSchedResourceRepo)
+	mockCurriculum := new(MockCurriculumRepo)
+	mockUser := new(MockUserRepository)
+	mockMailer := new(MockMailer)
+	
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+	ctx := context.Background()
+	
+	testDate := time.Date(2025, 10, 3, 0, 0, 0, 0, time.UTC)
+	instID := "prof-Notify"
+	roomID := "room-X"
+	offeringID := "off-N"
+	instEmail := "prof@test.com"
+
+	session := &models.ClassSession{
+		ID:               "sess-123",
+		CourseOfferingID: offeringID,
+		InstructorID:     &instID,
+		RoomID:           &roomID,
+		Date:             testDate,
+		StartTime:        "09:00",
+		EndTime:          "10:00",
+	}
+
+	// 1. Conflict Check Expectations
+	mockRepo.On("GetOffering", ctx, offeringID).Return(&models.CourseOffering{ID: offeringID, CourseID: "course-1", MaxCapacity: 50}, nil)
+	mockResource.On("GetRoom", ctx, roomID).Return(&models.Room{ID: roomID, Capacity: 50}, nil)
+	mockRepo.On("ListSessionsByRoom", ctx, roomID, testDate, testDate).Return([]models.ClassSession{}, nil)
+	mockRepo.On("ListSessionsByInstructor", ctx, instID, testDate, testDate).Return([]models.ClassSession{}, nil)
+	mockResource.On("GetAvailability", ctx, instID).Return([]models.InstructorAvailability{}, nil)
+    mockCurriculum.On("GetCourse", ctx, "course-1").Return(nil, nil).Maybe()
+
+	// 2. Create Session Expectation
+	mockRepo.On("CreateSession", ctx, session).Return(nil)
+
+	// 3. Notification Expectations
+	mockUser.On("GetByID", ctx, instID).Return(&models.User{
+		ID:        instID,
+		FirstName: "Professor",
+		Email:     instEmail,
+	}, nil)
+	
+	mockMailer.On("SendNotificationEmail", instEmail, mock.Anything, mock.Anything).Return(nil)
+
+	// Execute
+	_, err := svc.ScheduleSession(ctx, session)
+	assert.NoError(t, err)
+
+	// Verify Mailer was called (async, so give it a split second or assert specifically)
+	time.Sleep(50 * time.Millisecond) // Wait for goroutine
+	mockMailer.AssertCalled(t, "SendNotificationEmail", instEmail, mock.Anything, mock.Anything)
 }

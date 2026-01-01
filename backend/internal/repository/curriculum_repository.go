@@ -31,6 +31,8 @@ type CurriculumRepository interface {
 	// Node Definitions
 	CreateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error
 	GetNodeDefinitions(ctx context.Context, journeyMapID string) ([]models.JourneyNodeDefinition, error)
+	GetNodeDefinition(ctx context.Context, id string) (*models.JourneyNodeDefinition, error)
+	UpdateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error
 	DeleteNodeDefinition(ctx context.Context, id string) error
 	
 	// Cohorts
@@ -167,6 +169,21 @@ func (r *SQLCurriculumRepository) GetNodeDefinitions(ctx context.Context, journe
 
 func (r *SQLCurriculumRepository) DeleteNodeDefinition(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM journey_node_definitions WHERE id=$1`, id)
+	return err
+}
+
+func (r *SQLCurriculumRepository) GetNodeDefinition(ctx context.Context, id string) (*models.JourneyNodeDefinition, error) {
+	var nd models.JourneyNodeDefinition
+	err := sqlx.GetContext(ctx, r.db, &nd, `SELECT * FROM journey_node_definitions WHERE id=$1`, id)
+	return &nd, err
+}
+
+func (r *SQLCurriculumRepository) UpdateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE journey_node_definitions 
+		SET title=$1, description=$2, coordinates=$3, config=$4, prerequisites=$5, module_key=$6, type=$7, updated_at=now()
+		WHERE id=$8`,
+		nd.Title, nd.Description, nd.Coordinates, nd.Config, pq.Array(nd.Prerequisites), nd.ModuleKey, nd.Type, nd.ID)
 	return err
 }
 
