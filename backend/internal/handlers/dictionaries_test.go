@@ -2,19 +2,77 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/testutils"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+// MockDictionaryRepository definition
+type MockDictionaryRepository struct {
+	mock.Mock
+}
+
+func (m *MockDictionaryRepository) ListPrograms(ctx context.Context, tenantID string, activeOnly bool) ([]models.Program, error) {
+	args := m.Called(ctx, tenantID, activeOnly)
+	return args.Get(0).([]models.Program), args.Error(1)
+}
+func (m *MockDictionaryRepository) CreateProgram(ctx context.Context, tenantID, name, code string) (string, error) {
+	return "p1", nil
+}
+func (m *MockDictionaryRepository) UpdateProgram(ctx context.Context, tenantID, id, name, code string, isActive *bool) error {
+	return nil
+}
+func (m *MockDictionaryRepository) DeleteProgram(ctx context.Context, tenantID, id string) error {
+	return nil
+}
+func (m *MockDictionaryRepository) ListSpecialties(ctx context.Context, tenantID string, activeOnly bool, programID string) ([]models.Specialty, error) {
+	return nil, nil
+}
+func (m *MockDictionaryRepository) CreateSpecialty(ctx context.Context, tenantID, name, code string, programIDs []string) (string, error) {
+	return "", nil
+}
+func (m *MockDictionaryRepository) UpdateSpecialty(ctx context.Context, tenantID, id, name, code string, isActive *bool, programIDs []string) error {
+	return nil
+}
+func (m *MockDictionaryRepository) DeleteSpecialty(ctx context.Context, tenantID, id string) error {
+	return nil
+}
+func (m *MockDictionaryRepository) ListCohorts(ctx context.Context, tenantID string, activeOnly bool) ([]models.Cohort, error) {
+	return nil, nil
+}
+func (m *MockDictionaryRepository) CreateCohort(ctx context.Context, tenantID, name, startDate, endDate string) (string, error) {
+	return "", nil
+}
+func (m *MockDictionaryRepository) UpdateCohort(ctx context.Context, tenantID, id, name, startDate, endDate string, isActive *bool) error {
+	return nil
+}
+func (m *MockDictionaryRepository) DeleteCohort(ctx context.Context, tenantID, id string) error {
+	return nil
+}
+func (m *MockDictionaryRepository) ListDepartments(ctx context.Context, tenantID string, activeOnly bool) ([]models.Department, error) {
+	return nil, nil
+}
+func (m *MockDictionaryRepository) CreateDepartment(ctx context.Context, tenantID, name, code string) (string, error) {
+	return "", nil
+}
+func (m *MockDictionaryRepository) UpdateDepartment(ctx context.Context, tenantID, id, name, code string, isActive *bool) error {
+	return nil
+}
+func (m *MockDictionaryRepository) DeleteDepartment(ctx context.Context, tenantID, id string) error {
+	return nil
+}
 
 func TestDictionaryHandler_Programs(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
@@ -66,15 +124,48 @@ func TestDictionaryHandler_Programs(t *testing.T) {
 	})
 
 	t.Run("List Programs", func(t *testing.T) {
+		// Ensure Clean Mock State
+		mockRepo := new(MockDictionaryRepository)
+		// Re-init handler with FRESH mock using constructor
+		s := services.NewDictionaryService(mockRepo)
+		h := handlers.NewDictionaryHandler(s)
+		
+		gin.SetMode(gin.TestMode)
+		r := gin.New()
+		r.GET("/dictionaries/programs", h.ListPrograms)
+
+		// Setup Expectation
+		mockRepo.On("ListPrograms", mock.Anything, "t1", false).Return([]models.Program{
+			{ID: "p1", Name: "Computer Science", Code: "CS"},
+		}, nil)
+
 		req, _ := http.NewRequest("GET", "/dictionaries/programs", nil)
+		// Inject Tenant Context if middleware does it, usually Set("tenant_id", "t1")
+		// But here we might need to mock middleware behavior or use a helper that sets context.
+		// If handler calls GetTenantID(c), we need to ensure context has it.
+		// For unit test without middleware, we can't easily set context unless we use a wrapper.
+		// HOWEVER, standard handler usually gets tenant from context.
+		
+		// Let's force context in the request? No, Gin context.
+		// Correct approach: Use a middleware that sets the keys.
 		w := httptest.NewRecorder()
+		
+		// Wrap with context setter
+		r.GET("/dictionaries/programs_test", func(c *gin.Context) {
+			c.Set("tenant_id", "t1")
+			h.ListPrograms(c)
+		})
+		
+		req, _ = http.NewRequest("GET", "/dictionaries/programs_test", nil)
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp []map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.Len(t, resp, 1)
-		assert.Equal(t, "Computer Science", resp[0]["name"])
+		if len(resp) > 0 {
+			assert.Equal(t, "Computer Science", resp[0]["name"])
+		}
 	})
 
 	t.Run("Update Program", func(t *testing.T) {

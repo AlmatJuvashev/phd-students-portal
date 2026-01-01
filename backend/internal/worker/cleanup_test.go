@@ -122,3 +122,71 @@ func TestCleanupWorker_RunCleanup_Pagination(t *testing.T) {
 	assert.Contains(t, mockS3.DeletedKeys, "orphan-1.pdf")
 	assert.Contains(t, mockS3.DeletedKeys, "orphan-2.pdf")
 }
+
+func TestCleanupWorker_Start(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	// Cancel immediately to test graceful shutdown
+	cancel()
+
+	mockS3 := &MockS3Client{}
+	worker := NewCleanupWorker(db, mockS3, "test-bucket")
+	
+	// Should not block
+	done := make(chan bool)
+	go func() {
+		worker.Start(ctx)
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("Start did not return after context cancellation")
+	}
+}
+
+func TestCleanupWorker_RunCleanup_Errors(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+	
+	t.Run("Missing S3 Client", func(t *testing.T) {
+		worker := NewCleanupWorker(db, nil, "bucket")
+		// Should run without panic
+		worker.runCleanup(context.Background())
+	})
+
+	t.Run("S3 List Error", func(t *testing.T) {
+		mockS3 := &MockS3Client{
+			ListObjectsFunc: func(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
+				return nil, assert.AnError
+			},
+		}
+		worker := NewCleanupWorker(db, mockS3, "bucket")
+		worker.runCleanup(context.Background())
+	})
+
+	t.Run("S3 Delete Error", func(t *testing.T) {
+		oldTime := time.Now().Add(-48 * time.Hour)
+		mockS3 := &MockS3Client{
+			ListObjectsFunc: func(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
+				return &s3.ListObjectsV2Output{
+					Contents: []types.Object{
+						{Key: aws.String("orphan-error.pdf"), LastModified: &oldTime},
+					},
+				}, nil
+			},
+			DeleteObjectFunc: func(ctx context.Context, params *s3.DeleteObjectInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectOutput, error) {
+				return nil, assert.AnError
+			},
+		}
+		worker := NewCleanupWorker(db, mockS3, "bucket")
+		worker.runCleanup(context.Background())
+		// Verification is implied by lack of panic and log output (if we could check logs)
+		// But functionally we check if it tried to delete
+		assert.Len(t, mockS3.DeletedKeys, 1)
+	})
+}

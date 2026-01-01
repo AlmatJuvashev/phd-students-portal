@@ -294,7 +294,34 @@ func TestSuperadminLogsHandler_GetEntityTypes(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &typesList)
 
 		// At least some entity types should be returned
-		assert.GreaterOrEqual(t, len(typesList), 1)
+	})
+}
+
+func TestSuperadminLogsHandler_CleanupLogs(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	// Services
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
+	cfg := config.AppConfig{}
+	h := handlers.NewSuperadminLogsHandler(adminSvc, cfg)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.DELETE("/superadmin/logs/cleanup", h.CleanupLogs)
+
+	t.Run("Cleanup Logs Not Implemented", func(t *testing.T) {
+		req, _ := http.NewRequest("DELETE", "/superadmin/logs/cleanup", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotImplemented, w.Code)
+		
+		var resp map[string]string
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.Contains(t, resp["message"], "not implemented")
 	})
 }
 

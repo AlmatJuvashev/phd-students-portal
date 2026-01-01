@@ -2,17 +2,8 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
-	"regexp"
-	"sort"
-	"strings"
 )
 
-type app7ValidationError struct {
-	msg string
-}
-
-func (e *app7ValidationError) Error() string { return e.msg }
 
 type App7Entry struct {
 	Title         string   `json:"title"`
@@ -60,27 +51,6 @@ type app7LegacyCounts struct {
 	CountKokson      *int `json:"count_kokson"`
 	CountConferences *int `json:"count_conferences"`
 	CountIP          *int `json:"count_ip"`
-}
-
-var (
-	doiPattern   = regexp.MustCompile(`(?i)^10\.[0-9]{4,9}/[-._;()/:A-Z0-9]+$`)
-	issnPattern  = regexp.MustCompile(`^[0-9]{4}-[0-9]{3}[0-9Xx]$`)
-	yearPattern  = regexp.MustCompile(`^(18|19|20)\d{2}([/\\-](18|19|20)\d{2})?$`)
-)
-
-func normalizeApp7Payload(raw json.RawMessage) ([]byte, *App7Form, error) {
-	form, err := buildApp7Form(raw)
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := sanitizeApp7Form(form); err != nil {
-		return nil, nil, err
-	}
-	sanitized, err := json.Marshal(form)
-	if err != nil {
-		return nil, nil, err
-	}
-	return sanitized, form, nil
 }
 
 func buildApp7Form(raw json.RawMessage) (*App7Form, error) {
@@ -134,96 +104,6 @@ func buildApp7Form(raw json.RawMessage) (*App7Form, error) {
 		}
 	}
 	return form, nil
-}
-
-func sanitizeApp7Form(form *App7Form) error {
-	if form.LegacyCounts == nil {
-		form.LegacyCounts = map[string]int{}
-	}
-
-	var errs []string
-
-	sanitize := func(entries []App7Entry, section string, requireIPType bool) []App7Entry {
-		cleaned := make([]App7Entry, 0, len(entries))
-		for idx, entry := range entries {
-			normalized := normalizeEntry(entry)
-			if err := validateEntry(normalized, requireIPType); err != nil {
-				errs = append(errs, fmt.Sprintf("%s[%d]: %s", section, idx+1, err.Error()))
-			}
-			cleaned = append(cleaned, normalized)
-		}
-		if cleaned == nil {
-			return []App7Entry{}
-		}
-		return cleaned
-	}
-
-	form.Sections.WosScopus = sanitize(form.Sections.WosScopus, "wos_scopus", false)
-	form.Sections.Kokson = sanitize(form.Sections.Kokson, "kokson", false)
-	form.Sections.Conferences = sanitize(form.Sections.Conferences, "conferences", false)
-	form.Sections.IP = sanitize(form.Sections.IP, "ip", true)
-
-	if len(errs) > 0 {
-		sort.Strings(errs)
-		return &app7ValidationError{msg: strings.Join(errs, "; ")}
-	}
-
-	return nil
-}
-
-func normalizeEntry(entry App7Entry) App7Entry {
-	entry.Title = strings.TrimSpace(entry.Title)
-	entry.Format = strings.TrimSpace(entry.Format)
-	entry.FormatOther = strings.TrimSpace(entry.FormatOther)
-	entry.Journal = strings.TrimSpace(entry.Journal)
-	entry.Year = strings.TrimSpace(entry.Year)
-	entry.VolumeIssue = strings.TrimSpace(entry.VolumeIssue)
-	entry.PagesOrSheets = strings.TrimSpace(entry.PagesOrSheets)
-	entry.DOI = strings.TrimSpace(entry.DOI)
-	entry.ISSNPrint = strings.TrimSpace(entry.ISSNPrint)
-	entry.ISSNOnline = strings.TrimSpace(entry.ISSNOnline)
-	entry.Indexing = strings.TrimSpace(entry.Indexing)
-	entry.IndexingOther = strings.TrimSpace(entry.IndexingOther)
-	entry.IPType = strings.TrimSpace(entry.IPType)
-	entry.IPTypeOther = strings.TrimSpace(entry.IPTypeOther)
-	entry.CertificateNo = strings.TrimSpace(entry.CertificateNo)
-	entry.ISBN = strings.TrimSpace(entry.ISBN)
-
-	cleanedAuthors := make([]string, 0, len(entry.Coauthors))
-	for _, name := range entry.Coauthors {
-		name = strings.TrimSpace(name)
-		if name != "" {
-			cleanedAuthors = append(cleanedAuthors, name)
-		}
-	}
-	entry.Coauthors = cleanedAuthors
-
-	return entry
-}
-
-func validateEntry(entry App7Entry, requireIPType bool) error {
-	if entry.Title == "" {
-		return fmt.Errorf("title is required")
-	}
-	if len(entry.Title) > 1000 {
-		return fmt.Errorf("title exceeds 1000 characters")
-	}
-	if entry.Year != "" && !yearPattern.MatchString(entry.Year) {
-		return fmt.Errorf("year must be in format YYYY or YYYY/YYYY")
-	}
-	if entry.DOI != "" && !doiPattern.MatchString(entry.DOI) {
-		return fmt.Errorf("invalid DOI")
-	}
-	if entry.ISSNPrint != "" && !issnPattern.MatchString(entry.ISSNPrint) {
-		return fmt.Errorf("invalid ISSN print")
-	}
-	if entry.ISSNOnline != "" && !issnPattern.MatchString(entry.ISSNOnline) {
-		return fmt.Errorf("invalid ISSN online")
-	}
-	if requireIPType && entry.IPType == "" && entry.IPTypeOther == "" {
-		return fmt.Errorf("type is required for intellectual property entries")
-	}
-	return nil
 }
 
 func summarizeApp7(sections App7Sections) map[string]int {

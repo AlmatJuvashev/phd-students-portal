@@ -114,7 +114,17 @@ func TestUsersHandler_UpdateAvatar(t *testing.T) {
 		var avatarURL string
 		err := db.Get(&avatarURL, "SELECT avatar_url FROM users WHERE id=$1", userID)
 		require.NoError(t, err)
+
 		assert.Equal(t, newAvatar, avatarURL)
+	})
+
+	t.Run("Update Avatar Invalid JSON", func(t *testing.T) {
+		req, _ := http.NewRequest("PUT", "/users/me/avatar", bytes.NewBufferString("invalid-json"))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }
 

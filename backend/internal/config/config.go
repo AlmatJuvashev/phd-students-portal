@@ -58,7 +58,7 @@ func MustLoad() AppConfig {
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")
 	}
-	_ = os.MkdirAll(cfg.UploadDir, 0755)
+	_ = os.MkdirAll(cfg.UploadDir, 0750)
 
 	// Log important config values at startup
 	log.Printf("Config loaded: Port=%s, Env=%s, FrontendBase=%s, ServerURL=%s", cfg.Port, cfg.Env, cfg.FrontendBase, cfg.ServerURL)

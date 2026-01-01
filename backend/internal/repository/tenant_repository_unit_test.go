@@ -7,6 +7,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,5 +93,48 @@ func TestSQLTenantRepository_Update_Unit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, tenant)
 		assert.Equal(t, "Updated Name", tenant.Name)
+	})
+}
+
+func TestSQLTenantRepository_UpdateServices_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLTenantRepository(sqlx.NewDb(db, "sqlmock"))
+
+	id := "t-1"
+	services := []string{"chat", "calendar"}
+
+	t.Run("Success", func(t *testing.T) {
+		mock.ExpectQuery(`UPDATE tenants SET enabled_services = \$2, updated_at = now\(\) WHERE id = \$1 RETURNING name`).
+			WithArgs(id, pq.Array(services)).
+			WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("Tenant One"))
+
+		name, err := repo.UpdateServices(context.Background(), id, services)
+		assert.NoError(t, err)
+		assert.Equal(t, "Tenant One", name)
+	})
+}
+
+func TestSQLTenantRepository_UpdateLogo_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLTenantRepository(sqlx.NewDb(db, "sqlmock"))
+
+	id := "t-1"
+	url := "http://example.com/logo.png"
+
+	t.Run("Success", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE tenants SET logo_url = \$2, updated_at = now\(\) WHERE id = \$1`).
+			WithArgs(id, url).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.UpdateLogo(context.Background(), id, url)
+		assert.NoError(t, err)
 	})
 }

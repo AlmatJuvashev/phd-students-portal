@@ -203,3 +203,42 @@ func TestNodeWithRequirements(t *testing.T) {
 	assert.Equal(t, "doc1", node.Requirements.Uploads[0].Key)
 	assert.True(t, node.Requirements.Uploads[0].Required)
 }
+
+func TestEnsureActiveForTenant(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	tmpDir := t.TempDir()
+	playbookPath := filepath.Join(tmpDir, "playbook.json")
+	playbookData := `{
+		"playbook_id": "tenant-playbook",
+		"version": "2.0.0",
+		"locale_default": "en",
+		"worlds": [{"id": "W1", "nodes": []}]
+	}`
+	err := os.WriteFile(playbookPath, []byte(playbookData), 0644)
+	require.NoError(t, err)
+
+	tenantID := "test-tenant-uuid-123"
+	
+	// Ensure table has the tenant (if FK constraint exists). 
+	// The repo doesn't enforce FK on tenant_id in playbook_versions usually, but let's see schema.
+	// SetupTestDB creates 'default-test' tenant. We'll use a new one.
+	_, err = db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type) VALUES ($1, 'slug', 'Name', 'university')`, tenantID)
+	// If tenants table doesn't exist or setup failed, this might error. But SetupTestDB runs migrations.
+	// Actually, based on previous cleanupDB, tenants table exists.
+	if err != nil {
+		// Try using the default tenant if insert fails (maybe duplicate)
+		tenantID = "00000000-0000-0000-0000-000000000001"
+	}
+
+	mgr, err := EnsureActiveForTenant(db, playbookPath, tenantID)
+	require.NoError(t, err)
+	assert.Equal(t, "2.0.0", mgr.Version)
+
+	// Verify it's active for THAT tenant
+	var activeVersionID string
+	err = db.Get(&activeVersionID, "SELECT playbook_version_id FROM playbook_active_version WHERE tenant_id=$1", tenantID)
+	assert.NoError(t, err)
+	assert.Equal(t, mgr.VersionID, activeVersionID)
+}

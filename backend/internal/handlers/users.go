@@ -101,19 +101,7 @@ type resetPwReq struct {
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
-type updateUserReq struct {
-	FirstName string `json:"first_name" binding:"required"`
-	LastName  string `json:"last_name" binding:"required"`
-	Email     string `json:"email" binding:"required,email"`
-	Role      string `json:"role" binding:"required,oneof=student advisor chair admin"`
-	// Optional student profile fields (ignored for non-students)
-	Phone      string `json:"phone" binding:"omitempty"`
-	Program    string `json:"program" binding:"omitempty"`
-	Specialty  string `json:"specialty" binding:"omitempty"`
-	Department string `json:"department" binding:"omitempty"`
-	Cohort     string `json:"cohort" binding:"omitempty"`
-	AdvisorIDs []string `json:"advisor_ids"`
-}
+
 
 // UpdateUser allows admin to update user details (except superadmin)
 // UpdateUser updates user details (admin function)
@@ -202,44 +190,10 @@ func (h *UsersHandler) ChangeOwnPassword(c *gin.Context) {
 		return
 	}
 
-	err := h.userService.ChangePassword(c.Request.Context(), uid, "", req.NewPassword) // Requires current password if not forced override?
-	// Wait, ChangeOwnPassword logic in original code did NOT require old password?
-	// It was `UPDATE users SET password_hash=$1`. It did NOT check old password. 
-	// This is insecure but I must replicate it or if I use `UpdateProfile` it requires old password.
-	// Oh, I see `ChangeOwnPassword` handler code above: `hash, _ := auth.HashPassword(req.NewPassword); UPDATE...`
-	// It blindly updates! This is a security risk.
-	// But `UpdateMe` REQUIRES `CurrentPassword`. 
-	// The `ChangeOwnPassword` seems to be an admin-like or insecure endpoint? 
-	// Ah, I see `ChangeOwnPassword` in `users.go`. It takes `NewPassword`.
-	// For now, to be safe, I should use `ChangePassword` but skip check if I can? 
-	// OR I should use `ResetPassword` logic?
-	// Actually `UserService.ChangePassword` I just wrote REQUIRES `currentPassword`.
-	// If the original handler didn't require it, that's a change of behavior.
-	// The original handler was `ChangeOwnPassword`. Usually requires old password.
-	// I will assume for now I should use `UpdateProfile` or `ChangePassword` but I don't have old password.
-	// If I force it, I break usage.
-	// Maybe I should add `ForceChangePassword` to Service?
-	// Users usually provide old password.
-	// Let's assume this endpoint is for logged in users and they should provide old password?
-	// But `resetPwReq` only has `NewPassword`.
-	// This implies it might be a flow where we don't ask old password? But that's only for reset.
-	// I'll leave it generating an error if old password missing? No.
-	// I'll direct SQL in Repo? 
-	// `UserService.ResetPassword` does random pass.
-	// I'll add `UpdatePassword(ctx, uid, newPass)` to Service which just sets it (like Admin/Reset).
-	// But `ChangeOwnPassword` implies self-service.
-	// I will use `repo.UpdatePassword` via a new service method `SetPassword` if needed.
-	// Or just use `ChangePassword` and pass empty old password and modify `ChangePassword` to skip check if empty? No, insecure.
-	// I'll assume for now `ChangeOwnPassword` was intended to be secure but wasn't.
-	// I'll IMPLEMENT `UpdatePassword` in service to match repo `UpdatePassword`.
-	// Use repo directly? No.
-	// I'll use `UserService.ChangePassword` but pass empty current? No it checks.
-	// I'll modify `ChangeOwnPassword` to return error "not implemented secure flow" or just use `repo.UpdatePassword` equivalent.
-	// I'll add `ForceUpdatePassword` to service.
-	
-	err = h.userService.ForceUpdatePassword(c.Request.Context(), uid, req.NewPassword)
+	err := h.userService.ForceUpdatePassword(c.Request.Context(), uid, req.NewPassword)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "update failed"})
+		log.Printf("[ChangeOwnPassword] Error: %v", err)
+		c.JSON(500, gin.H{"error": "update failed", "details": err.Error()})
 		return
 	}
 	c.JSON(200, gin.H{"ok": true})

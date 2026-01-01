@@ -445,4 +445,12 @@ func TestDocumentsHandler_DownloadVersion(t *testing.T) {
 			assert.Equal(t, http.StatusInternalServerError, w.Code)
 		}
 	})
+
+	t.Run("Download Version Not Found", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/documents/versions/00000000-0000-0000-0000-000000000000/download", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }

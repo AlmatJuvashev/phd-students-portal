@@ -306,6 +306,9 @@ func TestUsersHandler_ChangeOwnPassword(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
+	if w.Code != http.StatusOK {
+		t.Logf("Response Body: %s", w.Body.String())
+	}
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var newHash string
@@ -331,20 +334,31 @@ func TestUsersHandler_ResetPasswordForUser(t *testing.T) {
 	r := gin.New()
 	r.POST("/users/:id/reset-password", h.ResetPasswordForUser)
 
-	req, _ := http.NewRequest("POST", "/users/"+userID+"/reset-password", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	t.Run("Success", func(t *testing.T) {
+		req, _ := http.NewRequest("POST", "/users/"+userID+"/reset-password", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	var resp map[string]string
-	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.NotEmpty(t, resp["temp_password"])
+		assert.Equal(t, http.StatusOK, w.Code)
+		var resp map[string]string
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.NotEmpty(t, resp["temp_password"])
 
-	var newHash string
-	err = db.Get(&newHash, "SELECT password_hash FROM users WHERE id=$1", userID)
-	require.NoError(t, err)
-	assert.True(t, auth.CheckPassword(newHash, resp["temp_password"]))
+		var newHash string
+		err = db.Get(&newHash, "SELECT password_hash FROM users WHERE id=$1", userID)
+		require.NoError(t, err)
+		assert.True(t, auth.CheckPassword(newHash, resp["temp_password"]))
+	})
+
+	t.Run("User Not Found", func(t *testing.T) {
+		req, _ := http.NewRequest("POST", "/users/"+uuid.NewString()+"/reset-password", nil)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
 }
+
 
 func TestUsersHandler_CreateUser_Failures(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
@@ -461,4 +475,41 @@ func TestUsersHandler_ChangeOwnPassword_MissingID(t *testing.T) {
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
+}
+
+func TestUsersHandler_UpdateAvatar_Success(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	userID := uuid.NewString()
+	_, err := db.Exec(`INSERT INTO users (id, username, email, first_name, last_name, role, password_hash, is_active)
+		VALUES ($1, 'avatarupd', 'avu@ex.com', 'Avatar', 'Upd', 'student', 'hash', true)`, userID)
+	require.NoError(t, err)
+
+	repo := repository.NewSQLUserRepository(db)
+	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("userID", userID)
+		c.Next()
+	})
+	r.PUT("/users/me/avatar", h.UpdateAvatar)
+
+	newAvatar := "http://example.com/new-avatar.jpg"
+	reqBody := map[string]string{"avatar_url": newAvatar}
+	body, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("PUT", "/users/me/avatar", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var dbAvatar string
+	err = db.Get(&dbAvatar, "SELECT avatar_url FROM users WHERE id=$1", userID)
+	require.NoError(t, err)
+	assert.Equal(t, newAvatar, dbAvatar)
 }

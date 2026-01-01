@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
@@ -453,14 +454,14 @@ func (s *AdminService) ReviewAttachment(ctx context.Context, attachmentID, statu
 	
 	newState := meta.State
 	if total > 0 {
-		switch {
-		case latestStatus == "approved":
+		switch latestStatus {
+		case "approved":
 			newState = "done"
-		case latestStatus == "approved_with_comments":
+		case "approved_with_comments":
 			newState = "done"
-		case latestStatus == "rejected":
+		case "rejected":
 			newState = "needs_fixes"
-		case latestStatus == "submitted":
+		case "submitted":
 			newState = "under_review"
 		default:
 			newState = "submitted"
@@ -474,7 +475,7 @@ func (s *AdminService) ReviewAttachment(ctx context.Context, attachmentID, statu
 		}
 		// Update All Instances (sync versions)
 		if err := s.repo.UpdateAllNodeInstances(ctx, meta.StudentID, meta.NodeID, meta.InstanceID, newState); err != nil {
-			// Warning
+			log.Printf("Warning: failed to sync node instances: %v", err)
 		}
 		// Upsert Journey State
 		_ = s.repo.UpsertJourneyState(ctx, meta.TenantID, meta.StudentID, meta.NodeID, newState)
@@ -484,15 +485,17 @@ func (s *AdminService) ReviewAttachment(ctx context.Context, attachmentID, statu
 		// Activate Next Nodes
 		if newState == "done" {
 			// TODO: Implement ActiveNextNodes logic in Service or Helper, or let Handler do it
+			log.Printf("Node %s is done, check for next nodes activation", meta.NodeID)
 		}
 	}
 	
 	// Notifications
 	title := "Document Reviewed: " + meta.Filename
 	msg := "Your document has been reviewed."
-	if status == "approved" || status == "approved_with_comments" {
+	switch status {
+	case "approved", "approved_with_comments":
 		msg = "Your document has been approved."
-	} else if status == "rejected" {
+	case "rejected":
 		msg = "Changes requested for your document."
 		if note != "" {
 			msg += " Note: " + note

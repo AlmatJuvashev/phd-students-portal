@@ -1,0 +1,28 @@
+package models
+
+import "time"
+
+// Building represents a physical building or campus location
+type Building struct {
+	ID          string    `db:"id" json:"id"`
+	TenantID    string    `db:"tenant_id" json:"tenant_id"`
+	Name        string    `db:"name" json:"name"` // e.g., "Main Campus", "Building A"
+	Address     string    `db:"address" json:"address"`
+	Description string    `db:"description" json:"description"` // JSONB localized
+	IsActive    bool      `db:"is_active" json:"is_active"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}
+
+// Room represents a specific room within a building
+type Room struct {
+	ID          string    `db:"id" json:"id"`
+	BuildingID  string    `db:"building_id" json:"building_id"`
+	Name        string    `db:"name" json:"name"` // e.g., "101", "Auditorium"
+	Capacity    int       `db:"capacity" json:"capacity"`
+	Type        string    `db:"type" json:"type"` // e.g., "lecture_hall", "lab", "office"
+	Features    string    `db:"features" json:"features"` // JSONB e.g., ["projector", "whiteboard"]
+	IsActive    bool      `db:"is_active" json:"is_active"`
+	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+}

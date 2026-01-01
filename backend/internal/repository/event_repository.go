@@ -34,8 +34,8 @@ func (r *SQLEventRepository) CreateEvent(ctx context.Context, event *models.Even
 
 	// Insert event
 	query := `
-		INSERT INTO events (tenant_id, title, description, start_time, end_time, event_type, location, meeting_type, meeting_url, physical_address, color, creator_id)
-		VALUES (:tenant_id, :title, :description, :start_time, :end_time, :event_type, :location, :meeting_type, :meeting_url, :physical_address, :color, :creator_id)
+		INSERT INTO events (tenant_id, title, description, start_time, end_time, event_type, location, meeting_type, meeting_url, physical_address, color, creator_id, recurrence_type, recurrence_end)
+		VALUES (:tenant_id, :title, :description, :start_time, :end_time, :event_type, :location, :meeting_type, :meeting_url, :physical_address, :color, :creator_id, :recurrence_type, :recurrence_end)
 		RETURNING id, created_at, updated_at`
 	
 	rows, err := tx.NamedQuery(query, event)
@@ -96,7 +96,7 @@ func (r *SQLEventRepository) UpdateEvent(ctx context.Context, event *models.Even
 		UPDATE events 
 		SET title=:title, description=:description, start_time=:start_time, end_time=:end_time, 
 			event_type=:event_type, location=:location, meeting_type=:meeting_type, meeting_url=:meeting_url,
-			physical_address=:physical_address, color=:color, updated_at=NOW()
+			physical_address=:physical_address, color=:color, recurrence_type=:recurrence_type, recurrence_end=:recurrence_end, updated_at=NOW()
 		WHERE id=:id AND creator_id=:creator_id`
 	
 	result, err := r.db.NamedExecContext(ctx, query, event)

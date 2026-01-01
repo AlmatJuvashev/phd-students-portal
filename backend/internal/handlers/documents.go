@@ -74,7 +74,7 @@ func (h *DocumentsHandler) UploadVersion(c *gin.Context) {
 	}
 	
 	destDir := filepath.Join(h.cfg.UploadDir, docId)
-	_ = os.MkdirAll(destDir, 0755)
+	_ = os.MkdirAll(destDir, 0750)
 	dest := filepath.Join(destDir, file.Filename)
 	if err := c.SaveUploadedFile(file, dest); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "save failed"})

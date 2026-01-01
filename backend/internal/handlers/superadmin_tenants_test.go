@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -475,5 +476,171 @@ func TestSuperadminTenantsHandler_DeleteTenant(t *testing.T) {
 
 		// Accepts 404 or 500
 		assert.True(t, w.Code == http.StatusNotFound || w.Code == http.StatusInternalServerError)
+	})
+}
+
+func TestSuperadminTenantsHandler_UpdateTenant(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	// Create test tenant
+	tenantID := "e1000000-6666-6666-6666-666666666666"
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, tenant_type, is_active, primary_color) 
+		VALUES ($1, 'updateme', 'Update Me Tenant', 'university', true, '#000000')
+		ON CONFLICT (id) DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	cfg := config.AppConfig{}
+	
+	// Services
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	tenantSvc := services.NewTenantService(tenantRepo)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
+	h := handlers.NewSuperadminTenantsHandler(tenantSvc, adminSvc, cfg)
+
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_update_tenant", "superadmin")
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
+		c.Next()
+	})
+	r.PUT("/superadmin/tenants/:id", h.UpdateTenant)
+
+	t.Run("Update Tenant Success", func(t *testing.T) {
+		newName := "Updated Tenant Name"
+		newColor := "#ffffff"
+		body := map[string]interface{}{
+			"name":          newName,
+			"primary_color": newColor,
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest("PUT", "/superadmin/tenants/"+tenantID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		
+		var tenant map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &tenant)
+		
+		assert.Equal(t, newName, tenant["name"])
+		assert.Equal(t, newColor, tenant["primary_color"])
+		// Slug should remain unchanged
+		assert.Equal(t, "updateme", tenant["slug"])
+	})
+
+	t.Run("Update Tenant Invalid Type", func(t *testing.T) {
+		body := map[string]interface{}{
+			"tenant_type": "invalid",
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest("PUT", "/superadmin/tenants/"+tenantID, bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+func TestSuperadminTenantsHandler_UploadLogo(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	// Create test tenant
+	tenantID := "f1000000-7777-7777-7777-777777777777"
+	_, err := db.Exec(`INSERT INTO tenants (id, slug, name, is_active) 
+		VALUES ($1, 'logotenant', 'Logo Tenant', true)
+		ON CONFLICT (id) DO NOTHING`, tenantID)
+	require.NoError(t, err)
+
+	cfg := config.AppConfig{}
+	
+	// Services
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	adminRepo := repository.NewSQLSuperAdminRepository(db)
+	tenantSvc := services.NewTenantService(tenantRepo)
+	adminSvc := services.NewSuperAdminService(adminRepo)
+
+	h := handlers.NewSuperadminTenantsHandler(tenantSvc, adminSvc, cfg)
+
+	// Create admin user for context
+	adminID := testutils.CreateTestUser(t, db, "admin_upload_logo", "superadmin")
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("userID", adminID)
+		c.Set("tenant_id", "00000000-0000-0000-0000-000000000001")
+		c.Next()
+	})
+	r.POST("/superadmin/tenants/:id/logo", h.UploadLogo)
+
+	t.Run("Upload Logo Success", func(t *testing.T) {
+		// Create multipart form
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body) // Needs import "mime/multipart"
+		part, err := writer.CreateFormFile("logo", "logo.png")
+		require.NoError(t, err)
+		part.Write([]byte("fake image content"))
+		writer.Close()
+
+		req, _ := http.NewRequest("POST", "/superadmin/tenants/"+tenantID+"/logo", body)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		// Need to mock file type check or it will fail validation?
+		// Handler checks Content-Type header of the part, not just bytes.
+		// Standard multipart writer sets standard content type? No, usually octet-stream unless specified.
+		// Go's textproto.MIMEHeader can be used but CreateFormFile simplifies.
+		// Actually, CreateFormFile doesn't let us set content type easily.
+		// Let's use CreatePart.
+		
+		// Re-do with CreatePart
+		body = &bytes.Buffer{}
+		writer = multipart.NewWriter(body)
+		h := make(map[string][]string)
+		h["Content-Disposition"] = []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "logo", "logo.png")}
+		h["Content-Type"] = []string{"image/png"}
+		part, err = writer.CreatePart(h)
+		require.NoError(t, err)
+		part.Write([]byte("fake image content"))
+		writer.Close()
+		
+		req, _ = http.NewRequest("POST", "/superadmin/tenants/"+tenantID+"/logo", body)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.Contains(t, resp["logo_url"], "/uploads/tenants/"+tenantID+"/logo")
+	})
+
+	t.Run("Upload Logo Invalid Type", func(t *testing.T) {
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		h := make(map[string][]string)
+		h["Content-Disposition"] = []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "logo", "script.sh")}
+		h["Content-Type"] = []string{"application/x-sh"}
+		part, err := writer.CreatePart(h)
+		require.NoError(t, err)
+		part.Write([]byte("#!/bin/bash"))
+		writer.Close()
+
+		req, _ := http.NewRequest("POST", "/superadmin/tenants/"+tenantID+"/logo", body)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }

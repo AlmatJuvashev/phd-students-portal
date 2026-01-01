@@ -69,27 +69,21 @@ func NewS3FromEnv() (*S3Client, error) {
 	
 	credProvider := aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(access, secret, ""))
 	
-	if endpoint != "" {
-		resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-			return aws.Endpoint{URL: endpoint, HostnameImmutable: true}, nil
-		})
-		opts := []func(*config.LoadOptions) error{
-			config.WithRegion(region),
-			config.WithEndpointResolverWithOptions(resolver),
-			config.WithCredentialsProvider(credProvider),
-		}
-		cfg, err = config.LoadDefaultConfig(context.Background(), opts...)
-	} else {
-		loadOpts := []func(*config.LoadOptions) error{
-			config.WithRegion(region),
-			config.WithCredentialsProvider(credProvider),
-		}
-		cfg, err = config.LoadDefaultConfig(context.Background(), loadOpts...)
+	loadOpts := []func(*config.LoadOptions) error{
+		config.WithRegion(region),
+		config.WithCredentialsProvider(credProvider),
 	}
+	cfg, err = config.LoadDefaultConfig(context.Background(), loadOpts...)
 	if err != nil {
 		return nil, err
 	}
-	client := s3.NewFromConfig(cfg, func(o *s3.Options) { o.UsePathStyle = scfg.UsePathStyle })
+
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.UsePathStyle = scfg.UsePathStyle
+		if scfg.Endpoint != "" {
+			o.BaseEndpoint = aws.String(scfg.Endpoint)
+		}
+	})
 	return &S3Client{cfg: scfg, client: client}, nil
 }
 

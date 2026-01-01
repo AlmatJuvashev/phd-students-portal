@@ -218,3 +218,8 @@ func AuthMiddleware(secret []byte, dbx *sqlx.DB, rds *redis.Client) gin.HandlerF
 		c.Next()
 	}
 }
+
+// GetUserID retrieves the authenticated user's ID from context
+func GetUserID(c *gin.Context) string {
+	return c.GetString("userID")
+}
