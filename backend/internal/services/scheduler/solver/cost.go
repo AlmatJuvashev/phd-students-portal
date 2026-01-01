@@ -1,0 +1,114 @@
+package solver
+
+import (
+	"math"
+)
+
+// CalculateCost computes total energy (penalty) of the solution.
+// Higher = Worse. Goal is 0 hard constraints and minimal soft constraints.
+func (s *SchedulerSolver) CalculateCost(sol *Solution, instance ProblemInstance) float64 {
+	hardPenalties := 0.0
+	softPenalties := 0.0
+
+	// Pre-process: Group assignments by Room and Instructor for O(N) overlap checks
+	// This is expensive inside the loop. 
+	// Optimization: The SA "Move" function should effectively update these costs incrementally
+	// but for MVP we will recalculate from scratch to ensure correctness first.
+	
+	byRoom := make(map[string][]Assignment)
+	byInstructor := make(map[string][]Assignment)
+
+	// Single pass to build maps and check simple constraints
+	for _, assign := range sol.Assignments {
+		// 1. Capacity Check (Hard)
+		room, ok := instance.Rooms[assign.RoomID]
+		if !ok { continue } // Should not happen in valid encoding
+		
+		session, ok := instance.Sessions[assign.SessionID]
+		if !ok { continue }
+
+
+		// Capacity Check
+		if room.Capacity < session.MaxStudents { 
+			w := s.getWeight(s.Config.CapacityConstraint, s.Config.WeightCapacity)
+			if s.Config.CapacityConstraint == "HARD" {
+				hardPenalties += w
+			} else {
+				softPenalties += w
+			}
+		}
+		
+
+		// Department Constraint
+		roomDept := ""
+		if room.DepartmentID != nil {
+			roomDept = *room.DepartmentID
+		}
+		
+		if roomDept != session.DepartmentID {
+			w := s.getWeight(s.Config.DepartmentConstraint, s.Config.WeightHardConflict)
+			if s.Config.DepartmentConstraint == "HARD" {
+				hardPenalties += w
+			} else {
+				softPenalties += w
+			}
+		}
+		
+		byRoom[assign.RoomID] = append(byRoom[assign.RoomID], assign)
+		if session.InstructorID != "" {
+			byInstructor[session.InstructorID] = append(byInstructor[session.InstructorID], assign)
+		}
+		
+		// Soft: Utilization
+		waste := float64(room.Capacity - session.MaxStudents)
+		if waste > 0 {
+			softPenalties += math.Sqrt(waste) // Sub-linear penalty
+		}
+	}
+
+	// 2. Overlap Checks (Hard) using the groups
+	hardPenalties += countOverlaps(byRoom)
+	hardPenalties += countOverlaps(byInstructor)
+
+	// Total Energy
+	// WeightHardConflict should be large enough to dominate any soft constraints
+	totalCost := (hardPenalties * s.Config.WeightHardConflict) + 
+				 (softPenalties * s.Config.WeightUtilization)
+	
+	// Check feasibility
+	sol.IsValid = (hardPenalties == 0)
+	
+	return totalCost
+}
+
+// countOverlaps checks for time intersections within a group of assignments
+func countOverlaps(groups map[string][]Assignment) float64 {
+	conflicts := 0.0
+	for _, assignments := range groups {
+		// O(N^2) for assignments in same resource. Usually N is small (classes in Room 101).
+		for i := 0; i < len(assignments); i++ {
+			for j := i + 1; j < len(assignments); j++ {
+				if overlap(assignments[i], assignments[j]) {
+					conflicts += 1.0
+				}
+			}
+		}
+	}
+	return conflicts
+}
+
+func overlap(a, b Assignment) bool {
+	// (StartA < EndB) and (EndA > StartB)
+	return a.StartTime.Before(b.EndTime) && a.EndTime.After(b.StartTime)
+}
+
+func (s *SchedulerSolver) getWeight(severity string, defaultWeight float64) float64 {
+	switch severity {
+	case "HARD":
+		return s.Config.WeightHardConflict // Always use high penalty
+	case "SOFT":
+		return defaultWeight // Use specific soft weight
+	default:
+		return 0 // OFF
+	}
+}

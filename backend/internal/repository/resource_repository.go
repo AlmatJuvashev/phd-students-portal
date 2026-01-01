@@ -71,10 +71,10 @@ func (r *SQLResourceRepository) DeleteBuilding(ctx context.Context, id string) e
 
 func (r *SQLResourceRepository) CreateRoom(ctx context.Context, rm *models.Room) error {
 	return r.db.QueryRowxContext(ctx, `
-		INSERT INTO rooms (building_id, name, capacity, type, features, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO rooms (building_id, name, capacity, floor, department_id, type, features, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at`,
-		rm.BuildingID, rm.Name, rm.Capacity, rm.Type, rm.Features, rm.IsActive,
+		rm.BuildingID, rm.Name, rm.Capacity, rm.Floor, rm.DepartmentID, rm.Type, rm.Features, rm.IsActive,
 	).Scan(&rm.ID, &rm.CreatedAt, &rm.UpdatedAt)
 }
 
@@ -86,15 +86,15 @@ func (r *SQLResourceRepository) GetRoom(ctx context.Context, id string) (*models
 
 func (r *SQLResourceRepository) ListRooms(ctx context.Context, buildingID string) ([]models.Room, error) {
 	var list []models.Room
-	err := sqlx.SelectContext(ctx, r.db, &list, `SELECT * FROM rooms WHERE building_id=$1 ORDER BY name ASC`, buildingID)
+	err := sqlx.SelectContext(ctx, r.db, &list, `SELECT * FROM rooms WHERE building_id=$1 ORDER BY floor, name ASC`, buildingID)
 	return list, err
 }
 
 func (r *SQLResourceRepository) UpdateRoom(ctx context.Context, rm *models.Room) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE rooms SET name=$1, capacity=$2, type=$3, features=$4, is_active=$5, updated_at=now()
-		WHERE id=$6`,
-		rm.Name, rm.Capacity, rm.Type, rm.Features, rm.IsActive, rm.ID)
+		UPDATE rooms SET name=$1, capacity=$2, floor=$3, department_id=$4, type=$5, features=$6, is_active=$7, updated_at=now()
+		WHERE id=$8`,
+		rm.Name, rm.Capacity, rm.Floor, rm.DepartmentID, rm.Type, rm.Features, rm.IsActive, rm.ID)
 	return err
 }
 

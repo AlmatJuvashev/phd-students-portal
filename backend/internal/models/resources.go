@@ -20,6 +20,8 @@ type Room struct {
 	BuildingID  string    `db:"building_id" json:"building_id"`
 	Name        string    `db:"name" json:"name"` // e.g., "101", "Auditorium"
 	Capacity    int       `db:"capacity" json:"capacity"`
+	Floor       int       `db:"floor" json:"floor"`
+	DepartmentID *string  `db:"department_id" json:"department_id,omitempty"` // Restrict to specific department
 	Type        string    `db:"type" json:"type"` // e.g., "lecture_hall", "lab", "office"
 	Features    string    `db:"features" json:"features"` // JSONB e.g., ["projector", "whiteboard"]
 	IsActive    bool      `db:"is_active" json:"is_active"`

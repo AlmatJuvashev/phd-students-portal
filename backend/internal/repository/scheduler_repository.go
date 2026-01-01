@@ -34,6 +34,7 @@ type SchedulerRepository interface {
 	ListSessions(ctx context.Context, offeringID string, startDate, endDate time.Time) ([]models.ClassSession, error)
 	ListSessionsByRoom(ctx context.Context, roomID string, startDate, endDate time.Time) ([]models.ClassSession, error)
 	ListSessionsByInstructor(ctx context.Context, instructorID string, startDate, endDate time.Time) ([]models.ClassSession, error)
+	ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error)
 	UpdateSession(ctx context.Context, session *models.ClassSession) error
 	DeleteSession(ctx context.Context, id string) error
 }
@@ -200,6 +201,17 @@ func (r *SQLSchedulerRepository) ListSessionsByInstructor(ctx context.Context, i
 	query := `SELECT * FROM class_sessions WHERE instructor_id = $1 AND date >= $2 AND date <= $3 AND is_cancelled = false`
 	var list []models.ClassSession
 	err := r.db.SelectContext(ctx, &list, query, instructorID, startDate, endDate)
+	return list, err
+}
+
+func (r *SQLSchedulerRepository) ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error) {
+	query := `
+		SELECT s.* FROM class_sessions s
+		JOIN course_offerings o ON s.course_offering_id = o.id
+		WHERE o.term_id = $1
+		ORDER BY s.date, s.start_time`
+	var list []models.ClassSession
+	err := r.db.SelectContext(ctx, &list, query, termID)
 	return list, err
 }
 
