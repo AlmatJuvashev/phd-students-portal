@@ -87,10 +87,10 @@ func (r *SQLCurriculumRepository) DeleteProgram(ctx context.Context, id string) 
 
 func (r *SQLCurriculumRepository) CreateCourse(ctx context.Context, c *models.Course) error {
 	return r.db.QueryRowxContext(ctx, `
-		INSERT INTO courses (tenant_id, program_id, code, title, description, credits, workload_hours, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO courses (tenant_id, program_id, department_id, code, title, description, credits, workload_hours, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, created_at, updated_at`,
-		c.TenantID, c.ProgramID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive,
+		c.TenantID, c.ProgramID, c.DepartmentID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive,
 	).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 }
 
@@ -117,9 +117,9 @@ func (r *SQLCurriculumRepository) ListCourses(ctx context.Context, tenantID stri
 
 func (r *SQLCurriculumRepository) UpdateCourse(ctx context.Context, c *models.Course) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE courses SET program_id=$1, code=$2, title=$3, description=$4, credits=$5, workload_hours=$6, is_active=$7, updated_at=now()
-		WHERE id=$8`,
-		c.ProgramID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive, c.ID)
+		UPDATE courses SET program_id=$1, department_id=$2, code=$3, title=$4, description=$5, credits=$6, workload_hours=$7, is_active=$8, updated_at=now()
+		WHERE id=$9`,
+		c.ProgramID, c.DepartmentID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive, c.ID)
 	return err
 }
 

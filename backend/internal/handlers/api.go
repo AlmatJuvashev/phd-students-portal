@@ -188,7 +188,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Oh, I can see "resourceHandler := ..." in previous context? No.
 	// Let's instantiate SQLResourceRepository here again, it's cheap (just a struct with db pointer).
 	resourceRepo := repository.NewSQLResourceRepository(db)
-	schedulerService := services.NewSchedulerService(schedulerRepo, resourceRepo)
+	curriculumRepo := repository.NewSQLCurriculumRepository(db)
+	schedulerService := services.NewSchedulerService(schedulerRepo, resourceRepo, curriculumRepo)
 	schedulerHandler := NewSchedulerHandler(schedulerService)
 
 
@@ -252,6 +253,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			
 			sched.GET("/sessions", schedulerHandler.ListSessions)
 			sched.POST("/sessions", schedulerHandler.CreateSession)
+			sched.POST("/optimize", schedulerHandler.AutoSchedule)
 		}
 
 		// Search

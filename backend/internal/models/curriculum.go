@@ -26,6 +26,7 @@ type Course struct {
 	ID          string    `db:"id" json:"id"`
 	TenantID    string    `db:"tenant_id" json:"tenant_id"`
 	ProgramID   *string   `db:"program_id" json:"program_id,omitempty"` // Optional link to specific program
+	DepartmentID *string  `db:"department_id" json:"department_id,omitempty"` // Owning Department
 	Code        string    `db:"code" json:"code"`
 	Title       string    `db:"title" json:"title"` // JSONB
 	Description string    `db:"description" json:"description"` // JSONB

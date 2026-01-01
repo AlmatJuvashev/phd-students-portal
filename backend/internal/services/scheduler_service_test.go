@@ -48,6 +48,7 @@ func (m *MockSchedulerRepo) RemoveStaff(ctx context.Context, id string) error { 
 func (m *MockSchedulerRepo) ListSessions(ctx context.Context, oID string, s, e time.Time) ([]models.ClassSession, error) { return nil, nil }
 func (m *MockSchedulerRepo) UpdateSession(ctx context.Context, s *models.ClassSession) error { return nil }
 func (m *MockSchedulerRepo) DeleteSession(ctx context.Context, id string) error { return nil }
+func (m *MockSchedulerRepo) ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error) { return nil, nil }
 
 // MockSchedResourceRepo
 type MockSchedResourceRepo struct {
@@ -72,7 +73,8 @@ func (m *MockSchedResourceRepo) DeleteRoom(ctx context.Context, id string) error
 func TestSchedulerService_ConflictDetection(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
 	mockResource := new(MockSchedResourceRepo)
-	svc := NewSchedulerService(mockRepo, mockResource)
+	mockCurriculum := new(MockCurriculumRepo)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum)
 	ctx := context.Background()
 
 	testDate := time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC)
@@ -93,7 +95,7 @@ func TestSchedulerService_ConflictDetection(t *testing.T) {
 
 	// Case 1: Time Overlap (11:00 - 12:00) -> Should Fail
 	newSession := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "11:00", EndTime: "12:00", RoomID: &roomID}
-	err := svc.CheckConflicts(ctx, newSession)
+	_, err := svc.CheckConflicts(ctx, newSession)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Room room-101 is already booked")
 
@@ -105,7 +107,8 @@ func TestSchedulerService_ConflictDetection(t *testing.T) {
 func TestSchedulerService_CapacityConflict(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
 	mockResource := new(MockSchedResourceRepo)
-	svc := NewSchedulerService(mockRepo, mockResource)
+	mockCurriculum := new(MockCurriculumRepo)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum)
 	ctx := context.Background()
 	
 	offeringID := "off-big"
@@ -120,7 +123,7 @@ func TestSchedulerService_CapacityConflict(t *testing.T) {
 	// Session
 	session := &models.ClassSession{CourseOfferingID: offeringID, Date: time.Now(), StartTime: "10:00", EndTime: "11:00", RoomID: &roomID}
 
-	err := svc.CheckConflicts(ctx, session)
+	_, err := svc.CheckConflicts(ctx, session)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Room capacity (10) is less than")
 }
@@ -128,7 +131,8 @@ func TestSchedulerService_CapacityConflict(t *testing.T) {
 func TestSchedulerService_InstructorConflict(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
 	mockResource := new(MockSchedResourceRepo)
-	svc := NewSchedulerService(mockRepo, mockResource)
+	mockCurriculum := new(MockCurriculumRepo)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum)
 	ctx := context.Background()
 	testDate := time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC)
 	instID := "prof-X"
@@ -143,7 +147,7 @@ func TestSchedulerService_InstructorConflict(t *testing.T) {
 
 	newSession := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "09:30", EndTime: "11:00", InstructorID: &instID}
 
-	err := svc.CheckConflicts(ctx, newSession)
+	_, err := svc.CheckConflicts(ctx, newSession)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Instructor is already teaching")
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/scheduler/solver"
 	"github.com/gin-gonic/gin"
 )
 
@@ -80,7 +81,7 @@ func (h *SchedulerHandler) CreateSession(c *gin.Context) {
 		return
 	}
 	
-	err := h.service.ScheduleSession(c.Request.Context(), &s)
+	warnings, err := h.service.ScheduleSession(c.Request.Context(), &s)
 	if err != nil {
 		// Check for conflict
 		if _, ok := err.(*services.ConflictError); ok {
@@ -90,7 +91,15 @@ func (h *SchedulerHandler) CreateSession(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, s)
+	
+	response := gin.H{
+		"data": s,
+	}
+	if len(warnings) > 0 {
+		response["warnings"] = warnings
+		// Maybe 202 Accepted if warnings? But it IS created. 201 is fine.
+	}
+	c.JSON(http.StatusCreated, response)
 }
 
 func (h *SchedulerHandler) ListSessions(c *gin.Context) {
@@ -108,4 +117,28 @@ func (h *SchedulerHandler) ListSessions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, sessions)
+}
+
+func (h *SchedulerHandler) AutoSchedule(c *gin.Context) {
+	var req struct {
+		TermID string               `json:"term_id" binding:"required"`
+		Config *solver.SolverConfig `json:"config"` // Optional config override
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	tenantID := c.GetString("tenant_id")
+	if tenantID == "" {
+		tenantID = c.Query("tenant_id") // Fallback
+	}
+
+	solution, err := h.service.AutoSchedule(c.Request.Context(), tenantID, req.TermID, req.Config)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	c.JSON(http.StatusOK, solution)
 }
