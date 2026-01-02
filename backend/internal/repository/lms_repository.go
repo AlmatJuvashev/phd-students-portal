@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/jmoiron/sqlx"
@@ -16,8 +17,14 @@ type LMSRepository interface {
 
 	// Submissions
 	CreateSubmission(ctx context.Context, sub *models.ActivitySubmission) error
-	GetSubmission(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error)
-	ListSubmissions(ctx context.Context, offeringID string) ([]models.ActivitySubmission, error)
+	GetSubmission(ctx context.Context, id string) (*models.ActivitySubmission, error)
+	GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error)
+	ListSubmissions(ctx context.Context, activityID string) ([]models.ActivitySubmission, error)
+	
+	// Annotations
+	CreateAnnotation(ctx context.Context, ann models.SubmissionAnnotation) (*models.SubmissionAnnotation, error)
+	ListAnnotations(ctx context.Context, submissionID string) ([]models.SubmissionAnnotation, error)
+	DeleteAnnotation(ctx context.Context, id string) error
 
 	// Attendance
 	MarkAttendance(ctx context.Context, att *models.ClassAttendance) error
@@ -85,7 +92,13 @@ func (r *SQLLMSRepository) CreateSubmission(ctx context.Context, s *models.Activ
 	).Scan(&s.ID, &s.SubmittedAt)
 }
 
-func (r *SQLLMSRepository) GetSubmission(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
+func (r *SQLLMSRepository) GetSubmission(ctx context.Context, id string) (*models.ActivitySubmission, error) {
+	var s models.ActivitySubmission
+	err := r.db.GetContext(ctx, &s, `SELECT * FROM activity_submissions WHERE id=$1`, id)
+	return &s, err
+}
+
+func (r *SQLLMSRepository) GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
 	var s models.ActivitySubmission
 	err := r.db.GetContext(ctx, &s, `
 		SELECT * FROM activity_submissions WHERE activity_id=$1 AND student_id=$2`, activityID, studentID)
@@ -98,6 +111,44 @@ func (r *SQLLMSRepository) ListSubmissions(ctx context.Context, offeringID strin
 	err := r.db.SelectContext(ctx, &list, `
 		SELECT * FROM activity_submissions WHERE course_offering_id=$1 ORDER BY submitted_at DESC`, offeringID)
 	return list, err
+}
+
+// --- Annotations ---
+
+func (r *SQLLMSRepository) CreateAnnotation(ctx context.Context, ann models.SubmissionAnnotation) (*models.SubmissionAnnotation, error) {
+	ann.CreatedAt = time.Now()
+	ann.UpdatedAt = time.Now()
+	err := r.db.QueryRowxContext(ctx, `
+		INSERT INTO submission_annotations (
+			submission_id, author_id, page_number, annotation_type, 
+			x_percent, y_percent, width_percent, height_percent, 
+			content, color, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id
+	`, ann.SubmissionID, ann.AuthorID, ann.PageNumber, ann.AnnotationType,
+		ann.XPercent, ann.YPercent, ann.WidthPercent, ann.HeightPercent,
+		ann.Content, ann.Color, ann.CreatedAt, ann.UpdatedAt,
+	).Scan(&ann.ID)
+	
+	if err != nil {
+		return nil, err
+	}
+	return &ann, nil
+}
+
+func (r *SQLLMSRepository) ListAnnotations(ctx context.Context, submissionID string) ([]models.SubmissionAnnotation, error) {
+	var annotations []models.SubmissionAnnotation
+	err := r.db.SelectContext(ctx, &annotations, `
+		SELECT * FROM submission_annotations 
+		WHERE submission_id = $1 
+		ORDER BY page_number ASC, created_at ASC
+	`, submissionID)
+	return annotations, err
+}
+
+func (r *SQLLMSRepository) DeleteAnnotation(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM submission_annotations WHERE id = $1`, id)
+	return err
 }
 
 // --- Attendance ---
