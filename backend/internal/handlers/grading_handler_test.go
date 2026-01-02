@@ -120,3 +120,37 @@ func TestGradingHandler_CreateSchema(t *testing.T) {
 	h.CreateSchema(c)
 	assert.Equal(t, http.StatusCreated, w.Code)
 }
+
+func TestGradingHandler_ListSchemas(t *testing.T) {
+	mockRepo := new(LocalMockGradingRepo)
+	svc := services.NewGradingService(mockRepo)
+	h := NewGradingHandler(svc)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/grading/schemas", nil)
+	c.Set("tenant_id", "t1")
+
+	expected := []models.GradingSchema{{Name: "S1"}}
+	mockRepo.On("ListSchemas", mock.Anything, "t1").Return(expected, nil)
+
+	h.ListSchemas(c)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGradingHandler_ListStudentGrades(t *testing.T) {
+	mockRepo := new(LocalMockGradingRepo)
+	svc := services.NewGradingService(mockRepo)
+	h := NewGradingHandler(svc)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/grading/student/s1", nil)
+	c.Params = gin.Params{{Key: "studentId", Value: "s1"}}
+
+	expected := []models.GradebookEntry{{Score: 90}}
+	mockRepo.On("ListStudentEntries", mock.Anything, "s1").Return(expected, nil)
+
+	h.ListStudentGrades(c)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
