@@ -199,6 +199,12 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	schedulerService := services.NewSchedulerService(schedulerRepo, resourceRepo, curriculumRepo, userRepo, smtpMailer)
 	schedulerHandler := NewSchedulerHandler(schedulerService)
 
+	// Teacher Dashboard
+	lmsRepo := repository.NewSQLLMSRepository(db)
+	gradingRepo := repository.NewSQLGradingRepository(db)
+	teacherService := services.NewTeacherService(schedulerRepo, lmsRepo, gradingRepo)
+	teacherHandler := NewTeacherHandler(teacherService)
+
 
 
 	// ===========================================
@@ -242,6 +248,20 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			cal.GET("/events", calendarHandler.GetEvents)
 			cal.PUT("/events/:id", calendarHandler.UpdateEvent)
 			cal.DELETE("/events/:id", calendarHandler.DeleteEvent)
+		}
+
+		// Teacher / Faculty Dashboard
+		teacher := protected.Group("/teacher")
+		// Ideally verify role="instructor" or "advisor" here. 
+		// For now, allow any auth user, handler can enforce or we add RoleMiddleware
+		// teacher.Use(middleware.RequireRoles("instructor", "advisor", "superadmin", "admin")) 
+		teacher.Use(middleware.RequireRoles("instructor", "advisor", "superadmin", "admin"))
+		{
+			teacher.GET("/dashboard", teacherHandler.GetDashboardStats)
+			teacher.GET("/courses", teacherHandler.GetMyCourses)
+			teacher.GET("/courses/:id/roster", teacherHandler.GetCourseRoster)
+			teacher.GET("/courses/:id/gradebook", teacherHandler.GetGradebook)
+			teacher.GET("/submissions", teacherHandler.GetSubmissions)
 		}
 
 		// Checklist
