@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
@@ -73,3 +74,21 @@ func (h *AnalyticsHandler) GetOverdueStats(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, stats)
 }
+
+func (h *AnalyticsHandler) GetHighRiskStudents(c *gin.Context) {
+	thresholdStr := c.DefaultQuery("threshold", "50.0")
+	threshold, err := strconv.ParseFloat(thresholdStr, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid threshold"})
+		return
+	}
+
+	students, err := h.service.GetHighRiskStudents(c.Request.Context(), threshold)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, students)
+}
+
+

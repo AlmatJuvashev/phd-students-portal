@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/middleware"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 
@@ -176,9 +177,17 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	contactsHandler := NewContactsHandler(contactService)
 
 	// Analytics
+	// Analytics
 	analyticsRepo := repository.NewSQLAnalyticsRepository(db)
-	analyticsService := services.NewAnalyticsService(analyticsRepo)
-	analyticsHandler := NewAnalyticsHandler(analyticsService)
+	// Needs LMS and Attendance repos, which are defined later in the file usually.
+	// I need to move their definition UP or move Analytics definition DOWN.
+	// LMS and Attendance are defined around lines 205 and 211.
+	// I will move Analytics instantiation DOWN after them.
+	
+	// Moving "analyticsService := ..." line to be AFTER lmsRepo and attendanceRepo are initialized.
+	// So I will comment out/remove the lines here and insert them later.
+	// But `analyticsHandler` is used? No, just created here.
+
 
 	// Scheduler
 	schedulerRepo := repository.NewSQLSchedulerRepository(db)
@@ -188,6 +197,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Oh, I can see "resourceHandler := ..." in previous context? No.
 	resourceRepo := repository.NewSQLResourceRepository(db)
 	curriculumRepo := repository.NewSQLCurriculumRepository(db)
+	curriculumService := services.NewCurriculumService(curriculumRepo)
+	curriculumHandler := NewCurriculumHandler(curriculumService)
 	
 	// Program Builder
 	programBuilderService := services.NewProgramBuilderService(curriculumRepo)
@@ -199,12 +210,53 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	schedulerService := services.NewSchedulerService(schedulerRepo, resourceRepo, curriculumRepo, userRepo, smtpMailer)
 	schedulerHandler := NewSchedulerHandler(schedulerService)
 
-	// Teacher Dashboard
 	lmsRepo := repository.NewSQLLMSRepository(db)
 	gradingRepo := repository.NewSQLGradingRepository(db)
 	teacherService := services.NewTeacherService(schedulerRepo, lmsRepo, gradingRepo)
 	teacherHandler := NewTeacherHandler(teacherService)
 
+	// Attendance (Phase 17)
+	attendanceRepo := repository.NewSQLAttendanceRepository(db)
+	attendanceService := services.NewAttendanceService(attendanceRepo)
+	// Analytics (Moved here to access lmsRepo & attendanceRepo)
+	analyticsService := services.NewAnalyticsService(analyticsRepo, lmsRepo, attendanceRepo)
+	analyticsHandler := NewAnalyticsHandler(analyticsService)
+
+	// AI Assistant
+	aiService := services.NewAIService(cfg)
+	aiHandler := NewAIHandler(aiService)
+
+	// Transcript (Phase 17)
+	transcriptRepo := repository.NewSQLTranscriptRepository(db)
+	transcriptService := services.NewTranscriptService(transcriptRepo, schedulerRepo)
+	transcriptHandler := NewTranscriptHandler(transcriptService)
+
+	// Bulk Operations (Phase 17)
+	// Bulk Operations (Phase 17)
+	bulkService := services.NewBulkEnrollmentService(userService)
+	bulkHandler := NewBulkHandler(bulkService)
+
+	// LTI 1.3 (Phase 19)
+	ltiRepo := repository.NewSQLLTIRepository(db)
+	ltiService := services.NewLTIService(ltiRepo, cfg)
+	ltiHandler := NewLTIHandler(ltiService, cfg)
+	api.GET("/lti/login_init", ltiHandler.LoginInit)
+	api.POST("/lti/launch", ltiHandler.Launch)
+	api.GET("/.well-known/jwks.json", ltiHandler.GetJWKS)
+	
+	// ===========================================
+	// RBAC (Phase 20)
+	// ===========================================
+	rbacRepo := repository.NewSQLRBACRepository(db)
+	authzSvc := services.NewAuthzService(rbacRepo)
+	rbac := middleware.NewRBACMiddleware(authzSvc)
+
+	// ===========================================
+	// External Audit (Phase 24)
+	// ===========================================
+	auditRepo := repository.NewSQLAuditRepository(db)
+	auditService := services.NewAuditService(auditRepo, curriculumRepo)
+	auditHandler := NewAuditHandler(auditService, curriculumService)
 
 
 	// ===========================================
@@ -252,16 +304,21 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 		// Teacher / Faculty Dashboard
 		teacher := protected.Group("/teacher")
-		// Ideally verify role="instructor" or "advisor" here. 
-		// For now, allow any auth user, handler can enforce or we add RoleMiddleware
-		// teacher.Use(middleware.RequireRoles("instructor", "advisor", "superadmin", "admin")) 
-		teacher.Use(middleware.RequireRoles("instructor", "advisor", "superadmin", "admin"))
+		// Use new RBAC Middleware
+		// Global check: Must have at least 'course.view' globally OR we can rely on specific endpoint checks
+		// For dashboard, we check 'course.view' globally for now (as instructor/student have it)
+		teacher.Use(rbac.RequirePermission("course.view", models.ContextGlobal, ""))
 		{
 			teacher.GET("/dashboard", teacherHandler.GetDashboardStats)
 			teacher.GET("/courses", teacherHandler.GetMyCourses)
-			teacher.GET("/courses/:id/roster", teacherHandler.GetCourseRoster)
+			// Context-Aware check: Must have 'course.view' for this SPECIFIC course ID
+			teacher.GET("/courses/:id/roster", rbac.RequirePermission("course.view", models.ContextCourse, "id"), teacherHandler.GetCourseRoster)
 			teacher.GET("/courses/:id/gradebook", teacherHandler.GetGradebook)
 			teacher.GET("/submissions", teacherHandler.GetSubmissions)
+			teacher.POST("/submissions/:id/annotations", teacherHandler.AddAnnotation)
+			teacher.GET("/submissions/:id/annotations", teacherHandler.GetAnnotations)
+			teacher.DELETE("/submissions/:id/annotations/:annId", teacherHandler.DeleteAnnotation)
+            teacher.POST("/sessions/:session_id/attendance", attendanceHandler.BatchRecordAttendance)
 		}
 
 		// Checklist
@@ -308,9 +365,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			gr.GET("/student/:studentId", gradingHandler.ListStudentGrades)
 		}
 
-		// Item Bank Module
-		ibRepo := repository.NewSQLItemBankRepository(db)
-		ibService := services.NewItemBankService(ibRepo)
+		// Item Bank Module (Powered by Assessment Engine)
+		assessmentRepo := repository.NewSQLAssessmentRepository(db)
+		ibService := services.NewItemBankService(assessmentRepo)
 		ibHandler := NewItemBankHandler(ibService)
 
 		ib := protected.Group("/item-banks")
@@ -319,6 +376,22 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			ib.POST("/banks", ibHandler.CreateBank)
 			ib.GET("/banks/:bankId/items", ibHandler.ListItems)
 			ib.POST("/banks/:bankId/items", ibHandler.CreateItem)
+		}
+
+		// Assessment Engine Module (Phase 25)
+		assessmentService := services.NewAssessmentService(assessmentRepo)
+		assessmentHandler := NewAssessmentHandler(assessmentService)
+
+		ae := protected.Group("/assessments")
+		{
+			ae.POST("", assessmentHandler.CreateAssessment)
+			ae.POST("/:id/attempts", assessmentHandler.StartAttempt)
+		}
+
+		at := protected.Group("/attempts")
+		{
+			at.POST("/:id/response", assessmentHandler.SubmitResponse)
+			at.POST("/:id/complete", assessmentHandler.CompleteAttempt)
 		}
 
 		// Governance Module (Phase 5)
@@ -367,37 +440,82 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			}
 		}
 
-		// Admin/Advisor Progress Monitoring
+		// Student Academic Record (Phase 17)
+		protected.GET("/student/transcript", transcriptHandler.GetStudentTranscript)
+
+		// Admin/Advisor Progress Monitoring & Review
 		adm := protected.Group("/admin")
-		adm.Use(middleware.RequireAdminOrAdvisor())
+		// Note: We deliberately do NOT apply a blanket middleware here anymore.
+		// Granular permissions are applied below.
+
+		// 1. Monitor & Student Data (Accessible to Advisor)
+		// Includes: Progress, Journey, Attachments, Reminders
+		monitorGrp := adm.Group("") 
+		monitorGrp.Use(middleware.RequireRoles("admin", "advisor", "superadmin"))
 		{
-			adm.GET("/student-progress", adminHandler.StudentProgress)
-			adm.GET("/monitor", adminHandler.MonitorStudents)
-			adm.GET("/monitor/students", adminHandler.MonitorStudents) // Alias for frontend compatibility
-			adm.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
-			adm.GET("/students/:id", adminHandler.GetStudentDetails)
-			adm.GET("/students/:id/journey", adminHandler.StudentJourney)
-			adm.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
-			adm.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
-			adm.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
+			monitorGrp.GET("/student-progress", adminHandler.StudentProgress)
+			monitorGrp.GET("/monitor", adminHandler.MonitorStudents)
+			monitorGrp.GET("/monitor/students", adminHandler.MonitorStudents)
+			monitorGrp.GET("/monitor/analytics", adminHandler.MonitorAnalytics)
+			monitorGrp.GET("/students/:id", adminHandler.GetStudentDetails)
+			monitorGrp.GET("/students/:id/journey", adminHandler.StudentJourney)
+			monitorGrp.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
+			monitorGrp.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
+			monitorGrp.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
 			
 			// Review actions
-			adm.POST("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
-			adm.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
-			adm.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
+			monitorGrp.POST("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
+			monitorGrp.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
+			monitorGrp.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
 			
 			// Reminders
-			adm.POST("/reminders", adminHandler.PostReminders)
+			monitorGrp.POST("/reminders", adminHandler.PostReminders)
 			
-			// User management (admin panel)
-			adm.GET("/users", users.ListUsers)
-			adm.POST("/users", users.CreateUser)
-			adm.PUT("/users/:id", users.UpdateUser)
-			adm.PATCH("/users/:id/active", users.SetActive)
-			adm.POST("/users/:id/reset-password", users.ResetPasswordForUser)
+			// Admin notifications (Advisors need to see alerts too)
+			admNotif := monitorGrp.Group("/notifications")
+			{
+				admNotif.GET("", notificationHandler.GetNotifications)
+				admNotif.GET("/unread", notificationHandler.GetUnread)
+				admNotif.GET("/unread-count", notificationHandler.GetUnread)
+				admNotif.POST("/:id/read", notificationHandler.MarkAsRead)
+				admNotif.POST("/read-all", notificationHandler.MarkAllAsRead)
+			}
 			
+			// Contacts Search (Advisors might need this)
+			monitorGrp.GET("/contacts", contactsHandler.AdminList)
+		}
+
+		// 2. User Management (IT Admin only - NO Advisors)
+		sysAdminGrp := adm.Group("")
+		sysAdminGrp.Use(middleware.RequireRoles("admin", "it_admin", "superadmin"))
+		{
+			sysAdminGrp.GET("/users", users.ListUsers)
+			sysAdminGrp.POST("/users", users.CreateUser)
+			sysAdminGrp.PUT("/users/:id", users.UpdateUser)
+			sysAdminGrp.PATCH("/users/:id/active", users.SetActive)
+			sysAdminGrp.POST("/users/:id/reset-password", users.ResetPasswordForUser)
+			sysAdminGrp.POST("/bulk/enroll", bulkHandler.BulkEnrollStudents)
+			
+			// Manage Contacts
+			sysAdminGrp.POST("/contacts", contactsHandler.Create)
+			sysAdminGrp.PUT("/contacts/:id", contactsHandler.Update)
+			sysAdminGrp.DELETE("/contacts/:id", contactsHandler.Delete)
+
+			// LTI Tool Management
+			sysAdminGrp.POST("/lti/tools", ltiHandler.RegisterTool)
+			sysAdminGrp.GET("/lti/tools", ltiHandler.ListTools)
+		}
+
+		// 3. Content / Dictionaries (Registrar / Content Mgr)
+		// Advisors might need READ access, but Write should be restricted?
+		// For simplicity, let's allow Admins/Registrars/ContentMgr/Superadmin modify.
+		// Advisors: Read Only? Current handlers don't split R/W easily without more code.
+		// Let's implement full access for Content Team.
+		contentGrp := adm.Group("")
+		contentGrp.Use(middleware.RequireRoles("admin", "registrar", "content_manager", "superadmin"))
+		{
 			// Admin dictionaries
-			admDict := adm.Group("/dictionaries")
+			admDict := contentGrp.Group("/dictionaries")
 			{
 				admDict.GET("/programs", dictionaryHandler.ListPrograms)
 				admDict.POST("/programs", dictionaryHandler.CreateProgram)
@@ -420,29 +538,19 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 				admDict.DELETE("/departments/:id", dictionaryHandler.DeleteDepartment)
 			}
 
-			// Program Builder (Components)
-			admBuilder := adm.Group("/programs/:id/builder")
+			// Program Builder
+			admBuilder := contentGrp.Group("/programs/:id/builder")
 			{
 				admBuilder.GET("/nodes", programBuilderHandler.GetNodes)
 				admBuilder.POST("/nodes", programBuilderHandler.CreateNode)
 				admBuilder.PUT("/nodes/:nodeId", programBuilderHandler.UpdateNode)
 			}
-			
-			// Admin notifications (duplicated from protected for admin panel access)
-			admNotif := adm.Group("/notifications")
-			{
-				admNotif.GET("", notificationHandler.GetNotifications)
-				admNotif.GET("/unread", notificationHandler.GetUnread)
-				admNotif.GET("/unread-count", notificationHandler.GetUnread) // Alias for compatibility
-				admNotif.POST("/:id/read", notificationHandler.MarkAsRead)
-				admNotif.POST("/read-all", notificationHandler.MarkAllAsRead)
-			}
-			
-			// Admin contacts
-			adm.GET("/contacts", contactsHandler.AdminList)
-			adm.POST("/contacts", contactsHandler.Create)
-			adm.PUT("/contacts/:id", contactsHandler.Update)
-			adm.DELETE("/contacts/:id", contactsHandler.Delete)
+
+			// AI Assistant (Content Generation)
+			contentGrp.POST("/ai/generate-course", aiHandler.GenerateCourseStructure)
+			contentGrp.POST("/ai/generate-quiz", aiHandler.GenerateQuiz)
+			contentGrp.POST("/ai/generate-survey", aiHandler.GenerateSurvey)
+			contentGrp.POST("/ai/generate-assessment-items", aiHandler.GenerateAssessmentItems)
 		}
 
 
@@ -461,7 +569,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 			// Admin chat actions
 			adminChat := chat.Group("")
-			adminChat.Use(middleware.RequireAdminOrAdvisor())
+			adminChat.Use(rbac.RequirePermission("user.view", models.ContextGlobal, ""))
 			{
 				adminChat.POST("/rooms", chatHandler.CreateRoom)
 				adminChat.PATCH("/rooms/:roomId", chatHandler.UpdateRoom)
@@ -479,12 +587,89 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 		// Analytics
 		an := protected.Group("/analytics")
-		an.Use(middleware.RequireAdminOrAdvisor())
+		an.Use(rbac.RequirePermission("user.view", models.ContextGlobal, "")) // Advisor/Admin access
 		{
 			an.GET("/stages", analyticsHandler.GetStageStats)
 			an.GET("/overdue", analyticsHandler.GetOverdueStats)
 			an.GET("/monitor", analyticsHandler.GetMonitorMetrics)
+			an.GET("/at-risk", analyticsHandler.GetHighRiskStudents)
 		}
+
+		// Curriculum Management (Registrar/ContentMgr)
+		curr := protected.Group("/curriculum")
+		curr.Use(middleware.RequireRoles("admin", "registrar", "content_manager", "superadmin")) // "admin" kept for legacy compatibility
+		{
+			// Programs
+			curr.GET("/programs", curriculumHandler.ListPrograms)
+			curr.POST("/programs", curriculumHandler.CreateProgram)
+			curr.GET("/programs/:id", curriculumHandler.GetProgram)
+			curr.PUT("/programs/:id", curriculumHandler.UpdateProgram)
+			curr.DELETE("/programs/:id", curriculumHandler.DeleteProgram)
+
+			// Courses
+			curr.GET("/courses", curriculumHandler.ListCourses)
+			curr.POST("/courses", curriculumHandler.CreateCourse)
+			// curr.PUT("/courses/:id", curriculumHandler.UpdateCourse) // TODO: Add if implemented
+			// curr.DELETE("/courses/:id", curriculumHandler.DeleteCourse) // TODO: Add if implemented
+		}
+
+		// ===========================================
+		// External Audit (Phase 24)
+		// Read-only access for external examiners and internal auditors
+		// ===========================================
+		audit := protected.Group("/audit")
+		audit.Use(middleware.RequireRoles("external", "admin", "superadmin", "registrar"))
+		{
+			audit.GET("/programs", auditHandler.ListPrograms)
+			audit.GET("/programs/:id", auditHandler.GetProgram)
+			audit.GET("/courses", auditHandler.ListCourses)
+			audit.GET("/outcomes", auditHandler.ListOutcomes)
+			audit.GET("/changelog", auditHandler.ListChangeLog)
+			audit.GET("/reports/program-summary", auditHandler.ProgramSummaryReport)
+		}
+
+		// Admin-only endpoints for managing outcomes
+		outcomes := protected.Group("/outcomes")
+		outcomes.Use(middleware.RequireRoles("admin", "superadmin", "registrar", "content_manager"))
+		{
+			outcomes.POST("", auditHandler.CreateOutcome)
+			outcomes.PUT("/:id", auditHandler.UpdateOutcome)
+			outcomes.DELETE("/:id", auditHandler.DeleteOutcome)
+		}
+
+		// Discussion Forums (Phase 26)
+		forumRepo := repository.NewSQLForumRepository(db)
+		forumService := services.NewForumService(forumRepo)
+		forumHandler := NewForumHandler(forumService)
+
+		// Course-level
+		protected.GET("/courses/:id/forums", forumHandler.ListForums)
+		protected.POST("/courses/:id/forums", forumHandler.CreateForum)
+
+		// Forum-level
+		forums := protected.Group("/forums")
+		{
+			forums.GET("/:id/topics", forumHandler.ListTopics)
+			forums.POST("/:id/topics", forumHandler.CreateTopic)
+		}
+
+		// Topic-level
+		topics := protected.Group("/topics")
+		{
+			topics.GET("/:id", forumHandler.GetTopic)
+			topics.POST("/:id/posts", forumHandler.CreatePost)
+		}
+
+		// Rubric Grading (Phase 27)
+		rubricRepo := repository.NewSQLRubricRepository(db)
+		rubricService := services.NewRubricService(rubricRepo)
+		rubricHandler := NewRubricHandler(rubricService)
+
+		protected.POST("/courses/:id/rubrics", rubricHandler.CreateRubric)
+		protected.GET("/courses/:id/rubrics", rubricHandler.ListRubrics)
+		protected.GET("/rubrics/:id", rubricHandler.GetRubric)
+		
+		protected.POST("/submissions/:id/rubric_grade", rubricHandler.SubmitGrade)
 	}
 	
 	// SuperAdmin Handlers
