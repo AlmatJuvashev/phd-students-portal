@@ -54,6 +54,22 @@ type ActivitySubmission struct {
 	ActivityTitle string `db:"activity_title" json:"activity_title,omitempty"`
 }
 
+type SubmissionAnnotation struct {
+	ID             string    `db:"id" json:"id"`
+	SubmissionID   string    `db:"submission_id" json:"submission_id"`
+	AuthorID       string    `db:"author_id" json:"author_id"`
+	PageNumber     int       `db:"page_number" json:"page_number"`
+	AnnotationType string    `db:"annotation_type" json:"annotation_type"` // highlight, text...
+	XPercent       float64   `db:"x_percent" json:"x_percent"`
+	YPercent       float64   `db:"y_percent" json:"y_percent"`
+	WidthPercent   float64   `db:"width_percent" json:"width_percent,omitempty"`
+	HeightPercent  float64   `db:"height_percent" json:"height_percent,omitempty"`
+	Content        *string   `db:"content" json:"content,omitempty"`
+	Color          string    `db:"color" json:"color"`
+	CreatedAt      time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time `db:"updated_at" json:"updated_at"`
+}
+
 // --- Attendance ---
 
 const (
