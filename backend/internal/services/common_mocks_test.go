@@ -41,9 +41,10 @@ func (m *MockUserRepository) GetPasswordResetToken(ctx context.Context, tokenHas
 	return ret.String(0), ret.Get(1).(time.Time), ret.Error(2)
 }
 func (m *MockUserRepository) DeletePasswordResetToken(ctx context.Context, tokenHash string) error { return m.Called(ctx, tokenHash).Error(0) }
-func (m *MockUserRepository) GetTenantRole(ctx context.Context, userID, tenantID string) (string, error) { 
+func (m *MockUserRepository) GetTenantRoles(ctx context.Context, userID, tenantID string) ([]string, error) { 
 	ret := m.Called(ctx, userID, tenantID)
-	return ret.String(0), ret.Error(1)
+	if ret.Get(0) == nil { return nil, ret.Error(1) }
+	return ret.Get(0).([]string), ret.Error(1)
 }
 func (m *MockUserRepository) LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error { return m.Called(ctx, studentID, advisorID, tenantID).Error(0) }
 func (m *MockUserRepository) ReplaceAdvisors(ctx context.Context, studentID string, advisorIDs []string, tenantID string) error { return m.Called(ctx, studentID, advisorIDs, tenantID).Error(0) }
@@ -112,4 +113,19 @@ func (m *MockAnalyticsRepository) GetBottleneck(ctx context.Context, filter mode
 func (m *MockAnalyticsRepository) GetProfileFlagCount(ctx context.Context, key string, minVal float64, filter models.FilterParams) (int, error) {
 	args := m.Called(ctx, key, minVal, filter)
 	return args.Int(0), args.Error(1)
+}
+
+// Risk Analytics
+func (m *MockAnalyticsRepository) SaveRiskSnapshot(ctx context.Context, s *models.RiskSnapshot) error {
+	return m.Called(ctx, s).Error(0)
+}
+func (m *MockAnalyticsRepository) GetStudentRiskHistory(ctx context.Context, studentID string) ([]models.RiskSnapshot, error) {
+	args := m.Called(ctx, studentID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.RiskSnapshot), args.Error(1)
+}
+func (m *MockAnalyticsRepository) GetHighRiskStudents(ctx context.Context, threshold float64) ([]models.RiskSnapshot, error) {
+	args := m.Called(ctx, threshold)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.RiskSnapshot), args.Error(1)
 }
