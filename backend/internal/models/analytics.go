@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type StudentStageStats struct {
 	Stage string `db:"stage" json:"stage"`
 	Count int    `db:"count" json:"count"`
@@ -24,3 +26,23 @@ type MonitorMetrics struct {
 	BottleneckCount    int     `json:"bottleneck_count"`
 	ProfileFlagCount   int     `json:"profile_flag_count"` // Generic "RP Required"
 }
+
+type RiskFactor struct {
+	Type        string  `json:"type"` // "ATTENDANCE", "GRADES", "DEADLINES"
+	Description string  `json:"description"`
+	Value       float64 `json:"value"` // e.g., 0.65 for 65%
+	Weight      float64 `json:"weight"` // Contribution to score
+}
+
+type RiskSnapshot struct {
+	ID          string       `db:"id" json:"id"`
+	StudentID   string       `db:"student_id" json:"student_id"`
+	RiskScore   float64      `db:"risk_score" json:"risk_score"`
+	RiskFactors []RiskFactor `json:"risk_factors"` // Unmarshalled from JSONB
+	RawFactors  []byte       `db:"risk_factors" json:"-"`
+	CreatedAt   time.Time    `db:"created_at" json:"created_at"`
+	
+	// Optional joined fields
+	StudentName string `db:"student_name" json:"student_name,omitempty"`
+}
+
