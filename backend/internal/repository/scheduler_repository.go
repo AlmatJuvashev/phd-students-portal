@@ -37,7 +37,10 @@ type SchedulerRepository interface {
 	ListSessionsByInstructor(ctx context.Context, instructorID string, startDate, endDate time.Time) ([]models.ClassSession, error)
 	ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error)
 	UpdateSession(ctx context.Context, session *models.ClassSession) error
-	DeleteSession(ctx context.Context, id string) error
+	// Cohorts
+	AddCohortToOffering(ctx context.Context, offeringID string, cohortID string) error
+	GetOfferingCohorts(ctx context.Context, offeringID string) ([]string, error)
+	ListSessionsForCohorts(ctx context.Context, cohortIDs []string, startDate, endDate time.Time) ([]models.ClassSession, error)
 }
 
 type SQLSchedulerRepository struct {
@@ -245,4 +248,42 @@ func (r *SQLSchedulerRepository) UpdateSession(ctx context.Context, s *models.Cl
 func (r *SQLSchedulerRepository) DeleteSession(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, "DELETE FROM class_sessions WHERE id = $1", id)
 	return err
+}
+
+// --- Cohorts ---
+
+func (r *SQLSchedulerRepository) AddCohortToOffering(ctx context.Context, offeringID string, cohortID string) error {
+	query := `INSERT INTO course_offering_cohorts (course_offering_id, cohort_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`
+	_, err := r.db.ExecContext(ctx, query, offeringID, cohortID)
+	return err
+}
+
+func (r *SQLSchedulerRepository) GetOfferingCohorts(ctx context.Context, offeringID string) ([]string, error) {
+	var cohorts []string
+	query := `SELECT cohort_id FROM course_offering_cohorts WHERE course_offering_id = $1`
+	err := r.db.SelectContext(ctx, &cohorts, query, offeringID)
+	return cohorts, err
+}
+
+func (r *SQLSchedulerRepository) ListSessionsForCohorts(ctx context.Context, cohortIDs []string, startDate, endDate time.Time) ([]models.ClassSession, error) {
+	if len(cohortIDs) == 0 {
+		return []models.ClassSession{}, nil
+	}
+	query, args, err := sqlx.In(`
+		SELECT s.* FROM class_sessions s
+		JOIN course_offering_cohorts coc ON s.course_offering_id = coc.course_offering_id
+		WHERE coc.cohort_id IN (?) 
+		AND s.date >= ? AND s.date <= ? 
+		AND s.is_cancelled = false
+	`, cohortIDs, startDate, endDate)
+	
+	if err != nil {
+		return nil, err
+	}
+	// Rebind for Postgres
+	query = r.db.Rebind(query)
+	
+	var list []models.ClassSession
+	err = r.db.SelectContext(ctx, &list, query, args...)
+	return list, err
 }

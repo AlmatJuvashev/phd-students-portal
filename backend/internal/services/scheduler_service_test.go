@@ -99,6 +99,20 @@ func (m *MockSchedulerRepo) ListSessionsForTerm(ctx context.Context, termID stri
 	args := m.Called(ctx, termID)
 	return args.Get(0).([]models.ClassSession), args.Error(1)
 }
+func (m *MockSchedulerRepo) AddCohortToOffering(ctx context.Context, offeringID, cohortID string) error {
+	args := m.Called(ctx, offeringID, cohortID)
+	return args.Error(0)
+}
+func (m *MockSchedulerRepo) GetOfferingCohorts(ctx context.Context, offeringID string) ([]string, error) {
+	args := m.Called(ctx, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]string), args.Error(1)
+}
+func (m *MockSchedulerRepo) ListSessionsForCohorts(ctx context.Context, cohortIDs []string, s, e time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, cohortIDs, s, e)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
 
 // MockSchedResourceRepo
 type MockSchedResourceRepo struct {
@@ -113,17 +127,25 @@ func (m *MockSchedResourceRepo) CreateBuilding(ctx context.Context, b *models.Bu
 func (m *MockSchedResourceRepo) GetBuilding(ctx context.Context, id string) (*models.Building, error) { return nil, nil }
 func (m *MockSchedResourceRepo) ListBuildings(ctx context.Context, tenantID string) ([]models.Building, error) { return nil, nil }
 func (m *MockSchedResourceRepo) UpdateBuilding(ctx context.Context, b *models.Building) error { return nil }
-func (m *MockSchedResourceRepo) DeleteBuilding(ctx context.Context, id string) error { return nil }
+func (m *MockSchedResourceRepo) DeleteBuilding(ctx context.Context, id string, userID string) error { return nil }
 func (m *MockSchedResourceRepo) CreateRoom(ctx context.Context, r *models.Room) error { return nil }
 func (m *MockSchedResourceRepo) ListRooms(ctx context.Context, buildingID string) ([]models.Room, error) { return nil, nil }
 func (m *MockSchedResourceRepo) UpdateRoom(ctx context.Context, r *models.Room) error { return nil }
-func (m *MockSchedResourceRepo) DeleteRoom(ctx context.Context, id string) error { return nil }
+func (m *MockSchedResourceRepo) DeleteRoom(ctx context.Context, id string, userID string) error { return nil }
 func (m *MockSchedResourceRepo) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error { return nil }
 func (m *MockSchedResourceRepo) GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error) {
 	args := m.Called(ctx, instructorID)
 	// Return empty list by default if not mocked otherwise
 	if args.Get(0) == nil { return []models.InstructorAvailability{}, args.Error(1) }
 	return args.Get(0).([]models.InstructorAvailability), args.Error(1)
+}
+func (m *MockSchedResourceRepo) SetRoomAttribute(ctx context.Context, attr *models.RoomAttribute) error {
+	return nil 
+}
+func (m *MockSchedResourceRepo) GetRoomAttributes(ctx context.Context, roomID string) ([]models.RoomAttribute, error) {
+	args := m.Called(ctx, roomID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.RoomAttribute), args.Error(1)
 }
 
 
@@ -149,6 +171,24 @@ func TestSchedulerService_ConflictDetection(t *testing.T) {
 		{ID: "existing1", StartTime: "10:00", EndTime: "11:30", RoomID: &roomID, Date: testDate},
 	}
 	mockRepo.On("ListSessionsByRoom", ctx, roomID, testDate, testDate).Return(existing, nil)
+	
+	// Expectations for advanced checks (since we reach Overlap Check, these might not be called if overlap fails immediately? 
+	// Wait, code: Overlap Check -> Warning/Error. if Hard Error, returns. 
+	// In code: if valid overlapping session found -> returns error.
+	// So downstream calls skipped?
+	// But in Case 1 below, newSession overlaps (11:00 vs 11:30 end).
+	// So CheckConflicts returns Error at Step 1.B.
+	// So Step 1.C, 1.D (Requirements) skipped.
+	// So NO expectation needed for Case 1?
+	// Let's verify failure.
+	// Previous failure was in ScheduleSession_Notification test.
+	// ConflictDetection might have passed if it errored out early.
+	// I will just add expectations to be safe or leave if not called.
+	// Actually, Case 1 fails early.
+	// BUT Case 2 might proceed?
+	// Wait, I only see Case 1 in snippet.
+	// Let's look at ScheduleSession_Notification test which FAILED.
+
 
 	// Case 1: Time Overlap (11:00 - 12:00) -> Should Fail
 	newSession := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "11:00", EndTime: "12:00", RoomID: &roomID}
@@ -277,6 +317,11 @@ func TestSchedulerService_ScheduleSession_Notification(t *testing.T) {
 	mockRepo.On("ListSessionsByInstructor", ctx, instID, testDate, testDate).Return([]models.ClassSession{}, nil)
 	mockResource.On("GetAvailability", ctx, instID).Return([]models.InstructorAvailability{}, nil)
     mockCurriculum.On("GetCourse", ctx, "course-1").Return(nil, nil).Maybe()
+	
+	// NEW Expectations:
+	mockCurriculum.On("GetCourseRequirements", ctx, "course-1").Return([]models.CourseRequirement{}, nil)
+	mockResource.On("GetRoomAttributes", ctx, roomID).Return([]models.RoomAttribute{}, nil)
+	mockRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
 
 	// 2. Create Session Expectation
 	mockRepo.On("CreateSession", ctx, session).Return(nil)

@@ -20,6 +20,7 @@ type ProblemInstance struct {
 	Instructors  map[string]models.User // InstructorID -> User Model (optional)
 	Dependencies map[string][]string    // SessionID -> List of prerequisite SessionIDs
 	Unavailability map[string][]models.InstructorAvailability // InstructorID -> List of unavailable slots
+	RoomAttributes map[string]map[string]string               // RoomID -> Key -> Value
 }
 
 // SessionData is a flattened representation of a session for the solver.
@@ -32,6 +33,8 @@ type SessionData struct {
 	DepartmentID string // Department of the Course (optional)
 	FixedRoomID  string // If strictly pre-assigned (Hard Constraint)
 	OriginalTime time.Time
+	Cohorts      []string                  // TARGET_COHORTS
+	Requirements []models.CourseRequirement // Course Requirements
 }
 
 // Assignment represents a decision for a single session.

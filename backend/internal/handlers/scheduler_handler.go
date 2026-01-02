@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -10,11 +11,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type SchedulerHandler struct {
-	service *services.SchedulerService
+type SchedulerOrchestrator interface {
+	CreateTerm(ctx context.Context, term *models.AcademicTerm) error
+	ListTerms(ctx context.Context, tenantID string) ([]models.AcademicTerm, error)
+	GetTerm(ctx context.Context, id string) (*models.AcademicTerm, error)
+	CreateOffering(ctx context.Context, offering *models.CourseOffering) error
+	ScheduleSession(ctx context.Context, session *models.ClassSession) ([]string, error)
+	ListSessions(ctx context.Context, offeringID string, start, end time.Time) ([]models.ClassSession, error)
+	AutoSchedule(ctx context.Context, tenantID, termID string, config *solver.SolverConfig) (*solver.Solution, error)
 }
 
-func NewSchedulerHandler(service *services.SchedulerService) *SchedulerHandler {
+type SchedulerHandler struct {
+	service SchedulerOrchestrator
+}
+
+func NewSchedulerHandler(service SchedulerOrchestrator) *SchedulerHandler {
 	return &SchedulerHandler{service: service}
 }
 

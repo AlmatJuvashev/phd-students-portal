@@ -47,6 +47,10 @@ func (s *SchedulerService) ListTerms(ctx context.Context, tenantID string) ([]mo
 	return s.repo.ListTerms(ctx, tenantID)
 }
 
+func (s *SchedulerService) GetTerm(ctx context.Context, id string) (*models.AcademicTerm, error) {
+	return s.repo.GetTerm(ctx, id)
+}
+
 // --- Offerings & Staff ---
 func (s *SchedulerService) CreateOffering(ctx context.Context, o *models.CourseOffering) error {
 	if o.CourseID == "" || o.TermID == "" {
@@ -150,7 +154,7 @@ func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.C
 	// For ONLINE_SYNC: Skip room constraints but check instructor
 	isOnline := (format == models.DeliveryOnlineSync)
 
-	// 1. Room Conflict & Capacity Check (Skip for online formats)
+	// 1. Room Conflict & Capacity & Attributes Check
 	if session.RoomID != nil && !isOnline {
 		room, err := s.resourceRepo.GetRoom(ctx, *session.RoomID)
 		if err != nil {
@@ -174,7 +178,6 @@ func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.C
 		}
 		if hasOverlap(session, sessions) {
 			msg := fmt.Sprintf("Room %s is already booked at this time", *session.RoomID)
-			// Overlaps are arguably always Hard for physical rooms, but let's respect config
 			if cfg.TimeConflictConstraint == "HARD" {
 				return nil, &ConflictError{Reason: msg}
 			} else {
@@ -183,7 +186,6 @@ func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.C
 		}
 
 		// C. Department Check
-		// Try to fetch course metadata
 		course, err := s.curriculumRepo.GetCourse(ctx, offering.CourseID)
 		if err == nil && course != nil && course.DepartmentID != nil {
 			roomDept := ""
@@ -199,9 +201,30 @@ func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.C
 				}
 			}
 		}
+
+		// D. Attribute/Feature Check
+		// 1. Requirements from Course
+		reqs, err := s.curriculumRepo.GetCourseRequirements(ctx, offering.CourseID)
+		if err == nil && len(reqs) > 0 {
+			// 2. Attributes from Room
+			attrs, err := s.resourceRepo.GetRoomAttributes(ctx, *session.RoomID)
+			if err == nil {
+				attrMap := make(map[string]string)
+				for _, a := range attrs {
+					attrMap[a.Key] = a.Value
+				}
+				for _, r := range reqs {
+					val, ok := attrMap[r.Key]
+					if !ok || val != r.Value {
+						msg := fmt.Sprintf("Room missing required attribute: %s=%s", r.Key, r.Value)
+						warnings = append(warnings, "Warning: "+msg) // Usually soft for manual override
+					}
+				}
+			}
+		}
 	}
 
-	// 2. Instructor Conflict & Availability
+	// 2. Instructor Conflict & Availability & Travel Time
 	if session.InstructorID != nil {
 		// A. Overlap with Existing Sessions
 		sessions, err := s.repo.ListSessionsByInstructor(ctx, *session.InstructorID, session.Date, session.Date)
@@ -212,11 +235,10 @@ func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.C
 			return nil, &ConflictError{Reason: "Instructor is already teaching another class at this time"}
 		}
 
-		// B. Unavailability Check (Resource Repo)
-		// We need to fetch unavailability for this instructor
+		// B. Unavailability Check
 		availList, err := s.resourceRepo.GetAvailability(ctx, *session.InstructorID)
-		if err == nil { // Ignore error for now, treat as no constraints
-			sessionDay := int(session.Date.Weekday()) // 0=Sun
+		if err == nil {
+			sessionDay := int(session.Date.Weekday())
 			sMins := parseTime(session.StartTime)
 			eMins := parseTime(session.EndTime)
 
@@ -226,14 +248,35 @@ func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.C
 					uEnd := parseTime(slot.EndTime)
 
 					if sMins < uEnd && eMins > uStart {
-						// Overlap
 						msg := "Instructor is unavailable during this time"
-						if cfg.TimeConflictConstraint == "HARD" { // Treat as Time Conflict
+						if cfg.TimeConflictConstraint == "HARD" {
 							return nil, &ConflictError{Reason: msg}
 						} else {
 							warnings = append(warnings, "Warning: "+msg)
 						}
 					}
+				}
+			}
+		}
+
+		// C. Travel Time Check
+		// Note: Simplified check. If previous/next session on simplified timeline (same day) is in different building.
+		// Requires checking Room->Building for adjacent sessions.
+		// For now, let's skip complex travel time implementation in this step to avoid massive code bloat in one chunk.
+		// Will move to separate method if needed.
+	}
+
+	// 3. Cohort Conflict Check (Student Group Overlap)
+	cohorts, err := s.repo.GetOfferingCohorts(ctx, session.CourseOfferingID)
+	if err == nil && len(cohorts) > 0 {
+		cohortSessions, err := s.repo.ListSessionsForCohorts(ctx, cohorts, session.Date, session.Date)
+		if err == nil {
+			if hasOverlap(session, cohortSessions) {
+				msg := "Scheduling conflict for Student Cohort(s)"
+				if cfg.TimeConflictConstraint == "HARD" {
+					return nil, &ConflictError{Reason: msg}
+				} else {
+					warnings = append(warnings, "Warning: "+msg)
 				}
 			}
 		}
@@ -348,6 +391,12 @@ func (s *SchedulerService) AutoSchedule(ctx context.Context, tenantID, termID st
 		// Department
 		deptID := courseDeptMap[offering.CourseID]
 
+		// Fetch Cohorts for Offering (Warning: N+1 query, but optimized later)
+		cohorts, _ := s.repo.GetOfferingCohorts(ctx, sess.CourseOfferingID)
+
+		// Fetch Requirements for Course (Warning: N+1 query)
+		reqs, _ := s.curriculumRepo.GetCourseRequirements(ctx, offering.CourseID)
+
 		instance.Sessions[sess.ID] = solver.SessionData{
 			ID:           sess.ID,
 			DurationMins: duration,
@@ -356,6 +405,22 @@ func (s *SchedulerService) AutoSchedule(ctx context.Context, tenantID, termID st
 			DepartmentID: deptID,
 			FixedRoomID:  "",
 			OriginalTime: sess.Date,
+			Cohorts:      cohorts,
+			Requirements: reqs,
+		}
+	}
+
+	// 2.5 Populate Room Attributes
+	// This should ideally be a bulk fetch. For now, iterate.
+	instance.RoomAttributes = make(map[string]map[string]string)
+	for _, room := range rooms {
+		attrs, err := s.resourceRepo.GetRoomAttributes(ctx, room.ID)
+		if err == nil && len(attrs) > 0 {
+			attrMap := make(map[string]string)
+			for _, a := range attrs {
+				attrMap[a.Key] = a.Value
+			}
+			instance.RoomAttributes[room.ID] = attrMap
 		}
 	}
 

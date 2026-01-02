@@ -85,6 +85,9 @@ func TestDeliveryFormat_OnlineAsync_NoConstraints(t *testing.T) {
 		MaxCapacity:    100,
 	}, nil)
 
+	// Cohort check is always performed
+	mockRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
+
 	// Session with no room and no time - should be fine for async
 	session := &models.ClassSession{
 		CourseOfferingID: offeringID,
@@ -128,6 +131,8 @@ func TestDeliveryFormat_OnlineSync_SkipsRoomChecks(t *testing.T) {
 	// Instructor availability check
 	mockResourceRepo.On("GetAvailability", ctx, instID).Return([]models.InstructorAvailability{}, nil)
 	mockRepo.On("ListSessionsByInstructor", ctx, instID, mock.Anything, mock.Anything).Return([]models.ClassSession{}, nil)
+	// Cohort check
+	mockRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
 
 	session := &models.ClassSession{
 		CourseOfferingID: offeringID,
@@ -261,6 +266,9 @@ func TestDeliveryFormat_Hybrid_SessionOverride(t *testing.T) {
 		DeliveryFormat: models.DeliveryHybrid,
 		MaxCapacity:    40,
 	}, nil)
+	
+	// Cohort check
+	mockRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
 
 	t.Run("Session with ONLINE_SYNC override skips room checks", func(t *testing.T) {
 		onlineFormat := models.DeliveryOnlineSync
