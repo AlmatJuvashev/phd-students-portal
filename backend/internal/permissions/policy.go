@@ -21,6 +21,19 @@ const (
 	ResourceDocument Resource = "document"
 )
 
+// HasRole checks if the user has the specified role (checking both Role and Roles fields).
+func HasRole(user models.User, role models.Role) bool {
+	if user.Role == role {
+		return true
+	}
+	for _, r := range user.Roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
 // Can checks if the actor can perform the action on the resource.
 // This is a simplified policy engine.
 func Can(actor models.User, action Action, resource Resource, target interface{}) bool {
@@ -48,12 +61,12 @@ func canUser(actor models.User, action Action, target interface{}) bool {
 	}
 
 	// Superadmin can do anything
-	if actor.Role == models.RoleSuperAdmin {
+	if HasRole(actor, models.RoleSuperAdmin) {
 		return true
 	}
 
 	// Admin can manage users
-	if actor.Role == models.RoleAdmin {
+	if HasRole(actor, models.RoleAdmin) || HasRole(actor, models.RoleITAdmin) {
 		return true
 	}
 
@@ -62,12 +75,11 @@ func canUser(actor models.User, action Action, target interface{}) bool {
 		return true
 	}
 
-	// Advisors can read their students (assuming we had advisor relation logic here)
-	// For now, let's say Advisors can read any student (simplified)
-	if actor.Role == models.RoleAdvisor && targetUser.Role == models.RoleStudent {
+	// Advisors can read their students (simplified)
+	if HasRole(actor, models.RoleAdvisor) && HasRole(targetUser, models.RoleStudent) {
 		return action == ActionRead
 	}
-
+	
 	return false
 }
 
