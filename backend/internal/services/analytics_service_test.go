@@ -12,7 +12,7 @@ import (
 
 func TestAnalyticsService_GetMonitorMetrics(t *testing.T) {
 	mockRepo := new(MockAnalyticsRepository)
-	service := NewAnalyticsService(mockRepo)
+	service := NewAnalyticsService(mockRepo, nil, nil)
 
 	ctx := context.Background()
 	filter := models.FilterParams{TenantID: "tenant-1"}
