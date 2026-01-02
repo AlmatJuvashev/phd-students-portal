@@ -91,4 +91,13 @@ func (h *AnalyticsHandler) GetHighRiskStudents(c *gin.Context) {
 	c.JSON(http.StatusOK, students)
 }
 
+func (h *AnalyticsHandler) HandleBatchRiskAnalysis(c *gin.Context) {
+	count, err := h.service.RunBatchRiskAnalysis(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "processed": count})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Batch analysis completed", "processed": count})
+}
+
 
