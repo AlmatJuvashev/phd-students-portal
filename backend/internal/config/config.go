@@ -29,10 +29,13 @@ type AppConfig struct {
 	S3Endpoint      string
 	S3Bucket        string
 	ServerURL       string
+	IssuerURL       string
+	OpenAIKey       string
 }
 
 // MustLoad loads configuration from environment variables.
 func MustLoad() AppConfig {
+	serverURL := get("SERVER_URL", "http://localhost:8080")
 	cfg := AppConfig{
 		RedisURL:        get("REDIS_URL", "redis://127.0.0.1:6379"),
 		Port:            get("APP_PORT", "8080"),
@@ -53,11 +56,18 @@ func MustLoad() AppConfig {
 		PlaybookPath:    get("PLAYBOOK_PATH", "../frontend/src/playbooks/playbook.json"),
 		S3Endpoint:      get("S3_ENDPOINT", ""),
 		S3Bucket:        get("S3_BUCKET", ""),
-		ServerURL:       get("SERVER_URL", "http://localhost:8080"),
+		ServerURL:       serverURL,
+		IssuerURL:       get("ISSUER_URL", serverURL), // Default to server URL
+		OpenAIKey:       get("OPENAI_API_KEY", ""),
 	}
 	if cfg.DatabaseURL == "" {
 		log.Fatal("DATABASE_URL is required")
 	}
+	// Warning only for AI
+	if cfg.OpenAIKey == "" {
+		log.Println("WARN: OPENAI_API_KEY is missing. AI features will be disabled.")
+	}
+
 	_ = os.MkdirAll(cfg.UploadDir, 0750)
 
 	// Log important config values at startup

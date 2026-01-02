@@ -31,8 +31,8 @@ func (m *MockResourceRepo) UpdateBuilding(ctx context.Context, b *models.Buildin
 	args := m.Called(ctx, b)
 	return args.Error(0)
 }
-func (m *MockResourceRepo) DeleteBuilding(ctx context.Context, id string) error {
-	args := m.Called(ctx, id)
+func (m *MockResourceRepo) DeleteBuilding(ctx context.Context, id string, userID string) error {
+	args := m.Called(ctx, id, userID)
 	return args.Error(0)
 }
 // Room mocks
@@ -52,8 +52,8 @@ func (m *MockResourceRepo) UpdateRoom(ctx context.Context, r *models.Room) error
 	args := m.Called(ctx, r)
 	return args.Error(0)
 }
-func (m *MockResourceRepo) DeleteRoom(ctx context.Context, id string) error {
-	args := m.Called(ctx, id)
+func (m *MockResourceRepo) DeleteRoom(ctx context.Context, id string, userID string) error {
+	args := m.Called(ctx, id, userID)
 	return args.Error(0)
 }
 func (m *MockResourceRepo) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error {
@@ -63,6 +63,15 @@ func (m *MockResourceRepo) SetAvailability(ctx context.Context, avail *models.In
 func (m *MockResourceRepo) GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error) {
 	args := m.Called(ctx, instructorID)
 	return args.Get(0).([]models.InstructorAvailability), args.Error(1)
+}
+func (m *MockResourceRepo) SetRoomAttribute(ctx context.Context, attr *models.RoomAttribute) error {
+	args := m.Called(ctx, attr)
+	return args.Error(0)
+}
+func (m *MockResourceRepo) GetRoomAttributes(ctx context.Context, roomID string) ([]models.RoomAttribute, error) {
+	args := m.Called(ctx, roomID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.RoomAttribute), args.Error(1)
 }
 
 // Ensure mock implements interface

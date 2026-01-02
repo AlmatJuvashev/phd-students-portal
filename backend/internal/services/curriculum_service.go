@@ -70,6 +70,10 @@ func (s *CurriculumService) ListCourses(ctx context.Context, tenantID string, pr
 	return s.repo.ListCourses(ctx, tenantID, programID)
 }
 
+func (s *CurriculumService) GetCourse(ctx context.Context, id string) (*models.Course, error) {
+	return s.repo.GetCourse(ctx, id)
+}
+
 func (s *CurriculumService) UpdateCourse(ctx context.Context, c *models.Course) error {
 	c.UpdatedAt = time.Now()
 	return s.repo.UpdateCourse(ctx, c)

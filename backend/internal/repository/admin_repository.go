@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -687,12 +688,31 @@ func (r *SQLAdminRepository) CreateNotification(ctx context.Context, recipientID
 }
 
 func (r *SQLAdminRepository) CreateReviewedDocumentVersion(ctx context.Context, docID, storagePath, objKey, bucket, mimeType string, sizeBytes int64, actorID, etag, tenantID string) (string, error) {
-	var id string
-	err := r.db.QueryRowContext(ctx, `INSERT INTO document_versions (
-		document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag, tenant_id
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-		docID, storagePath, objKey, bucket, mimeType, sizeBytes, actorID, nullableString(etag), tenantID).Scan(&id)
-	return id, err
+	// Generate ID in Go to avoid "postgres inconsistent types deduced" error with RETURNING clause
+	id := uuid.New().String()
+	
+	// Use standard Exec, no RETURNING needed
+	query := `INSERT INTO document_versions (
+		id, document_id, storage_path, object_key, bucket, mime_type, size_bytes, uploaded_by, etag, tenant_id
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+
+	_, err := r.db.ExecContext(ctx, query, 
+		id, 
+		docID, 
+		storagePath, 
+		objKey, 
+		bucket, 
+		mimeType, 
+		sizeBytes, 
+		actorID, 
+		nullableString(etag), 
+		tenantID,
+	)
+	
+	if err != nil {
+		return "", err
+	}
+	return id, nil
 }
 
 func nullableString(s string) sql.NullString {

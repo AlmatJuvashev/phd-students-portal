@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"testing"
-	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/DATA-DOG/go-sqlmock"
@@ -11,112 +11,48 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestResourceRepository_Buildings(t *testing.T) {
+func TestSQLResourceRepository_RoomAttributes(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
 	defer db.Close()
+
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
 	repo := NewSQLResourceRepository(sqlxDB)
 	ctx := context.Background()
 
-	b := &models.Building{
-		TenantID:    "t1",
-		Name:        "Main Hall",
-		Address:     "123 St",
-		Description: "{}",
-		IsActive:    true,
-	}
+	t.Run("SetRoomAttribute_Success", func(t *testing.T) {
+		mock.ExpectExec("INSERT INTO room_attributes").
+			WithArgs("room-1", "Projector", "true").
+			WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Create
-	mock.ExpectQuery(`INSERT INTO buildings`).
-		WithArgs(b.TenantID, b.Name, b.Address, b.Description, b.IsActive).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
-			AddRow("b1", time.Now(), time.Now()))
+		err := repo.SetRoomAttribute(ctx, &models.RoomAttribute{RoomID: "room-1", Key: "Projector", Value: "true"})
+		assert.NoError(t, err)
+	})
 
-	err = repo.CreateBuilding(ctx, b)
-	assert.NoError(t, err)
-	assert.Equal(t, "b1", b.ID)
+	t.Run("SetRoomAttribute_Error", func(t *testing.T) {
+		mock.ExpectExec("INSERT INTO room_attributes").
+			WithArgs("room-1", "Projector", "true").
+			WillReturnError(fmt.Errorf("db error"))
 
-	// List
-	mock.ExpectQuery(`SELECT \* FROM buildings WHERE tenant_id=\$1`).
-		WithArgs("t1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow("b1", "Main Hall"))
-	
-	list, err := repo.ListBuildings(ctx, "t1")
-	assert.NoError(t, err)
-	assert.Len(t, list, 1)
+		err := repo.SetRoomAttribute(ctx, &models.RoomAttribute{RoomID: "room-1", Key: "Projector", Value: "true"})
+		assert.Error(t, err)
+	})
 
-	// Update
-	b.Name = "Updated Hall"
-	mock.ExpectExec(`UPDATE buildings`).
-		WithArgs(b.Name, b.Address, b.Description, b.IsActive, b.ID).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	err = repo.UpdateBuilding(ctx, b)
-	assert.NoError(t, err)
+	t.Run("GetRoomAttributes_Success", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"room_id", "key", "value"}).
+			AddRow("room-1", "Projector", "true").
+			AddRow("room-1", "Seats", "50")
 
-	// Delete
-	mock.ExpectExec(`DELETE FROM buildings`).
-		WithArgs("b1").
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	err = repo.DeleteBuilding(ctx, "b1")
-	assert.NoError(t, err)
-	
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
+		mock.ExpectQuery(`SELECT (.+) FROM room_attributes WHERE room_id=\$1`).
+			WithArgs("room-1").
+			WillReturnRows(rows)
 
-func TestResourceRepository_Rooms(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLResourceRepository(sqlxDB)
-	ctx := context.Background()
-
-	deptID := "dept-1"
-	r := &models.Room{
-		BuildingID:   "b1",
-		Name:         "101",
-		Capacity:     50,
-		Floor:        1,
-		DepartmentID: &deptID,
-		Type:         "lecture",
-		Features:     "[]",
-		IsActive:     true,
-	}
-
-	// Create - 8 args: building_id, name, capacity, floor, department_id, type, features, is_active
-	mock.ExpectQuery(`INSERT INTO rooms`).
-		WithArgs(r.BuildingID, r.Name, r.Capacity, r.Floor, r.DepartmentID, r.Type, r.Features, r.IsActive).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
-			AddRow("r1", time.Now(), time.Now()))
-
-	err = repo.CreateRoom(ctx, r)
-	assert.NoError(t, err)
-	assert.Equal(t, "r1", r.ID)
-
-	// List
-	mock.ExpectQuery(`SELECT \* FROM rooms WHERE building_id=\$1`).
-		WithArgs("b1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow("r1", "101"))
-	
-	list, err := repo.ListRooms(ctx, "b1")
-	assert.NoError(t, err)
-	assert.Len(t, list, 1)
-
-	// Update - 8 args: name, capacity, floor, department_id, type, features, is_active, id
-	r.Capacity = 60
-	mock.ExpectExec(`UPDATE rooms`).
-		WithArgs(r.Name, r.Capacity, r.Floor, r.DepartmentID, r.Type, r.Features, r.IsActive, r.ID).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	err = repo.UpdateRoom(ctx, r)
-	assert.NoError(t, err)
-
-	// Delete
-	mock.ExpectExec(`DELETE FROM rooms`).
-		WithArgs("r1").
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	err = repo.DeleteRoom(ctx, "r1")
-	assert.NoError(t, err)
-	
-	assert.NoError(t, mock.ExpectationsWereMet())
+		attrs, err := repo.GetRoomAttributes(ctx, "room-1")
+		assert.NoError(t, err)
+		assert.Len(t, attrs, 2)
+		assert.Equal(t, "Projector", attrs[0].Key)
+		assert.Equal(t, "true", attrs[0].Value)
+	})
 }

@@ -5,12 +5,17 @@ import "time"
 type Role string
 
 const (
-	RoleSuperAdmin Role = "superadmin"
-	RoleAdmin      Role = "admin"
-	RoleStudent    Role = "student"
-	RoleAdvisor    Role = "advisor"
-	RoleSecretary  Role = "secretary"
-	RoleChair      Role = "chair"
+	RoleSuperAdmin     Role = "superadmin"
+	RoleAdmin          Role = "admin" // Legacy Monolithic Admin (to be split)
+	RoleITAdmin        Role = "it_admin"
+	RoleRegistrar      Role = "registrar"
+	RoleContentMgr     Role = "content_manager"
+	RoleStudentAffairs Role = "student_affairs"
+	RoleStudent        Role = "student"
+	RoleAdvisor        Role = "advisor"
+	RoleSecretary      Role = "secretary"
+	RoleChair          Role = "chair"
+	RoleExternal       Role = "external" // External Examiner
 )
 
 type User struct {
@@ -20,6 +25,7 @@ type User struct {
 	FirstName    string    `db:"first_name" json:"first_name"`
 	LastName     string    `db:"last_name" json:"last_name"`
 	Role         Role      `db:"role" json:"role"`
+	Roles        []Role    `db:"-" json:"roles"`   // Effective Roles for current context
 	PasswordHash string    `db:"password_hash" json:"-"`
 	IsActive     bool      `db:"is_active" json:"is_active"`
 	IsSuperadmin bool      `db:"is_superadmin" json:"is_superadmin"` // Global admin across all tenants

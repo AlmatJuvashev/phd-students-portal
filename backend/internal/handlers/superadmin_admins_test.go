@@ -108,6 +108,18 @@ func TestSuperadminAdminsHandler_CreateAdmin(t *testing.T) {
 		r.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusCreated, w.Code)
 	})
+
+	t.Run("Create Admin Validation Fail", func(t *testing.T) {
+		body := map[string]interface{}{
+			"username": "", // Invalid: required
+		}
+		jb, _ := json.Marshal(body)
+		req, _ := http.NewRequest("POST", "/superadmin/admins", bytes.NewBuffer(jb))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }
 
 func TestSuperadminAdminsHandler_DeleteAdmin(t *testing.T) {
@@ -163,6 +175,14 @@ func TestSuperadminAdminsHandler_UpdateAdmin(t *testing.T) {
 		r.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("Update Admin Invalid JSON", func(t *testing.T) {
+		req, _ := http.NewRequest("PUT", "/superadmin/admins/"+userID, bytes.NewBufferString("invalid-json"))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }
 
 func TestSuperadminAdminsHandler_ResetPassword(t *testing.T) {
@@ -190,5 +210,15 @@ func TestSuperadminAdminsHandler_ResetPassword(t *testing.T) {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("Reset Short Password", func(t *testing.T) {
+		body := map[string]interface{}{"password": "short"}
+		jb, _ := json.Marshal(body)
+		req, _ := http.NewRequest("POST", "/superadmin/admins/"+userID+"/reset-password", bytes.NewBuffer(jb))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }

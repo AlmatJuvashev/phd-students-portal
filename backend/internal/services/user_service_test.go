@@ -112,9 +112,12 @@ func (m *MockUserRepository) DeletePasswordResetToken(ctx context.Context, token
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) GetTenantRole(ctx context.Context, userID, tenantID string) (string, error) {
+func (m *MockUserRepository) GetTenantRoles(ctx context.Context, userID, tenantID string) ([]string, error) {
 	args := m.Called(ctx, userID, tenantID)
-	return args.String(0), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
 }
 
 func (m *MockUserRepository) CheckRateLimit(ctx context.Context, userID, action string, window time.Duration) (int, error) {

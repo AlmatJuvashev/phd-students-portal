@@ -26,21 +26,23 @@ type Tenant struct {
 
 // UserTenantMembership represents a user's membership in a tenant with a specific role
 type UserTenantMembership struct {
-	UserID    string    `db:"user_id" json:"user_id"`
-	TenantID  string    `db:"tenant_id" json:"tenant_id"`
-	Role      Role      `db:"role" json:"role"`           // Role within this tenant
-	IsPrimary bool      `db:"is_primary" json:"is_primary"` // User's primary tenant
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	UserID    string         `db:"user_id" json:"user_id"`
+	TenantID  string         `db:"tenant_id" json:"tenant_id"`
+	Role      Role           `db:"role" json:"role"`             // Deprecated: Use Roles
+	Roles     pq.StringArray `db:"roles" json:"roles"`           // Multi-role support
+	IsPrimary bool           `db:"is_primary" json:"is_primary"` // User's primary tenant
+	CreatedAt time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 // TenantMembershipView extends membership with tenant details
 type TenantMembershipView struct {
-	TenantID   string `db:"tenant_id" json:"tenant_id"`
-	TenantName string `db:"tenant_name" json:"tenant_name"`
-	TenantSlug string `db:"tenant_slug" json:"tenant_slug"`
-	Role       string `db:"role" json:"role"`
-	IsPrimary  bool   `db:"is_primary" json:"is_primary"`
+	TenantID   string         `db:"tenant_id" json:"tenant_id"`
+	TenantName string         `db:"tenant_name" json:"tenant_name"`
+	TenantSlug string         `db:"tenant_slug" json:"tenant_slug"`
+	Role       string         `db:"role" json:"role"` // Deprecated
+	Roles      pq.StringArray `db:"roles" json:"roles"`
+	IsPrimary  bool           `db:"is_primary" json:"is_primary"`
 }
 
 // TenantStatsView includes user and admin counts

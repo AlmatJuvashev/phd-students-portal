@@ -87,6 +87,17 @@ func (m *HMockSchedulerRepo) ListSessionsByInstructor(ctx context.Context, iID s
     if args.Get(0) == nil { return nil, args.Error(1) }
     return args.Get(0).([]models.ClassSession), args.Error(1)
 }
+func (m *HMockSchedulerRepo) AddCohortToOffering(ctx context.Context, offeringID, cohortID string) error { return m.Called(ctx, offeringID, cohortID).Error(0) }
+func (m *HMockSchedulerRepo) GetOfferingCohorts(ctx context.Context, offeringID string) ([]string, error) {
+	args := m.Called(ctx, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]string), args.Error(1)
+}
+func (m *HMockSchedulerRepo) ListSessionsForCohorts(ctx context.Context, cohortIDs []string, s, e time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, cohortIDs, s, e)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
 
 type HMockLMSRepo struct{ mock.Mock }
 func (m *HMockLMSRepo) EnrollStudent(ctx context.Context, e *models.CourseEnrollment) error { return nil }
@@ -97,9 +108,40 @@ func (m *HMockLMSRepo) GetCourseRoster(ctx context.Context, offeringID string) (
 func (m *HMockLMSRepo) GetStudentEnrollments(ctx context.Context, studentID string) ([]models.CourseEnrollment, error) { return nil, nil }
 func (m *HMockLMSRepo) UpdateEnrollmentStatus(ctx context.Context, id, s string) error { return nil }
 func (m *HMockLMSRepo) CreateSubmission(ctx context.Context, s *models.ActivitySubmission) error { return nil }
-func (m *HMockLMSRepo) GetSubmission(ctx context.Context, a, s string) (*models.ActivitySubmission, error) { return nil, nil }
-func (m *HMockLMSRepo) ListSubmissions(ctx context.Context, o string) ([]models.ActivitySubmission, error) { return nil, nil }
-func (m *HMockLMSRepo) MarkAttendance(ctx context.Context, a *models.ClassAttendance) error { return nil }
+func (m *HMockLMSRepo) GetSubmission(ctx context.Context, id string) (*models.ActivitySubmission, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.ActivitySubmission), args.Error(1)
+}
+func (m *HMockLMSRepo) GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
+	args := m.Called(ctx, activityID, studentID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.ActivitySubmission), args.Error(1)
+}
+func (m *HMockLMSRepo) ListSubmissions(ctx context.Context, offeringID string) ([]models.ActivitySubmission, error) { 
+	args := m.Called(ctx, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ActivitySubmission), args.Error(1) 
+}
+func (m *HMockLMSRepo) MarkAttendance(ctx context.Context, att *models.ClassAttendance) error {
+	args := m.Called(ctx, att)
+	return args.Error(0)
+}
+func (m *HMockLMSRepo) CreateAnnotation(ctx context.Context, ann models.SubmissionAnnotation) (*models.SubmissionAnnotation, error) {
+	args := m.Called(ctx, ann)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.SubmissionAnnotation), args.Error(1)
+}
+func (m *HMockLMSRepo) ListAnnotations(ctx context.Context, submissionID string) ([]models.SubmissionAnnotation, error) {
+	args := m.Called(ctx, submissionID)
+	return args.Get(0).([]models.SubmissionAnnotation), args.Error(1)
+}
+func (m *HMockLMSRepo) DeleteAnnotation(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
 func (m *HMockLMSRepo) GetSessionAttendance(ctx context.Context, s string) ([]models.ClassAttendance, error) { return nil, nil }
 
 // Need full interface compliance
@@ -171,5 +213,46 @@ func TestTeacherHandler_GetGradebook(t *testing.T) {
 	mocks.Grading.On("ListEntries", mock.Anything, "123").Return([]models.GradebookEntry{}, nil)
 
 	h.GetGradebook(c)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestTeacherHandler_GetMySchedule(t *testing.T) {
+	h, _ := setupTeacherHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/teacher/schedule", nil)
+	c.Set("claims", jwt.MapClaims{"sub": "inst-1"})
+
+	h.GetMySchedule(c)
+	// Currently returns 501
+	assert.Equal(t, http.StatusNotImplemented, w.Code)
+}
+
+func TestTeacherHandler_GetMyCourses(t *testing.T) {
+	h, mocks := setupTeacherHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/teacher/courses", nil)
+	c.Set("claims", jwt.MapClaims{"sub": "inst-1"})
+
+	mocks.Sched.On("ListOfferingsByInstructor", mock.Anything, "inst-1", "").Return([]models.CourseOffering{{ID: "c1"}}, nil)
+
+	h.GetMyCourses(c)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestTeacherHandler_GetSubmissions(t *testing.T) {
+	h, mocks := setupTeacherHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/teacher/submissions", nil)
+	c.Set("claims", jwt.MapClaims{"sub": "inst-1"})
+
+	// Service first gets courses for instructor
+	mocks.Sched.On("ListOfferingsByInstructor", mock.Anything, "inst-1", "").Return([]models.CourseOffering{{ID: "c1"}}, nil)
+	// Then gets submissions for each course
+	mocks.LMS.On("ListSubmissions", mock.Anything, "c1").Return([]models.ActivitySubmission{{ID: "s1"}}, nil)
+
+	h.GetSubmissions(c)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
