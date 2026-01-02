@@ -22,6 +22,7 @@ type SchedulerRepository interface {
 	CreateOffering(ctx context.Context, offering *models.CourseOffering) error
 	GetOffering(ctx context.Context, id string) (*models.CourseOffering, error)
 	ListOfferings(ctx context.Context, tenantID string, termID string) ([]models.CourseOffering, error)
+	ListOfferingsByInstructor(ctx context.Context, instructorID string, termID string) ([]models.CourseOffering, error)
 	UpdateOffering(ctx context.Context, offering *models.CourseOffering) error
 
 	// Staff
@@ -104,6 +105,19 @@ func (r *SQLSchedulerRepository) CreateOffering(ctx context.Context, o *models.C
 		return rows.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
 	}
 	return nil
+}
+
+func (r *SQLSchedulerRepository) ListOfferingsByInstructor(ctx context.Context, instructorID string, termID string) ([]models.CourseOffering, error) {
+	var offerings []models.CourseOffering
+	// Join course_staff to find offerings where user is an instructor
+	query := `
+		SELECT co.* 
+		FROM course_offerings co
+		JOIN course_staff cs ON co.id = cs.course_offering_id
+		WHERE cs.user_id = $1 AND cs.role = 'INSTRUCTOR' AND ($2 = '' OR co.term_id = $2)
+		ORDER BY co.created_at DESC`
+	err := r.db.SelectContext(ctx, &offerings, query, instructorID, termID)
+	return offerings, err
 }
 
 func (r *SQLSchedulerRepository) GetOffering(ctx context.Context, id string) (*models.CourseOffering, error) {

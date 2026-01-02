@@ -67,6 +67,10 @@ func (m *MockSchedulerRepo) UpdateOffering(ctx context.Context, offering *models
 	args := m.Called(ctx, offering)
 	return args.Error(0)
 }
+func (m *MockSchedulerRepo) ListOfferingsByInstructor(ctx context.Context, instructorID string, termID string) ([]models.CourseOffering, error) {
+	args := m.Called(ctx, instructorID, termID)
+	return args.Get(0).([]models.CourseOffering), args.Error(1)
+}
 func (m *MockSchedulerRepo) AddStaff(ctx context.Context, staff *models.CourseStaff) error {
 	args := m.Called(ctx, staff)
 	return args.Error(0)
