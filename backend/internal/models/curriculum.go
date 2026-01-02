@@ -32,9 +32,17 @@ type Course struct {
 	Description string    `db:"description" json:"description"` // JSONB
 	Credits     int       `db:"credits" json:"credits"`
 	WorkloadHours int     `db:"workload_hours" json:"workload_hours"` // Total hours
-	IsActive    bool      `db:"is_active" json:"is_active"`
-	CreatedAt   time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
+	Attributes  []CourseRequirement `db:"-" json:"attributes"` // New Requirements
+	IsActive    bool                `db:"is_active" json:"is_active"`
+	CreatedAt   time.Time           `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time           `db:"updated_at" json:"updated_at"`
+}
+
+// CourseRequirement represents a scheduling constraint for a course
+type CourseRequirement struct {
+	CourseID string `db:"course_id" json:"course_id"`
+	Key      string `db:"key" json:"key"`     // e.g. "REQUIRES_EQUIPMENT"
+	Value    string `db:"value" json:"value"` // e.g. "Projector"
 }
 
 // JourneyMap (aka Playbook Definition) linked to a Program

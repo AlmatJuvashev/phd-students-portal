@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -78,4 +79,45 @@ func (h *TeacherHandler) GetSubmissions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, subs)
+}
+
+// AddAnnotation POST /submissions/:id/annotations
+func (h *TeacherHandler) AddAnnotation(c *gin.Context) {
+	submissionID := c.Param("id")
+	var ann models.SubmissionAnnotation
+	if err := c.ShouldBindJSON(&ann); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ann.SubmissionID = submissionID
+	ann.AuthorID = userIDFromClaims(c)
+
+	created, err := h.svc.AddAnnotation(c.Request.Context(), ann)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, created)
+}
+
+// GetAnnotations GET /submissions/:id/annotations
+func (h *TeacherHandler) GetAnnotations(c *gin.Context) {
+	submissionID := c.Param("id")
+	list, err := h.svc.GetAnnotationsForSubmission(c.Request.Context(), submissionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+// DeleteAnnotation DELETE /submissions/:id/annotations/:annId
+func (h *TeacherHandler) DeleteAnnotation(c *gin.Context) {
+	// submissionID := c.Param("id") // Not needed if deleting by primary key
+	annotationID := c.Param("annId")
+	if err := h.svc.RemoveAnnotation(c.Request.Context(), annotationID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

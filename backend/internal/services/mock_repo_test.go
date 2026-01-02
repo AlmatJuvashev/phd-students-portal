@@ -166,7 +166,7 @@ type HandwrittenMockUserRepository struct {
 	CreatePasswordResetTokenFunc    func(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error
 	GetPasswordResetTokenFunc       func(ctx context.Context, tokenHash string) (string, time.Time, error)
 	DeletePasswordResetTokenFunc    func(ctx context.Context, tokenHash string) error
-	GetTenantRoleFunc               func(ctx context.Context, userID, tenantID string) (string, error)
+	GetTenantRolesFunc               func(ctx context.Context, userID, tenantID string) ([]string, error)
 	LinkAdvisorFunc                 func(ctx context.Context, studentID, advisorID, tenantID string) error
 	CheckRateLimitFunc              func(ctx context.Context, userID, action string, window time.Duration) (int, error)
 	RecordRateLimitFunc             func(ctx context.Context, userID, action string) error
@@ -222,8 +222,8 @@ func (m *HandwrittenMockUserRepository) GetPasswordResetToken(ctx context.Contex
 func (m *HandwrittenMockUserRepository) DeletePasswordResetToken(ctx context.Context, h string) error {
 	return m.DeletePasswordResetTokenFunc(ctx, h)
 }
-func (m *HandwrittenMockUserRepository) GetTenantRole(ctx context.Context, u, t string) (string, error) {
-	return m.GetTenantRoleFunc(ctx, u, t)
+func (m *HandwrittenMockUserRepository) GetTenantRoles(ctx context.Context, u, t string) ([]string, error) {
+	return m.GetTenantRolesFunc(ctx, u, t)
 }
 func (m *HandwrittenMockUserRepository) LinkAdvisor(ctx context.Context, s, a, t string) error {
 	return m.LinkAdvisorFunc(ctx, s, a, t)
@@ -270,10 +270,9 @@ func NewHandwrittenMockUserRepository() *HandwrittenMockUserRepository {
 		ExistsFunc: func(ctx context.Context, username string) (bool, error) { return false, nil },
 		EmailExistsFunc: func(ctx context.Context, email, exclude string) (bool, error) { return false, nil },
 		ListFunc: func(ctx context.Context, f repository.UserFilter, p repository.Pagination) ([]models.User, int, error) { return nil, 0, nil },
-		CreatePasswordResetTokenFunc: func(ctx context.Context, id, h string, ex time.Time) error { return nil },
 		GetPasswordResetTokenFunc: func(ctx context.Context, h string) (string, time.Time, error) { return "", time.Time{}, nil },
 		DeletePasswordResetTokenFunc: func(ctx context.Context, h string) error { return nil },
-		GetTenantRoleFunc: func(ctx context.Context, u, t string) (string, error) { return "", nil },
+		GetTenantRolesFunc: func(ctx context.Context, u, t string) ([]string, error) { return nil, nil },
 		LinkAdvisorFunc: func(ctx context.Context, s, a, t string) error { return nil },
 		CheckRateLimitFunc: func(ctx context.Context, u, a string, w time.Duration) (int, error) { return 0, nil },
 		RecordRateLimitFunc: func(ctx context.Context, u, a string) error { return nil },

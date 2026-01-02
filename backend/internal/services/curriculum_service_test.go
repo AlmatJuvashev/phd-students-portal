@@ -100,6 +100,15 @@ func (m *MockCurriculumRepo) ListCohorts(ctx context.Context, pID string) ([]mod
 	args := m.Called(ctx, pID)
 	return args.Get(0).([]models.Cohort), args.Error(1)
 }
+func (m *MockCurriculumRepo) SetCourseRequirement(ctx context.Context, req *models.CourseRequirement) error {
+	args := m.Called(ctx, req)
+	return args.Error(0)
+}
+func (m *MockCurriculumRepo) GetCourseRequirements(ctx context.Context, courseID string) ([]models.CourseRequirement, error) {
+	args := m.Called(ctx, courseID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseRequirement), args.Error(1)
+}
 
 // Ensure mock implements interface
 var _ repository.CurriculumRepository = (*MockCurriculumRepo)(nil)

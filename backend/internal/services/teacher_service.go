@@ -112,3 +112,17 @@ func (s *TeacherService) GetSubmissions(ctx context.Context, instructorID string
 	}
 	return allSubs, nil
 }
+
+// --- Annotations ---
+
+func (s *TeacherService) AddAnnotation(ctx context.Context, ann models.SubmissionAnnotation) (*models.SubmissionAnnotation, error) {
+	return s.lmsRepo.CreateAnnotation(ctx, ann)
+}
+
+func (s *TeacherService) GetAnnotationsForSubmission(ctx context.Context, submissionID string) ([]models.SubmissionAnnotation, error) {
+	return s.lmsRepo.ListAnnotations(ctx, submissionID)
+}
+
+func (s *TeacherService) RemoveAnnotation(ctx context.Context, id string) error {
+	return s.lmsRepo.DeleteAnnotation(ctx, id)
+}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 // UserRepository defines data access methods for Users
@@ -32,7 +33,7 @@ type UserRepository interface {
 	DeletePasswordResetToken(ctx context.Context, tokenHash string) error
 
 	// Multitenancy
-	GetTenantRole(ctx context.Context, userID, tenantID string) (string, error)
+	GetTenantRoles(ctx context.Context, userID, tenantID string) ([]string, error)
 
 	// Student specific
 	LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error
@@ -348,16 +349,16 @@ func (r *SQLUserRepository) DeletePasswordResetToken(ctx context.Context, tokenH
 	return err
 }
 
-func (r *SQLUserRepository) GetTenantRole(ctx context.Context, userID, tenantID string) (string, error) {
-	var role string
+func (r *SQLUserRepository) GetTenantRoles(ctx context.Context, userID, tenantID string) ([]string, error) {
+	var roles pq.StringArray
 	err := r.db.QueryRowContext(ctx, `
-		SELECT role 
+		SELECT roles 
 		FROM user_tenant_memberships 
-		WHERE user_id = $1 AND tenant_id = $2`, userID, tenantID).Scan(&role)
+		WHERE user_id = $1 AND tenant_id = $2`, userID, tenantID).Scan(&roles)
 	if err == sql.ErrNoRows {
-		return "", ErrNotFound
+		return nil, ErrNotFound
 	}
-	return role, err
+	return []string(roles), err
 }
 
 

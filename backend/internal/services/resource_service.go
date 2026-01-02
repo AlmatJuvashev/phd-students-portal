@@ -44,8 +44,8 @@ func (s *ResourceService) UpdateBuilding(ctx context.Context, b *models.Building
 	return s.repo.UpdateBuilding(ctx, b)
 }
 
-func (s *ResourceService) DeleteBuilding(ctx context.Context, id string) error {
-	return s.repo.DeleteBuilding(ctx, id)
+func (s *ResourceService) DeleteBuilding(ctx context.Context, id string, userID string) error {
+	return s.repo.DeleteBuilding(ctx, id, userID)
 }
 
 // Rooms
@@ -81,6 +81,6 @@ func (s *ResourceService) UpdateRoom(ctx context.Context, r *models.Room) error 
 	return s.repo.UpdateRoom(ctx, r)
 }
 
-func (s *ResourceService) DeleteRoom(ctx context.Context, id string) error {
-	return s.repo.DeleteRoom(ctx, id)
+func (s *ResourceService) DeleteRoom(ctx context.Context, id string, userID string) error {
+	return s.repo.DeleteRoom(ctx, id, userID)
 }

@@ -38,6 +38,10 @@ type CurriculumRepository interface {
 	// Cohorts
 	CreateCohort(ctx context.Context, c *models.Cohort) error
 	ListCohorts(ctx context.Context, programID string) ([]models.Cohort, error)
+
+	// Requirements (Advanced Scheduling)
+	SetCourseRequirement(ctx context.Context, req *models.CourseRequirement) error
+	GetCourseRequirements(ctx context.Context, courseID string) ([]models.CourseRequirement, error)
 }
 
 type SQLCurriculumRepository struct {
@@ -202,4 +206,18 @@ func (r *SQLCurriculumRepository) ListCohorts(ctx context.Context, programID str
 	var cohorts []models.Cohort
 	err := sqlx.SelectContext(ctx, r.db, &cohorts, `SELECT * FROM cohorts WHERE program_id=$1 ORDER BY start_date DESC`, programID)
 	return cohorts, err
+}
+
+// --- Requirements ---
+
+func (r *SQLCurriculumRepository) SetCourseRequirement(ctx context.Context, req *models.CourseRequirement) error {
+	query := `INSERT INTO course_requirements (course_id, key, value) VALUES (:course_id, :key, :value) ON CONFLICT DO NOTHING`
+	_, err := r.db.NamedExecContext(ctx, query, req)
+	return err
+}
+
+func (r *SQLCurriculumRepository) GetCourseRequirements(ctx context.Context, courseID string) ([]models.CourseRequirement, error) {
+	var list []models.CourseRequirement
+	err := sqlx.SelectContext(ctx, r.db, &list, "SELECT * FROM course_requirements WHERE course_id=$1", courseID)
+	return list, err
 }

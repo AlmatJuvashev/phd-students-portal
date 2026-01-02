@@ -42,7 +42,7 @@ func TestGenerateJWTWithTenant(t *testing.T) {
 	isSuperadmin := false
 	expDays := 7
 
-	tokenString, err := GenerateJWTWithTenant(sub, role, tenantID, isSuperadmin, secret, expDays)
+	tokenString, err := GenerateJWTWithTenant(sub, []string{role}, tenantID, isSuperadmin, secret, expDays)
 	require.NoError(t, err)
 	require.NotEmpty(t, tokenString)
 
@@ -57,7 +57,11 @@ func TestGenerateJWTWithTenant(t *testing.T) {
 	require.True(t, ok)
 
 	assert.Equal(t, sub, claims["sub"])
-	assert.Equal(t, role, claims["role"])
+	// Check roles array
+	rolesClaim, ok := claims["roles"].([]interface{})
+	require.True(t, ok, "roles claim should be a slice")
+	assert.Contains(t, rolesClaim, role)
+	
 	assert.Equal(t, tenantID, claims["tenant_id"])
 	assert.Equal(t, isSuperadmin, claims["is_superadmin"])
 }

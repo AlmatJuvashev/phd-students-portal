@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,281 +14,345 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCurriculumRepository_CreateProgram(t *testing.T) {
+func newTestCurriculumRepo(t *testing.T) (*SQLCurriculumRepository, sqlmock.Sqlmock, func()) {
 	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLCurriculumRepository(sqlxDB)
-
-	ctx := context.Background()
-	p := &models.Program{
-		TenantID:    "tenant-1",
-		Code:        "PHD-CS",
-		Title:       `{"en": "PhD Computer Science"}`,
-		Description: `{"en": "Advanced research"}`,
-		Credits:     240,
-		DurationMonths: 36,
-		IsActive:    true,
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-
-	mock.ExpectQuery(`INSERT INTO programs`).
-		WithArgs(p.TenantID, p.Code, p.Title, p.Description, p.Credits, p.DurationMonths, p.IsActive).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
-			AddRow("prog-1", time.Now(), time.Now()))
-
-	err = repo.CreateProgram(ctx, p)
-	assert.NoError(t, err)
-	assert.Equal(t, "prog-1", p.ID)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestCurriculumRepository_GetUpdateDeleteProgram(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
 	repo := NewSQLCurriculumRepository(sqlxDB)
-	ctx := context.Background()
-
-	// GetProgram
-	mock.ExpectQuery(`SELECT \* FROM programs WHERE id=\$1`).
-		WithArgs("prog-1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "code"}).AddRow("prog-1", "P1"))
-
-	p, err := repo.GetProgram(ctx, "prog-1")
-	assert.NoError(t, err)
-	assert.Equal(t, "prog-1", p.ID)
-
-	// UpdateProgram
-	p.Title = `{"en": "Updated"}`
-	mock.ExpectExec(`UPDATE programs SET code=\$1, title=\$2`).
-		WithArgs(p.Code, p.Title, p.Description, p.Credits, p.DurationMonths, p.IsActive, p.ID).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	err = repo.UpdateProgram(ctx, p)
-	assert.NoError(t, err)
-
-	// DeleteProgram
-	mock.ExpectExec(`DELETE FROM programs WHERE id=\$1`).
-		WithArgs("prog-1").
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	err = repo.DeleteProgram(ctx, "prog-1")
-	assert.NoError(t, err)
-	
-	assert.NoError(t, mock.ExpectationsWereMet())
+	return repo, mock, func() { db.Close() }
 }
 
-func TestCurriculumRepository_CreateCourse(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLCurriculumRepository(sqlxDB)
-
+func TestSQLCurriculumRepository_Programs(t *testing.T) {
+	repo, mock, teardown := newTestCurriculumRepo(t)
+	defer teardown()
 	ctx := context.Background()
-	progID := "prog-1"
-	c := &models.Course{
-		TenantID:    "tenant-1",
-		ProgramID:   &progID,
-		Code:        "CS101",
-		Title:       `{"en": "Intro to AI"}`,
-		Description: `{"en": "Basics"}`,
-		Credits:     5,
-		WorkloadHours: 150,
-		IsActive:    true,
-	}
 
-	mock.ExpectQuery(`INSERT INTO courses`).
-		WithArgs(c.TenantID, c.ProgramID, c.DepartmentID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
-			AddRow("course-1", time.Now(), time.Now()))
+	t.Run("CreateProgram", func(t *testing.T) {
+		prog := &models.Program{
+			TenantID:       "t1",
+			Code:           "PHD-CS",
+			Title:          "PhD Computer Science",
+			Description:    "Desc",
+			Credits:        180,
+			DurationMonths: 48,
+			IsActive:       true,
+		}
 
-	err = repo.CreateCourse(ctx, c)
-	assert.NoError(t, err)
-	assert.Equal(t, "course-1", c.ID)
-	assert.NoError(t, mock.ExpectationsWereMet())
+		mock.ExpectQuery("INSERT INTO programs").
+			WithArgs("t1", "PHD-CS", "PhD Computer Science", "Desc", 180, 48, true).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
+				AddRow("p1", time.Now(), time.Now()))
+
+		err := repo.CreateProgram(ctx, prog)
+		assert.NoError(t, err)
+		assert.Equal(t, "p1", prog.ID)
+	})
+
+	t.Run("GetProgram", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "code", "title"}).
+			AddRow("p1", "PHD-CS", "PhD Computer Science")
+		mock.ExpectQuery("SELECT \\* FROM programs WHERE id=\\$1").
+			WithArgs("p1").
+			WillReturnRows(rows)
+
+		p, err := repo.GetProgram(ctx, "p1")
+		assert.NoError(t, err)
+		assert.Equal(t, "PHD-CS", p.Code)
+	})
+
+	t.Run("ListPrograms", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "code"}).
+			AddRow("p1", "PHD-CS").
+			AddRow("p2", "PHD-MATH")
+		mock.ExpectQuery("SELECT \\* FROM programs WHERE tenant_id=\\$1 ORDER BY created_at DESC").
+			WithArgs("t1").
+			WillReturnRows(rows)
+
+		list, err := repo.ListPrograms(ctx, "t1")
+		assert.NoError(t, err)
+		assert.Len(t, list, 2)
+	})
+
+	t.Run("UpdateProgram", func(t *testing.T) {
+		prog := &models.Program{
+			ID:             "p1",
+			Code:           "PHD-CS-V2",
+			Title:          "Updated Title",
+			Description:    "New Desc",
+			Credits:        240,
+			DurationMonths: 60,
+			IsActive:       false,
+		}
+		mock.ExpectExec("UPDATE programs SET").
+			WithArgs("PHD-CS-V2", "Updated Title", "New Desc", 240, 60, false, "p1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.UpdateProgram(ctx, prog)
+		assert.NoError(t, err)
+	})
+
+	t.Run("DeleteProgram", func(t *testing.T) {
+		mock.ExpectExec("DELETE FROM programs WHERE id=\\$1").
+			WithArgs("p1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		err := repo.DeleteProgram(ctx, "p1")
+		assert.NoError(t, err)
+	})
 }
 
-func TestCurriculumRepository_GetUpdateDeleteCourse(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLCurriculumRepository(sqlxDB)
+func TestSQLCurriculumRepository_Courses(t *testing.T) {
+	repo, mock, teardown := newTestCurriculumRepo(t)
+	defer teardown()
 	ctx := context.Background()
 
-	// GetCourse
-	mock.ExpectQuery(`SELECT \* FROM courses WHERE id=\$1`).
-		WithArgs("c1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "code"}).AddRow("c1", "C1"))
+	t.Run("CreateCourse", func(t *testing.T) {
+		course := &models.Course{
+			TenantID:      "t1",
+			ProgramID:     nil,
+			DepartmentID:  nil,
+			Code:          "CS101",
+			Title:         "Intro",
+			Description:   "Desc",
+			Credits:       6,
+			WorkloadHours: 120,
+			IsActive:      true,
+		}
 
-	c, err := repo.GetCourse(ctx, "c1")
-	assert.NoError(t, err)
-	assert.Equal(t, "c1", c.ID)
+		mock.ExpectQuery("INSERT INTO courses").
+			WithArgs("t1", nil, nil, "CS101", "Intro", "Desc", 6, 120, true).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
+				AddRow("c1", time.Now(), time.Now()))
 
-	// UpdateCourse
-	c.Code = "C2"
-	mock.ExpectExec(`UPDATE courses SET program_id=\$1`).
-		WithArgs(c.ProgramID, c.DepartmentID, c.Code, c.Title, c.Description, c.Credits, c.WorkloadHours, c.IsActive, c.ID).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+		err := repo.CreateCourse(ctx, course)
+		assert.NoError(t, err)
+		assert.Equal(t, "c1", course.ID)
+	})
 
-	err = repo.UpdateCourse(ctx, c)
-	assert.NoError(t, err)
+	t.Run("GetCourse", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "code"}).AddRow("c1", "CS101")
+		mock.ExpectQuery("SELECT \\* FROM courses WHERE id=\\$1").
+			WithArgs("c1").
+			WillReturnRows(rows)
+		c, err := repo.GetCourse(ctx, "c1")
+		assert.NoError(t, err)
+		assert.Equal(t, "CS101", c.Code)
+	})
 
-	// DeleteCourse
-	mock.ExpectExec(`DELETE FROM courses WHERE id=\$1`).
-		WithArgs("c1").
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	err = repo.DeleteCourse(ctx, "c1")
-	assert.NoError(t, err)
-	
-	assert.NoError(t, mock.ExpectationsWereMet())
+	t.Run("ListCourses", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "code"}).AddRow("c1", "CS101")
+		mock.ExpectQuery("SELECT \\* FROM courses WHERE tenant_id=\\$1 ORDER BY code ASC").
+			WithArgs("t1").
+			WillReturnRows(rows)
+
+		list, err := repo.ListCourses(ctx, "t1", nil)
+		assert.NoError(t, err)
+		assert.Len(t, list, 1)
+	})
+
+	t.Run("UpdateCourse", func(t *testing.T) {
+		course := &models.Course{
+			ID:          "c1",
+			Code:        "CS101-V2",
+			Title:       "Updated",
+			Description: "Desc",
+		}
+		mock.ExpectExec("UPDATE courses SET").
+			WithArgs(nil, nil, "CS101-V2", "Updated", "Desc", 0, 0, false, "c1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.UpdateCourse(ctx, course)
+		assert.NoError(t, err)
+	})
+
+	t.Run("DeleteCourse", func(t *testing.T) {
+		mock.ExpectExec("DELETE FROM courses WHERE id=\\$1").
+			WithArgs("c1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		err := repo.DeleteCourse(ctx, "c1")
+		assert.NoError(t, err)
+	})
 }
 
-func TestCurriculumRepository_CreateJourneyMapAndNodes(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLCurriculumRepository(sqlxDB)
-
+func TestSQLCurriculumRepository_JourneyMaps(t *testing.T) {
+	repo, mock, teardown := newTestCurriculumRepo(t)
+	defer teardown()
 	ctx := context.Background()
-	jm := &models.JourneyMap{
-		ProgramID: "prog-1",
-		Title:     `{"en": "Standard Path"}`,
-		Version:   "1.0.0",
-		IsActive:  true,
-	}
 
-	// 1. Create Journey Map
-	mock.ExpectQuery(`INSERT INTO journey_maps`).
-		WithArgs(jm.ProgramID, jm.Title, jm.Version, jm.IsActive).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).
-			AddRow("map-1", time.Now()))
+	t.Run("CreateJourneyMap", func(t *testing.T) {
+		jm := &models.JourneyMap{
+			ProgramID: "p1",
+			Title:     "Map 1",
+			Version:   "1.0",
+			IsActive:  true,
+		}
+		mock.ExpectQuery("INSERT INTO journey_maps").
+			WithArgs("p1", "Map 1", "1.0", true).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow("jm1", time.Now()))
 
-	err = repo.CreateJourneyMap(ctx, jm)
-	assert.NoError(t, err)
-	assert.Equal(t, "map-1", jm.ID)
+		err := repo.CreateJourneyMap(ctx, jm)
+		assert.NoError(t, err)
+		assert.Equal(t, "jm1", jm.ID)
+	})
 
-	// 2. Create Node Definition
-	nd := &models.JourneyNodeDefinition{
-		JourneyMapID: "map-1",
-		Slug:         "node-1",
-		Type:         "task",
-		Title:        `{"en": "Submit Proposal"}`,
-		Description:  `{"en": "Description"}`,
-		ModuleKey:    "I",
-		Coordinates:  `{"x": 100, "y": 100}`,
-		Config:       `{}`,
-		Prerequisites: []string{"node-0"},
-	}
+	t.Run("GetJourneyMapByProgram", func(t *testing.T) {
+		mock.ExpectQuery("SELECT \\* FROM journey_maps WHERE program_id=\\$1 LIMIT 1").
+			WithArgs("p1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "title"}).AddRow("jm1", "Map 1"))
 
-	mock.ExpectQuery(`INSERT INTO journey_node_definitions`).
-		WithArgs(nd.JourneyMapID, nd.ParentNodeID, nd.Slug, nd.Type, nd.Title, nd.Description, nd.ModuleKey, nd.Coordinates, nd.Config, pq.Array(nd.Prerequisites)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).
-			AddRow("node-def-1", time.Now()))
+		jm, err := repo.GetJourneyMapByProgram(ctx, "p1")
+		assert.NoError(t, err)
+		assert.Equal(t, "Map 1", jm.Title)
+	})
 
-	err = repo.CreateNodeDefinition(ctx, nd)
-	assert.NoError(t, err)
-	assert.Equal(t, "node-def-1", nd.ID)
+	t.Run("GetJourneyMapByProgram_NotFound", func(t *testing.T) {
+		mock.ExpectQuery("SELECT \\* FROM journey_maps WHERE program_id=\\$1 LIMIT 1").
+			WithArgs("p1").
+			WillReturnError(sql.ErrNoRows)
 
-	// 3. GetJourneyMapByProgram (Found)
-	mock.ExpectQuery(`SELECT \* FROM journey_maps WHERE program_id=\$1 LIMIT 1`).
-		WithArgs("prog-1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "program_id"}).AddRow("map-1", "prog-1"))
-	foundMap, err := repo.GetJourneyMapByProgram(ctx, "prog-1")
-	assert.NoError(t, err)
-	assert.NotNil(t, foundMap)
-
-	// 4. GetJourneyMapByProgram (Not Found)
-	mock.ExpectQuery(`SELECT \* FROM journey_maps WHERE program_id=\$1 LIMIT 1`).
-		WithArgs("prog-unknown").
-		WillReturnError(sql.ErrNoRows)
-	foundMap, err = repo.GetJourneyMapByProgram(ctx, "prog-unknown")
-	assert.NoError(t, err) // Should handle NoRows gracefully
-	assert.Nil(t, foundMap)
-	
-	// 5. GetNodeDefinitions
-	mock.ExpectQuery(`SELECT \* FROM journey_node_definitions WHERE journey_map_id=\$1`).
-		WithArgs("map-1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "slug"}).AddRow("n1", "slug1"))
-	nodes, err := repo.GetNodeDefinitions(ctx, "map-1")
-	assert.NoError(t, err)
-	assert.Len(t, nodes, 1)
-
-	// 6. DeleteNodeDefinition
-	mock.ExpectExec(`DELETE FROM journey_node_definitions WHERE id=\$1`).
-		WithArgs("n1").
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	err = repo.DeleteNodeDefinition(ctx, "n1")
-	assert.NoError(t, err)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
+		jm, err := repo.GetJourneyMapByProgram(ctx, "p1")
+		assert.NoError(t, err)
+		assert.Nil(t, jm)
+	})
 }
 
-func TestCurriculumRepository_List(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLCurriculumRepository(sqlxDB)
-
+func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
+	repo, mock, teardown := newTestCurriculumRepo(t)
+	defer teardown()
 	ctx := context.Background()
 
-	// List Programs
-	mock.ExpectQuery(`SELECT \* FROM programs WHERE tenant_id=\$1`).
-		WithArgs("tenant-1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "code", "title"}).
-			AddRow("prog-1", "P1", `{"en": "Title"}`))
+	t.Run("CreateNodeDefinition", func(t *testing.T) {
+		nd := &models.JourneyNodeDefinition{
+			JourneyMapID:  "jm1",
+			Slug:          "node-1",
+			Type:          "task",
+			Title:         "Node 1",
+			Description:   "Desc",
+			ModuleKey:     "I",
+			Coordinates:   "0,0",
+			Config:        "{}",
+			Prerequisites: []string{"start"},
+		}
+		mock.ExpectQuery("INSERT INTO journey_node_definitions").
+			WithArgs("jm1", nil, "node-1", "task", "Node 1", "Desc", "I", "0,0", "{}", pq.Array([]string{"start"})).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow("nd1", time.Now()))
 
-	progs, err := repo.ListPrograms(ctx, "tenant-1")
-	assert.NoError(t, err)
-	assert.Len(t, progs, 1)
+		err := repo.CreateNodeDefinition(ctx, nd)
+		assert.NoError(t, err)
+		assert.Equal(t, "nd1", nd.ID)
+	})
 
-	// List Courses
-	mock.ExpectQuery(`SELECT \* FROM courses WHERE tenant_id=\$1`).
-		WithArgs("tenant-1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "code"}).
-			AddRow("c1", "C1"))
+	t.Run("GetNodeDefinitions", func(t *testing.T) {
+		mock.ExpectQuery("SELECT \\* FROM journey_node_definitions WHERE journey_map_id=\\$1").
+			WithArgs("jm1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "slug"}).AddRow("nd1", "node-1"))
 
-	courses, err := repo.ListCourses(ctx, "tenant-1", nil)
-	assert.NoError(t, err)
-	assert.Len(t, courses, 1)
+		nodes, err := repo.GetNodeDefinitions(ctx, "jm1")
+		assert.NoError(t, err)
+		assert.Len(t, nodes, 1)
+	})
 	
-	assert.NoError(t, mock.ExpectationsWereMet())
+	t.Run("GetNodeDefinition", func(t *testing.T) {
+		mock.ExpectQuery("SELECT \\* FROM journey_node_definitions WHERE id=\\$1").
+			WithArgs("nd1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "slug"}).AddRow("nd1", "node-1"))
+		
+		node, err := repo.GetNodeDefinition(ctx, "nd1")
+		assert.NoError(t, err)
+		assert.Equal(t, "node-1", node.Slug)
+	})
+	
+	t.Run("UpdateNodeDefinition", func(t *testing.T) {
+		nd := &models.JourneyNodeDefinition{
+			ID: "nd1",
+			Title: "Updated",
+			Prerequisites: []string{"a"},
+		}
+		mock.ExpectExec("UPDATE journey_node_definitions SET").
+			WithArgs("Updated", "", "", "", pq.Array([]string{"a"}), "", "", "nd1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+			
+		err := repo.UpdateNodeDefinition(ctx, nd)
+		assert.NoError(t, err)
+	})
+	
+	t.Run("DeleteNodeDefinition", func(t *testing.T) {
+		mock.ExpectExec("DELETE FROM journey_node_definitions WHERE id=\\$1").
+			WithArgs("nd1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		err := repo.DeleteNodeDefinition(ctx, "nd1")
+		assert.NoError(t, err)
+	})
 }
 
-func TestCurriculumRepository_Cohorts(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	repo := NewSQLCurriculumRepository(sqlxDB)
+func TestSQLCurriculumRepository_Cohorts(t *testing.T) {
+	repo, mock, teardown := newTestCurriculumRepo(t)
+	defer teardown()
 	ctx := context.Background()
 
-	c := &models.Cohort{
-		ProgramID: "prog-1",
-		Name: "Winter 2024",
-		IsActive: true,
-	}
+	t.Run("CreateCohort", func(t *testing.T) {
+		cohort := &models.Cohort{
+			ProgramID: "p1",
+			Name:      "Winter 2024",
+			IsActive:  true,
+		}
+		mock.ExpectQuery("INSERT INTO cohorts").
+			WithArgs("p1", "Winter 2024", sqlmock.AnyArg(), sqlmock.AnyArg(), true).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow("c1", time.Now()))
 
-	// Create
-	mock.ExpectQuery(`INSERT INTO cohorts`).
-		WithArgs(c.ProgramID, c.Name, c.StartDate, c.EndDate, c.IsActive).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow("coh-1", time.Now()))
-	
-	err = repo.CreateCohort(ctx, c)
-	assert.NoError(t, err)
+		err := repo.CreateCohort(ctx, cohort)
+		assert.NoError(t, err)
+		assert.Equal(t, "c1", cohort.ID)
+	})
 
-	// List
-	mock.ExpectQuery(`SELECT \* FROM cohorts WHERE program_id=\$1`).
-		WithArgs("prog-1").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow("coh-1", "Winter 2024"))
-	
-	list, err := repo.ListCohorts(ctx, "prog-1")
-	assert.NoError(t, err)
-	assert.Len(t, list, 1)
+	t.Run("ListCohorts", func(t *testing.T) {
+		mock.ExpectQuery("SELECT \\* FROM cohorts WHERE program_id=\\$1").
+			WithArgs("p1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow("c1", "Winter 2024"))
 
-	assert.NoError(t, mock.ExpectationsWereMet())
+		list, err := repo.ListCohorts(ctx, "p1")
+		assert.NoError(t, err)
+		assert.Len(t, list, 1)
+	})
+}
+
+func TestSQLCurriculumRepository_CourseRequirements(t *testing.T) {
+	repo, mock, teardown := newTestCurriculumRepo(t)
+	defer teardown()
+	ctx := context.Background()
+
+	t.Run("SetCourseRequirement_Success", func(t *testing.T) {
+		mock.ExpectExec("INSERT INTO course_requirements").
+			WithArgs("course-1", "Lab", "true").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.SetCourseRequirement(ctx, &models.CourseRequirement{CourseID: "course-1", Key: "Lab", Value: "true"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("SetCourseRequirement_Error", func(t *testing.T) {
+		mock.ExpectExec("INSERT INTO course_requirements").
+			WithArgs("course-1", "Lab", "true").
+			WillReturnError(fmt.Errorf("db error"))
+
+		err := repo.SetCourseRequirement(ctx, &models.CourseRequirement{CourseID: "course-1", Key: "Lab", Value: "true"})
+		assert.Error(t, err)
+	})
+
+	t.Run("GetCourseRequirements_Success", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"course_id", "key", "value"}).
+			AddRow("course-1", "Lab", "true").
+			AddRow("course-1", "OS", "Linux")
+
+		mock.ExpectQuery(`SELECT \* FROM course_requirements WHERE course_id=\$1`).
+			WithArgs("course-1").
+			WillReturnRows(rows)
+
+		reqs, err := repo.GetCourseRequirements(ctx, "course-1")
+		assert.NoError(t, err)
+		assert.Len(t, reqs, 2)
+		assert.Equal(t, "Lab", reqs[0].Key)
+		assert.Equal(t, "true", reqs[0].Value)
+	})
 }

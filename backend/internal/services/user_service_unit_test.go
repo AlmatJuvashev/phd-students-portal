@@ -8,7 +8,6 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/auth"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/config"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/stretchr/testify/assert"
 )
@@ -257,10 +256,21 @@ func TestUserService_BasicMethods(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	_ = svc.ForceUpdatePassword(ctx, "u1", "newpass")
-	_, _, _ = svc.ResetPasswordForUser(ctx, "u1")
-	_, _ = svc.ResetPassword(ctx, "u1")
-	_, _, _ = svc.ListUsers(ctx, repository.UserFilter{}, repository.Pagination{})
+	t.Run("ForceUpdatePassword Success", func(t *testing.T) {
+		mockRepo.UpdatePasswordFunc = func(ctx context.Context, id, hash string) error {
+			if id != "u1" { return assert.AnError }
+			return nil
+		}
+		err := svc.ForceUpdatePassword(ctx, "u1", "newpass")
+		assert.NoError(t, err)
+	})
+
+	t.Run("ResetPassword Success", func(t *testing.T) {
+		mockRepo.UpdatePasswordFunc = func(ctx context.Context, id, hash string) error { return nil }
+		pass, err := svc.ResetPassword(ctx, "u1")
+		assert.NoError(t, err)
+		assert.NotEmpty(t, pass)
+	})
 }
 
 func TestUserService_AdminUpdateUser_Unit(t *testing.T) {

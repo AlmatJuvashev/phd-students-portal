@@ -47,7 +47,7 @@ func (h *ItemBankHandler) ListBanks(c *gin.Context) {
 // CreateItem - POST /api/item-banks/banks/:bankId/items
 func (h *ItemBankHandler) CreateItem(c *gin.Context) {
 	bankID := c.Param("bankId")
-	var item models.QuestionItem
+	var item models.Question
 	if err := c.ShouldBindJSON(&item); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

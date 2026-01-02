@@ -54,6 +54,13 @@ func TestManualConstraints(t *testing.T) {
 		ID:           courseID,
 		DepartmentID: &deptAnatomy,
 	}, nil).Once()
+	
+	// NEW Expectations for advanced logic
+	mockCurrRepo.On("GetCourseRequirements", ctx, courseID).Return([]models.CourseRequirement{}, nil)
+	// GetRoomAttributes only called if RoomID present (it is)
+	mockResRepo.On("GetRoomAttributes", ctx, roomID).Return([]models.RoomAttribute{}, nil)
+	// GetOfferingCohorts
+	mockSchedRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
 
 	warnings, err := svc.CheckConflicts(ctx, session)
 	assert.NoError(t, err)

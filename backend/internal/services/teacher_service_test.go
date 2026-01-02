@@ -33,7 +33,14 @@ func (m *MockLMSRepo) UpdateEnrollmentStatus(ctx context.Context, id, status str
 func (m *MockLMSRepo) CreateSubmission(ctx context.Context, s *models.ActivitySubmission) error {
 	return m.Called(ctx, s).Error(0)
 }
-func (m *MockLMSRepo) GetSubmission(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
+func (m *MockLMSRepo) GetSubmission(ctx context.Context, id string) (*models.ActivitySubmission, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.ActivitySubmission), args.Error(1)
+}
+func (m *MockLMSRepo) GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
 	args := m.Called(ctx, activityID, studentID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -46,6 +53,21 @@ func (m *MockLMSRepo) ListSubmissions(ctx context.Context, offeringID string) ([
 }
 func (m *MockLMSRepo) MarkAttendance(ctx context.Context, att *models.ClassAttendance) error {
 	return m.Called(ctx, att).Error(0)
+}
+func (m *MockLMSRepo) CreateAnnotation(ctx context.Context, ann models.SubmissionAnnotation) (*models.SubmissionAnnotation, error) {
+	args := m.Called(ctx, ann)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.SubmissionAnnotation), args.Error(1)
+}
+func (m *MockLMSRepo) ListAnnotations(ctx context.Context, submissionID string) ([]models.SubmissionAnnotation, error) {
+	args := m.Called(ctx, submissionID)
+	return args.Get(0).([]models.SubmissionAnnotation), args.Error(1)
+}
+func (m *MockLMSRepo) DeleteAnnotation(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
 }
 func (m *MockLMSRepo) GetSessionAttendance(ctx context.Context, sessionID string) ([]models.ClassAttendance, error) {
 	args := m.Called(ctx, sessionID)
@@ -134,6 +156,43 @@ func TestTeacherService_GetSubmissions(t *testing.T) {
 
 	result, err := svc.GetSubmissions(context.Background(), instructorID)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(result))
+	assert.Len(t, result, 1)
 	assert.Equal(t, "sub-1", result[0].ID)
+	mockLMS.AssertExpectations(t)
 }
+
+func TestTeacherService_Annotations(t *testing.T) {
+	mockScheduler := new(MockSchedulerRepo)
+	mockLMS := new(MockLMSRepo)
+	mockGrading := new(MockGradingRepo)
+	svc := NewTeacherService(mockScheduler, mockLMS, mockGrading)
+
+	ctx := context.Background()
+	content := "Good job"
+	ann := models.SubmissionAnnotation{
+		SubmissionID: "sub-1",
+		Content:      &content,
+		Color:        "#FF0000",
+	}
+
+	mockLMS.On("CreateAnnotation", ctx, ann).Return(&ann, nil)
+	mockLMS.On("ListAnnotations", ctx, "sub-1").Return([]models.SubmissionAnnotation{ann}, nil)
+	mockLMS.On("DeleteAnnotation", ctx, "ann-1").Return(nil)
+
+	// Create
+	created, err := svc.AddAnnotation(ctx, ann)
+	assert.NoError(t, err)
+	assert.Equal(t, "sub-1", created.SubmissionID)
+
+	// List
+	list, err := svc.GetAnnotationsForSubmission(ctx, "sub-1")
+	assert.NoError(t, err)
+	assert.Len(t, list, 1)
+
+	// Delete
+	err = svc.RemoveAnnotation(ctx, "ann-1")
+	assert.NoError(t, err)
+
+	mockLMS.AssertExpectations(t)
+}
+

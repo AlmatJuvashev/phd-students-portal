@@ -26,8 +26,8 @@ func TestAuthService_Login_Unit(t *testing.T) {
 		mockRepo.GetByUsernameFunc = func(ctx context.Context, u string) (*models.User, error) {
 			return &models.User{ID: "u1", Username: u, PasswordHash: pw, IsActive: true, Role: "student"}, nil
 		}
-		mockRepo.GetTenantRoleFunc = func(ctx context.Context, uid, tid string) (string, error) {
-			return "student", nil
+		mockRepo.GetTenantRolesFunc = func(ctx context.Context, uid, tid string) ([]string, error) {
+			return []string{"student"}, nil
 		}
 		res, err := svc.Login(ctx, "john", "pass", "t1")
 		assert.NoError(t, err)
@@ -57,8 +57,8 @@ func TestAuthService_Login_Unit(t *testing.T) {
 		mockRepo.GetByUsernameFunc = func(ctx context.Context, u string) (*models.User, error) {
 			return &models.User{ID: "u1", Username: u, PasswordHash: pw, IsActive: true, Role: "student"}, nil
 		}
-		mockRepo.GetTenantRoleFunc = func(ctx context.Context, uid, tid string) (string, error) {
-			return "", errors.New("not member")
+		mockRepo.GetTenantRolesFunc = func(ctx context.Context, uid, tid string) ([]string, error) {
+			return nil, errors.New("not member")
 		}
 		_, err := svc.Login(ctx, "john", "pass", "t1")
 		assert.Error(t, err)
