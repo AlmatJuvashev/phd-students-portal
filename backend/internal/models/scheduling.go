@@ -53,6 +53,7 @@ type CourseOffering struct {
 	VirtualCapacity *int      `db:"virtual_capacity" json:"virtual_capacity,omitempty"` // Optional cap for online
 	CurrentEnrolled int       `db:"current_enrolled" json:"current_enrolled"`
 	MeetingURL      *string   `db:"meeting_url" json:"meeting_url,omitempty"` // Default meeting link for online
+	TargetCohorts   []string  `db:"-" json:"target_cohorts"`              // List of Cohort UUIDs for conflict detection
 	IsActive        bool      `db:"is_active" json:"is_active"`
 	Status          string    `db:"status" json:"status"`                 // DRAFT, PUBLISHED, ARCHIVED
 	CreatedAt       time.Time `db:"created_at" json:"created_at"`

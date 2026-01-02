@@ -54,6 +54,22 @@ func (s *SchedulerSolver) CalculateCost(sol *Solution, instance ProblemInstance)
 			}
 		}
 		
+		// Attribute Check
+		if reqs := session.Requirements; len(reqs) > 0 {
+			if attrs, ok := instance.RoomAttributes[assign.RoomID]; ok {
+				for _, r := range reqs {
+					if val, has := attrs[r.Key]; !has || val != r.Value {
+						// Missing Requirement
+						// Treat as Soft for now unless critical config added
+						softPenalties += s.Config.WeightUtilization * 5 // High soft penalty
+					}
+				}
+			} else {
+				// Room has no attributes but requirements exist -> Penalty
+				softPenalties += s.Config.WeightUtilization * 5
+			}
+		}
+
 		byRoom[assign.RoomID] = append(byRoom[assign.RoomID], assign)
 		if session.InstructorID != "" {
 			byInstructor[session.InstructorID] = append(byInstructor[session.InstructorID], assign)
@@ -89,6 +105,8 @@ func (s *SchedulerSolver) CalculateCost(sol *Solution, instance ProblemInstance)
 				}
 			}
 		}
+
+
 		
 		// Soft: Utilization
 		waste := float64(room.Capacity - session.MaxStudents)
@@ -100,6 +118,18 @@ func (s *SchedulerSolver) CalculateCost(sol *Solution, instance ProblemInstance)
 	// 2. Overlap Checks (Hard) using the groups
 	hardPenalties += countOverlaps(byRoom)
 	hardPenalties += countOverlaps(byInstructor)
+	
+	// Cohort Overlaps (Need to build map first or do it in loop above)
+	// Let's rebuild map here for clarity/correctness despite O(N) cost
+	byCohort := make(map[string][]Assignment)
+	for _, assign := range sol.Assignments {
+		if sess, ok := instance.Sessions[assign.SessionID]; ok {
+			for _, cid := range sess.Cohorts {
+				byCohort[cid] = append(byCohort[cid], assign)
+			}
+		}
+	}
+	hardPenalties += countOverlaps(byCohort)
 
 	// Total Energy
 	// WeightHardConflict should be large enough to dominate any soft constraints
