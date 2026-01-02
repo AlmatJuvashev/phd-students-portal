@@ -218,8 +218,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// Attendance (Phase 17)
 	attendanceRepo := repository.NewSQLAttendanceRepository(db)
 	attendanceService := services.NewAttendanceService(attendanceRepo)
-	// Analytics (Moved here to access lmsRepo & attendanceRepo)
-	analyticsService := services.NewAnalyticsService(analyticsRepo, lmsRepo, attendanceRepo)
+	attendanceHandler := NewAttendanceHandler(attendanceService)
+	// Initialize AnalyticsService (depends on AnalyticsRepo, LMSRepo, AttendanceRepo, UserRepo)
+	analyticsService := services.NewAnalyticsService(analyticsRepo, lmsRepo, attendanceRepo, userRepo)
 	analyticsHandler := NewAnalyticsHandler(analyticsService)
 
 	// AI Assistant
@@ -593,6 +594,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			an.GET("/overdue", analyticsHandler.GetOverdueStats)
 			an.GET("/monitor", analyticsHandler.GetMonitorMetrics)
 			an.GET("/at-risk", analyticsHandler.GetHighRiskStudents)
+			an.POST("/batch-analysis", analyticsHandler.HandleBatchRiskAnalysis)
 		}
 
 		// Curriculum Management (Registrar/ContentMgr)

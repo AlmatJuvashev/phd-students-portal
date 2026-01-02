@@ -171,7 +171,7 @@ func TestNewAnalyticsService(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLAnalyticsRepository(db)
-	svc := NewAnalyticsService(repo, nil, nil)
+	svc := NewAnalyticsService(repo, nil, nil, nil)
 	assert.NotNil(t, svc)
 }
 
@@ -180,7 +180,7 @@ func TestAnalyticsService_GetStudentsByStage(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLAnalyticsRepository(db)
-	svc := NewAnalyticsService(repo, nil, nil)
+	svc := NewAnalyticsService(repo, nil, nil, nil)
 	testutils.CreateTestUser(t, db, "analyticsstudent1", "student")
 
 	ctx := context.Background()
@@ -195,7 +195,7 @@ func TestAnalyticsService_GetAdvisorLoad(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLAnalyticsRepository(db)
-	svc := NewAnalyticsService(repo, nil, nil)
+	svc := NewAnalyticsService(repo, nil, nil, nil)
 
 	ctx := context.Background()
 	stats, err := svc.GetAdvisorLoad(ctx)
@@ -209,7 +209,7 @@ func TestAnalyticsService_GetOverdueTasks(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLAnalyticsRepository(db)
-	svc := NewAnalyticsService(repo, nil, nil)
+	svc := NewAnalyticsService(repo, nil, nil, nil)
 
 	ctx := context.Background()
 	stats, err := svc.GetOverdueTasks(ctx)

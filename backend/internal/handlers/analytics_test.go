@@ -41,7 +41,7 @@ func TestAnalyticsHandler_GetStageStats(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAnalyticsRepository(db)
-	svc := services.NewAnalyticsService(repo, nil, nil)
+	svc := services.NewAnalyticsService(repo, nil, nil, nil)
 	h := handlers.NewAnalyticsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -83,7 +83,7 @@ func TestAnalyticsHandler_GetOverdueStats(t *testing.T) {
 	// So if no instance, it counts.
 
 	repo := repository.NewSQLAnalyticsRepository(db)
-	svc := services.NewAnalyticsService(repo, nil, nil)
+	svc := services.NewAnalyticsService(repo, nil, nil, nil)
 	h := handlers.NewAnalyticsHandler(svc)
 
 	gin.SetMode(gin.TestMode)
@@ -114,7 +114,7 @@ func TestAnalyticsHandler_GetMonitorMetrics(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLAnalyticsRepository(db)
-	svc := services.NewAnalyticsService(repo, nil, nil)
+	svc := services.NewAnalyticsService(repo, nil, nil, nil)
 	h := handlers.NewAnalyticsHandler(svc)
 
 	gin.SetMode(gin.TestMode)

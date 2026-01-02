@@ -27,18 +27,20 @@ func DefaultAnalyticsConfig() *AnalyticsConfig {
 }
 
 type AnalyticsService struct {
-	repo    repository.AnalyticsRepository
-	lmsRepo repository.LMSRepository
-	attRepo repository.AttendanceRepository
-	config  *AnalyticsConfig
+	repo     repository.AnalyticsRepository
+	lmsRepo  repository.LMSRepository
+	attRepo  repository.AttendanceRepository
+	userRepo repository.UserRepository
+	config   *AnalyticsConfig
 }
 
-func NewAnalyticsService(repo repository.AnalyticsRepository, lmsRepo repository.LMSRepository, attRepo repository.AttendanceRepository) *AnalyticsService {
+func NewAnalyticsService(repo repository.AnalyticsRepository, lmsRepo repository.LMSRepository, attRepo repository.AttendanceRepository, userRepo repository.UserRepository) *AnalyticsService {
 	return &AnalyticsService{
-		repo:    repo,
-		lmsRepo: lmsRepo,
-		attRepo: attRepo,
-		config:  DefaultAnalyticsConfig(),
+		repo:     repo,
+		lmsRepo:  lmsRepo,
+		attRepo:  attRepo,
+		userRepo: userRepo,
+		config:   DefaultAnalyticsConfig(),
 	}
 }
 
@@ -110,7 +112,58 @@ func (s *AnalyticsService) CalculateStudentRisk(ctx context.Context, studentID s
 	bytes, _ := json.Marshal(snapshot.RiskFactors)
 	snapshot.RawFactors = bytes
 
+	snapshot.RawFactors = bytes
+
 	return snapshot, nil
+}
+
+// Batch Analysis
+func (s *AnalyticsService) RunBatchRiskAnalysis(ctx context.Context) (int, error) {
+	// 1. Fetch all active students. Paging through.
+	limit := 100
+	offset := 0
+	processed := 0
+	
+	active := true
+	filter := repository.UserFilter{
+		Role: "student",
+		Active: &active,
+	}
+
+	for {
+		users, total, err := s.userRepo.List(ctx, filter, repository.Pagination{Limit: limit, Offset: offset})
+		if err != nil {
+			return processed, err
+		}
+		
+		if len(users) == 0 {
+			break
+		}
+
+		for _, u := range users {
+			// Calculate Risk
+			snapshot, err := s.CalculateStudentRisk(ctx, u.ID)
+			if err != nil {
+				// Log error but continue? For now, we continue but could count errors.
+				continue
+			}
+			
+			// Augment snapshot with name if needed, but repository likely handles join or we store it?
+			// CalculateStudentRisk returns snapshot.
+			// Save
+			if err := s.SaveRiskSnapshot(ctx, snapshot); err != nil {
+				continue
+			}
+			processed++
+		}
+
+		offset += limit
+		if offset >= total {
+			break
+		}
+	}
+	
+	return processed, nil
 }
 
 func (s *AnalyticsService) SaveRiskSnapshot(ctx context.Context, snapshot *models.RiskSnapshot) error {

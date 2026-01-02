@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -105,7 +106,7 @@ func TestAnalyticsService_CalculateStudentRisk(t *testing.T) {
 	mockAtt := new(RiskMockAttendanceRepo)
 	mockLMS := new(RiskMockLMSRepo)
 
-	svc := NewAnalyticsService(mockRepo, mockLMS, mockAtt)
+	svc := NewAnalyticsService(mockRepo, mockLMS, mockAtt, nil)
 	ctx := context.Background()
 	studentID := "student-1"
 
@@ -125,7 +126,7 @@ func TestAnalyticsService_CalculateStudentRisk(t *testing.T) {
 		// Wait, "GetSubmissionByStudent" args? (ctx, activityID, studentID).
 		// In previous logic I put "" as activityID.
 		mockLMS.On("GetSubmissionByStudent", ctx, "", studentID).Return(&models.ActivitySubmission{}, nil)
-
+		mockLMS.On("GetProfileFlagCount", ctx, studentID).Return(map[string]int{}, nil)
 
 		risk, err := svc.CalculateStudentRisk(ctx, studentID)
 		assert.NoError(t, err)
@@ -157,4 +158,67 @@ func TestAnalyticsService_CalculateStudentRisk(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Less(t, risk.RiskScore, 10.0) // Just strictly less than low threshold
 	})
+}
+
+func TestAnalyticsService_RunBatchRiskAnalysis(t *testing.T) {
+	// 1. Mocks
+	mockRepo := new(RiskMockAnalyticsRepo)
+	mockLMS := new(RiskMockLMSRepo)
+	mockAtt := new(RiskMockAttendanceRepo)
+	mockUser := new(MockUserRepository) // Using existing Mock from common_mocks_test.go
+
+	// 2. Setup
+	svc := NewAnalyticsService(mockRepo, mockLMS, mockAtt, mockUser)
+	ctx := context.Background()
+
+	// 3. User Mock
+	stubUser := models.User{ID: "u1", Role: "student", IsActive: true}
+	
+	active := true
+	filter := repository.UserFilter{Role: "student", Active: &active}
+	// Note: Pagination Check. First call returns 1 user.
+	// Next loop iteration calculates offset += 100.
+	// Implementation calls List again?
+	// The implementation loop:
+	// users, total, err := s.userRepo.List(...)
+	// if len(users) == 0 -> break.
+	// process users.
+	// offset += limit.
+	// if offset >= total -> break.
+	
+	// So if List returns total=1, limit=100. offset starts 0.
+	// loop 1: List(offset=0) -> returns [u1], total=1. Process u1. offset becomes 100.
+	// check 100 >= 1? Yes. Break.
+	// So List Is called ONCE.
+	
+	mockUser.On("List", ctx, filter, repository.Pagination{Limit: 100, Offset: 0}).
+		Return([]models.User{stubUser}, 1, nil)
+
+	// 4. Calc Risk Mocks
+	// Attendance
+	rawAtt := []models.ClassAttendance{
+		{Status: models.AttendancePresent}, {Status: models.AttendanceAbsent},
+	}
+	mockAtt.On("GetStudentAttendance", ctx, "u1").Return(rawAtt, nil)
+
+	// LMS
+	mockLMS.On("GetProfileFlagCount", ctx, "u1").Return(map[string]int{"rp_required": 0}, nil)
+	mockLMS.On("GetSubmissionByStudent", ctx, "", "u1").Return(&models.ActivitySubmission{}, nil)
+	// (Note: CalculateStudentRisk logic might call GetSubmissionByStudent)
+
+	// 5. Save Mock
+	mockRepo.On("SaveRiskSnapshot", ctx, mock.MatchedBy(func(s *models.RiskSnapshot) bool {
+		return s.StudentID == "u1" && s.RiskScore == 25.0
+	})).Return(nil)
+
+	// 6. Execute
+	count, err := svc.RunBatchRiskAnalysis(ctx)
+
+	// 7. Verify
+	assert.NoError(t, err)
+	assert.Equal(t, 1, count)
+	
+	mockUser.AssertExpectations(t)
+	mockRepo.AssertExpectations(t)
+	mockAtt.AssertExpectations(t)
 }
