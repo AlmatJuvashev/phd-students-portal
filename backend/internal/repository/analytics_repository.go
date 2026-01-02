@@ -20,7 +20,12 @@ type AnalyticsRepository interface {
 	GetNodeCompletionCount(ctx context.Context, nodeID string, filter models.FilterParams) (int, error)
 	GetDurationForNodes(ctx context.Context, nodeIDs []string, filter models.FilterParams) ([]float64, error)
 	GetBottleneck(ctx context.Context, filter models.FilterParams) (string, int, error)
-	GetProfileFlagCount(ctx context.Context, key string, minVal float64, filter models.FilterParams) (int, error)
+	GetProfileFlagCount(ctx context.Context, key string, min float64, filter models.FilterParams) (int, error)
+
+	// Risk Analytics
+	SaveRiskSnapshot(ctx context.Context, s *models.RiskSnapshot) error
+	GetStudentRiskHistory(ctx context.Context, studentID string) ([]models.RiskSnapshot, error)
+	GetHighRiskStudents(ctx context.Context, threshold float64) ([]models.RiskSnapshot, error)
 }
 
 type SQLAnalyticsRepository struct {
@@ -272,4 +277,59 @@ func (r *SQLAnalyticsRepository) buildFilter(f models.FilterParams) ([]string, [
 	}
 	
 	return where, args
+}
+
+// --- Risk Analytics Implementation ---
+
+func (r *SQLAnalyticsRepository) SaveRiskSnapshot(ctx context.Context, s *models.RiskSnapshot) error {
+	// Insert snapshot
+	s.CreatedAt = time.Now()
+	// Marshal RiskFactors for DB if needed, but model handles it?
+	// RiskSnapshot struct has RiskFactors (JSONB) and RawFactors?
+	// Let's assume passed struct has RawFactors populated if using that, or we assume RiskFactors is []byte.
+	// The model definition: RiskFactors types.JSONText `db:"risk_factors"`
+	
+	query := `
+		INSERT INTO student_risk_snapshots (student_id, risk_score, risk_factors, created_at)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id`
+	
+	err := r.db.QueryRowxContext(ctx, query, s.StudentID, s.RiskScore, s.RiskFactors, s.CreatedAt).Scan(&s.ID)
+	return err
+}
+
+func (r *SQLAnalyticsRepository) GetStudentRiskHistory(ctx context.Context, studentID string) ([]models.RiskSnapshot, error) {
+	var snapshots []models.RiskSnapshot
+	query := `SELECT * FROM student_risk_snapshots WHERE student_id = $1 ORDER BY created_at DESC`
+	err := r.db.SelectContext(ctx, &snapshots, query, studentID)
+	return snapshots, err
+}
+
+func (r *SQLAnalyticsRepository) GetHighRiskStudents(ctx context.Context, threshold float64) ([]models.RiskSnapshot, error) {
+	// Get LATEST snapshot for each student that is above threshold
+	// Use DISTINCT ON (student_id) logic
+	query := `
+		SELECT DISTINCT ON (student_id) *
+		FROM student_risk_snapshots
+		WHERE risk_score >= $1
+		ORDER BY student_id, created_at DESC`
+		
+	var snapshots []models.RiskSnapshot
+	err := r.db.SelectContext(ctx, &snapshots, query, threshold)
+	
+	// Also populate StudentName for convenience?
+	// We might need a JOIN query to do that efficiently.
+	if err == nil && len(snapshots) > 0 {
+		// Populate names... or update query
+		// Let's update query to join users
+		queryWithJoin := `
+			SELECT DISTINCT ON (srs.student_id) srs.*, u.first_name || ' ' || u.last_name as student_name
+			FROM student_risk_snapshots srs
+			JOIN users u ON srs.student_id = u.id
+			WHERE srs.risk_score >= $1
+			ORDER BY srs.student_id, srs.created_at DESC`
+		err = r.db.SelectContext(ctx, &snapshots, queryWithJoin, threshold)
+	}
+	
+	return snapshots, err
 }
