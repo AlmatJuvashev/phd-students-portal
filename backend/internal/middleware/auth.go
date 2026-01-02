@@ -79,12 +79,31 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
 			return
 		}
-		role, _ := val.(jwt.MapClaims)["role"].(string)
-		if !set[role] {
-			c.AbortWithStatusJSON(403, gin.H{"error": "forbidden"})
-			return
+		
+		claims := val.(jwt.MapClaims)
+		var userRoles []string
+
+		// Handle 'roles' array (new)
+		if roles, ok := claims["roles"].([]interface{}); ok {
+			for _, r := range roles {
+				if rStr, ok := r.(string); ok {
+					userRoles = append(userRoles, rStr)
+				}
+			}
+		} else if role, ok := claims["role"].(string); ok {
+			// Fallback for legacy tokens (single role)
+			userRoles = append(userRoles, role)
 		}
-		c.Next()
+
+		// Check if any user role matches required roles
+		for _, ur := range userRoles {
+			if set[ur] {
+				c.Next()
+				return
+			}
+		}
+
+		c.AbortWithStatusJSON(403, gin.H{"error": "forbidden"})
 	}
 }
 
@@ -210,10 +229,18 @@ func AuthMiddleware(secret []byte, dbx *sqlx.DB, rds *redis.Client) gin.HandlerF
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found", "details": "userID not set after hydration - check JWT 'sub' claim"})
 			return
 		}
-		if _, exists := c.Get("current_user"); !exists {
+		u, exists := c.Get("current_user")
+		if !exists {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found", "details": "current_user not set - user may not exist in database"})
 			return
 		}
+
+		// Inject effective roles from JWT into the context for Policy checks
+		if userLite, ok := u.(UserLite); ok {
+			// Dummy usage to avoid unused variable error until we implement full User construction
+			_ = userLite
+		}
+		
 		log.Printf("[AuthMiddleware] All checks passed, calling c.Next() for path=%s", c.Request.URL.Path)
 		c.Next()
 	}

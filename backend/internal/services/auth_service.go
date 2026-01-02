@@ -57,41 +57,43 @@ func (s *AuthService) Login(ctx context.Context, username, password string, tena
 	log.Printf("[AuthService.Login] Password verified for user=%s", username)
 
 	// Verify Tenant Access
-	var role string
+	var roles []string
 	if user.Role == "superadmin" {
-		role = "superadmin"
+		roles = []string{"superadmin"}
 		log.Printf("[AuthService.Login] User is superadmin, bypassing tenant check")
-		// Superadmin has access to everything effectively, but token needs a role.
-		// If tenantID is provided, we should check if they are "operating as" superadmin?
-		// Existing logic: "Verify user has access to this tenant (unless superadmin)"
-		// If superadmin, role stays superadmin.
 	} else if tenantID != "" {
 		// Check membership
 		log.Printf("[AuthService.Login] Checking tenant membership: userID=%s, tenantID=%s", user.ID, tenantID)
-		tenantRole, err := s.repo.GetTenantRole(ctx, user.ID, tenantID)
+		tenantRoles, err := s.repo.GetTenantRoles(ctx, user.ID, tenantID)
 		if err != nil {
 			log.Printf("[AuthService.Login] Tenant access denied: userID=%s, tenantID=%s, error=%v", user.ID, tenantID, err)
 			return nil, errors.New("access denied to this portal")
 		}
-		role = tenantRole
-		log.Printf("[AuthService.Login] Tenant access granted: role=%s", role)
+		roles = tenantRoles
+		log.Printf("[AuthService.Login] Tenant access granted: roles=%v", roles)
 	} else {
 		// No tenant context (e.g. platform admin login? or just resolving user role)
-		role = string(user.Role)
-		log.Printf("[AuthService.Login] No tenant context, using user role=%s", role)
+		roles = []string{string(user.Role)}
+		log.Printf("[AuthService.Login] No tenant context, using user global role=%v", roles)
 	}
 
-	token, err := s.GenerateToken(user.ID, role, tenantID, user.Role == "superadmin")
+	token, err := s.GenerateToken(user.ID, roles, tenantID, user.Role == "superadmin")
 	if err != nil {
 		log.Printf("[AuthService.Login] Token generation failed: %v", err)
 		return nil, err
 	}
-	log.Printf("[AuthService.Login] Login successful: userID=%s, role=%s, tenantID=%s", user.ID, role, tenantID)
+	log.Printf("[AuthService.Login] Login successful: userID=%s, roles=%v, tenantID=%s", user.ID, roles, tenantID)
 	
+	// Assuming LoginResponse.Role is deprecated or we send primary role
+	primaryRole := ""
+	if len(roles) > 0 {
+		primaryRole = roles[0]
+	}
+
 	return &LoginResponse{
 		Token:        token,
 		UserID:       user.ID,
-		Role:         role,
+		Role:         primaryRole, // Legacy field
 		IsSuperadmin: user.Role == "superadmin", 
 	}, nil
 }
@@ -143,6 +145,6 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 	return s.repo.DeletePasswordResetToken(ctx, tokenHash)
 }
 
-func (s *AuthService) GenerateToken(userID, role, tenantID string, isSuperadmin bool) (string, error) {
-	return auth.GenerateJWTWithTenant(userID, role, tenantID, isSuperadmin, []byte(s.cfg.JWTSecret), s.cfg.JWTExpDays)
+func (s *AuthService) GenerateToken(userID string, roles []string, tenantID string, isSuperadmin bool) (string, error) {
+	return auth.GenerateJWTWithTenant(userID, roles, tenantID, isSuperadmin, []byte(s.cfg.JWTSecret), s.cfg.JWTExpDays)
 }
