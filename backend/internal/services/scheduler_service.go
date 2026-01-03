@@ -71,6 +71,10 @@ func (s *SchedulerService) CreateOffering(ctx context.Context, o *models.CourseO
 	return s.repo.CreateOffering(ctx, o)
 }
 
+func (s *SchedulerService) ListOfferings(ctx context.Context, tenantID, termID string) ([]models.CourseOffering, error) {
+	return s.repo.ListOfferings(ctx, tenantID, termID)
+}
+
 func (s *SchedulerService) AddStaff(ctx context.Context, staff *models.CourseStaff) error {
 	staff.CreatedAt = time.Now()
 	return s.repo.AddStaff(ctx, staff)

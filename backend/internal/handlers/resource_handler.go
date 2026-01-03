@@ -93,10 +93,7 @@ func (h *ResourceHandler) DeleteBuilding(c *gin.Context) {
 
 func (h *ResourceHandler) ListRooms(c *gin.Context) {
 	buildingID := c.Query("building_id")
-	if buildingID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "building_id required"})
-		return
-	}
+	// buildingID is optional now
 	list, err := h.svc.ListRooms(c.Request.Context(), buildingID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

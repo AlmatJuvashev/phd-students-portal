@@ -1,7 +1,7 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { fetchMonitorStudents, type MonitorStudent } from "./api";
+import { fetchMonitorStudents, runBatchAnalysis, type MonitorStudent } from "./api";
 import { FiltersBar, type Filters } from "./components/FiltersBar";
 import { StudentsTableView } from "./components/StudentsTableView";
 import { KanbanView } from "./components/KanbanView";
@@ -13,6 +13,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { Activity, Play } from "lucide-react";
+
+// Simple toast fallback since sonner is missing
+const toast = {
+  success: (msg: string) => alert(msg),
+  error: (msg: string) => alert(msg)
+};
+
+const BatchAnalysisButton = ({ onComplete }: { onComplete: () => void }) => {
+  const { mutate, isPending } = useMutation({
+    mutationFn: runBatchAnalysis,
+    onSuccess: () => {
+      toast.success("Risk analysis started successfully");
+      onComplete();
+    },
+    onError: () => {
+      toast.error("Failed to start risk analysis");
+    }
+  });
+
+  return (
+    <Button 
+      variant="outline" 
+      onClick={() => mutate()} 
+      disabled={isPending}
+      className="gap-2"
+    >
+      {isPending ? <Activity className="animate-spin h-4 w-4" /> : <Play className="h-4 w-4" />}
+      Run Analysis
+    </Button>
+  );
+};
 
 export function StudentsMonitorPage() {
   const { t } = useTranslation("common");
@@ -159,6 +191,12 @@ export function StudentsMonitorPage() {
                   count: data.length,
                 })}
               </Badge>
+            </div>
+            <div className="flex gap-2">
+               <BatchAnalysisButton onComplete={() => refetch()} />
+               <Button onClick={() => setBulkOpen(true)}>
+                 {t("admin.monitor.bulk_action", "Bulk Action")}
+               </Button>
             </div>
           </div>
         </div>

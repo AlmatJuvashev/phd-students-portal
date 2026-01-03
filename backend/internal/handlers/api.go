@@ -191,11 +191,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Scheduler
 	schedulerRepo := repository.NewSQLSchedulerRepository(db)
-	// Reuse existing ResourceRepo (resourceRepo) which was defined above. Wait, resourceRepo is "resources := ..." or similar? 
-	// I need to find where ResourceRepo is defined. It's likely in "resources".
-	// Let's create it fresh to be safe or look up slightly higher in file.
-	// Oh, I can see "resourceHandler := ..." in previous context? No.
 	resourceRepo := repository.NewSQLResourceRepository(db)
+	resourceService := services.NewResourceService(resourceRepo)
+	resourceHandler := NewResourceHandler(resourceService)
+
 	curriculumRepo := repository.NewSQLCurriculumRepository(db)
 	curriculumService := services.NewCurriculumService(curriculumRepo)
 	curriculumHandler := NewCurriculumHandler(curriculumService)
@@ -335,10 +334,18 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			sched.POST("/terms", schedulerHandler.CreateTerm)
 			
 			sched.POST("/offerings", schedulerHandler.CreateOffering)
+			sched.GET("/offerings", schedulerHandler.ListOfferings)
 			
 			sched.GET("/sessions", schedulerHandler.ListSessions)
 			sched.POST("/sessions", schedulerHandler.CreateSession)
 			sched.POST("/optimize", schedulerHandler.AutoSchedule)
+		}
+
+		// Resources
+		res := protected.Group("/resources")
+		{
+			res.GET("/buildings", resourceHandler.ListBuildings)
+			res.GET("/rooms", resourceHandler.ListRooms)
 		}
 
 		// Search

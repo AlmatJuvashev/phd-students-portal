@@ -15,7 +15,14 @@ export type MonitorStudent = {
   current_stage?: string;
   stage_done?: number;
   stage_total?: number;
+  risk_score?: number;
+  risk_level?: "HIGH" | "MEDIUM" | "LOW";
+  last_risk_analysis?: string;
 };
+
+export async function runBatchAnalysis() {
+  return api('/analytics/batch-analysis', { method: 'POST' });
+}
 
 export async function fetchMonitorStudents(params: Record<string, any> = {}) {
   const sp = new URLSearchParams();

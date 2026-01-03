@@ -100,6 +100,11 @@ export function StudentsTableView({
                   })}
                 </th>
                 <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t("admin.monitor.table.columns.risk", {
+                    defaultValue: "Risk Level",
+                  })}
+                </th>
+                <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t("admin.monitor.table.columns.cohort", {
                     defaultValue: "Cohort",
                   })}
@@ -208,6 +213,18 @@ export function StudentsTableView({
                     </div>
                   </td>
                   <td className="py-2.5 px-4 text-center">
+                    {student.risk_level ? (
+                      <Badge
+                        variant={student.risk_level === "HIGH" ? "destructive" : student.risk_level === "MEDIUM" ? "default" : "secondary"}
+                        className={student.risk_level === "MEDIUM" ? "bg-yellow-500 hover:bg-yellow-600 border-none" : ""}
+                      >
+                         {student.risk_level} ({student.risk_score || 0})
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-4 text-center">
                     <div className="text-sm text-foreground">
                       {student.cohort || "—"}
                     </div>
@@ -247,7 +264,7 @@ export function StudentsTableView({
               {rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="p-8 text-center text-muted-foreground"
                   >
                     {t("admin.monitor.empty", {

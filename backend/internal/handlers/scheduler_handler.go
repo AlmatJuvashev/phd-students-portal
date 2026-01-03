@@ -16,6 +16,7 @@ type SchedulerOrchestrator interface {
 	ListTerms(ctx context.Context, tenantID string) ([]models.AcademicTerm, error)
 	GetTerm(ctx context.Context, id string) (*models.AcademicTerm, error)
 	CreateOffering(ctx context.Context, offering *models.CourseOffering) error
+	ListOfferings(ctx context.Context, tenantID, termID string) ([]models.CourseOffering, error)
 	ScheduleSession(ctx context.Context, session *models.ClassSession) ([]string, error)
 	ListSessions(ctx context.Context, offeringID string, start, end time.Time) ([]models.ClassSession, error)
 	AutoSchedule(ctx context.Context, tenantID, termID string, config *solver.SolverConfig) (*solver.Solution, error)
@@ -81,6 +82,21 @@ func (h *SchedulerHandler) CreateOffering(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, o)
+}
+
+func (h *SchedulerHandler) ListOfferings(c *gin.Context) {
+	tenantID := c.GetString("tenant_id")
+	if tenantID == "" {
+		tenantID = c.Query("tenant_id")
+	}
+	termID := c.Query("term_id")
+	
+	offerings, err := h.service.ListOfferings(c.Request.Context(), tenantID, termID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, offerings)
 }
 
 // --- Sessions ---

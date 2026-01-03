@@ -37,6 +37,11 @@ func (m *MockSchedulerService) CreateOffering(ctx context.Context, offering *mod
 	args := m.Called(ctx, offering)
 	return args.Error(0)
 }
+
+func (m *MockSchedulerService) ListOfferings(ctx context.Context, tenantID, termID string) ([]models.CourseOffering, error) {
+	args := m.Called(ctx, tenantID, termID)
+	return args.Get(0).([]models.CourseOffering), args.Error(1)
+}
 func (m *MockSchedulerService) ScheduleSession(ctx context.Context, session *models.ClassSession) ([]string, error) {
 	args := m.Called(ctx, session)
 	return args.Get(0).([]string), args.Error(1)
