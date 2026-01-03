@@ -29,7 +29,7 @@ func TestUsersHandler_GetPendingEmailVerification(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -74,7 +74,7 @@ func TestUsersHandler_UpdateMe_EmailChange(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -120,7 +120,7 @@ func TestUsersHandler_PresignAvatarUpload(t *testing.T) {
 
 	userID := uuid.NewString()
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -188,7 +188,7 @@ func TestUsersHandler_UpdateUser(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -249,7 +249,7 @@ func TestUsersHandler_UpdateMe_Failures(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -286,7 +286,7 @@ func TestUsersHandler_ChangeOwnPassword(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -327,7 +327,7 @@ func TestUsersHandler_ResetPasswordForUser(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -365,7 +365,7 @@ func TestUsersHandler_CreateUser_Failures(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -388,7 +388,7 @@ func TestUsersHandler_ChangeOwnPassword_Failures(t *testing.T) {
 
 	userID := uuid.NewString()
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -414,7 +414,7 @@ func TestUsersHandler_UpdateMe_InvalidClaims(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -436,7 +436,7 @@ func TestUsersHandler_SetActive_Failures(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -458,7 +458,7 @@ func TestUsersHandler_ChangeOwnPassword_MissingID(t *testing.T) {
 	defer teardown()
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)
@@ -487,7 +487,7 @@ func TestUsersHandler_UpdateAvatar_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	repo := repository.NewSQLUserRepository(db)
-	svc := services.NewUserService(repo, nil, testutils.GetTestConfig(), nil, nil)
+	svc := services.NewUserService(repo, nil, nil, testutils.GetTestConfig(), nil, nil)
 	h := handlers.NewUsersHandler(svc, testutils.GetTestConfig())
 
 	gin.SetMode(gin.TestMode)

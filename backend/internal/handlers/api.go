@@ -109,7 +109,8 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	// Repositories & Domain Services
 	userRepo := repository.NewSQLUserRepository(db)
-	userService := services.NewUserService(userRepo, rds, cfg, emailService, s3Svc)
+	tenantRepo := repository.NewSQLTenantRepository(db)
+	userService := services.NewUserService(userRepo, tenantRepo, rds, cfg, emailService, s3Svc)
 	authService := services.NewAuthService(userRepo, emailService, cfg)
 
 	// Auth routes (login and password reset)
@@ -264,7 +265,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// ===========================================
 	
 	// Create Repos & Services for SuperAdmin/Tenant
-	tenantRepo := repository.NewSQLTenantRepository(db)
+	// tenantRepo moved up
 	tenantService := services.NewTenantService(tenantRepo)
 	
 	superAdminRepo := repository.NewSQLSuperAdminRepository(db)

@@ -30,20 +30,22 @@ type CreateUserRequest struct {
 }
 
 type UserService struct {
-	repo     repository.UserRepository
-	rds      *redis.Client
-	cfg      config.AppConfig
-	emailSvc EmailSender
-	storage  StorageClient
+	repo       repository.UserRepository
+	tenantRepo repository.TenantRepository
+	rds        *redis.Client
+	cfg        config.AppConfig
+	emailSvc   EmailSender
+	storage    StorageClient
 }
 
-func NewUserService(repo repository.UserRepository, rds *redis.Client, cfg config.AppConfig, emailSvc EmailSender, storage StorageClient) *UserService {
+func NewUserService(repo repository.UserRepository, tenantRepo repository.TenantRepository, rds *redis.Client, cfg config.AppConfig, emailSvc EmailSender, storage StorageClient) *UserService {
 	return &UserService{
-		repo:     repo,
-		rds:      rds,
-		cfg:      cfg,
-		emailSvc: emailSvc,
-		storage:  storage,
+		repo:       repo,
+		tenantRepo: tenantRepo,
+		rds:        rds,
+		cfg:        cfg,
+		emailSvc:   emailSvc,
+		storage:    storage,
 	}
 }
 
@@ -83,6 +85,25 @@ func (s *UserService) CreateUser(ctx context.Context, req CreateUserRequest) (*m
 	user.ID = id
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
+
+	// 3.5. Create Tenant Membership
+	if req.TenantID != "" {
+		// Use the provided role, or fallback to user.Role string
+		roleName := string(user.Role)
+		// For students, the primary role is student. For others, it matches.
+		// Note via TenantRepo we now insert into 'roles' array correctly.
+		// default isPrimary=true for new users in this context
+		err = s.tenantRepo.AddUserToTenant(ctx, id, req.TenantID, roleName, true)
+		if err != nil {
+			// Best effort or fail?
+			// If we fail here, user exists but has no access. 
+			// Should log error but maybe returns partial success?
+			// For safety, let's error out? But username is consumed.
+			// Let's return error.
+			log.Printf("[CreateUser] Failed to add membership: %v", err)
+			return nil, "", fmt.Errorf("user created but membership failed: %w", err)
+		}
+	}
 
 	// 4. Link Advisors (if student)
 	if req.Role == "student" && len(req.AdvisorIDs) > 0 {

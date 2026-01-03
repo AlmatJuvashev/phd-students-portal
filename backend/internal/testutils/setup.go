@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -98,6 +99,19 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		dbURL = "postgres://postgres:postgres@localhost:5435/phd_test?sslmode=disable"
 	}
 
+	// SAFETY CHECK: Parse URL to ensure we are NOT connecting to production 'phd' DB
+	u, err := url.Parse(dbURL)
+	if err != nil {
+		log.Fatalf("[SetupTestDB] Invalid TEST_DATABASE_URL: %v", err)
+	}
+	dbPath := strings.TrimPrefix(u.Path, "/")
+	if dbPath == "phd" {
+		log.Fatalf("[SetupTestDB] CRITICAL SAFETY BLOCK: Attempting to run tests against production 'phd' database! Aborting immediately.")
+	}
+	if !strings.Contains(dbPath, "test") {
+		log.Printf("[SetupTestDB] WARNING: Running tests against database '%s' which does not contain 'test'. This is risky.", dbPath)
+	}
+
 	// Identify package name for database isolation (capture BEFORE testOnce.Do)
 	_, filename, _, _ := runtime.Caller(1)
 	pkgName := filepath.Base(filepath.Dir(filename))
@@ -138,14 +152,23 @@ func SetupTestDB() (*sqlx.DB, func()) {
 
 		if baseExists {
 			log.Printf("[SetupTestDB] Dropping stale base template: %s", baseDB)
-			conn.ExecContext(ctx, fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s' AND pid <> pg_backend_pid()", baseDB))
-			conn.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s", baseDB))
+			_, err := conn.ExecContext(ctx, fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s' AND pid <> pg_backend_pid()", baseDB))
+			if err != nil {
+				log.Printf("[SetupTestDB] Warning: Failed to terminate connections to %s: %v", baseDB, err)
+			}
+			_, err = conn.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s", baseDB))
+			if err != nil {
+				log.Fatalf("[SetupTestDB] Failed to drop base template %s: %v", baseDB, err)
+			}
 			baseExists = false
 		}
 		
 		if !baseExists {
 			log.Printf("[SetupTestDB] Creating base template database: %s", baseDB)
-			conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", baseDB))
+			_, err := conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", baseDB))
+			if err != nil {
+				log.Fatalf("[SetupTestDB] Failed to create base template %s: %v", baseDB, err)
+			}
 		}
 
 		// Always migrate base template to ensure it's up to date

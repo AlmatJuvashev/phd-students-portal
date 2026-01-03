@@ -16,6 +16,7 @@ type Pagination struct {
 
 // UserFilter defines criteria for listing users
 type UserFilter struct {
+	TenantID   string // Filter by tenant membership
 	Role       string
 	Program    string
 	Specialty  string

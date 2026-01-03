@@ -34,7 +34,7 @@ func TestMeHandler_Me(t *testing.T) {
 	// Setup Services
 	userRepo := repository.NewSQLUserRepository(db)
 	tenantRepo := repository.NewSQLTenantRepository(db)
-	userSvc := services.NewUserService(userRepo, nil, config.AppConfig{}, nil, nil)
+	userSvc := services.NewUserService(userRepo, nil, nil, config.AppConfig{}, nil, nil)
 	tenantSvc := services.NewTenantService(tenantRepo)
 
 
@@ -107,7 +107,7 @@ func TestMeHandler_MyTenants(t *testing.T) {
 	// Services
 	userRepo := repository.NewSQLUserRepository(db)
 	tenantRepo := repository.NewSQLTenantRepository(db)
-	userSvc := services.NewUserService(userRepo, nil, config.AppConfig{}, nil, nil)
+	userSvc := services.NewUserService(userRepo, nil, nil, config.AppConfig{}, nil, nil)
 	tenantSvc := services.NewTenantService(tenantRepo)
 
 	cfg := config.AppConfig{} // Ensure cfg is defined
@@ -183,7 +183,7 @@ func TestMeHandler_MyTenant(t *testing.T) {
 	// Services
 	userRepo := repository.NewSQLUserRepository(db)
 	tenantRepo := repository.NewSQLTenantRepository(db)
-	userSvc := services.NewUserService(userRepo, nil, config.AppConfig{}, nil, nil)
+	userSvc := services.NewUserService(userRepo, nil, nil, config.AppConfig{}, nil, nil)
 	tenantSvc := services.NewTenantService(tenantRepo)
 
 	cfg := config.AppConfig{}

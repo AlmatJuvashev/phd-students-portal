@@ -22,6 +22,7 @@ import {
   BookOpen,
   BarChart3,
   PhoneCall,
+  CalendarClock,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -193,6 +194,20 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
             <PhoneCall className="h-4 w-4" />
             {!collapsed && (
               <span>{t("admin.sidebar.contacts", "Contacts")}</span>
+            )}
+          </NavLink>
+          <NavLink
+            to="/admin/scheduler"
+            className={cn(
+              "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+              isActive("/admin/scheduler") && "bg-muted font-medium",
+              collapsed && "justify-center px-2"
+            )}
+            title={t("admin.sidebar.scheduler", "Scheduler")}
+          >
+            <CalendarClock className="h-4 w-4" />
+            {!collapsed && (
+              <span>{t("admin.sidebar.scheduler", "Scheduler")}</span>
             )}
           </NavLink>
         </>

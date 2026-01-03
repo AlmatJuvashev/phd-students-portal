@@ -36,7 +36,7 @@ func TestUsersHandler_MockFailures(t *testing.T) {
 		// So testing DB error in UpdateProfile is tricky without Redis.
 		// BUT, ResetPasswordForUser and others are easier.
 		
-		svc := services.NewUserService(repo, nil, config.AppConfig{}, nil, nil)
+		svc := services.NewUserService(repo, nil, nil, config.AppConfig{}, nil, nil)
 		h := handlers.NewUsersHandler(svc, config.AppConfig{})
 		r := gin.New()
 		return r, h, mock

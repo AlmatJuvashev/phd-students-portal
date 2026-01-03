@@ -1,4 +1,8 @@
 -- Create Question Banks Table
+-- Fix collision with 0066_create_item_bank_tables
+DROP TABLE IF EXISTS question_items CASCADE;
+DROP TABLE IF EXISTS question_banks CASCADE;
+
 CREATE TABLE question_banks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL, -- Logical tenant isolation

@@ -83,16 +83,28 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 		claims := val.(jwt.MapClaims)
 		var userRoles []string
 
-		// Handle 'roles' array (new)
-		if roles, ok := claims["roles"].([]interface{}); ok {
-			for _, r := range roles {
+		// 1. Try 'roles' array (new multi-role support)
+		if rolesInterface, ok := claims["roles"].([]interface{}); ok {
+			for _, r := range rolesInterface {
 				if rStr, ok := r.(string); ok {
 					userRoles = append(userRoles, rStr)
 				}
 			}
-		} else if role, ok := claims["role"].(string); ok {
-			// Fallback for legacy tokens (single role)
-			userRoles = append(userRoles, role)
+		}
+
+		// 2. Try legacy 'role' string (fallback for backward compat or single-role tokens)
+		if role, ok := claims["role"].(string); ok && role != "" {
+			// Only add if not already present to avoid duplicates
+			found := false
+			for _, ur := range userRoles {
+				if ur == role {
+					found = true
+					break
+				}
+			}
+			if !found {
+				userRoles = append(userRoles, role)
+			}
 		}
 
 		// Check if any user role matches required roles

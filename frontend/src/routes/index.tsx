@@ -109,6 +109,9 @@ const CalendarPage = lazy(() =>
 const AnalyticsDashboard = lazy(() =>
   import("@/features/analytics/AnalyticsDashboard").then((m) => ({ default: m.AnalyticsDashboard }))
 );
+const SchedulerPage = lazy(() =>
+  import("@/features/scheduler/SchedulerPage").then((m) => ({ default: m.default }))
+);
 
 // Superadmin pages
 const SuperadminLayout = lazy(() =>
@@ -359,6 +362,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "chair"]}>
             {WithSuspense(<AnalyticsDashboard />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "scheduler",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "registrar"]}>
+             {WithSuspense(<SchedulerPage />)}
           </ProtectedRoute>
         ),
       },

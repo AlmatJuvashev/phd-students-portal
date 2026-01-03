@@ -1,4 +1,4 @@
-export type Role = "superadmin" | "admin" | "advisor" | "chair" | "student";
+export type Role = "superadmin" | "admin" | "advisor" | "chair" | "student" | "registrar";
 export type AuthState = { token: string | null; role: Role | null };
 
 export function decodeJwtRole(token: string | null): Role | null {

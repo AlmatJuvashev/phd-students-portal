@@ -315,6 +315,19 @@ func (h *UsersHandler) ListUsers(c *gin.Context) {
 		Search:     q,
 	}
 
+	// Scoping logic:
+	// 1. If user is superadmin, they can view all OR specific tenant if query param provided.
+	// 2. If user is a tenant admin, they are FORCED to their tenant.
+	isSuperadmin := c.GetBool("is_superadmin")
+	tenantIDFromJWT := c.GetString("jwt_tenant_id")
+	requestedTenant := c.Query("tenant_id")
+
+	if !isSuperadmin {
+		filter.TenantID = tenantIDFromJWT
+	} else if requestedTenant != "" {
+		filter.TenantID = requestedTenant
+	}
+
 	users, total, err := h.userService.ListUsers(c.Request.Context(), filter, repository.Pagination{Limit: limit, Offset: offset})
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to fetch users"})

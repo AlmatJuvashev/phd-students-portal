@@ -228,28 +228,44 @@ func (r *SQLUserRepository) ReplaceAdvisors(ctx context.Context, studentID strin
 // List fetches users with filtering and pagination. 
 // OPTIMIZATION: Uses JOINs instead of subqueries for profile data (N+1 fix).
 func (r *SQLUserRepository) List(ctx context.Context, filter UserFilter, pagination Pagination) ([]models.User, int, error) {
-	// 1. Build Base Query and Where Caluse
+	// 1. Build Base Query and Where Clause
+	// We use strings for query construction to handle conditional JOINs
 	baseQuery := `
 		SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, u.is_active, u.created_at,
 		       COALESCE(u.phone, '') as phone,
-		       -- Prioritize user table fields, fallback to profile_submissions if empty (legacy support or sync logic)
 		       COALESCE(NULLIF(u.program, ''), ps.form_data->>'program', '') as program,
 		       COALESCE(NULLIF(u.specialty, ''), ps.form_data->>'specialty', '') as specialty,
 		       COALESCE(NULLIF(u.department, ''), ps.form_data->>'department', '') as department,
 		       COALESCE(NULLIF(u.cohort, ''), ps.form_data->>'cohort', '') as cohort
-		FROM users u
-		-- Join with latest profile submission (optimized to pick latest per user)
-		LEFT JOIN LATERAL (
-			SELECT form_data FROM profile_submissions 
-			WHERE user_id = u.id ORDER BY submitted_at DESC LIMIT 1
-		) ps ON true
-		WHERE 1=1`
+		FROM users u`
 	
-	countQuery := `SELECT COUNT(*) FROM users u WHERE 1=1`
+	countQuery := `SELECT COUNT(DISTINCT u.id) FROM users u`
 
 	var conditions []string
 	var args []any
 	argID := 1
+
+	// JOIN logic for multitenancy
+	if filter.TenantID != "" {
+		joinClause := " JOIN user_tenant_memberships utm ON u.id = utm.user_id"
+		baseQuery += joinClause
+		countQuery += joinClause
+		conditions = append(conditions, fmt.Sprintf("utm.tenant_id = $%d", argID))
+		args = append(args, filter.TenantID)
+		argID++
+	}
+
+	// Profile data optimization (pick latest per user)
+	baseQuery += ` LEFT JOIN LATERAL (
+		SELECT form_data FROM profile_submissions 
+		WHERE user_id = u.id ORDER BY submitted_at DESC LIMIT 1
+	) ps ON true WHERE 1=1`
+	
+	if filter.TenantID == "" {
+		countQuery += " WHERE 1=1"
+	} else {
+		countQuery += " WHERE 1=1" // utm condition already added
+	}
 
 	if filter.Role != "" {
 		conditions = append(conditions, fmt.Sprintf("u.role = $%d", argID))
@@ -257,9 +273,6 @@ func (r *SQLUserRepository) List(ctx context.Context, filter UserFilter, paginat
 		argID++
 	}
 	
-	// Complex filters might need to inspect the COALESCE result. 
-	// For performance, we'll filter on the 'users' table columns primarily if data is migrated.
-	// Assuming strict syncing to 'users' table in Create/Update logic, we can filter 'u.program'.
 	if filter.Program != "" {
 		conditions = append(conditions, fmt.Sprintf("u.program = $%d", argID))
 		args = append(args, filter.Program)
@@ -288,7 +301,6 @@ func (r *SQLUserRepository) List(ctx context.Context, filter UserFilter, paginat
 	}
 
 	if filter.Search != "" {
-		// PostgreSQL ILIKE
 		searchParam := fmt.Sprintf("%%%s%%", filter.Search)
 		conditions = append(conditions, fmt.Sprintf("(u.first_name ILIKE $%d OR u.last_name ILIKE $%d OR u.email ILIKE $%d)", argID, argID, argID))
 		args = append(args, searchParam)

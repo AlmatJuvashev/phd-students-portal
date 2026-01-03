@@ -21,7 +21,7 @@ func TestUserService_CreateUser_Unit(t *testing.T) {
 		return "u1", nil
 	}
 
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{}, nil, nil)
 	
 	req := services.CreateUserRequest{
 		FirstName: "John",
@@ -42,7 +42,7 @@ func TestUserService_CreateUser_Unit(t *testing.T) {
 func TestUserService_UpdateProfile_Unit(t *testing.T) {
 	mockRepo := NewHandwrittenMockUserRepository()
 	mockEmail := NewManualEmailSender()
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, mockEmail, nil)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{}, mockEmail, nil)
 	ctx := context.Background()
 
 	pw, _ := auth.HashPassword("old")
@@ -108,7 +108,7 @@ func TestUserService_UpdateProfile_Unit(t *testing.T) {
 
 func TestUserService_UsernameGen_Unit(t *testing.T) {
 	mockRepo := NewHandwrittenMockUserRepository()
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{}, nil, nil)
 	
 	t.Run("Collision Case", func(t *testing.T) {
 		calls := 0
@@ -139,7 +139,7 @@ func TestUserService_UsernameGen_Unit(t *testing.T) {
 
 func TestUserService_ResetPassword_Unit(t *testing.T) {
 	mockRepo := NewHandwrittenMockUserRepository()
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{}, nil, nil)
 	ctx := context.Background()
 
 	t.Run("ResetPasswordForUser Success", func(t *testing.T) {
@@ -164,7 +164,7 @@ func TestUserService_ResetPassword_Unit(t *testing.T) {
 
 func TestUserService_BasicMethods(t *testing.T) {
 	mockRepo := NewHandwrittenMockUserRepository()
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{}, nil, nil)
 	ctx := context.Background()
 
 	t.Run("ChangePassword", func(t *testing.T) {
@@ -283,7 +283,7 @@ func TestUserService_AdminUpdateUser_Unit(t *testing.T) {
 	mockRepo.SetActiveFunc = func(ctx context.Context, id string, a bool) error { return nil }
 	mockRepo.LogProfileAuditFunc = func(ctx context.Context, u, f, o, n, c string) error { return nil }
 	
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{}, nil, nil)
 	
 	t.Run("Update Role and Info", func(t *testing.T) {
 		req := services.AdminUpdateUserRequest{
@@ -309,7 +309,7 @@ func TestUserService_AdminUpdateUser_Unit(t *testing.T) {
 func TestUserService_Avatar_Unit(t *testing.T) {
 	mockRepo := NewHandwrittenMockUserRepository()
 	mockStorage := &services.MockStorageClient{}
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{S3Endpoint: "http://s3", S3Bucket: "bucket"}, nil, mockStorage)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{S3Endpoint: "http://s3", S3Bucket: "bucket"}, nil, mockStorage)
 	ctx := context.Background()
 
 	t.Run("Presign Success", func(t *testing.T) {
@@ -334,7 +334,7 @@ func TestUserService_Avatar_Unit(t *testing.T) {
 func TestUserService_VerifyEmail_Unit(t *testing.T) {
 	mockRepo := NewHandwrittenMockUserRepository()
 	ctx := context.Background()
-	svc := services.NewUserService(mockRepo, nil, config.AppConfig{}, nil, nil)
+	svc := services.NewUserService(mockRepo, nil, nil, config.AppConfig{}, nil, nil)
 
 	t.Run("Success", func(t *testing.T) {
 		mockRepo.GetEmailVerificationTokenFunc = func(ctx context.Context, token string) (string, string, string, error) {
