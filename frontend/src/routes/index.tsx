@@ -112,6 +112,12 @@ const AnalyticsDashboard = lazy(() =>
 const SchedulerPage = lazy(() =>
   import("@/features/scheduler/SchedulerPage").then((m) => ({ default: m.default }))
 );
+const ProgramsPage = lazy(() =>
+  import("@/features/curriculum/ProgramsPage").then((m) => ({ default: m.ProgramsPage }))
+);
+const CoursesPage = lazy(() =>
+  import("@/features/curriculum/CoursesPage").then((m) => ({ default: m.CoursesPage }))
+);
 
 // Superadmin pages
 const SuperadminLayout = lazy(() =>
@@ -370,6 +376,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "registrar"]}>
              {WithSuspense(<SchedulerPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "programs",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ProgramsPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "courses",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<CoursesPage />)}
           </ProtectedRoute>
         ),
       },

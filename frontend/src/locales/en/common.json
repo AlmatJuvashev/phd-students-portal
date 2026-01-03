@@ -948,5 +948,38 @@
     "progress": "Progress",
     "xp_earned": "XP Earned",
     "nodes": "Nodes"
+  },
+  "curriculum": {
+    "programs": {
+      "title": "Active Curricula",
+      "subtitle": "Select a program to manage enrollments and cohorts.",
+      "search_placeholder": "Search programs...",
+      "no_programs": "No programs found. Use Studio to create and publish new curricula.",
+      "stats": {
+        "students": "Students",
+        "completion": "Completion"
+      },
+      "status": {
+        "all": "All",
+        "active": "Active",
+        "draft": "Draft",
+        "archived": "Archived"
+      }
+    },
+    "inventory": {
+      "title": "Course Inventory",
+      "subtitle": "Available content modules for scheduling. Created in Studio.",
+      "search_placeholder": "Search inventory...",
+      "no_courses": "No courses found in inventory.",
+      "table": {
+        "code": "Code",
+        "title": "Title",
+        "category": "Category",
+        "credits": "Credits",
+        "duration": "Est. Duration",
+        "source": "Source",
+        "view_studio": "View in Studio"
+      }
+    }
   }
 }
