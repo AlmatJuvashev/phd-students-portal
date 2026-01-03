@@ -18,7 +18,9 @@ type ResourceRepository interface {
 	// Rooms
 	CreateRoom(ctx context.Context, r *models.Room) error
 	GetRoom(ctx context.Context, id string) (*models.Room, error)
-	ListRooms(ctx context.Context, buildingID string) ([]models.Room, error)
+	// ListRooms returns rooms for a tenant, optionally filtered by building_id.
+	// Note: rooms are tenant-scoped via buildings (rooms table has no tenant_id).
+	ListRooms(ctx context.Context, tenantID string, buildingID string) ([]models.Room, error)
 	UpdateRoom(ctx context.Context, r *models.Room) error
 	DeleteRoom(ctx context.Context, id string, userID string) error
 
@@ -92,9 +94,24 @@ func (r *SQLResourceRepository) GetRoom(ctx context.Context, id string) (*models
 	return &rm, err
 }
 
-func (r *SQLResourceRepository) ListRooms(ctx context.Context, buildingID string) ([]models.Room, error) {
+func (r *SQLResourceRepository) ListRooms(ctx context.Context, tenantID string, buildingID string) ([]models.Room, error) {
 	var list []models.Room
-	err := sqlx.SelectContext(ctx, r.db, &list, `SELECT * FROM rooms WHERE building_id=$1 AND deleted_at IS NULL ORDER BY floor, name ASC`, buildingID)
+
+	query := `
+		SELECT r.* 
+		FROM rooms r
+		JOIN buildings b ON r.building_id = b.id
+		WHERE b.tenant_id = $1 AND r.deleted_at IS NULL`
+	args := []interface{}{tenantID}
+
+	if buildingID != "" {
+		query += ` AND r.building_id = $2`
+		args = append(args, buildingID)
+	}
+
+	query += ` ORDER BY b.name ASC, r.floor ASC, r.name ASC`
+
+	err := sqlx.SelectContext(ctx, r.db, &list, query, args...)
 	return list, err
 }
 
@@ -148,5 +165,3 @@ func (r *SQLResourceRepository) GetRoomAttributes(ctx context.Context, roomID st
 	err := sqlx.SelectContext(ctx, r.db, &list, "SELECT * FROM room_attributes WHERE room_id=$1", roomID)
 	return list, err
 }
-
-

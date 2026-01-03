@@ -129,7 +129,9 @@ func (m *MockSchedResourceRepo) ListBuildings(ctx context.Context, tenantID stri
 func (m *MockSchedResourceRepo) UpdateBuilding(ctx context.Context, b *models.Building) error { return nil }
 func (m *MockSchedResourceRepo) DeleteBuilding(ctx context.Context, id string, userID string) error { return nil }
 func (m *MockSchedResourceRepo) CreateRoom(ctx context.Context, r *models.Room) error { return nil }
-func (m *MockSchedResourceRepo) ListRooms(ctx context.Context, buildingID string) ([]models.Room, error) { return nil, nil }
+func (m *MockSchedResourceRepo) ListRooms(ctx context.Context, tenantID string, buildingID string) ([]models.Room, error) {
+	return nil, nil
+}
 func (m *MockSchedResourceRepo) UpdateRoom(ctx context.Context, r *models.Room) error { return nil }
 func (m *MockSchedResourceRepo) DeleteRoom(ctx context.Context, id string, userID string) error { return nil }
 func (m *MockSchedResourceRepo) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error { return nil }

@@ -334,8 +334,8 @@ func (s *SchedulerService) AutoSchedule(ctx context.Context, tenantID, termID st
 		return nil, errors.New("no sessions found for this term")
 	}
 
-	// B. Rooms (Assume ResourceRepo has ListRooms)
-	rooms, err := s.resourceRepo.ListRooms(ctx, tenantID)
+	// B. Rooms (tenant-scoped via buildings join)
+	rooms, err := s.resourceRepo.ListRooms(ctx, tenantID, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list rooms: %w", err)
 	}

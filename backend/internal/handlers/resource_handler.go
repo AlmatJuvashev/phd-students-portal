@@ -92,9 +92,10 @@ func (h *ResourceHandler) DeleteBuilding(c *gin.Context) {
 // Rooms
 
 func (h *ResourceHandler) ListRooms(c *gin.Context) {
+	tenantID := middleware.GetTenantID(c)
 	buildingID := c.Query("building_id")
 	// buildingID is optional now
-	list, err := h.svc.ListRooms(c.Request.Context(), buildingID)
+	list, err := h.svc.ListRooms(c.Request.Context(), tenantID, buildingID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

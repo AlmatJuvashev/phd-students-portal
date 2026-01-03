@@ -44,8 +44,8 @@ func (m *MockResourceRepo) GetRoom(ctx context.Context, id string) (*models.Room
 	args := m.Called(ctx, id)
 	return args.Get(0).(*models.Room), args.Error(1)
 }
-func (m *MockResourceRepo) ListRooms(ctx context.Context, bID string) ([]models.Room, error) {
-	args := m.Called(ctx, bID)
+func (m *MockResourceRepo) ListRooms(ctx context.Context, tenantID string, buildingID string) ([]models.Room, error) {
+	args := m.Called(ctx, tenantID, buildingID)
 	return args.Get(0).([]models.Room), args.Error(1)
 }
 func (m *MockResourceRepo) UpdateRoom(ctx context.Context, r *models.Room) error {

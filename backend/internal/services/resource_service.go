@@ -69,8 +69,11 @@ func (s *ResourceService) GetRoom(ctx context.Context, id string) (*models.Room,
 	return s.repo.GetRoom(ctx, id)
 }
 
-func (s *ResourceService) ListRooms(ctx context.Context, buildingID string) ([]models.Room, error) {
-	return s.repo.ListRooms(ctx, buildingID)
+func (s *ResourceService) ListRooms(ctx context.Context, tenantID string, buildingID string) ([]models.Room, error) {
+	if tenantID == "" {
+		return nil, errors.New("tenant_id is required")
+	}
+	return s.repo.ListRooms(ctx, tenantID, buildingID)
 }
 
 func (s *ResourceService) UpdateRoom(ctx context.Context, r *models.Room) error {
