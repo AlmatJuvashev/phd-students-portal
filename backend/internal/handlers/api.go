@@ -551,6 +551,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			admBuilder := contentGrp.Group("/programs/:id/builder")
 			{
 				admBuilder.GET("/map", programBuilderHandler.GetJourneyMap)
+				admBuilder.PUT("/map", programBuilderHandler.UpdateJourneyMap)
 				admBuilder.GET("/nodes", programBuilderHandler.GetNodes)
 				admBuilder.POST("/nodes", programBuilderHandler.CreateNode)
 				admBuilder.PUT("/nodes/:nodeId", programBuilderHandler.UpdateNode)
@@ -621,6 +622,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			currBuilder := curr.Group("/programs/:id/builder")
 			{
 				currBuilder.GET("/map", programBuilderHandler.GetJourneyMap)
+				currBuilder.PUT("/map", programBuilderHandler.UpdateJourneyMap)
 				currBuilder.GET("/nodes", programBuilderHandler.GetNodes)
 				currBuilder.POST("/nodes", programBuilderHandler.CreateNode)
 				currBuilder.PUT("/nodes/:nodeId", programBuilderHandler.UpdateNode)

@@ -979,7 +979,268 @@
         "duration": "Est. Duration",
         "source": "Source",
         "view_studio": "View in Studio"
+    }
+  },
+  "enrollments": {
+      "title": "Roster Management",
+      "subtitle": "Track student progress and lifecycle across all programs.",
+      "search_placeholder": "Search by name, email, or program...",
+      "no_enrollments": "No enrollments found.",
+      "enroll_button": "Enroll Students",
+      "export_button": "Export",
+      "views": {
+        "list": "List View",
+        "board": "Kanban Board"
+      },
+      "table": {
+        "student": "Student",
+        "program_cohort": "Program & Cohort",
+        "progress": "Progress",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "wizard": {
+        "title": "Enrollment Wizard",
+        "subtitle": "Assign students to programs and cohorts.",
+        "steps": {
+          "program": "Program & Cohort",
+          "students": "Select Students",
+          "review": "Review"
+        },
+        "fields": {
+          "program": "Select Program",
+          "cohort": "Select Cohort",
+          "search_students": "Search available students...",
+          "ready_title": "Ready to Enroll",
+          "welcome_email": "Send welcome email and portal access instructions"
+        },
+        "buttons": {
+          "next": "Next Step",
+          "confirm": "Confirm Enrollment"
+        }
+      },
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "completed": "Completed",
+        "dropped": "Dropped"
       }
+    }
+  },
+  "studio": {
+    "title": "Course Builder",
+    "subtitle": "Structure modules, lessons, and interactive activities.",
+    "draft": "Draft",
+    "published": "Published",
+    "publish": "Publish",
+    "preview": "Preview",
+    "sidebar": {
+      "modules": "Modules",
+      "add_module": "Add Module",
+      "add_lesson": "Add Lesson",
+      "no_content": "No modules yet."
+    },
+    "editor": {
+      "activity_title": "Activity Title",
+      "points": "Points",
+      "optional": "Optional",
+      "content": "Content",
+      "video_urls": "Video URLs",
+      "add_video": "Add Video",
+      "no_video": "No videos added.",
+      "attachments": "Attachments",
+      "add_attachment": "Add Attachment",
+      "no_attachments": "No attachments.",
+      "citations": "Citations",
+      "add_citation": "Add Citation",
+      "no_citations": "No citations."
+    },
+    "types": {
+      "text": "Text / Article",
+      "video": "Video Lesson",
+      "quiz": "Quiz",
+      "survey": "Survey",
+      "assignment": "Assignment"
+    }
+  },
+  "student": {
+    "dashboard": {
+      "welcome": "Welcome back, {{name}}!",
+      "subtitle": "Your next steps are in the Journey.",
+      "default_program": "My Program",
+      "program_type": "doctoral",
+      "current_focus": "Current Focus",
+      "complete": "Complete",
+      "overdue": "Overdue",
+      "up_next": "Up Next",
+      "up_next_title": "Continue your Journey",
+      "up_next_time": "15 mins",
+      "continue": "Continue",
+      "your_programs": "Your Programs",
+      "program_hint": "This is a demo dashboard. Program enrollment will be wired later.",
+      "upcoming_tasks": "Upcoming Tasks",
+      "view_all_tasks": "View All Tasks",
+      "notice_title": "Demo Mode",
+      "notice_body": "Some student portal modules are still being migrated from v11.",
+      "tasks": [
+        { "title": "Submit Research Proposal", "due": "Tomorrow" },
+        { "title": "Ethics Committee Review", "due": "In 3 days" },
+        { "title": "Data Analysis Quiz", "due": "In 5 days" }
+      ]
+    }
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "Teacher Dashboard",
+      "subtitle": "Here's what's happening in your classes today.",
+      "view_full_schedule": "View Full Schedule",
+      "stats": {
+        "to_grade": "To Grade",
+        "pending_grading_subtitle": "Pending submissions to review",
+        "active_courses": "Active Courses",
+        "active_courses_subtitle": "Courses you teach",
+        "today_classes": "Today's Classes",
+        "today_classes_subtitle": "Sessions scheduled today",
+        "next_class": "Next Class",
+        "next_class_none": "No upcoming sessions",
+        "total_students": "Total Students",
+        "at_risk": "At Risk",
+        "upcoming": "Upcoming",
+        "urgent_prefix": "{{count}} Urgent"
+      },
+      "schedule": {
+        "title": "Today's Schedule",
+        "live_now": "Live Now",
+        "no_next_class": "No upcoming sessions scheduled.",
+        "empty": "No sessions scheduled for today."
+      },
+      "submissions": {
+        "title": "Recent Submissions",
+        "view_all": "View All"
+      },
+      "active_classes": {
+        "title": "Active Classes",
+        "students_count": "{{count}} Students",
+        "progress": "Progress"
+      },
+      "insight": {
+        "title": "Insight",
+        "placeholder_title": "Teaching insights will appear here.",
+        "placeholder_body": "Connect analytics to surface cohort trends and grading hotspots.",
+        "review_analytics": "Review Analytics"
+      }
+    },
+    "courses": {
+      "title": "My Classes",
+      "subtitle": "Manage your active teaching sections.",
+      "search_placeholder": "Search courses...",
+      "open_scheduler": "Scheduler",
+      "enrolled": "{{count}} enrolled",
+      "open": "Open",
+      "empty": "No courses found.",
+      "new_section": "New Section",
+      "schedule_new": "Schedule New Course",
+      "edit_course": "Edit Course",
+      "schedule_course": "Schedule Course",
+      "fields": {
+        "code": "Code",
+        "section": "Section",
+        "title": "Course Title",
+        "schedule": "Schedule",
+        "room": "Room",
+        "status": "Status"
+      },
+      "status": {
+        "active": "Active",
+        "upcoming": "Upcoming",
+        "archived": "Archived"
+      },
+      "detail": {
+        "roster": "Student Roster",
+        "sessions": "Sessions",
+        "analytics": "Analytics",
+        "settings": "Settings",
+        "no_students": "No students enrolled yet.",
+        "add_student": "Enroll Student",
+        "message_all": "Message All",
+        "attendance": "Attendance",
+        "last_active": "Last Active"
+      },
+      "grading": {
+        "title": "Gradebook",
+        "subtitle": "Review and grade student submissions.",
+        "pending": "Pending",
+        "graded": "Graded",
+        "all": "All Submissions",
+        "no_submissions": "No submissions found.",
+        "grade_now": "Grade Now",
+        "feedback": "Feedback",
+        "score": "Score",
+        "save_grade": "Save Grade"
+      }
+    },
+    "detail": {
+      "not_found": "Course not found.",
+      "back": "Back to Courses",
+      "edit_content": "Edit Content",
+      "open_grading": "Grade Submissions",
+      "stats": {
+        "enrolled": "Enrolled",
+        "roster": "Roster",
+        "gradebook": "Gradebook",
+        "avg": "Avg"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "roster": "Roster",
+        "gradebook": "Gradebook"
+      },
+      "overview_title": "Overview",
+      "overview_body": "Course analytics and assignments will be migrated next.",
+      "table": {
+        "student": "Student",
+        "email": "Email",
+        "status": "Status"
+      },
+      "no_students": "No students enrolled yet.",
+      "gradebook": {
+        "activity": "Activity",
+        "student": "Student",
+        "score": "Score",
+        "grade": "Grade",
+        "empty": "No grades yet."
+      }
+    },
+    "grading": {
+      "title": "Grading",
+      "subtitle": "Review and grade student submissions.",
+      "search_placeholder": "Search student or activity...",
+      "filters": {
+        "all": "All",
+        "submitted": "Submitted",
+        "graded": "Graded"
+      },
+      "table": {
+        "student": "Student",
+        "activity": "Activity",
+        "submitted": "Submitted",
+        "status": "Status",
+        "action": "Action"
+      },
+      "grade_now": "Grade Now",
+      "no_submissions": "No submissions found.",
+      "modal": {
+        "submission": "Submission",
+        "preview_title": "Submission Preview",
+        "preview_body": "Preview/download will be enabled after file uploads are migrated.",
+        "download": "Download Original"
+      },
+      "score": "Score",
+      "rubric": "Rubric",
+      "rubric_placeholder": "Rubric grading is coming soon.",
+      "feedback": "Feedback",
+      "feedback_placeholder": "Enter comments for the student…",
+      "save_grade": "Save Grade"
     }
   }
 }

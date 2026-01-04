@@ -45,7 +45,8 @@ type CourseRequirement struct {
 	Value    string `db:"value" json:"value"` // e.g. "Projector"
 }
 
-// JourneyMap (aka Program Version) linked to a Program
+// JourneyMap is a versioned template of a Program.
+// Storage: program_versions (Option 2: programs -> program_versions -> program_version_node_definitions)
 type JourneyMap struct {
 	ID          string    `db:"id" json:"id"`
 	ProgramID   string    `db:"program_id" json:"program_id"`
@@ -57,10 +58,10 @@ type JourneyMap struct {
 	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// JourneyNodeDefinition defines a node in the map template
+// JourneyNodeDefinition defines a node in a program version template.
 type JourneyNodeDefinition struct {
 	ID           string         `db:"id" json:"id"`
-	JourneyMapID string         `db:"program_version_id" json:"journey_map_id"`
+	JourneyMapID string         `db:"program_version_id" json:"program_version_id"`
 	ParentNodeID *string        `db:"parent_node_id" json:"parent_node_id,omitempty"`
 	Slug         string         `db:"slug" json:"slug"` // stable key like "VI_attestation_file"
 	Type         string         `db:"type" json:"type"` // task, milestone, form, upload, gateway, etc.

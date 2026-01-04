@@ -27,6 +27,7 @@ type CurriculumRepository interface {
 	// Journey Maps (Playbooks)
 	CreateJourneyMap(ctx context.Context, jm *models.JourneyMap) error
 	GetJourneyMapByProgram(ctx context.Context, programID string) (*models.JourneyMap, error)
+	UpdateJourneyMap(ctx context.Context, jm *models.JourneyMap) error
 	
 	// Node Definitions
 	CreateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error
@@ -159,6 +160,19 @@ func (r *SQLCurriculumRepository) GetJourneyMapByProgram(ctx context.Context, pr
 		return nil, nil
 	}
 	return &jm, err
+}
+
+func (r *SQLCurriculumRepository) UpdateJourneyMap(ctx context.Context, jm *models.JourneyMap) error {
+	if jm.Config == "" {
+		jm.Config = "{}"
+	}
+	return r.db.QueryRowxContext(ctx, `
+		UPDATE program_versions
+		SET title=$1, version=$2, config=$3, is_active=$4, updated_at=NOW()
+		WHERE id=$5
+		RETURNING updated_at`,
+		jm.Title, jm.Version, jm.Config, jm.IsActive, jm.ID,
+	).Scan(&jm.UpdatedAt)
 }
 
 // --- Node Definitions ---

@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Clock, ExternalLink, Library, Loader2 } from 'lucide-react';
+import { Search, Clock, ExternalLink, Library, Loader2, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { getCourses } from './api';
 import { Course } from './types';
 
+import { EduStudioHub } from '../studio/components/EduStudioHub';
+
 export const CoursesPage: React.FC = () => {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [showStudio, setShowStudio] = useState(false);
 
   const { data: courses = [], isLoading, error } = useQuery({
     queryKey: ['curriculum', 'courses'],
@@ -41,7 +44,7 @@ export const CoursesPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 relative">
        <div className="flex justify-between items-end">
           <div>
              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -51,7 +54,20 @@ export const CoursesPage: React.FC = () => {
                {t('curriculum.inventory.subtitle')}
              </p>
           </div>
+          <button 
+             onClick={() => setShowStudio(true)}
+             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 hover:scale-105 transition-all font-bold text-sm"
+          >
+             <div className="p-1 bg-white/20 rounded-md"><Sparkles size={14} /></div>
+             Open Studio Hub
+          </button>
        </div>
+
+       <EduStudioHub 
+         isOpen={showStudio} 
+         onClose={() => setShowStudio(false)} 
+         onNavigate={navigate} 
+       />
 
        {/* Search Bar */}
        <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex gap-2 max-w-md">
@@ -100,7 +116,7 @@ export const CoursesPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                          <button 
-                           onClick={() => navigate(`/admin/courses/${course.id}/builder`)}
+                           onClick={() => navigate(`/admin/studio/courses/${course.id}/builder`)}
                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg text-xs font-bold transition-colors"
                          >
                             {t('curriculum.inventory.table.view_studio')} <ExternalLink size={10} />

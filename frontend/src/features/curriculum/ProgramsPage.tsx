@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Search, GraduationCap, Users, Activity, Loader2 } from 'lucide-react';
+import { Search, GraduationCap, Users, Activity, Loader2, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getPrograms } from './api';
 import { Program } from './types';
 
+import { EduStudioHub } from '../studio/components/EduStudioHub';
+
 export const ProgramsPage: React.FC = () => {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState('all');
   const [search, setSearch] = useState('');
+  const [showStudio, setShowStudio] = useState(false);
 
   const { data: programs = [], isLoading, error } = useQuery({
     queryKey: ['curriculum', 'programs'],
@@ -45,7 +48,7 @@ export const ProgramsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 relative">
        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -55,7 +58,20 @@ export const ProgramsPage: React.FC = () => {
                {t('curriculum.programs.subtitle')}
              </p>
           </div>
+          <button 
+             onClick={() => setShowStudio(true)}
+             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 hover:scale-105 transition-all font-bold text-sm"
+          >
+             <div className="p-1 bg-white/20 rounded-md"><Sparkles size={14} /></div>
+             Open Studio Hub
+          </button>
        </div>
+
+       <EduStudioHub 
+         isOpen={showStudio} 
+         onClose={() => setShowStudio(false)} 
+         onNavigate={navigate} 
+       />
 
        {/* Filters */}
        <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-2">
@@ -90,7 +106,7 @@ export const ProgramsPage: React.FC = () => {
           {filteredPrograms.map((program: Program) => (
              <div 
                key={program.id}
-               onClick={() => navigate(`/admin/programs/${program.id}`)}
+               onClick={() => navigate(`/admin/studio/programs/${program.id}/builder`)}
                className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-emerald-300 transition-all cursor-pointer flex flex-col relative overflow-hidden"
              >
                 {/* Status Stripe */}

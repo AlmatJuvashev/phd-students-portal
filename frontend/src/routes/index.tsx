@@ -78,6 +78,9 @@ const AdvisorInbox = lazy(() =>
 const Dashboard = lazy(() =>
   import("@/pages/dashboard").then((m) => ({ default: m.Dashboard }))
 );
+const StudentDashboard = lazy(() =>
+  import("@/features/student-portal/StudentDashboard").then((m) => ({ default: m.StudentDashboard }))
+);
 const ForgotPassword = lazy(() =>
   import("@/pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
 );
@@ -117,6 +120,33 @@ const ProgramsPage = lazy(() =>
 );
 const CoursesPage = lazy(() =>
   import("@/features/curriculum/CoursesPage").then((m) => ({ default: m.CoursesPage }))
+);
+const EnrollmentsPage = lazy(() =>
+  import("@/features/enrollments/EnrollmentsPage").then((m) => ({ default: m.EnrollmentsPage }))
+);
+const ItemBanksPage = lazy(() =>
+  import("@/features/item-bank/BanksPage").then((m) => ({ default: m.BanksPage }))
+);
+const ItemBankItemsPage = lazy(() =>
+  import("@/features/item-bank/BankItemsPage").then((m) => ({ default: m.BankItemsPage }))
+);
+const CourseBuilder = lazy(() =>
+  import("@/features/studio/CourseBuilder").then((m) => ({ default: m.CourseBuilder }))
+);
+const ProgramBuilderPage = lazy(() =>
+  import("@/features/studio/ProgramBuilderPage").then((m) => ({ default: m.ProgramBuilderPage }))
+);
+const TeacherDashboard = lazy(() =>
+  import("@/features/teacher/TeacherDashboard").then((m) => ({ default: m.TeacherDashboard }))
+);
+const TeacherCoursesPage = lazy(() =>
+  import("@/features/teacher/TeacherCoursesPage").then((m) => ({ default: m.TeacherCoursesPage }))
+);
+const TeacherCourseDetail = lazy(() =>
+  import("@/features/teacher/TeacherCourseDetail").then((m) => ({ default: m.TeacherCourseDetail }))
+);
+const TeacherGradingPage = lazy(() =>
+  import("@/features/teacher/TeacherGradingPage").then((m) => ({ default: m.TeacherGradingPage }))
 );
 
 // Superadmin pages
@@ -235,6 +265,14 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <ProtectedRoute>{WithSuspense(<Dashboard />)}</ProtectedRoute>,
+      },
+      {
+        path: "student/dashboard",
+        element: (
+          <ProtectedRoute requiredRole="student">
+            {WithSuspense(<StudentDashboard />)}
+          </ProtectedRoute>
+        ),
       },
       {
         path: "profile",
@@ -374,7 +412,7 @@ export const router = createBrowserRouter([
       {
         path: "scheduler",
         element: (
-          <ProtectedRoute requiredAnyRole={["admin", "registrar"]}>
+          <ProtectedRoute requiredAnyRole={["admin"]}>
              {WithSuspense(<SchedulerPage />)}
           </ProtectedRoute>
         ),
@@ -392,6 +430,78 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<CoursesPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "enrollments",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<EnrollmentsPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "item-banks",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ItemBanksPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "item-banks/:bankId",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ItemBankItemsPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/courses/:courseId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<CourseBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/programs/:programId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ProgramBuilderPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/dashboard",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<TeacherDashboard />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/courses",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<TeacherCoursesPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/courses/:courseId",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<TeacherCourseDetail />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/grading",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<TeacherGradingPage />)}
           </ProtectedRoute>
         ),
       },

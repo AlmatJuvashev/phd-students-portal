@@ -25,6 +25,7 @@ func (h *ItemBankHandler) CreateBank(c *gin.Context) {
 		return
 	}
 	b.TenantID = middleware.GetTenantID(c)
+	b.CreatedBy = middleware.GetUserID(c)
 
 	if err := h.svc.CreateBank(c.Request.Context(), &b); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

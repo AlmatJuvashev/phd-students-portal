@@ -45,8 +45,10 @@ func (s *ProgramBuilderService) EnsureDraftMap(ctx context.Context, programID st
 }
 
 type BuilderNode struct {
-	ID           string          `json:"id"`
-	JourneyMapID string          `json:"journey_map_id"`
+	ID              string          `json:"id"`
+	ProgramVersionID string         `json:"program_version_id"`
+	// JourneyMapID is a deprecated alias kept for backward compatibility with older frontends.
+	JourneyMapID    string          `json:"journey_map_id,omitempty"`
 	ParentNodeID *string         `json:"parent_node_id,omitempty"`
 	Slug         string          `json:"slug"`
 	Type         string          `json:"type"`
@@ -58,6 +60,14 @@ type BuilderNode struct {
 	Prerequisites []string       `json:"prerequisites"`
 	CreatedAt    time.Time       `json:"created_at"`
 	UpdatedAt    time.Time       `json:"updated_at"`
+}
+
+type UpdateMapInput struct {
+	Title    *json.RawMessage `json:"title,omitempty"`
+	Version  *string         `json:"version,omitempty"`
+	Config   *json.RawMessage `json:"config,omitempty"`
+	Phases   *json.RawMessage `json:"phases,omitempty"`
+	IsActive *bool           `json:"is_active,omitempty"`
 }
 
 // FullJourneyMap represents the complete map structure for the Builder UI
@@ -117,6 +127,65 @@ func (s *ProgramBuilderService) GetJourneyMap(ctx context.Context, programID str
 		Nodes:     nodes,
 		Edges:     []interface{}{}, // Edges are derived from nodes' prerequisites in current model usually, or we can compute them here
 	}, nil
+}
+
+func (s *ProgramBuilderService) UpdateJourneyMap(ctx context.Context, programID string, in UpdateMapInput) (*FullJourneyMap, error) {
+	jm, err := s.repo.GetJourneyMapByProgram(ctx, programID)
+	if err != nil {
+		return nil, err
+	}
+	if jm == nil {
+		jm, err = s.EnsureDraftMap(ctx, programID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if in.Title != nil {
+		jm.Title = string(*in.Title)
+	}
+	if in.Version != nil {
+		jm.Version = *in.Version
+	}
+	if in.IsActive != nil {
+		jm.IsActive = *in.IsActive
+	}
+
+	configChanged := in.Config != nil || in.Phases != nil
+	if configChanged {
+		cfg := map[string]interface{}{}
+		if strings.TrimSpace(jm.Config) != "" {
+			_ = json.Unmarshal([]byte(jm.Config), &cfg)
+		}
+
+		if in.Config != nil {
+			var next map[string]interface{}
+			if err := json.Unmarshal(*in.Config, &next); err != nil {
+				return nil, err
+			}
+			cfg = next
+		}
+
+		if in.Phases != nil {
+			var phases interface{}
+			if err := json.Unmarshal(*in.Phases, &phases); err != nil {
+				return nil, err
+			}
+			cfg["phases"] = phases
+		}
+
+		b, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		jm.Config = string(b)
+	}
+
+	if err := s.repo.UpdateJourneyMap(ctx, jm); err != nil {
+		return nil, err
+	}
+
+	return s.GetJourneyMap(ctx, programID)
 }
 
 func (s *ProgramBuilderService) GetNodes(ctx context.Context, programID string) ([]BuilderNode, error) {
@@ -222,8 +291,9 @@ func normalizeJSONObject(value string, defaultJSON string) json.RawMessage {
 
 func toBuilderNode(n models.JourneyNodeDefinition) BuilderNode {
 	return BuilderNode{
-		ID:            n.ID,
-		JourneyMapID:  n.JourneyMapID,
+		ID:              n.ID,
+		ProgramVersionID: n.JourneyMapID,
+		JourneyMapID:     n.JourneyMapID,
 		ParentNodeID:  n.ParentNodeID,
 		Slug:          n.Slug,
 		Type:          n.Type,

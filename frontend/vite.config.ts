@@ -2,6 +2,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+const nodeMajor = Number(process.versions.node.split(".")[0] || "0");
+// workbox-build uses @rollup/plugin-terser when mode === 'production'. Node 23+ has issues
+// with that pipeline in some environments, causing build failures during SW generation.
+const workboxMode = nodeMajor >= 23 ? "development" : "production";
+
 export default defineConfig({
   plugins: [
     react(),
@@ -27,6 +32,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        mode: workboxMode,
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         runtimeCaching: [
           {

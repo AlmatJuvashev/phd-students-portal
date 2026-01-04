@@ -48,6 +48,28 @@ func withDatabase(dbURL string, databaseName string) string {
 	return u.String()
 }
 
+func deriveTestDatabaseURL() string {
+	if v := os.Getenv("TEST_DATABASE_URL"); v != "" {
+		return v
+	}
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		u, err := url.Parse(v)
+		if err != nil {
+			return ""
+		}
+		dbName := strings.TrimPrefix(u.Path, "/")
+		if dbName == "" {
+			return ""
+		}
+		if !strings.Contains(strings.ToLower(dbName), "test") {
+			dbName = dbName + "_test"
+		}
+		u.Path = "/" + dbName
+		return u.String()
+	}
+	return ""
+}
+
 // SetupTestDB connects to the test database, applies migrations, and returns the connection.
 // It assumes TEST_DATABASE_URL is set, or defaults to a local test DB.
 // It returns a cleanup function that should be deferred.
@@ -111,7 +133,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 
 	// Fallback to local DB (Original Logic) or if useContainer is false
 	// ... (Existing implementation for local DB)
-	dbURL := os.Getenv("TEST_DATABASE_URL")
+	dbURL := deriveTestDatabaseURL()
 	if dbURL == "" {
 		dbURL = "postgres://postgres:postgres@localhost:5435/phd_test?sslmode=disable"
 	}
@@ -303,13 +325,14 @@ func cleanupDB(db *sqlx.DB, schema string) {
 }
 
 func GetTestConfig() config.AppConfig {
+	dbURL := deriveTestDatabaseURL()
 	return config.AppConfig{
 		RedisURL:        "redis://localhost:6379",
 		Port:            "8080",
 		Env:             "test",
 		JWTSecret:       "test-secret",
 		JWTExpDays:      1,
-		DatabaseURL:     os.Getenv("TEST_DATABASE_URL"),
+		DatabaseURL:     dbURL,
 		UploadDir:       "./test_uploads",
 		FileUploadMaxMB: 10,
 		SMTPHost:        "localhost",

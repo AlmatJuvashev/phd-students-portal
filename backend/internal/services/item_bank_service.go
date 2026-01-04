@@ -21,9 +21,14 @@ func NewItemBankService(repo repository.AssessmentRepository) *ItemBankService {
 func (s *ItemBankService) CreateBank(ctx context.Context, b *models.QuestionBank) error {
 	b.CreatedAt = time.Now()
 	b.UpdatedAt = time.Now()
-	_, err := s.repo.CreateQuestionBank(ctx, *b) // Repo takes value, returns pointer
-	// Ideally update b with returned result ID
-	return err
+	created, err := s.repo.CreateQuestionBank(ctx, *b) // Repo takes value, returns pointer
+	if err != nil {
+		return err
+	}
+	if created != nil {
+		*b = *created
+	}
+	return nil
 }
 
 func (s *ItemBankService) ListBanks(ctx context.Context, tenantID string) ([]models.QuestionBank, error) {
@@ -39,8 +44,14 @@ func (s *ItemBankService) GetBank(ctx context.Context, id string) (*models.Quest
 func (s *ItemBankService) CreateItem(ctx context.Context, item *models.Question) error {
 	item.CreatedAt = time.Now()
 	item.UpdatedAt = time.Now()
-	_, err := s.repo.CreateQuestion(ctx, *item)
-	return err
+	created, err := s.repo.CreateQuestion(ctx, *item)
+	if err != nil {
+		return err
+	}
+	if created != nil {
+		*item = *created
+	}
+	return nil
 }
 
 func (s *ItemBankService) ListItems(ctx context.Context, bankID string) ([]models.Question, error) {

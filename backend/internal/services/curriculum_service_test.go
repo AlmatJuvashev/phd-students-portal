@@ -69,6 +69,10 @@ func (m *MockCurriculumRepo) GetJourneyMapByProgram(ctx context.Context, program
 	}
 	return args.Get(0).(*models.JourneyMap), args.Error(1)
 }
+func (m *MockCurriculumRepo) UpdateJourneyMap(ctx context.Context, jm *models.JourneyMap) error {
+	args := m.Called(ctx, jm)
+	return args.Error(0)
+}
 func (m *MockCurriculumRepo) CreateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error {
 	args := m.Called(ctx, nd)
 	return args.Error(0)

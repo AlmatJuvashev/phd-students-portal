@@ -31,6 +31,46 @@ func (h *ProgramBuilderHandler) GetJourneyMap(c *gin.Context) {
 	c.JSON(http.StatusOK, fullMap)
 }
 
+// UpdateJourneyMap updates the program version config (phases/layout) and/or metadata.
+// PUT /api/programs/:id/builder/map
+func (h *ProgramBuilderHandler) UpdateJourneyMap(c *gin.Context) {
+	programID := c.Param("id")
+
+	raw, err := c.GetRawData()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read body"})
+		return
+	}
+
+	var payload services.UpdateMapInput
+	var wrapped struct {
+		Map       services.UpdateMapInput `json:"map"`
+		JourneyMap services.UpdateMapInput `json:"journey_map"`
+	}
+	if err := json.Unmarshal(raw, &wrapped); err == nil && (wrapped.Map != (services.UpdateMapInput{}) || wrapped.JourneyMap != (services.UpdateMapInput{})) {
+		if wrapped.Map != (services.UpdateMapInput{}) {
+			payload = wrapped.Map
+		} else {
+			payload = wrapped.JourneyMap
+		}
+	} else if err := json.Unmarshal(raw, &payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if payload.Title == nil && payload.Version == nil && payload.Config == nil && payload.Phases == nil && payload.IsActive == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no fields to update"})
+		return
+	}
+
+	updated, err := h.builderService.UpdateJourneyMap(c.Request.Context(), programID, payload)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, updated)
+}
+
 // GetNodes returns all nodes for a program's journey map.
 // GET /api/admin/programs/:id/builder/nodes
 func (h *ProgramBuilderHandler) GetNodes(c *gin.Context) {

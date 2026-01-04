@@ -3,15 +3,26 @@ import { Program, Course } from './types';
 
 // Programs
 export const getPrograms = () => api.get<Program[]>('/curriculum/programs');
-// Journey Map (Builder)
-export const getProgramJourneyMap = (programId: string) =>
+// Program Versions (Builder)
+export const getProgramVersionMap = (programId: string) =>
   api.get(`/curriculum/programs/${programId}/builder/map`);
 
-export const getProgramNodes = (programId: string) =>
+export const getProgramVersionNodes = (programId: string) =>
   api.get(`/curriculum/programs/${programId}/builder/nodes`);
 
-export const createNode = (programId: string, data: any) =>
+export const createProgramVersionNode = (programId: string, data: any) =>
   api.post(`/curriculum/programs/${programId}/builder/nodes`, data);
+
+export const updateProgramVersionNode = (programId: string, nodeId: string, data: any) =>
+  api.put(`/curriculum/programs/${programId}/builder/nodes/${nodeId}`, data);
+
+export const updateProgramVersionMap = (programId: string, data: any) =>
+  api.put(`/curriculum/programs/${programId}/builder/map`, data);
+
+// Backward-compatible aliases (deprecated)
+export const getProgramJourneyMap = getProgramVersionMap;
+export const getProgramNodes = getProgramVersionNodes;
+export const createNode = createProgramVersionNode;
 export const getProgram = (id: string) => api.get<Program>(`/curriculum/programs/${id}`);
 export const createProgram = (data: Partial<Program>) => api.post('/curriculum/programs', data);
 export const updateProgram = (id: string, data: Partial<Program>) => 

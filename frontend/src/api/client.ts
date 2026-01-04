@@ -91,25 +91,31 @@ export async function api<T = any>(
 }
 
 // HTTP method helpers
-api.get = (path: string, opts?: RequestInit) =>
-  api(path, { ...opts, method: "GET" });
-api.post = (path: string, data?: any, opts?: RequestInit) =>
-  api(path, {
+api.get = <T = any>(path: string, opts?: RequestInit) =>
+  api<T>(path, { ...opts, method: "GET" });
+api.post = <T = any>(path: string, data?: any, opts?: RequestInit) =>
+  api<T>(path, {
     ...opts,
     method: "POST",
     body: data ? JSON.stringify(data) : undefined,
   });
-api.put = (path: string, data?: any, opts?: RequestInit) =>
-  api(path, {
+api.postFormData = <T = any>(path: string, formData: FormData, opts?: RequestInit) =>
+  api<T>(path, {
+    ...opts,
+    method: "POST",
+    body: formData,
+  });
+api.put = <T = any>(path: string, data?: any, opts?: RequestInit) =>
+  api<T>(path, {
     ...opts,
     method: "PUT",
     body: data ? JSON.stringify(data) : undefined,
   });
-api.patch = (path: string, data?: any, opts?: RequestInit) =>
-  api(path, {
+api.patch = <T = any>(path: string, data?: any, opts?: RequestInit) =>
+  api<T>(path, {
     ...opts,
     method: "PATCH",
     body: data ? JSON.stringify(data) : undefined,
   });
-api.delete = (path: string, opts?: RequestInit) =>
-  api(path, { ...opts, method: "DELETE" });
+api.delete = <T = any>(path: string, opts?: RequestInit) =>
+  api<T>(path, { ...opts, method: "DELETE" });
