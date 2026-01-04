@@ -68,15 +68,15 @@ frontend/src/
 | **Scheduler**        | ✅ `features/scheduler/`          | ✅ Enhanced                     | ✅ `/api/scheduler/*`         | Merge UI improvements |
 | **Students Monitor** | ✅ `features/students-monitor/`   | ❌ N/A                          | ✅ `/api/admin/*`             | No change             |
 | **Dictionaries**     | ✅ `features/admin/dictionaries/` | ❌ N/A                          | ✅ `/api/admin/*`             | No change             |
-| **LMS: Programs**    | ❌ Missing                        | ✅ `ProgramsPage`               | ✅ `/api/curriculum/*`        | **Migrate**           |
-| **LMS: Courses**     | ❌ Missing                        | ✅ `GlobalCoursesPage`          | ✅ `/api/curriculum/*`        | **Migrate**           |
-| **Course Builder**   | ❌ Missing                        | ✅ `CourseBuilder`              | ✅ `/api/course-content/*`    | **Migrate**           |
-| **Enrollments**      | ❌ Missing                        | ✅ `EnrollmentsPage`            | ✅ `/api/admin/enrollments/*` | **Migrate**           |
-| **Item Bank**        | ❌ Missing                        | ✅ `BanksPage`, `QuestionsPage` | ✅ `/api/item-bank/*`         | **Migrate**           |
-| **Quiz Builder**     | ❌ Missing                        | ✅ `QuizBuilder`                | ✅ `/api/assessments/*`       | **Migrate**           |
-| **Grading**          | ❌ Missing                        | ✅ `TeacherGradingPage`         | ✅ `/api/grading/*`           | **Migrate**           |
-| **Student App**      | ❌ Missing                        | ✅ Full student portal          | ✅ Various APIs               | **Migrate**           |
-| **Teacher App**      | ❌ Missing                        | ✅ Full teacher portal          | ✅ Various APIs               | **Migrate**           |
+| **LMS: Programs**    | ✅ `features/curriculum/`         | ✅ `ProgramsPage`               | ✅ `/api/curriculum/*`        | ✅ Migrated           |
+| **LMS: Courses**     | ✅ `features/curriculum/`         | ✅ `GlobalCoursesPage`          | ✅ `/api/curriculum/*`        | ✅ Migrated           |
+| **Course Builder**   | ✅ `features/studio/`             | ✅ `CourseBuilder`              | ✅ `/api/course-content/*`    | ✅ Migrated (in studio) |
+| **Enrollments**      | ✅ `features/enrollments/`        | ✅ `EnrollmentsPage`            | ✅ `/api/admin/enrollments/*` | ✅ Migrated           |
+| **Item Bank**        | ✅ `features/item-bank/`          | ✅ `BanksPage`, `QuestionsPage` | ✅ `/api/item-banks/*`        | ✅ Migrated           |
+| **Quiz Builder**     | ✅ `features/studio/` (modals)    | ✅ `QuizBuilder`                | ✅ `/api/assessments/*`       | ✅ Migrated (in studio) |
+| **Grading**          | ✅ `features/grading/` + `features/teacher/` | ✅ `TeacherGradingPage` | ✅ `/api/grading/*` | ✅ Migrated |
+| **Student App**      | ✅ `features/student-portal/`     | ✅ Full student portal          | ✅ `/api/student/*`           | ✅ Migrated |
+| **Teacher App**      | ✅ `features/teacher/`            | ✅ Full teacher portal          | ✅ `/api/teacher/*`           | ✅ Migrated |
 
 ---
 
