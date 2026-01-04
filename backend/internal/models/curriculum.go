@@ -45,20 +45,22 @@ type CourseRequirement struct {
 	Value    string `db:"value" json:"value"` // e.g. "Projector"
 }
 
-// JourneyMap (aka Playbook Definition) linked to a Program
+// JourneyMap (aka Program Version) linked to a Program
 type JourneyMap struct {
 	ID          string    `db:"id" json:"id"`
 	ProgramID   string    `db:"program_id" json:"program_id"`
 	Title       string    `db:"title" json:"title"` // JSONB
 	Version     string    `db:"version" json:"version"` // e.g. "1.1.0"
+	Config      string    `db:"config" json:"config"`   // JSONB for phases/layout
 	IsActive    bool      `db:"is_active" json:"is_active"`
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
 
 // JourneyNodeDefinition defines a node in the map template
 type JourneyNodeDefinition struct {
 	ID           string         `db:"id" json:"id"`
-	JourneyMapID string         `db:"journey_map_id" json:"journey_map_id"`
+	JourneyMapID string         `db:"program_version_id" json:"journey_map_id"`
 	ParentNodeID *string        `db:"parent_node_id" json:"parent_node_id,omitempty"`
 	Slug         string         `db:"slug" json:"slug"` // stable key like "VI_attestation_file"
 	Type         string         `db:"type" json:"type"` // task, milestone, form, upload, gateway, etc.
@@ -69,6 +71,7 @@ type JourneyNodeDefinition struct {
 	Config       string         `db:"config" json:"config"` // JSONB for specific node logic (mime types, forms)
 	Prerequisites pq.StringArray `db:"prerequisites" json:"prerequisites"` // Array of node slugs
 	CreatedAt    time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 // Cohort represents a group of students starting a program together

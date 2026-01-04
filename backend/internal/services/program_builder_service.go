@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"strings"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
@@ -18,9 +19,8 @@ func NewProgramBuilderService(repo repository.CurriculumRepository) *ProgramBuil
 	return &ProgramBuilderService{repo: repo}
 }
 
-// EnsureDraftMap ensures a JourneyMap exists for the program.
-// In a real builder, this might handle "Draft vs Published" versions.
-// For now, it gets or creates the active map.
+// EnsureDraftMap ensures a Program Version exists for the program.
+// "Journey Map" is a UI term; in storage this is a versioned program template.
 func (s *ProgramBuilderService) EnsureDraftMap(ctx context.Context, programID string) (*models.JourneyMap, error) {
 	jm, err := s.repo.GetJourneyMapByProgram(ctx, programID)
 	if err != nil {
@@ -33,8 +33,9 @@ func (s *ProgramBuilderService) EnsureDraftMap(ctx context.Context, programID st
 	// Create new
 	newMap := &models.JourneyMap{
 		ProgramID: programID,
-		Title:     `{"en": "Default Journey"}`,
+		Title:     `{"en": "Draft Program Version"}`,
 		Version:   "0.0.1",
+		Config:    `{"phases":[]}`,
 		IsActive:  true,
 	}
 	if err := s.repo.CreateJourneyMap(ctx, newMap); err != nil {
@@ -43,100 +44,196 @@ func (s *ProgramBuilderService) EnsureDraftMap(ctx context.Context, programID st
 	return newMap, nil
 }
 
-// UpdateNodeConfig validates and updates a node's configuration.
-// It accepts the strict ProgramNodeConfig, validates it against the node type,
-// and saves it as JSONB.
-func (s *ProgramBuilderService) UpdateNodeConfig(ctx context.Context, nodeID string, config models.ProgramNodeConfig) error {
-	node, err := s.repo.GetNodeDefinition(ctx, nodeID)
-	if err != nil {
-		return err
-	}
-	if node == nil {
-		return errors.New("node not found")
-	}
-
-	// Validation Logic
-	if err := s.validateConfig(node.Type, config); err != nil {
-		return fmt.Errorf("invalid config: %w", err)
-	}
-
-	// Marshal to JSONB
-	configBytes, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-	node.Config = string(configBytes)
-
-	return s.repo.UpdateNodeDefinition(ctx, node)
+type BuilderNode struct {
+	ID           string          `json:"id"`
+	JourneyMapID string          `json:"journey_map_id"`
+	ParentNodeID *string         `json:"parent_node_id,omitempty"`
+	Slug         string          `json:"slug"`
+	Type         string          `json:"type"`
+	Title        json.RawMessage `json:"title"`
+	Description  json.RawMessage `json:"description"`
+	ModuleKey    string          `json:"module_key"`
+	Coordinates  json.RawMessage `json:"coordinates"`
+	Config       json.RawMessage `json:"config"`
+	Prerequisites []string       `json:"prerequisites"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
 }
 
-// CreateNode creates a new node in the journey map.
-func (s *ProgramBuilderService) CreateNode(ctx context.Context, journeyMapID string, nodeDef models.JourneyNodeDefinition, config models.ProgramNodeConfig) (*models.JourneyNodeDefinition, error) {
-	// Validate type and config
-	if err := s.validateConfig(nodeDef.Type, config); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
-
-	configBytes, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-	nodeDef.Config = string(configBytes)
-	nodeDef.JourneyMapID = journeyMapID
-
-	if err := s.repo.CreateNodeDefinition(ctx, &nodeDef); err != nil {
-		return nil, err
-	}
-	return &nodeDef, nil
+// FullJourneyMap represents the complete map structure for the Builder UI
+type FullJourneyMap struct {
+	ID        string          `json:"id"`
+	ProgramID string          `json:"program_id"`
+	Title     json.RawMessage `json:"title"`
+	Version   string          `json:"version"`
+	Phases    []interface{}   `json:"phases"` // from config
+	Nodes     []BuilderNode   `json:"nodes"`
+	Edges     []interface{}   `json:"edges"` // derived or stored
 }
 
-func (s *ProgramBuilderService) validateConfig(nodeType string, config models.ProgramNodeConfig) error {
-	switch nodeType {
-	case "formEntry":
-		if len(config.Fields) == 0 {
-			return errors.New("formEntry must have at least one field")
-		}
-		for _, f := range config.Fields {
-			if f.Key == "" {
-				return errors.New("field key is required")
-			}
-			if f.Type == "" {
-				return errors.New("field type is required")
-			}
-			// Validate known types
-			switch f.Type {
-			case "text", "textarea", "boolean", "date", "file", "note", "select":
-			default:
-				return fmt.Errorf("unknown field type: %s", f.Type)
-			}
-		}
-	case "checklist":
-		if len(config.Fields) == 0 {
-			return errors.New("checklist must have at least one item")
-		}
-	case "cards":
-		if len(config.Slides) == 0 {
-			return errors.New("cards must have at least one slide")
-		}
-	case "info":
-		// Info nodes might just use Title/Description, config optional
-	default:
-		return fmt.Errorf("unknown node type: %s", nodeType)
-	}
-	return nil
-}
-
-func (s *ProgramBuilderService) GetNodes(ctx context.Context, programID string) ([]models.JourneyNodeDefinition, error) {
+func (s *ProgramBuilderService) GetJourneyMap(ctx context.Context, programID string) (*FullJourneyMap, error) {
+	// 1. Get Map
 	jm, err := s.repo.GetJourneyMapByProgram(ctx, programID)
 	if err != nil {
 		return nil, err
 	}
 	if jm == nil {
-		return []models.JourneyNodeDefinition{}, nil
+		// Auto-create draft if missing?
+		jm, err = s.EnsureDraftMap(ctx, programID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return s.repo.GetNodeDefinitions(ctx, jm.ID)
+
+	// 2. Get Nodes
+	rawNodes, err := s.repo.GetNodeDefinitions(ctx, jm.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Parse Config for Phases
+	var config map[string]interface{}
+	phases := []interface{}{}
+	if jm.Config != "" {
+		if err := json.Unmarshal([]byte(jm.Config), &config); err == nil {
+			if p, ok := config["phases"].([]interface{}); ok {
+				phases = p
+			}
+		}
+	}
+
+	nodes := make([]BuilderNode, 0, len(rawNodes))
+	for _, n := range rawNodes {
+		nodes = append(nodes, toBuilderNode(n))
+	}
+
+	// 4. Construct Response
+	return &FullJourneyMap{
+		ID:        jm.ID,
+		ProgramID: jm.ProgramID,
+		Title:     normalizeJSONValue(jm.Title),
+		Version:   jm.Version,
+		Phases:    phases,
+		Nodes:     nodes,
+		Edges:     []interface{}{}, // Edges are derived from nodes' prerequisites in current model usually, or we can compute them here
+	}, nil
+}
+
+func (s *ProgramBuilderService) GetNodes(ctx context.Context, programID string) ([]BuilderNode, error) {
+	jm, err := s.repo.GetJourneyMapByProgram(ctx, programID)
+	if err != nil {
+		return nil, err
+	}
+	if jm == nil {
+		return []BuilderNode{}, nil
+	}
+	rawNodes, err := s.repo.GetNodeDefinitions(ctx, jm.ID)
+	if err != nil {
+		return nil, err
+	}
+	nodes := make([]BuilderNode, 0, len(rawNodes))
+	for _, n := range rawNodes {
+		nodes = append(nodes, toBuilderNode(n))
+	}
+	return nodes, nil
 }
 
 func (s *ProgramBuilderService) GetNode(ctx context.Context, nodeID string) (*models.JourneyNodeDefinition, error) {
 	return s.repo.GetNodeDefinition(ctx, nodeID)
+}
+
+func (s *ProgramBuilderService) GetBuilderNode(ctx context.Context, nodeID string) (*BuilderNode, error) {
+	node, err := s.repo.GetNodeDefinition(ctx, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	if node == nil {
+		return nil, nil
+	}
+	bn := toBuilderNode(*node)
+	return &bn, nil
+}
+
+func (s *ProgramBuilderService) CreateNode(ctx context.Context, journeyMapID string, nodeDef *models.JourneyNodeDefinition) error {
+	if nodeDef == nil {
+		return errors.New("node is required")
+	}
+	nodeDef.JourneyMapID = journeyMapID
+	if strings.TrimSpace(nodeDef.Title) == "" {
+		titleBytes, _ := json.Marshal("Untitled")
+		nodeDef.Title = string(titleBytes)
+	}
+	if strings.TrimSpace(nodeDef.Description) == "" {
+		nodeDef.Description = "null"
+	}
+	if strings.TrimSpace(nodeDef.Coordinates) == "" {
+		nodeDef.Coordinates = `{"x":0,"y":0}`
+	}
+	if strings.TrimSpace(nodeDef.Config) == "" {
+		nodeDef.Config = "{}"
+	}
+	return s.repo.CreateNodeDefinition(ctx, nodeDef)
+}
+
+func (s *ProgramBuilderService) UpdateNode(ctx context.Context, nodeDef *models.JourneyNodeDefinition) error {
+	if nodeDef == nil {
+		return errors.New("node is required")
+	}
+	if strings.TrimSpace(nodeDef.Title) == "" {
+		nodeDef.Title = "null"
+	}
+	if strings.TrimSpace(nodeDef.Description) == "" {
+		nodeDef.Description = "null"
+	}
+	if strings.TrimSpace(nodeDef.Coordinates) == "" {
+		nodeDef.Coordinates = `{"x":0,"y":0}`
+	}
+	if strings.TrimSpace(nodeDef.Config) == "" {
+		nodeDef.Config = "{}"
+	}
+	return s.repo.UpdateNodeDefinition(ctx, nodeDef)
+}
+
+func normalizeJSONValue(value string) json.RawMessage {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	if json.Valid([]byte(trimmed)) {
+		return json.RawMessage(trimmed)
+	}
+	b, err := json.Marshal(value)
+	if err != nil {
+		return nil
+	}
+	return json.RawMessage(b)
+}
+
+func normalizeJSONObject(value string, defaultJSON string) json.RawMessage {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return json.RawMessage(defaultJSON)
+	}
+	if json.Valid([]byte(trimmed)) && strings.HasPrefix(trimmed, "{") {
+		return json.RawMessage(trimmed)
+	}
+	return json.RawMessage(defaultJSON)
+}
+
+func toBuilderNode(n models.JourneyNodeDefinition) BuilderNode {
+	return BuilderNode{
+		ID:            n.ID,
+		JourneyMapID:  n.JourneyMapID,
+		ParentNodeID:  n.ParentNodeID,
+		Slug:          n.Slug,
+		Type:          n.Type,
+		Title:         normalizeJSONValue(n.Title),
+		Description:   normalizeJSONValue(n.Description),
+		ModuleKey:     n.ModuleKey,
+		Coordinates:   normalizeJSONObject(n.Coordinates, `{"x":0,"y":0}`),
+		Config:        normalizeJSONObject(n.Config, `{}`),
+		Prerequisites: []string(n.Prerequisites),
+		CreatedAt:     n.CreatedAt,
+		UpdatedAt:     n.UpdatedAt,
+	}
 }

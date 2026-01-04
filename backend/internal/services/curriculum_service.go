@@ -87,6 +87,10 @@ func (s *CurriculumService) DeleteCourse(ctx context.Context, id string) error {
 
 func (s *CurriculumService) CreateJourneyMap(ctx context.Context, jm *models.JourneyMap) error {
 	jm.CreatedAt = time.Now()
+	jm.UpdatedAt = time.Now()
+	if jm.Config == "" {
+		jm.Config = "{}"
+	}
 	return s.repo.CreateJourneyMap(ctx, jm)
 }
 

@@ -10,79 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Use the existing MockCurriculumRepo from curriculum_service_test.go
-// Ensure it is in the same package (services) so we can reuse it if exported,
-// or redefine if it's not exported. It is defined in `curriculum_service_test.go` which is package `services`.
-// So it should be available if we are in package `services` and running tests for the package.
-
-func TestProgramBuilderService_ValidateConfig(t *testing.T) {
-	mockRepo := new(MockCurriculumRepo)
-	svc := NewProgramBuilderService(mockRepo)
-	ctx := context.Background()
-
-	// Test FormEntry Validation
-	t.Run("FormEntry Valid", func(t *testing.T) {
-		config := models.ProgramNodeConfig{
-			Fields: []models.ProgramFieldDefinition{
-				{Key: "f1", Type: "text", Label: map[string]string{"en": "Field 1"}},
-			},
-		}
-		// Reset mock expectations
-		mockRepo.ExpectedCalls = nil
-		
-		// Setup mock for CreateNode
-		mockRepo.On("CreateNodeDefinition", ctx, mock.Anything).Return(nil)
-
-		_, err := svc.CreateNode(ctx, "map1", models.JourneyNodeDefinition{Type: "formEntry"}, config)
-		assert.NoError(t, err)
-	})
-
-	t.Run("FormEntry Invalid - No Fields", func(t *testing.T) {
-		config := models.ProgramNodeConfig{Fields: []models.ProgramFieldDefinition{}}
-		_, err := svc.CreateNode(ctx, "map1", models.JourneyNodeDefinition{Type: "formEntry"}, config)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "must have at least one field")
-	})
-
-	t.Run("FormEntry Invalid - Bad Field Type", func(t *testing.T) {
-		config := models.ProgramNodeConfig{
-			Fields: []models.ProgramFieldDefinition{
-				{Key: "f1", Type: "invalid_type"},
-			},
-		}
-		_, err := svc.CreateNode(ctx, "map1", models.JourneyNodeDefinition{Type: "formEntry"}, config)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "unknown field type")
-	})
-
-	// Test Checklist Validation
-	t.Run("Checklist Valid", func(t *testing.T) {
-		config := models.ProgramNodeConfig{
-			Fields: []models.ProgramFieldDefinition{
-				{Key: "c1", Type: "boolean"},
-			},
-		}
-		mockRepo.ExpectedCalls = nil
-		mockRepo.On("CreateNodeDefinition", ctx, mock.Anything).Return(nil)
-
-		_, err := svc.CreateNode(ctx, "map1", models.JourneyNodeDefinition{Type: "checklist"}, config)
-		assert.NoError(t, err)
-	})
-	
-	t.Run("Cards Valid", func(t *testing.T) {
-		config := models.ProgramNodeConfig{
-			Slides: []models.ProgramCardSlide{
-				{Key: "s1", Title: map[string]string{"en": "Slide 1"}},
-			},
-		}
-		mockRepo.ExpectedCalls = nil
-		mockRepo.On("CreateNodeDefinition", ctx, mock.Anything).Return(nil)
-
-		_, err := svc.CreateNode(ctx, "map1", models.JourneyNodeDefinition{Type: "cards"}, config)
-		assert.NoError(t, err)
-	})
-}
-
 // TestProgramBuilderService_EnsureDraftMap tests the EnsureDraftMap function
 func TestProgramBuilderService_EnsureDraftMap(t *testing.T) {
 	ctx := context.Background()
@@ -138,59 +65,39 @@ func TestProgramBuilderService_EnsureDraftMap(t *testing.T) {
 	})
 }
 
-// TestProgramBuilderService_UpdateNodeConfig tests the UpdateNodeConfig function
-func TestProgramBuilderService_UpdateNodeConfig(t *testing.T) {
+func TestProgramBuilderService_CreateAndUpdateNode(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("CreateNode applies defaults and calls repo", func(t *testing.T) {
 		mockRepo := new(MockCurriculumRepo)
 		svc := NewProgramBuilderService(mockRepo)
 
-		node := &models.JourneyNodeDefinition{ID: "node1", Type: "formEntry"}
-		mockRepo.On("GetNodeDefinition", ctx, "node1").Return(node, nil)
-		mockRepo.On("UpdateNodeDefinition", ctx, mock.Anything).Return(nil)
-
-		config := models.ProgramNodeConfig{
-			Fields: []models.ProgramFieldDefinition{{Key: "f1", Type: "text"}},
+		node := &models.JourneyNodeDefinition{
+			Slug: "n1",
+			Type: "form",
 		}
-		err := svc.UpdateNodeConfig(ctx, "node1", config)
+		mockRepo.On("CreateNodeDefinition", ctx, mock.AnythingOfType("*models.JourneyNodeDefinition")).Return(nil).Run(func(args mock.Arguments) {
+			nd := args.Get(1).(*models.JourneyNodeDefinition)
+			assert.NotEmpty(t, nd.Title)
+			assert.NotEmpty(t, nd.Coordinates)
+			assert.NotEmpty(t, nd.Config)
+		})
+
+		err := svc.CreateNode(ctx, "map1", node)
+		assert.NoError(t, err)
+		mockRepo.AssertCalled(t, "CreateNodeDefinition", ctx, mock.Anything)
+	})
+
+	t.Run("UpdateNode calls repo", func(t *testing.T) {
+		mockRepo := new(MockCurriculumRepo)
+		svc := NewProgramBuilderService(mockRepo)
+
+		node := &models.JourneyNodeDefinition{ID: "node1", Title: `"Updated"`, Coordinates: `{"x":1,"y":2}`, Config: `{}`}
+		mockRepo.On("UpdateNodeDefinition", ctx, mock.AnythingOfType("*models.JourneyNodeDefinition")).Return(nil)
+
+		err := svc.UpdateNode(ctx, node)
 		assert.NoError(t, err)
 		mockRepo.AssertCalled(t, "UpdateNodeDefinition", ctx, mock.Anything)
-	})
-
-	t.Run("Node not found", func(t *testing.T) {
-		mockRepo := new(MockCurriculumRepo)
-		svc := NewProgramBuilderService(mockRepo)
-
-		mockRepo.On("GetNodeDefinition", ctx, "nonexistent").Return(nil, nil)
-
-		err := svc.UpdateNodeConfig(ctx, "nonexistent", models.ProgramNodeConfig{})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "not found")
-	})
-
-	t.Run("DB error on get", func(t *testing.T) {
-		mockRepo := new(MockCurriculumRepo)
-		svc := NewProgramBuilderService(mockRepo)
-
-		mockRepo.On("GetNodeDefinition", ctx, "node2").Return(nil, errors.New("db error"))
-
-		err := svc.UpdateNodeConfig(ctx, "node2", models.ProgramNodeConfig{})
-		assert.Error(t, err)
-	})
-
-	t.Run("Invalid config", func(t *testing.T) {
-		mockRepo := new(MockCurriculumRepo)
-		svc := NewProgramBuilderService(mockRepo)
-
-		node := &models.JourneyNodeDefinition{ID: "node3", Type: "formEntry"}
-		mockRepo.On("GetNodeDefinition", ctx, "node3").Return(node, nil)
-
-		// Empty fields = invalid for formEntry
-		config := models.ProgramNodeConfig{Fields: []models.ProgramFieldDefinition{}}
-		err := svc.UpdateNodeConfig(ctx, "node3", config)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid config")
 	})
 }
 
@@ -204,8 +111,8 @@ func TestProgramBuilderService_GetNodes(t *testing.T) {
 
 		jm := &models.JourneyMap{ID: "jm1", ProgramID: "prog1"}
 		nodes := []models.JourneyNodeDefinition{
-			{ID: "n1", JourneyMapID: "jm1"},
-			{ID: "n2", JourneyMapID: "jm1"},
+			{ID: "n1", JourneyMapID: "jm1", Title: `"Node 1"`},
+			{ID: "n2", JourneyMapID: "jm1", Title: `"Node 2"`},
 		}
 		mockRepo.On("GetJourneyMapByProgram", ctx, "prog1").Return(jm, nil)
 		mockRepo.On("GetNodeDefinitions", ctx, "jm1").Return(nodes, nil)
@@ -213,6 +120,7 @@ func TestProgramBuilderService_GetNodes(t *testing.T) {
 		result, err := svc.GetNodes(ctx, "prog1")
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
+		assert.Equal(t, "n1", result[0].ID)
 	})
 
 	t.Run("Returns empty for program without map", func(t *testing.T) {

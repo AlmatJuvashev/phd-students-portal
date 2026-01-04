@@ -56,10 +56,10 @@ func NewSQLCurriculumRepository(db *sqlx.DB) *SQLCurriculumRepository {
 
 func (r *SQLCurriculumRepository) CreateProgram(ctx context.Context, p *models.Program) error {
 	return r.db.QueryRowxContext(ctx, `
-		INSERT INTO programs (tenant_id, code, title, description, credits, duration_months, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO programs (tenant_id, code, name, title, description, credits, duration_months, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at`,
-		p.TenantID, p.Code, p.Title, p.Description, p.Credits, p.DurationMonths, p.IsActive,
+		p.TenantID, p.Code, p.Name, p.Title, p.Description, p.Credits, p.DurationMonths, p.IsActive,
 	).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
 }
 
@@ -137,17 +137,24 @@ func (r *SQLCurriculumRepository) DeleteCourse(ctx context.Context, id string) e
 // --- Journey Maps ---
 
 func (r *SQLCurriculumRepository) CreateJourneyMap(ctx context.Context, jm *models.JourneyMap) error {
+	if jm.Config == "" {
+		jm.Config = "{}"
+	}
 	return r.db.QueryRowxContext(ctx, `
-		INSERT INTO journey_maps (program_id, title, version, is_active)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at`,
-		jm.ProgramID, jm.Title, jm.Version, jm.IsActive,
-	).Scan(&jm.ID, &jm.CreatedAt)
+		INSERT INTO program_versions (program_id, title, version, config, is_active, updated_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+		RETURNING id, created_at, updated_at`,
+		jm.ProgramID, jm.Title, jm.Version, jm.Config, jm.IsActive,
+	).Scan(&jm.ID, &jm.CreatedAt, &jm.UpdatedAt)
 }
 
 func (r *SQLCurriculumRepository) GetJourneyMapByProgram(ctx context.Context, programID string) (*models.JourneyMap, error) {
 	var jm models.JourneyMap
-	err := sqlx.GetContext(ctx, r.db, &jm, `SELECT * FROM journey_maps WHERE program_id=$1 LIMIT 1`, programID)
+	err := sqlx.GetContext(ctx, r.db, &jm, `
+		SELECT * FROM program_versions 
+		WHERE program_id=$1
+		ORDER BY is_active DESC, created_at DESC
+		LIMIT 1`, programID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -158,33 +165,33 @@ func (r *SQLCurriculumRepository) GetJourneyMapByProgram(ctx context.Context, pr
 
 func (r *SQLCurriculumRepository) CreateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error {
 	return r.db.QueryRowxContext(ctx, `
-		INSERT INTO journey_node_definitions (journey_map_id, parent_node_id, slug, type, title, description, module_key, coordinates, config, prerequisites)
+		INSERT INTO program_version_node_definitions (program_version_id, parent_node_id, slug, type, title, description, module_key, coordinates, config, prerequisites)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING id, created_at`,
+		RETURNING id, created_at, updated_at`,
 		nd.JourneyMapID, nd.ParentNodeID, nd.Slug, nd.Type, nd.Title, nd.Description, nd.ModuleKey, nd.Coordinates, nd.Config, pq.Array(nd.Prerequisites),
-	).Scan(&nd.ID, &nd.CreatedAt)
+	).Scan(&nd.ID, &nd.CreatedAt, &nd.UpdatedAt)
 }
 
 func (r *SQLCurriculumRepository) GetNodeDefinitions(ctx context.Context, journeyMapID string) ([]models.JourneyNodeDefinition, error) {
 	var nodes []models.JourneyNodeDefinition
-	err := sqlx.SelectContext(ctx, r.db, &nodes, `SELECT * FROM journey_node_definitions WHERE journey_map_id=$1 ORDER BY module_key, slug`, journeyMapID)
+	err := sqlx.SelectContext(ctx, r.db, &nodes, `SELECT * FROM program_version_node_definitions WHERE program_version_id=$1 ORDER BY module_key, slug`, journeyMapID)
 	return nodes, err
 }
 
 func (r *SQLCurriculumRepository) DeleteNodeDefinition(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM journey_node_definitions WHERE id=$1`, id)
+	_, err := r.db.ExecContext(ctx, `DELETE FROM program_version_node_definitions WHERE id=$1`, id)
 	return err
 }
 
 func (r *SQLCurriculumRepository) GetNodeDefinition(ctx context.Context, id string) (*models.JourneyNodeDefinition, error) {
 	var nd models.JourneyNodeDefinition
-	err := sqlx.GetContext(ctx, r.db, &nd, `SELECT * FROM journey_node_definitions WHERE id=$1`, id)
+	err := sqlx.GetContext(ctx, r.db, &nd, `SELECT * FROM program_version_node_definitions WHERE id=$1`, id)
 	return &nd, err
 }
 
 func (r *SQLCurriculumRepository) UpdateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE journey_node_definitions 
+		UPDATE program_version_node_definitions 
 		SET title=$1, description=$2, coordinates=$3, config=$4, prerequisites=$5, module_key=$6, type=$7, updated_at=now()
 		WHERE id=$8`,
 		nd.Title, nd.Description, nd.Coordinates, nd.Config, pq.Array(nd.Prerequisites), nd.ModuleKey, nd.Type, nd.ID)

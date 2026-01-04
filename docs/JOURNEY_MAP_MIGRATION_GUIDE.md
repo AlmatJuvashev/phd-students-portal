@@ -42,11 +42,11 @@ Backend /api/curriculum/programs/:id/journey-map  →  JourneyMap component  →
 | JSON Field | Backend Model | Database Table |
 |------------|---------------|----------------|
 | `playbook_id` | `Program.code` | `programs` |
-| `version` | `JourneyMap.version` | `journey_maps` |
-| `worlds[]` | `JourneyNodeDefinition.module_key` | `journey_node_definitions` |
-| `worlds[].nodes[]` | `JourneyNodeDefinition` | `journey_node_definitions` |
+| `version` | `JourneyMap.version` | `program_versions` |
+| `worlds[]` | `JourneyNodeDefinition.module_key` | `program_version_node_definitions` |
+| `worlds[].nodes[]` | `JourneyNodeDefinition` | `program_version_node_definitions` |
 | `roles[]` | Static (keep in frontend) | - |
-| `conditions[]` | `JourneyNodeDefinition.config` | `journey_node_definitions` |
+| `conditions[]` | `JourneyNodeDefinition.config` | `program_version_node_definitions` |
 | `assets[]` | Static file (assets_list.json) | - |
 
 ### Node Definition Mapping
@@ -72,7 +72,7 @@ Backend /api/curriculum/programs/:id/journey-map  →  JourneyMap component  →
 ```go
 type JourneyNodeDefinition struct {
   ID            string         // UUID
-  JourneyMapID  string         // FK to journey_maps
+  JourneyMapID  string         // FK to program_versions
   Slug          string         // "S1_profile" (stable key)
   Type          string         // "form"
   Title         string         // JSONB: {"ru": "...", "kz": "...", "en": "..."}
@@ -267,10 +267,10 @@ func migrateNode(db *sqlx.DB, journeyMapID, worldID string, worldOrder int, node
     titleJSON, _ := json.Marshal(node.Title)
     
     _, err := db.Exec(`
-        INSERT INTO journey_node_definitions 
-        (id, journey_map_id, slug, type, title, module_key, config, prerequisites, created_at)
+        INSERT INTO program_version_node_definitions 
+        (id, program_version_id, slug, type, title, module_key, config, prerequisites, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-        ON CONFLICT (journey_map_id, slug) DO UPDATE SET
+        ON CONFLICT (program_version_id, slug) DO UPDATE SET
             type = EXCLUDED.type,
             title = EXCLUDED.title,
             config = EXCLUDED.config,
@@ -291,40 +291,9 @@ func migrateNode(db *sqlx.DB, journeyMapID, worldID string, worldOrder int, node
 }
 ```
 
-#### 2.2 Database Schema (if not exists)
+#### 2.2 Database Schema (Already Exists)
 
-```sql
--- Migration: 20260103_journey_map_tables.sql
-
-CREATE TABLE IF NOT EXISTS journey_maps (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    program_id UUID NOT NULL REFERENCES programs(id),
-    title JSONB DEFAULT '{}',
-    version VARCHAR(20) NOT NULL DEFAULT '1.0.0',
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(program_id, version)
-);
-
-CREATE TABLE IF NOT EXISTS journey_node_definitions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    journey_map_id UUID NOT NULL REFERENCES journey_maps(id) ON DELETE CASCADE,
-    parent_node_id UUID REFERENCES journey_node_definitions(id),
-    slug VARCHAR(100) NOT NULL,  -- Original node ID like "S1_profile"
-    type VARCHAR(50) NOT NULL,   -- form, upload, decision, etc.
-    title JSONB DEFAULT '{}',
-    description JSONB DEFAULT '{}',
-    module_key VARCHAR(20),      -- World ID: W1, W2, etc.
-    coordinates JSONB DEFAULT '{"x": 0, "y": 0}',
-    config JSONB DEFAULT '{}',   -- Full node config
-    prerequisites TEXT[] DEFAULT '{}',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(journey_map_id, slug)
-);
-
-CREATE INDEX idx_journey_nodes_map ON journey_node_definitions(journey_map_id);
-CREATE INDEX idx_journey_nodes_module ON journey_node_definitions(module_key);
-```
+> **Note:** `program_versions` and `program_version_node_definitions` were introduced as `journey_maps` and `journey_node_definitions` in `0061_upgrade_curriculum_v11.up.sql`, then renamed in `0105_rename_journey_maps_to_program_versions.up.sql`.
 
 ---
 
@@ -461,7 +430,7 @@ No dynamic population - users download and fill manually.
 
 ### Backend Tasks
 
-- [ ] Add database tables (`journey_maps`, `journey_node_definitions`)
+- [ ] Add database tables (`program_versions`, `program_version_node_definitions`)
 - [ ] Create migration script to import `playbook.json`
 - [ ] Add `GET /api/journey/map` endpoint
 - [ ] Add `GET /api/curriculum/programs/:id/journey-map` endpoint
@@ -502,7 +471,7 @@ The current playbook has these "worlds":
 | W5 | V — Пост-защита | 5 | ~10 nodes |
 | W6 | VI — Аттестация | 6 | ~8 nodes |
 
-These map to `journey_node_definitions.module_key`:
+These map to `program_version_node_definitions.module_key`:
 - `W1` → `module_key = "W1"`
 - Frontend groups by `module_key` to reconstruct worlds
 

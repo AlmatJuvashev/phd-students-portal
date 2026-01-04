@@ -1,0 +1,1 @@
+ALTER TABLE journey_maps DROP COLUMN IF EXISTS config;

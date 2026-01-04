@@ -33,6 +33,7 @@ func TestSQLCurriculumRepository_Programs(t *testing.T) {
 		prog := &models.Program{
 			TenantID:       "t1",
 			Code:           "PHD-CS",
+			Name:           "PHD-CS",
 			Title:          "PhD Computer Science",
 			Description:    "Desc",
 			Credits:        180,
@@ -41,7 +42,7 @@ func TestSQLCurriculumRepository_Programs(t *testing.T) {
 		}
 
 		mock.ExpectQuery("INSERT INTO programs").
-			WithArgs("t1", "PHD-CS", "PhD Computer Science", "Desc", 180, 48, true).
+			WithArgs("t1", "PHD-CS", "PHD-CS", "PhD Computer Science", "Desc", 180, 48, true).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
 				AddRow("p1", time.Now(), time.Now()))
 
@@ -185,11 +186,12 @@ func TestSQLCurriculumRepository_JourneyMaps(t *testing.T) {
 			ProgramID: "p1",
 			Title:     "Map 1",
 			Version:   "1.0",
+			Config:    "{}",
 			IsActive:  true,
 		}
-		mock.ExpectQuery("INSERT INTO journey_maps").
-			WithArgs("p1", "Map 1", "1.0", true).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow("jm1", time.Now()))
+		mock.ExpectQuery("INSERT INTO program_versions").
+			WithArgs("p1", "Map 1", "1.0", "{}", true).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).AddRow("jm1", time.Now(), time.Now()))
 
 		err := repo.CreateJourneyMap(ctx, jm)
 		assert.NoError(t, err)
@@ -197,7 +199,7 @@ func TestSQLCurriculumRepository_JourneyMaps(t *testing.T) {
 	})
 
 	t.Run("GetJourneyMapByProgram", func(t *testing.T) {
-		mock.ExpectQuery("SELECT \\* FROM journey_maps WHERE program_id=\\$1 LIMIT 1").
+		mock.ExpectQuery("SELECT \\* FROM program_versions").
 			WithArgs("p1").
 			WillReturnRows(sqlmock.NewRows([]string{"id", "title"}).AddRow("jm1", "Map 1"))
 
@@ -207,7 +209,7 @@ func TestSQLCurriculumRepository_JourneyMaps(t *testing.T) {
 	})
 
 	t.Run("GetJourneyMapByProgram_NotFound", func(t *testing.T) {
-		mock.ExpectQuery("SELECT \\* FROM journey_maps WHERE program_id=\\$1 LIMIT 1").
+		mock.ExpectQuery("SELECT \\* FROM program_versions").
 			WithArgs("p1").
 			WillReturnError(sql.ErrNoRows)
 
@@ -230,13 +232,13 @@ func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
 			Title:         "Node 1",
 			Description:   "Desc",
 			ModuleKey:     "I",
-			Coordinates:   "0,0",
+			Coordinates:   `{"x":0,"y":0}`,
 			Config:        "{}",
 			Prerequisites: []string{"start"},
 		}
-		mock.ExpectQuery("INSERT INTO journey_node_definitions").
-			WithArgs("jm1", nil, "node-1", "task", "Node 1", "Desc", "I", "0,0", "{}", pq.Array([]string{"start"})).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at"}).AddRow("nd1", time.Now()))
+		mock.ExpectQuery("INSERT INTO program_version_node_definitions").
+			WithArgs("jm1", nil, "node-1", "task", "Node 1", "Desc", "I", `{"x":0,"y":0}`, "{}", pq.Array([]string{"start"})).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).AddRow("nd1", time.Now(), time.Now()))
 
 		err := repo.CreateNodeDefinition(ctx, nd)
 		assert.NoError(t, err)
@@ -244,7 +246,7 @@ func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
 	})
 
 	t.Run("GetNodeDefinitions", func(t *testing.T) {
-		mock.ExpectQuery("SELECT \\* FROM journey_node_definitions WHERE journey_map_id=\\$1").
+		mock.ExpectQuery("SELECT \\* FROM program_version_node_definitions WHERE program_version_id=\\$1").
 			WithArgs("jm1").
 			WillReturnRows(sqlmock.NewRows([]string{"id", "slug"}).AddRow("nd1", "node-1"))
 
@@ -254,7 +256,7 @@ func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
 	})
 	
 	t.Run("GetNodeDefinition", func(t *testing.T) {
-		mock.ExpectQuery("SELECT \\* FROM journey_node_definitions WHERE id=\\$1").
+		mock.ExpectQuery("SELECT \\* FROM program_version_node_definitions WHERE id=\\$1").
 			WithArgs("nd1").
 			WillReturnRows(sqlmock.NewRows([]string{"id", "slug"}).AddRow("nd1", "node-1"))
 		
@@ -269,7 +271,7 @@ func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
 			Title: "Updated",
 			Prerequisites: []string{"a"},
 		}
-		mock.ExpectExec("UPDATE journey_node_definitions SET").
+		mock.ExpectExec("UPDATE program_version_node_definitions").
 			WithArgs("Updated", "", "", "", pq.Array([]string{"a"}), "", "", "nd1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 			
@@ -278,7 +280,7 @@ func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
 	})
 	
 	t.Run("DeleteNodeDefinition", func(t *testing.T) {
-		mock.ExpectExec("DELETE FROM journey_node_definitions WHERE id=\\$1").
+		mock.ExpectExec("DELETE FROM program_version_node_definitions WHERE id=\\$1").
 			WithArgs("nd1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err := repo.DeleteNodeDefinition(ctx, "nd1")

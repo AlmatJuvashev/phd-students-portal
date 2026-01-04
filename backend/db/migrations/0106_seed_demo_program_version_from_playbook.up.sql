@@ -1,0 +1,3460 @@
+-- Seed demo university with an initial Program Version derived from the current playbook.json.
+--
+-- This implements the 'program_versions' storage model (Option 2):
+-- programs (template) -> program_versions (versioned template) -> program_version_node_definitions (nodes)
+--
+-- Demo tenant: dd000000-0000-0000-0000-d00000000001
+
+WITH pb AS (
+  SELECT $pb$
+{
+  "playbook_id": "phd-doctorant.kz",
+  "version": "1.1.0",
+  "effective_date": "2025-10-06",
+  "locale_default": "ru",
+  "locales": ["ru", "kz", "en"],
+  "metadata": {
+    "jurisdiction": "KZ",
+    "owner_org": "KazNMU",
+    "created_by": "PMO",
+    "changelog": [
+      {
+        "version": "1.1.0",
+        "type": "form",
+        "actionHints": ["form"],
+        "notes": "Enriched defense prep/defense/post-defense nodes with deadlines, multilingual labels, uploads, and validation without changing categories/IDs."
+      },
+      {
+        "version": "1.0.0",
+        "date": "2025-09-01",
+        "notes": "Initial publication"
+      }
+    ]
+  },
+  "ui": {
+    "worlds_palette": [
+      "#0ea5e9",
+      "#22c55e",
+      "#f59e0b",
+      "#ef4444",
+      "#a855f7",
+      "#14b8a6",
+      "#64748b"
+    ],
+    "icons": {
+      "form": "lucide:form-input",
+      "upload": "lucide:upload",
+      "decision": "lucide:git-merge",
+      "meeting": "lucide:users",
+      "waiting": "lucide:hourglass",
+      "external": "lucide:external-link",
+      "boss": "lucide:trophy"
+    },
+    "node_states": [
+      "locked",
+      "active",
+      "submitted",
+      "waiting",
+      "needs_fixes",
+      "done"
+    ]
+  },
+  "roles": [
+    {
+      "id": "student",
+      "label": {
+        "ru": "Докторант",
+        "kz": "Докторант",
+        "en": "Student"
+      }
+    },
+    {
+      "id": "advisor",
+      "label": {
+        "ru": "Научный руководитель",
+        "kz": "Ғылыми жетекші",
+        "en": "Advisor"
+      }
+    },
+    {
+      "id": "secretary",
+      "label": {
+        "ru": "Секретарь ДС/НК",
+        "kz": "ДС/ҒК хатшысы",
+        "en": "Secretary (DC/SC)"
+      }
+    },
+    {
+      "id": "chair",
+      "label": {
+        "ru": "Председатель",
+        "kz": "Төраға",
+        "en": "Chair"
+      }
+    },
+    {
+      "id": "admin",
+      "label": {
+        "ru": "Админ",
+        "kz": "Админ",
+        "en": "Admin"
+      }
+    }
+  ],
+  "conditions": [
+    {
+      "id": "rp_required",
+      "expr": "profile.years_since_graduation > 3",
+      "description": {
+        "ru": "Если с момента выпуска прошло более 3 лет — требуется этап RP",
+        "kz": "Оқуды бітіргеннен кейін 3 жылдан асса — RP кезеңі қажет",
+        "en": "If >3 years since graduation, the RP stage is required"
+      }
+    }
+  ],
+  "worlds": [
+    {
+      "id": "W1",
+      "title": {
+        "ru": "I — Подготовка",
+        "kz": "I — Дайындық",
+        "en": "I — Preparation"
+      },
+      "order": 1,
+      "nodes": [
+        {
+          "id": "S1_profile",
+          "title": {
+            "ru": "Профиль докторанта",
+            "kz": "Докторант профилі",
+            "en": "Doctoral profile"
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": [],
+          "next": ["S1_text_ready"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Профиль заполнен",
+                "kz": "Профиль толтырылды",
+                "en": "Profile completed"
+              },
+              "next": ["S1_text_ready"]
+            }
+          ],
+          "requirements": {
+            "fields": [
+              {
+                "key": "full_name",
+                "required": true,
+                "label": {}
+              },
+              {
+                "key": "specialty",
+                "required": true,
+                "type": "select",
+                "label": {
+                    "ru": "Специальность",
+                    "kz": "Мамандық",
+                    "en": "Specialty"
+                },
+                "options": [] 
+              },
+              {
+                "key": "program",
+                "required": true,
+                "type": "select",
+                "label": {
+                    "ru": "Образовательная программа",
+                    "kz": "Білім беру бағдарламасы",
+                    "en": "Queue Program"
+                },
+                "options": []
+              },
+              {
+                "key": "department",
+                "required": true,
+                "type": "select",
+                "label": {
+                    "ru": "Кафедра / Департамент",
+                    "kz": "Кафедра / Департамент",
+                    "en": "Department"
+                },
+                "options": []
+              },
+
+              {
+                "key": "graduation_date",
+                "required": true,
+                "type": "date",
+                "label": {
+                  "ru": "Дата выпуска из программы",
+                  "kz": "Бағдарламаны бітірген күні",
+                  "en": "Graduation date"
+                }
+              },
+              {
+                "key": "advisors_full_names",
+                "type": "array",
+                "label": {
+                  "ru": "ФИО консультантов",
+                  "kz": "Жетекшілердің толық аты-жөні",
+                  "en": "Advisors' full names"
+                },
+                "placeholder": {
+                  "ru": "каждая строка — отдельное ФИО",
+                  "kz": "әр жолға бір адам",
+                  "en": "one per line"
+                }
+              },
+              {
+                "key": "dissertation_form",
+                "type": "select",
+                "label": {
+                  "ru": "Форма диссертации",
+                  "kz": "Диссертация формасы",
+                  "en": "Dissertation form"
+                },
+                "options": [
+                  {
+                    "value": "classic",
+                    "label": {
+                      "ru": "Классическая",
+                      "kz": "Классикалық",
+                      "en": "Classic"
+                    }
+                  },
+                  {
+                    "value": "series",
+                    "label": {
+                      "ru": "Серия статей",
+                      "kz": "Мақалалар сериясы",
+                      "en": "Series of articles"
+                    }
+                  },
+                  {
+                    "value": "other",
+                    "label": {
+                      "ru": "Другое",
+                      "kz": "Басқа",
+                      "en": "Other"
+                    }
+                  }
+                ],
+                "other_key": "dissertation_form_other"
+              }
+            ]
+          },
+          "outputs": [
+            {
+              "key": "profile_snapshot.pdf",
+              "type": "auto_generated"
+            }
+          ],
+          "actionHints": []
+        },
+        {
+          "id": "S1_text_ready",
+          "title": {
+            "ru": "Текст диссертации подготовлен",
+            "kz": "Диссертация мәтіні дайын",
+            "en": "Dissertation draft ready"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_profile"],
+          "next": ["S0_antiplagiat"],
+          "screen": {
+            "question": {
+              "ru": "Текст диссертации приведён к стандарту оформления?",
+              "kz": "Диссертация мәтіні рәсімдеу стандартына келтірілді ме?",
+              "en": "Is the dissertation formatted according to the standard?"
+            },
+            "buttons": [
+              {
+                "id": "view_requirements",
+                "label": {
+                  "ru": "Проверить требования",
+                  "kz": "Талаптарды қарау",
+                  "en": "Review the requirements"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Структура и оформление",
+                    "kz": "Құрылым және рәсімдеу",
+                    "en": "Structure & formatting"
+                  },
+                  "text": {
+                    "ru": [
+                      "Сравните разделы и оформление с официальным стандартом КазНМУ.",
+                      "Убедитесь, что титульный лист, аннотации, оглавление, главы, заключение и список литературы оформлены корректно.",
+                      "Проверьте приложения и нумерацию страниц.",
+                      "Стандарт можно скачать по ссылке ниже."
+                    ],
+                    "kz": [
+                      "Құрылымды және рәсімдеуді ҚазҰМУ ресми стандартымен салыстырыңыз.",
+                      "Титул беті, аннотациялар, мазмұны, тараулар, қорытынды және әдебиеттер тізімі дұрыс рәсімделгеніне көз жеткізіңіз.",
+                      "Қосымшаларды және бет нөмірлеуді тексеріңіз.",
+                      "Төмендегі сілтемеден стандартты жүктей аласыз."
+                    ],
+                    "en": [
+                      "Compare your manuscript with the official KazNMU formatting standard.",
+                      "Verify title page, abstracts, table of contents, chapters, conclusion, and references meet the requirements.",
+                      "Check appendices and pagination.",
+                      "Download the standard via the link below."
+                    ]
+                  },
+                  "downloads": [
+                    {
+                      "label": {
+                        "ru": "Стандарт оформления (PDF)",
+                        "kz": "Рәсімдеу стандарты (PDF)",
+                        "en": "Formatting standard (PDF)"
+                      },
+                      "asset_path": "https://smart.enu.kz/api/serve?path=/general/files/b71af2ed-0459-4244-aed9-71073c0cb952.pdf"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить готовность",
+                  "kz": "Дайындығын растау",
+                  "en": "Confirm readiness"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Вы подтвердите, что текст полностью оформлен по стандарту?",
+                  "kz": "Мәтін стандартқа толық сәйкес екенін растайсыз ба?",
+                  "en": "Confirm the manuscript is fully formatted to the standard?"
+                }
+              }
+            ]
+          },
+          "requirements": {
+            "uploads": [
+              {
+                "key": "dissertation_draft_file",
+                "label": {
+                  "ru": "Файл текста диссертации (DOCX/PDF)",
+                  "kz": "Диссертация мәтіні файлы (DOCX/PDF)",
+                  "en": "Dissertation manuscript file (DOCX/PDF)"
+                },
+                "required": true,
+                "mime": [
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  "application/msword",
+                  "application/pdf"
+                ]
+              }
+            ]
+          },
+          "on_confirm": {
+            "status": "completed",
+            "message": {
+              "ru": "Текст диссертации подготовлен по стандарту.",
+              "kz": "Диссертация мәтіні стандартқа келтірілді.",
+              "en": "Dissertation manuscript is formatted according to the standard."
+            },
+            "next_node": "S1_antiplag"
+          }
+        },
+        {
+          "id": "S0_antiplagiat",
+          "module": "I",
+          "title": {
+            "ru": "Справка на антиплагиат",
+            "kz": "Антиплагиат анықтамасы",
+            "en": "Anti-plagiarism certificate"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "prerequisites": ["S1_text_ready"],
+          "next": ["S1_publications_list"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "antiplagiat_cert",
+                "label": {
+                  "ru": "Справка об уникальности диссертации (с подписью и печатью)",
+                  "kz": "Диссертацияның бірегейлігі туралы анықтама (қолтаңбамен және мөрмен)",
+                  "en": "Dissertation uniqueness certificate (signed and stamped)"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ]
+          },
+          "screen": {
+            "question": {
+              "ru": "Вы загрузили справку об уникальности диссертации?",
+              "kz": "Диссертацияның бірегейлігі туралы анықтаманы жүктедіңіз бе?",
+              "en": "Have you uploaded the dissertation uniqueness certificate?"
+            },
+            "buttons": [
+              {
+                "id": "confirm_upload",
+                "label": {
+                  "ru": "Подтвердить загрузку",
+                  "kz": "Жүктеуді растау",
+                  "en": "Confirm upload"
+                },
+                "action": "confirm_completion",
+                "instructions": {
+                  "title": {
+                    "ru": "Инструкция по получению справки",
+                    "kz": "Анықтаманы алу нұсқаулығы",
+                    "en": "How to obtain the certificate"
+                  },
+                  "text": {
+                    "ru": [
+                      "Проверьте уникальность диссертации через систему StrikePlagiarism.",
+                      "Уникальность должна составлять не менее 75%.",
+                      "Получите справку с подписью ответственного лица и печатью.",
+                      "Загрузите скан справки в формате PDF или изображение."
+                    ],
+                    "kz": [
+                      "StrikePlagiarism жүйесі арқылы диссертацияның бірегейлігін тексеріңіз.",
+                      "Бірегейлік кемінде 75% болуы керек.",
+                      "Жауапты тұлғаның қолтаңбасы мен мөрі бар анықтаманы алыңыз.",
+                      "Анықтаманың сканін PDF форматында немесе сурет түрінде жүктеңіз."
+                    ],
+                    "en": [
+                      "Check your dissertation's uniqueness through the StrikePlagiarism system.",
+                      "Uniqueness should be at least 75%.",
+                      "Obtain a certificate with the responsible person's signature and stamp.",
+                      "Upload the scanned certificate in PDF format or as an image."
+                    ]
+                  }
+                },
+                "confirmation_text": {
+                  "ru": "Вы уверены, что загрузили корректную справку?",
+                  "kz": "Дұрыс анықтаманы жүктегеніңізге сенімдісіз бе?",
+                  "en": "Are you sure you uploaded the correct certificate?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Справка загружена.",
+                "kz": "Анықтама жүктелді.",
+                "en": "Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["confirm_upload"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_upload"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Справка загружена.",
+                "kz": "✅ Анықтама жүктелді.",
+                "en": "✅ Certificate uploaded."
+              },
+              "next_node": "S1_publications_list"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-11-29",
+            "requires_upload": true,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "S1_publications_list",
+          "title": {
+            "ru": "Список публикаций",
+            "kz": "Жарияланымдар тізімі",
+            "en": "Publications list"
+          },
+          "description": {
+            "ru": "Заполните сведения по каждому материалу Приложения 7. Добавьте публикации, конференционные материалы и объекты интеллектуальной собственности по разделам I–IV. Шаблон DOCX можно скачать в блоке справа.",
+            "kz": "Қосымша 7 бойынша әр материал туралы деректерді толтырыңыз. I–IV бөлімдерге жарияланымдарды, конференция материалдарын және зияткерлік меншік объектілерін жазыңыз. DOCX үлгісін оң жақ блоктан жүктей аласыз.",
+            "en": "Provide details for each item in Appendix 7. Add publications, conference materials, and intellectual property items for sections I–IV. Download the DOCX template from the panel on the right."
+          },
+          "type": "form",
+          "actionHints": ["form"],
+          "icon": "lucide:file-text",
+          "who_can_complete": ["student"],
+          "prerequisites": ["S0_antiplagiat"],
+          "next": ["E1_apply_omid"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Список подготовлен",
+                "kz": "Тізім дайын",
+                "en": "List prepared"
+              },
+              "next": ["E1_apply_omid"]
+            }
+          ],
+          "requirements": {
+            "templates": [
+              "tpl_app7_ru_docx",
+              "tpl_app7_kz_docx",
+              "tpl_app7_en_docx"
+            ],
+            
+            "uploads": [
+              {
+                "key": "appendix_7_signed",
+                "label": { "ru": "Приложение 7 (подписанное)", "kz": "7-қосымша (қол қойылған)", "en": "Appendix 7 (signed)" },
+                "required": false,
+                "mime": ["application/pdf"]
+              }
+            ],
+            "fields": [
+              {
+                "key": "wos_scopus",
+                "type": "collection",
+                "icon": "lucide:globe",
+                "label": {
+                  "ru": "I. Публикации в базах Web of Science или Scopus",
+                  "kz": "I. Web of Science немесе Scopus базаларындағы жарияланымдар",
+                  "en": "I. Publications indexed in Web of Science or Scopus"
+                },
+                "help_text": {
+                  "ru": "Добавьте все публикации, проиндексированные в международных базах данных",
+                  "kz": "Халықаралық деректер базаларында индекстелген барлық жарияланымдарды қосыңыз",
+                  "en": "Add all publications indexed in international databases"
+                },
+                "item_label": {
+                  "ru": "Запись о публикации",
+                  "kz": "Жарияланым жазбасы",
+                  "en": "Publication entry"
+                },
+                "add_button": {
+                  "ru": "➕ Добавить публикацию",
+                  "kz": "➕ Жарияланым қосу",
+                  "en": "➕ Add publication"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "icon": "lucide:heading",
+                    "label": {
+                      "ru": "📝 Наименование работы",
+                      "kz": "📝 Жұмыстың атауы",
+                      "en": "📝 Title of work"
+                    },
+                    "placeholder": {
+                      "ru": "Введите полное название публикации",
+                      "kz": "Жарияланымның толық атауын енгізіңіз",
+                      "en": "Enter full publication title"
+                    }
+                  },
+                  {
+                    "key": "format",
+                    "type": "select",
+                    "required": true,
+                    "icon": "lucide:layout",
+                    "label": {
+                      "ru": "📋 Формат публикации",
+                      "kz": "📋 Жарияланым форматы",
+                      "en": "📋 Publication format"
+                    },
+                    "options": [
+                      {
+                        "value": "print",
+                        "label": {
+                          "ru": "🖨️ Печатный",
+                          "kz": "🖨️ Баспа",
+                          "en": "🖨️ Printed"
+                        }
+                      },
+                      {
+                        "value": "manuscript",
+                        "label": {
+                          "ru": "📄 На правах рукописи",
+                          "kz": "📄 Қолжазба",
+                          "en": "📄 Manuscript"
+                        }
+                      },
+                      {
+                        "value": "electronic",
+                        "label": {
+                          "ru": "💻 Электронный",
+                          "kz": "💻 Электрондық",
+                          "en": "💻 Electronic"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "➕ Другое",
+                          "kz": "➕ Басқа",
+                          "en": "➕ Other"
+                        }
+                      }
+                    ],
+                    "other_key": "format_other"
+                  },
+                  {
+                    "key": "journal",
+                    "required": true,
+                    "icon": "lucide:book",
+                    "label": {
+                      "ru": "📚 Журнал / издательство",
+                      "kz": "📚 Журнал / баспа",
+                      "en": "📚 Journal / publisher"
+                    },
+                    "placeholder": {
+                      "ru": "Название журнала или издательства",
+                      "kz": "Журнал немесе баспа атауы",
+                      "en": "Journal or publisher name"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "type": "number",
+                    "required": true,
+                    "icon": "lucide:calendar",
+                    "label": {
+                      "ru": "📅 Год",
+                      "kz": "📅 Жыл",
+                      "en": "📅 Year"
+                    },
+                    "placeholder": {
+                      "ru": "например, 2024",
+                      "kz": "мысалы, 2024",
+                      "en": "e.g. 2024"
+                    },
+                    "min": 2000,
+                    "max": 2030
+                  },
+                  {
+                    "key": "volume_issue",
+                    "icon": "lucide:hash",
+                    "label": {
+                      "ru": "📖 Том / №",
+                      "kz": "📖 Том / №",
+                      "en": "📖 Volume / issue"
+                    },
+                    "placeholder": {
+                      "ru": "Том 5, №3",
+                      "kz": "5-том, 3-№",
+                      "en": "Vol. 5, No. 3"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "required": true,
+                    "icon": "lucide:file-text",
+                    "label": {
+                      "ru": "📄 Кол-во печатных листов или страниц",
+                      "kz": "📄 Баспа табақтары немесе беттер саны",
+                      "en": "📄 Printed sheets or pages"
+                    },
+                    "placeholder": {
+                      "ru": "Например: с. 45-67 или 2,5 п.л.",
+                      "kz": "Мысалы: 45-67 б. немесе 2,5 б.т.",
+                      "en": "E.g.: pp. 45-67 or 2.5 sheets"
+                    }
+                  },
+                  {
+                    "key": "doi",
+                    "icon": "lucide:link",
+                    "label": {
+                      "ru": "🔗 DOI",
+                      "kz": "🔗 DOI",
+                      "en": "🔗 DOI"
+                    },
+                    "placeholder": {
+                      "ru": "10.1234/example.2024",
+                      "kz": "10.1234/example.2024",
+                      "en": "10.1234/example.2024"
+                    },
+                    "help_text": {
+                      "ru": "Цифровой идентификатор объекта",
+                      "kz": "Объектінің цифрлық идентификаторы",
+                      "en": "Digital Object Identifier"
+                    }
+                  },
+                  {
+                    "key": "issn_print",
+                    "icon": "lucide:printer",
+                    "label": {
+                      "ru": "🖨️ ISSN (print)",
+                      "kz": "🖨️ ISSN (баспа)",
+                      "en": "🖨️ ISSN (print)"
+                    },
+                    "placeholder": {
+                      "ru": "XXXX-XXXX",
+                      "kz": "XXXX-XXXX",
+                      "en": "XXXX-XXXX"
+                    }
+                  },
+                  {
+                    "key": "issn_online",
+                    "icon": "lucide:monitor",
+                    "label": {
+                      "ru": "💻 ISSN (online)",
+                      "kz": "💻 ISSN (онлайн)",
+                      "en": "💻 ISSN (online)"
+                    },
+                    "placeholder": {
+                      "ru": "XXXX-XXXX",
+                      "kz": "XXXX-XXXX",
+                      "en": "XXXX-XXXX"
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "icon": "lucide:users",
+                    "label": {
+                      "ru": "👥 Фамилии соавторов",
+                      "kz": "👥 Авторлар тізімі",
+                      "en": "👥 Co-authors"
+                    },
+                    "placeholder": {
+                      "ru": "по одному в строке",
+                      "kz": "әр жолға бір есім",
+                      "en": "one per line"
+                    },
+                    "add_button_text": {
+                      "ru": "+ Добавить соавтора",
+                      "kz": "+ Автор қосу",
+                      "en": "+ Add co-author"
+                    }
+                  },
+                  {
+                    "key": "indexing",
+                    "type": "select",
+                    "required": true,
+                    "icon": "lucide:database",
+                    "label": {
+                      "ru": "🗂️ Индексирование",
+                      "kz": "🗂️ Индекстеу",
+                      "en": "🗂️ Indexing"
+                    },
+                    "options": [
+                      {
+                        "value": "wos",
+                        "label": {
+                          "ru": "🌐 Web of Science",
+                          "kz": "🌐 Web of Science",
+                          "en": "🌐 Web of Science"
+                        }
+                      },
+                      {
+                        "value": "scopus",
+                        "label": {
+                          "ru": "🔬 Scopus",
+                          "kz": "🔬 Scopus",
+                          "en": "🔬 Scopus"
+                        }
+                      },
+                      {
+                        "value": "kokson",
+                        "label": {
+                          "ru": "📋 Перечень КОКСОН",
+                          "kz": "📋 КОКСОН тізімі",
+                          "en": "📋 KOKSON list"
+                        }
+                      },
+                      {
+                        "value": "rsci",
+                        "label": {
+                          "ru": "🇷🇺 РИНЦ",
+                          "kz": "🇷🇺 РИНЦ",
+                          "en": "🇷🇺 RSCI"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "➕ Другое",
+                          "kz": "➕ Басқа",
+                          "en": "➕ Other"
+                        }
+                      }
+                    ],
+                    "other_key": "indexing_other"
+                  }
+                ]
+              },
+              {
+                "key": "kokson",
+                "type": "collection",
+                "icon": "lucide:book-open",
+                "label": {
+                  "ru": "II. Статьи в журналах перечня КОКСОН МНиВО РК",
+                  "kz": "II. ҚР ҒЖБМ КОКСОН тізіміндегі журналдардағы мақалалар",
+                  "en": "II. Articles in journals from the KOKSON MSHE RK list"
+                },
+                "help_text": {
+                  "ru": "Статьи в казахстанских и зарубежных изданиях, рекомендованных КОКСОН",
+                  "kz": "КОКСОН ұсынған қазақстандық және шетелдік басылымдардағы мақалалар",
+                  "en": "Articles in Kazakh and foreign publications recommended by KOKSON"
+                },
+                "item_label": {
+                  "ru": "Запись о статье",
+                  "kz": "Мақала жазбасы",
+                  "en": "Article entry"
+                },
+                "add_button": {
+                  "ru": "➕ Добавить статью",
+                  "kz": "➕ Мақала қосу",
+                  "en": "➕ Add article"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "icon": "lucide:heading",
+                    "label": {
+                      "ru": "📝 Наименование работы",
+                      "kz": "📝 Жұмыстың атауы",
+                      "en": "📝 Title of work"
+                    },
+                    "placeholder": {
+                      "ru": "Введите полное название статьи",
+                      "kz": "Мақаланың толық атауын енгізіңіз",
+                      "en": "Enter full article title"
+                    }
+                  },
+                  {
+                    "key": "format",
+                    "type": "select",
+                    "required": true,
+                    "icon": "lucide:layout",
+                    "label": {
+                      "ru": "📋 Формат публикации",
+                      "kz": "📋 Жарияланым форматы",
+                      "en": "📋 Publication format"
+                    },
+                    "options": [
+                      {
+                        "value": "print",
+                        "label": {
+                          "ru": "🖨️ Печатный",
+                          "kz": "🖨️ Баспа",
+                          "en": "🖨️ Printed"
+                        }
+                      },
+                      {
+                        "value": "manuscript",
+                        "label": {
+                          "ru": "📄 На правах рукописи",
+                          "kz": "📄 Қолжазба",
+                          "en": "📄 Manuscript"
+                        }
+                      },
+                      {
+                        "value": "electronic",
+                        "label": {
+                          "ru": "💻 Электронный",
+                          "kz": "💻 Электрондық",
+                          "en": "💻 Electronic"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "➕ Другое",
+                          "kz": "➕ Басқа",
+                          "en": "➕ Other"
+                        }
+                      }
+                    ],
+                    "other_key": "format_other"
+                  },
+                  {
+                    "key": "journal",
+                    "required": true,
+                    "icon": "lucide:book",
+                    "label": {
+                      "ru": "📚 Журнал / издательство",
+                      "kz": "📚 Журнал / баспа",
+                      "en": "📚 Journal / publisher"
+                    },
+                    "placeholder": {
+                      "ru": "Название журнала или издательства",
+                      "kz": "Журнал немесе баспа атауы",
+                      "en": "Journal or publisher name"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "type": "number",
+                    "required": true,
+                    "icon": "lucide:calendar",
+                    "label": {
+                      "ru": "📅 Год",
+                      "kz": "📅 Жыл",
+                      "en": "📅 Year"
+                    },
+                    "placeholder": {
+                      "ru": "например, 2024",
+                      "kz": "мысалы, 2024",
+                      "en": "e.g. 2024"
+                    },
+                    "min": 2000,
+                    "max": 2030
+                  },
+                  {
+                    "key": "volume_issue",
+                    "icon": "lucide:hash",
+                    "label": {
+                      "ru": "📖 Том / №",
+                      "kz": "📖 Том / №",
+                      "en": "📖 Volume / issue"
+                    },
+                    "placeholder": {
+                      "ru": "Том 5, №3",
+                      "kz": "5-том, 3-№",
+                      "en": "Vol. 5, No. 3"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "required": true,
+                    "icon": "lucide:file-text",
+                    "label": {
+                      "ru": "📄 Кол-во печатных листов или страниц",
+                      "kz": "📄 Баспа табақтары немесе беттер саны",
+                      "en": "📄 Printed sheets or pages"
+                    },
+                    "placeholder": {
+                      "ru": "Например: с. 45-67 или 2,5 п.л.",
+                      "kz": "Мысалы: 45-67 б. немесе 2,5 б.т.",
+                      "en": "E.g.: pp. 45-67 or 2.5 sheets"
+                    }
+                  },
+                  {
+                    "key": "issn_print",
+                    "icon": "lucide:printer",
+                    "label": {
+                      "ru": "🖨️ ISSN (print)",
+                      "kz": "🖨️ ISSN (баспа)",
+                      "en": "🖨️ ISSN (print)"
+                    },
+                    "placeholder": {
+                      "ru": "XXXX-XXXX",
+                      "kz": "XXXX-XXXX",
+                      "en": "XXXX-XXXX"
+                    }
+                  },
+                  {
+                    "key": "issn_online",
+                    "icon": "lucide:monitor",
+                    "label": {
+                      "ru": "💻 ISSN (online)",
+                      "kz": "💻 ISSN (онлайн)",
+                      "en": "💻 ISSN (online)"
+                    },
+                    "placeholder": {
+                      "ru": "XXXX-XXXX",
+                      "kz": "XXXX-XXXX",
+                      "en": "XXXX-XXXX"
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "icon": "lucide:users",
+                    "label": {
+                      "ru": "👥 Фамилии соавторов",
+                      "kz": "👥 Авторлар тізімі",
+                      "en": "👥 Co-authors"
+                    },
+                    "placeholder": {
+                      "ru": "по одному в строке",
+                      "kz": "әр жолға бір есім",
+                      "en": "one per line"
+                    },
+                    "add_button_text": {
+                      "ru": "+ Добавить соавтора",
+                      "kz": "+ Автор қосу",
+                      "en": "+ Add co-author"
+                    }
+                  }
+                ]
+              },
+              {
+                "key": "conferences",
+                "type": "collection",
+                "icon": "lucide:mic-2",
+                "label": {
+                  "ru": "III. Апробация на научных конференциях",
+                  "kz": "III. Ғылыми конференциялардағы апробация",
+                  "en": "III. Approval at scientific conferences"
+                },
+                "help_text": {
+                  "ru": "Материалы и тезисы докладов на международных конференциях",
+                  "kz": "Халықаралық конференциялардағы баяндамалар материалдары мен тезистері",
+                  "en": "Materials and abstracts of reports at international conferences"
+                },
+                "item_label": {
+                  "ru": "Запись о конференции",
+                  "kz": "Конференция жазбасы",
+                  "en": "Conference entry"
+                },
+                "add_button": {
+                  "ru": "➕ Добавить конференцию",
+                  "kz": "➕ Конференция қосу",
+                  "en": "➕ Add conference"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "icon": "lucide:heading",
+                    "label": {
+                      "ru": "📝 Наименование работы",
+                      "kz": "📝 Жұмыстың атауы",
+                      "en": "📝 Title of work"
+                    },
+                    "placeholder": {
+                      "ru": "Введите название доклада/тезиса",
+                      "kz": "Баяндама/тезис атауын енгізіңіз",
+                      "en": "Enter report/abstract title"
+                    }
+                  },
+                  {
+                    "key": "format",
+                    "type": "select",
+                    "required": true,
+                    "icon": "lucide:layout",
+                    "label": {
+                      "ru": "📋 Формат публикации",
+                      "kz": "📋 Жарияланым форматы",
+                      "en": "📋 Publication format"
+                    },
+                    "options": [
+                      {
+                        "value": "print",
+                        "label": {
+                          "ru": "🖨️ Печатный",
+                          "kz": "🖨️ Баспа",
+                          "en": "🖨️ Printed"
+                        }
+                      },
+                      {
+                        "value": "manuscript",
+                        "label": {
+                          "ru": "📄 На правах рукописи",
+                          "kz": "📄 Қолжазба",
+                          "en": "📄 Manuscript"
+                        }
+                      },
+                      {
+                        "value": "electronic",
+                        "label": {
+                          "ru": "💻 Электронный",
+                          "kz": "💻 Электрондық",
+                          "en": "💻 Electronic"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "➕ Другое",
+                          "kz": "➕ Басқа",
+                          "en": "➕ Other"
+                        }
+                      }
+                    ],
+                    "other_key": "format_other"
+                  },
+                  {
+                    "key": "journal",
+                    "required": true,
+                    "icon": "lucide:book",
+                    "label": {
+                      "ru": "📚 Название конференции / сборника",
+                      "kz": "📚 Конференция / жинақ атауы",
+                      "en": "📚 Conference / collection name"
+                    },
+                    "placeholder": {
+                      "ru": "Полное название конференции",
+                      "kz": "Конференцияның толық атауы",
+                      "en": "Full conference name"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "type": "number",
+                    "required": true,
+                    "icon": "lucide:calendar",
+                    "label": {
+                      "ru": "📅 Год",
+                      "kz": "📅 Жыл",
+                      "en": "📅 Year"
+                    },
+                    "min": 2000,
+                    "max": 2030
+                  },
+                  {
+                    "key": "volume_issue",
+                    "icon": "lucide:map-pin",
+                    "label": {
+                      "ru": "📍 Место проведения",
+                      "kz": "📍 Өту орны",
+                      "en": "📍 Location"
+                    },
+                    "placeholder": {
+                      "ru": "Город, Страна",
+                      "kz": "Қала, Ел",
+                      "en": "City, Country"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "required": true,
+                    "icon": "lucide:file-text",
+                    "label": {
+                      "ru": "📄 Страницы",
+                      "kz": "📄 Беттер",
+                      "en": "📄 Pages"
+                    },
+                    "placeholder": {
+                      "ru": "с. 12-15",
+                      "kz": "12-15 б.",
+                      "en": "pp. 12-15"
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "icon": "lucide:users",
+                    "label": {
+                      "ru": "👥 Фамилии соавторов",
+                      "kz": "👥 Авторлар тізімі",
+                      "en": "👥 Co-authors"
+                    },
+                    "add_button_text": {
+                      "ru": "+ Добавить соавтора",
+                      "kz": "+ Автор қосу",
+                      "en": "+ Add co-author"
+                    }
+                  }
+                ]
+              },
+              {
+                "key": "ip",
+                "type": "collection",
+                "icon": "lucide:lightbulb",
+                "label": {
+                  "ru": "IV. Другие публикации (патенты, авторские, монографии)",
+                  "kz": "IV. Басқа жарияланымдар (патенттер, авторлық куәліктер, монографиялар)",
+                  "en": "IV. Other publications (patents, copyrights, monographs)"
+                },
+                "help_text": {
+                  "ru": "Патенты, монографии, учебники и другие труды",
+                  "kz": "Патенттер, монографиялар, оқулықтар және басқа еңбектер",
+                  "en": "Patents, monographs, textbooks, and other works"
+                },
+                "item_label": {
+                  "ru": "Запись о труде",
+                  "kz": "Еңбек жазбасы",
+                  "en": "Work entry"
+                },
+                "add_button": {
+                  "ru": "➕ Добавить запись",
+                  "kz": "➕ Жазба қосу",
+                  "en": "➕ Add entry"
+                },
+                "item_fields": [
+                  {
+                    "key": "title",
+                    "required": true,
+                    "icon": "lucide:heading",
+                    "label": {
+                      "ru": "📝 Наименование работы",
+                      "kz": "📝 Жұмыстың атауы",
+                      "en": "📝 Title of work"
+                    },
+                    "placeholder": {
+                      "ru": "Название патента, книги и т.д.",
+                      "kz": "Патент, кітап атауы және т.б.",
+                      "en": "Patent, book title, etc."
+                    }
+                  },
+                  {
+                    "key": "format",
+                    "type": "select",
+                    "required": true,
+                    "icon": "lucide:layout",
+                    "label": {
+                      "ru": "📋 Вид документа",
+                      "kz": "📋 Құжат түрі",
+                      "en": "📋 Document type"
+                    },
+                    "options": [
+                      {
+                        "value": "patent",
+                        "label": {
+                          "ru": "📜 Патент",
+                          "kz": "📜 Патент",
+                          "en": "📜 Patent"
+                        }
+                      },
+                      {
+                        "value": "copyright",
+                        "label": {
+                          "ru": "©️ Авторское свидетельство",
+                          "kz": "©️ Авторлық куәлік",
+                          "en": "©️ Copyright certificate"
+                        }
+                      },
+                      {
+                        "value": "monograph",
+                        "label": {
+                          "ru": "📚 Монография",
+                          "kz": "📚 Монография",
+                          "en": "📚 Monograph"
+                        }
+                      },
+                      {
+                        "value": "textbook",
+                        "label": {
+                          "ru": "📘 Учебник / пособие",
+                          "kz": "📘 Оқулық / құрал",
+                          "en": "📘 Textbook / manual"
+                        }
+                      },
+                      {
+                        "value": "other",
+                        "label": {
+                          "ru": "➕ Другое",
+                          "kz": "➕ Басқа",
+                          "en": "➕ Other"
+                        }
+                      }
+                    ],
+                    "other_key": "format_other"
+                  },
+                  {
+                    "key": "journal",
+                    "required": true,
+                    "icon": "lucide:building",
+                    "label": {
+                      "ru": "🏢 Издательство / орган выдачи",
+                      "kz": "🏢 Баспа / беруші орган",
+                      "en": "🏢 Publisher / issuing authority"
+                    },
+                    "placeholder": {
+                      "ru": "Например: Казпатент, Эверо",
+                      "kz": "Мысалы: Қазпатент, Эверо",
+                      "en": "E.g.: Kazpatent, Evero"
+                    }
+                  },
+                  {
+                    "key": "year",
+                    "type": "number",
+                    "required": true,
+                    "icon": "lucide:calendar",
+                    "label": {
+                      "ru": "📅 Год",
+                      "kz": "📅 Жыл",
+                      "en": "📅 Year"
+                    },
+                    "min": 2000,
+                    "max": 2030
+                  },
+                  {
+                    "key": "volume_issue",
+                    "icon": "lucide:hash",
+                    "label": {
+                      "ru": "🔢 Номер документа",
+                      "kz": "🔢 Құжат нөмірі",
+                      "en": "🔢 Document number"
+                    },
+                    "placeholder": {
+                      "ru": "№ 12345",
+                      "kz": "№ 12345",
+                      "en": "No. 12345"
+                    }
+                  },
+                  {
+                    "key": "pages_or_sheets",
+                    "required": true,
+                    "icon": "lucide:file-text",
+                    "label": {
+                      "ru": "📄 Объём (с. или п.л.)",
+                      "kz": "📄 Көлемі (б. немесе б.т.)",
+                      "en": "📄 Size (pp. or sheets)"
+                    },
+                    "placeholder": {
+                      "ru": "150 с.",
+                      "kz": "150 б.",
+                      "en": "150 pp."
+                    }
+                  },
+                  {
+                    "key": "coauthors",
+                    "type": "array",
+                    "icon": "lucide:users",
+                    "label": {
+                      "ru": "👥 Соавторы",
+                      "kz": "👥 Авторлар",
+                      "en": "👥 Co-authors"
+                    },
+                    "add_button_text": {
+                      "ru": "+ Добавить",
+                      "kz": "+ Қосу",
+                      "en": "+ Add"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "W2",
+      "title": {
+        "ru": "II — Предварительная экспертиза (НК)",
+        "kz": "II — Алдын ала сараптама (ҒК)",
+        "en": "II — Pre-examination (Scientific Committee)"
+      },
+      "order": 2,
+      "nodes": [
+        {
+          "id": "E1_apply_omid",
+          "title": {
+            "ru": "Заявка в ОМиД",
+            "kz": "ОМиД-ке өтініш",
+            "en": "Application to OMiD"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "description": {
+            "ru": "Подтвердите подготовку и отправку заявления на предварительную экспертизу в ОМиД.",
+            "kz": "ОМиД-ке алдын ала сараптамаға өтініш дайындалып, жіберілгенін растаңыз.",
+            "en": "Confirm the OMiD preliminary review application is prepared and submitted."
+          },
+          "requirements": {
+            "uploads": [
+              {
+                "key": "omid_application",
+                "label": {
+                  "ru": "Заявление в ОМиД (подписанное PDF)",
+                  "kz": "ОМиД-ке өтініш (қол қойылған PDF)",
+                  "en": "OMiD Application (signed PDF)"
+                },
+                "required": true,
+                "mime": [
+                  "application/pdf"
+                ]
+              }
+            ]
+          },
+          "screen": {
+            "question": {
+              "ru": "Заявление в ОМиД оформлено и отправлено?",
+              "kz": "ОМиД-ке өтініш рәсімделіп, жіберілді ме?",
+              "en": "Is the OMiD application prepared and submitted?"
+            },
+            "buttons": [
+              {
+                "id": "how_to",
+                "label": {
+                  "ru": "Как оформить заявку",
+                  "kz": "Өтінішті қалай рәсімдеу",
+                  "en": "How to prepare the application"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Шаги оформления",
+                    "kz": "Рәсімдеу қадамдары",
+                    "en": "Preparation steps"
+                  },
+                  "text": {
+                    "ru": [
+                      "Скачайте шаблон и заполните заявление на русском языке.",
+                      "При необходимости подготовьте версии на казахском и английском языках.",
+                      "Проверьте корректность данных (ФИО, тема, специальность, контакты).",
+                      "Отправьте заявление в ОМиД установленным способом и дождитесь подтверждения."
+                    ],
+                    "kz": [
+                      "Үлгіні жүктеп, өтінішті орыс тілінде толтырыңыз.",
+                      "Қажет болса, қазақ және ағылшын тілдеріндегі нұсқаларын дайындаңыз.",
+                      "Деректердің дұрыстығын тексеріңіз (Т.А.Ә., тақырып, мамандық, байланыс).",
+                      "Өтінішті ОМиД-ке белгіленген арна арқылы жіберіп, растауды күтіңіз."
+                    ],
+                    "en": [
+                      "Download the template and complete the Russian version.",
+                      "Prepare Kazakh and English versions if required.",
+                      "Verify all details (name, topic, specialty, contacts).",
+                      "Submit the application to OMiD via the designated channel and wait for confirmation."
+                    ]
+                  },
+                  "downloads": [
+                    {
+                      "label": {
+                        "ru": "Шаблон (RU)",
+                        "kz": "Үлгі (RU)",
+                        "en": "Template (RU)"
+                      },
+                      "asset_id": "tpl_omid_application_ru_docx"
+                    },
+                    {
+                      "label": {
+                        "ru": "Шаблон (KZ)",
+                        "kz": "Үлгі (KZ)",
+                        "en": "Template (KZ)"
+                      },
+                      "asset_id": "tpl_omid_application_kz_docx"
+                    },
+                    {
+                      "label": {
+                        "ru": "Template (EN)",
+                        "kz": "Үлгі (EN)",
+                        "en": "Template (EN)"
+                      },
+                      "asset_id": "tpl_omid_application_en_docx"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить подачу",
+                  "kz": "Жіберуді растау",
+                  "en": "Confirm submission"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Вы уверены, что заявление отправлено в ОМиД?",
+                  "kz": "ОМиД-ке өтініш жіберілгеніне сенімдісіз бе?",
+                  "en": "Confirm the OMiD application has been submitted?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Заявка в ОМиД подтверждена. Можно собирать пакет документов на НК.",
+                "kz": "ОМиД-ке өтініш расталды. Енді ҒК құжаттар пакетін жинауға болады.",
+                "en": "OMiD application confirmed. You can proceed with the SC package."
+              },
+              "next_node": "NK_package"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["how_to", "confirm_ready"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_ready"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Заявка в ОМиД подтверждена.",
+                "kz": "✅ ОМиД-ке өтініш расталды.",
+                "en": "✅ OMiD application confirmed."
+              },
+              "next_node": "NK_package"
+            }
+          },
+          "prerequisites": ["S1_publications_list"],
+          "next": ["NK_package"]
+        },
+        {
+          "id": "NK_package",
+          "title": {
+            "ru": "Пакет документов для НК",
+            "kz": "ҒК құжаттар пакеті",
+            "en": "SC Documents Package"
+          },
+          "type": "confirmTask",
+          "who_can_complete": ["student"],
+          "prerequisites": ["E1_apply_omid"],
+          "next": ["E3_hearing_nk"],
+          "screen": {
+            "question": {
+              "ru": "Вы собрали и подготовили полный пакет документов для НК?",
+              "kz": "ҒК үшін құжаттар пакетін толық дайындадыңыз ба?",
+              "en": "Have you prepared the full document package for the SC?"
+            },
+            "buttons": [
+              {
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить готовность",
+                  "kz": "Дайындығын растау",
+                  "en": "Confirm readiness"
+                },
+                "action": "confirm_completion"
+              }
+            ]
+          }
+        },
+        {
+          "id": "E3_hearing_nk",
+          "title": {
+            "ru": "Заслушивание НК",
+            "kz": "ҒК тыңдауы",
+            "en": "SC Hearing"
+          },
+          "type": "form",
+          "actionHints": ["form"],
+          "who_can_complete": ["student"],
+          "prerequisites": ["NK_package"],
+          "description": {
+            "ru": "Подтвердите результаты после заслушивания.",
+            "kz": "Тыңдаудан кейінгі нәтижелерді растаңыз.",
+            "en": "Confirm post-hearing results."
+          },
+          "requirements": {
+            "ui_hints": {
+              "cards_layout": {
+                "style": "stacked",
+                "animation": "slideUp",
+                "card_variant": "question"
+              },
+              "buttons_style": "yes_no"
+            },
+            "uploads": [
+              {
+                "key": "sc_protocol_extract_nk",
+                "label": {
+                  "ru": "Выписка из протокола НК о положительном заключении",
+                  "kz": "ҒК хаттамасынан оң қорытынды туралы үзінді",
+                  "en": "SC protocol extract with positive conclusion"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
+            "fields": [
+              {
+                "key": "hearing_happened",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заслушивание состоялось?",
+                  "kz": "Тыңдау өтті ме?",
+                  "en": "Did the hearing take place?"
+                },
+                "options": {
+                  "true": {
+                    "ru": "Да",
+                    "kz": "Иә",
+                    "en": "Yes"
+                  },
+                  "false": {
+                    "ru": "Нет",
+                    "kz": "Жоқ",
+                    "en": "No"
+                  }
+                }
+              },
+              {
+                "key": "hearing_reminder",
+                "type": "note",
+                "visible_when": "form.hearing_happened == false",
+                "label": {
+                  "ru": "Назначьте и проведите заслушивание НК. Вернитесь к этому шагу после завершения.",
+                  "kz": "ҒК тыңдауын жоспарлап, өткізіңіз. Аяқтаған соң осы қадамға қайта оралыңыз.",
+                  "en": "Schedule and complete the SC hearing. Return to this step afterward."
+                }
+              },
+              {
+                "key": "remarks_exist",
+                "type": "boolean",
+                "required": false,
+                "visible_when": "form.hearing_happened == true",
+                "label": {
+                  "ru": "Имеются зафиксированные замечания рецензентов/членов НК?",
+                  "kz": "Рецензенттер/ҒК мүшелерінің тіркелген ескертпелері бар ма?",
+                  "en": "Are there recorded remarks from reviewers/SC members?"
+                },
+                "options": {
+                  "true": {
+                    "ru": "Да",
+                    "kz": "Иә",
+                    "en": "Yes"
+                  },
+                  "false": {
+                    "ru": "Нет",
+                    "kz": "Жоқ",
+                    "en": "No"
+                  }
+                }
+              },
+              {
+                "key": "plan_prepared",
+                "type": "boolean",
+                "required": false,
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true",
+                "label": {
+                  "ru": "Подготовлен план исправлений?",
+                  "kz": "Түзетулер жоспары дайын ба?",
+                  "en": "Is a fixes plan prepared?"
+                },
+                "options": {
+                  "true": {
+                    "ru": "Да",
+                    "kz": "Иә",
+                    "en": "Yes"
+                  },
+                  "false": {
+                    "ru": "Нет",
+                    "kz": "Жоқ",
+                    "en": "No"
+                  }
+                }
+              },
+              {
+                "key": "plan_reminder",
+                "type": "note",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared != true",
+                "label": {
+                  "ru": "Сначала создайте план исправлений и вернитесь к этому шагу.",
+                  "kz": "Алдымен түзетулер жоспарын жасаңыз да, осы қадамға оралыңыз.",
+                  "en": "Create a fixes plan first, then return to this step."
+                }
+              },
+              {
+                "key": "remarks_resolved",
+                "type": "boolean",
+                "required": false,
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared == true",
+                "label": {
+                  "ru": "Все замечания устранены?",
+                  "kz": "Барлық ескертпелер жойылды ма?",
+                  "en": "Have all remarks been resolved?"
+                },
+                "options": {
+                  "true": {
+                    "ru": "Да",
+                    "kz": "Иә",
+                    "en": "Yes"
+                  },
+                  "false": {
+                    "ru": "Нет",
+                    "kz": "Жоқ",
+                    "en": "No"
+                  }
+                }
+              },
+              {
+                "key": "resolve_reminder",
+                "type": "note",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved != true",
+                "label": {
+                  "ru": "Устраните все замечания согласно плану, затем подтвердите «Да».",
+                  "kz": "Жоспар бойынша барлық ескертпелерді жойып, содан кейін «Иә» деп растаңыз.",
+                  "en": "Resolve all remarks per the plan, then confirm “Yes”."
+                }
+              }
+            ],
+            "actions": [
+              {
+                "key": "go_to_next_no_remarks",
+                "kind": "navigate",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == false",
+                "label": {
+                  "ru": "Перейти к следующему шагу",
+                  "kz": "Келесі қадамға өту",
+                  "en": "Proceed to next step"
+                },
+                "to": "__conditional_next__"
+              },
+              {
+                "key": "go_to_next_all_resolved",
+                "kind": "navigate",
+                "visible_when": "form.hearing_happened == true && form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true",
+                "label": {
+                  "ru": "Перейти к следующему шагу",
+                  "kz": "Келесі қадамға өту",
+                  "en": "Proceed to next step"
+                },
+                "to": "__conditional_next__"
+              }
+            ]
+          },
+          "next": ["RP1_overview_actualization", "D1_normokontrol_ncste"],
+          "condition": "rp_required",
+          "outcomes": [
+            {
+              "value": "proceed_rp",
+              "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
+              "condition": "rp_required",
+              "next": ["RP1_overview_actualization"]
+            },
+            {
+              "value": "proceed_direct",
+              "when": "(form.remarks_exist == false) || (form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved == true)",
+              "next": ["D1_normokontrol_ncste"]
+            },
+            {
+              "value": "needs_plan",
+              "when": "form.remarks_exist == true && form.plan_prepared != true",
+              "next": ["E3_hearing_nk"]
+            },
+            {
+              "value": "needs_resolution",
+              "when": "form.remarks_exist == true && form.plan_prepared == true && form.remarks_resolved != true",
+              "next": ["E3_hearing_nk"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W3",
+      "title": {
+        "ru": "III — RP (условно)",
+        "kz": "III — RP (шартты)",
+        "en": "III — RP (conditional)"
+      },
+      "order": 3,
+      "nodes": [
+        {
+          "id": "RP1_overview_actualization",
+          "module": "III",
+          "title": {
+            "ru": "Актуализация Research Proposal: обзор и условия",
+            "kz": "Research Proposal өзектендіру: шолу және шарттар",
+            "en": "Research Proposal actualization: overview & conditions"
+          },
+          "type": "info",
+          "description": {
+            "ru": "Если со дня выпуска прошло 3 года и более, допуск к защите возможен только после повторного утверждения Research Proposal на заседании Научного комитета. ВНИМАНИЕ: Документы должны быть поданы не менее чем за 1 месяц до заседания НК.",
+            "kz": "Бітіру күнінен 3 жыл және одан көп өтсе, қорғауға жіберу тек Ғылыми комитет отырысында Research Proposal қайта бекітілгеннен кейін мүмкін. НАЗАР АУДАРЫҢЫЗ: Құжаттар ҒК отырысына дейін кемінде 1 ай бұрын тапсырылуы тиіс.",
+            "en": "If 3+ years have passed since graduation, defense is allowed only after Research Proposal is re-approved by the Scientific Committee. ATTENTION: Documents must be submitted at least 1 month before the SC meeting."
+          },
+          "who_can_complete": ["student"],
+          "prerequisites": ["E3_hearing_nk"],
+          "condition": "rp_required",
+          "next": ["RP2_sc_hearing_prep"],
+          "requirements": {
+            "fields": [
+              {
+                "key": "note_omid_letter",
+                "type": "note",
+                "label": {
+                  "ru": "ОМиД направляет служебное письмо в Научный комитет по специальности диссертационного исследования.",
+                  "kz": "ОМиД диссертациялық зерттеу мамандығы бойынша Ғылыми комитетке қызметтік хат жібереді.",
+                  "en": "OMiD sends an official letter to the Scientific Committee for your specialty."
+                }
+              },
+              {
+                "key": "note_sc_sets_date",
+                "type": "note",
+                "label": {
+                  "ru": "Научный комитет назначает дату заслушивания.",
+                  "kz": "Ғылыми комитет тыңдау күнін белгілейді.",
+                  "en": "The Scientific Committee schedules the hearing date."
+                }
+              },
+              {
+                "key": "note_student_prepares",
+                "type": "note",
+                "label": {
+                  "ru": "Докторант готовит презентацию и список публикаций к заседанию.",
+                  "kz": "Докторант отырысқа презентация мен жарияланымдар тізімін дайындайды.",
+                  "en": "The candidate prepares a presentation and a publication list for the hearing."
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "RP2_sc_hearing_prep",
+          "module": "III",
+          "title": {
+            "ru": "Заслушивание Research Proposal в Научном комитете",
+            "kz": "Ғылыми комитетте Research Proposal тыңдауы",
+            "en": "SC hearing of the Research Proposal"
+          },
+          "description": {
+            "ru": "Подготовьтесь к заслушиванию и загрузите выписку из протокола.",
+            "kz": "Тыңдауға дайындалыңыз және хаттамадан үзіндіні жүктеңіз.",
+            "en": "Prepare for the hearing and upload the protocol extract."
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["RP1_overview_actualization"],
+          "next": ["RP3_pre_expertise_application"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Заслушивание прошло",
+                "kz": "Тыңдау өтті",
+                "en": "Hearing completed"
+              },
+              "next": ["RP3_pre_expertise_application"]
+            }
+          ],
+          "requirements": {
+            "templates": ["tpl_app7_ru"],
+            "uploads": [
+              {
+                "key": "sc_protocol_extract",
+                "label": {
+                  "ru": "Выписка из протокола НК о положительном заключении",
+                  "kz": "ҒК хаттамасынан оң қорытынды туралы үзінді",
+                  "en": "SC protocol extract with positive conclusion"
+                },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ],
+            "fields": [
+              {
+                "key": "chk_hearing_date_received",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Назначенная дата заслушивания получена",
+                  "kz": "Тыңдау күні алынды",
+                  "en": "Hearing date received"
+                }
+              },
+              {
+                "key": "chk_presentation_ready",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Презентация к заслушиванию подготовлена",
+                  "kz": "Тыңдауға арналған презентация дайын",
+                  "en": "Hearing presentation prepared"
+                }
+              },
+              {
+                "key": "chk_publist_ready",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Список публикаций подготовлен (можно использовать Прил. 7)",
+                  "kz": "Жарияланымдар тізімі дайын (Қос. 7 пайдалануға болады)",
+                  "en": "Publication list prepared (you may use App. 7)"
+                }
+              },
+              {
+                "key": "chk_presented_at_sc",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заслушивание в Научном комитете проведено",
+                  "kz": "Ғылыми комитетте тыңдау өткізілді",
+                  "en": "Presented at the Scientific Committee"
+                }
+              },
+              {
+                "key": "chk_predefense_recommended",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Получена рекомендация пройти предзащиту",
+                  "kz": "Алдын ала қорғаудан өтуге ұсыныс алынды",
+                  "en": "Recommendation to pass pre-defense received"
+                }
+              },
+              {
+                "key": "chk_two_reviewers_assigned",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Назначены 2 рецензента для предзащиты",
+                  "kz": "Алдын ала қорғауға 2 рецензент тағайындалды",
+                  "en": "Two reviewers assigned for pre-defense"
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-11-29",
+            "requires_upload": true,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "RP3_pre_expertise_application",
+          "module": "III",
+          "title": {
+            "ru": "Заявление в ОМиД о прохождении предварительной экспертизы",
+            "kz": "ОМиД-ке алдын ала сараптамадан өту туралы өтініш",
+            "en": "Application to OMiD for preliminary expertise"
+          },
+          "type": "confirmTask",
+          "screen": {
+            "question": {
+              "ru": "Подали ли Вы в ОМиД заявление о прохождении предварительной экспертизы в Научном комитете?",
+              "kz": "Ғылыми комитетте алдын ала сараптамадан өту туралы өтінішті ОМиД-ке тапсырдыңыз ба?",
+              "en": "Have you submitted the application to OMiD for preliminary expertise at the Scientific Committee?"
+            },
+            "buttons": [
+              {
+                "id": "how_to",
+                "label": {
+                  "ru": "Как подать",
+                  "kz": "Қалай тапсыру",
+                  "en": "How to submit"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Заявление в ОМиД",
+                    "kz": "ОМиД-ке өтініш",
+                    "en": "Application to OMiD"
+                  },
+                  "text": {
+                    "ru": [
+                      "Подготовьте заявление о прохождении предварительной экспертизы (в свободной форме или по шаблону вуза).",
+                      "Приложите: презентацию, список публикаций, выписку из протокола об актуальности, рекомендации и сведения о назначенных рецензентах."
+                    ],
+                    "kz": [
+                      "Алдын ала сараптамадан өту туралы өтінішті дайындаңыз (еркін формада немесе университет үлгісімен).",
+                      "Қоса беріңіз: презентация, жарияланымдар тізімі, өзектілік бойынша хаттамадан үзінді, ұсыныстар және тағайындалған рецензенттер туралы мәліметтер."
+                    ],
+                    "en": [
+                      "Prepare the application for preliminary expertise (free form or university template).",
+                      "Attach: presentation, publication list, protocol extract on relevance, recommendations, and details of the assigned reviewers."
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "confirm_submitted",
+                "label": {
+                  "ru": "Подтвердить подачу заявления",
+                  "kz": "Өтініш беруді растау",
+                  "en": "Confirm submission"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Подтверждаете, что заявление подано в ОМиД?",
+                  "kz": "ОМиД-ке өтініш тапсырылғанын растайсыз ба?",
+                  "en": "Do you confirm the application has been submitted to OMiD?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Заявление подано. Перейдите к шагам предзащиты (пп. 7–12).",
+                "kz": "Өтініш берілді. Алдын ала қорғау қадамдарына өтіңіз (7–12-тт.).",
+                "en": "Application submitted. Proceed to the pre-defense steps (items 7–12)."
+              },
+              "next_node": "NK_package"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["how_to", "confirm_submitted"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_submitted"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Подано.",
+                "kz": "✅ Тапсырылды.",
+                "en": "✅ Submitted."
+              },
+              "next_node": "NK_package"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "W4",
+      "title": {
+        "ru": "IV — Подача в Диссертационный совет (ДС)",
+        "kz": "IV — Диссертациялық кеңеске тапсыру",
+        "en": "IV — Submission to Dissertation Council"
+      },
+      "order": 4,
+      "nodes": [
+        {
+          "id": "D1_normokontrol_ncste",
+          "module": "IV",
+          "title": {
+            "ru": "НЦГНТЭ: нормоконтроль оформления диссертации",
+            "kz": "НЦҒНТЭ: диссертацияны рәсімдеудің нормоконтролі",
+            "en": "NCSTE: dissertation formatting check (norm control)"
+          },
+          "type": "confirmTask",
+          "prerequisites": ["E3_hearing_nk"],
+          "next": ["IV_rector_application"],
+          "who_can_complete": ["student"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "dissertation_docx",
+                "label": { "ru": "Файл диссертации (DOCX)", "kz": "Диссертация файлы (DOCX)", "en": "Dissertation manuscript (DOCX)" },
+                "required": true,
+                "mime": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+              },
+              {
+                "key": "ncste_receipt",
+                "label": { "ru": "Квитанция об оплате (PDF/изображение)", "kz": "Төлем түбіртегі (PDF/сурет)", "en": "Payment receipt (PDF/image)" },
+                "required": true,
+                "mime": ["application/pdf", "image/jpeg", "image/png"]
+              }
+            ]
+          },
+          
+          "screen": {
+            "question": "Проверка технического оформления (нормоконтроль) в НЦГНТЭ пройдена?",
+            "buttons": [
+              {
+                "id": "how_to",
+                "label": "Как пройти",
+                "action": "show_instructions",
+                "instructions": {
+                  "title": "Как пройти нормоконтроль",
+                  "text": [
+                    "Для прохождения нормоконтроля необходимо направить письмо на адрес astana@ncste.kz (в произвольной форме).",
+                    "Сроки: около 10 рабочих дней.",
+                    "Формат файлов: DOCX.",
+                    "Стоимость: 18 200 тг.",
+                    "Оплата: через банк или Kaspi (Платежи → Доп. образование → филиал АО «НЦГНТЭ» г. Астана).",
+                    "К письму необходимо приложить: 1) файл диссертации в формате DOCX, 2) квитанцию об оплате услуги нормоконтроля.",
+                    "После проверки Вы получите подтверждение от НЦГНТЭ по электронной почте."
+                  ],
+                  "download": {
+                    "label": "Скачать пример письма",
+                    "asset_id": "tpl_ncste_normocontrol_letter_ru_docx",
+                    "asset_path": "/assets/templates/normocontrol_letter.docx"
+                  }
+                }
+              },
+              {
+                "id": "confirm_passed",
+                "label": "Подтвердить получение квитанции",
+                "action": "confirm_completion",
+                "confirmation_text": "Вы уверены, что получили квитанцию о прохождении нормоконтроля в НЦГНТЭ?"
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": "Нормоконтроль пройден и квитанция получена. Можно переходить к следующему шагу.",
+              "next_node": "IV_rector_application"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["how_to", "confirm_passed"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_passed"]
+            },
+            "completed": {
+              "message": "✅ Нормоконтроль пройдан және расталды.",
+              "next_node": "IV_rector_application"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
+          }
+        },
+        {
+          "id": "IV_rector_application",
+          "module": "IV",
+          "title": {
+            "ru": "Заявление ректору",
+            "kz": "Ректорға өтініш",
+            "en": "Letter to Rector"
+          },
+          "type": "confirmTask",
+          "prerequisites": ["D1_normokontrol_ncste"],
+          "next": ["IV3_publication_certificate_ncste"],
+          "who_can_complete": ["student"],
+          "requirements": {
+            "uploads": [
+              {
+                "key": "rector_letter",
+                "label": { "ru": "Заявление ректору (подписанное)", "kz": "Ректорға өтініш (қол қойылған)", "en": "Letter to Rector (signed)" },
+                "required": true,
+                "mime": ["application/pdf"]
+              }
+            ]
+          },
+          
+          "screen": {
+            "question": {
+              "ru": "Вы подали заявление на имя Председателя Правления – Ректора на допуск к защите (Приложение 4)?",
+              "kz": "Қорғауға жіберу туралы өтінішті Басқарма Төрағасы – Ректор атына (Қосымша 4) тапсырдыңыз ба?",
+              "en": "Have you submitted the letter to the Chair of the Board – Rector for permission to defend (Appendix 4)?"
+            },
+            "buttons": [
+              {
+                "id": "generate_letter",
+                "label": {
+                  "ru": "Сгенерировать заявление",
+                  "kz": "Өтінішті дайындау",
+                  "en": "Generate the letter"
+                },
+                "action": "show_instructions",
+                "instructions": {
+                  "title": {
+                    "ru": "Как оформить заявление",
+                    "kz": "Өтінішті қалай рәсімдеу",
+                    "en": "How to prepare the letter"
+                  },
+                  "text": {
+                    "ru": [
+                      "Скачайте шаблон заявления (Приложение 4) на русском языке и заполните его.",
+                      "Укажите тему диссертации, специальность, подтверждение выполнения требований Положения о Диссертационном совете.",
+                      "Подготовьте и приложите версии на казахском и английском языках, если требуется.",
+                      "Передайте заявление Учёному секретарю для регистрации и отправки Ректору."
+                    ],
+                    "kz": [
+                      "Өтініш үлгісін (Қосымша 4) орыс тілінде жүктеп, толтырыңыз.",
+                      "Диссертация тақырыбын, мамандығын және Диссертациялық кеңес Ережесінің талаптарын орындауды көрсетіңіз.",
+                      "Қажет болса, қазақ және ағылшын тілдеріндегі нұсқаларын дайындаңыз.",
+                      "Өтінішті тіркеу және Ректорға жіберу үшін Ғылыми хатшыға тапсырыңыз."
+                    ],
+                    "en": [
+                      "Download the Appendix 4 template (Russian) and complete the letter.",
+                      "Include dissertation topic, specialty, and confirmation that DC regulation requirements are satisfied.",
+                      "Prepare Kazakh and English versions if required by the secretary.",
+                      "Submit the signed letter to the Council Secretary for registration and forwarding to the Rector."
+                    ]
+                  },
+                  "downloads": [
+                    {
+                      "label": {
+                        "ru": "Шаблон (русский)",
+                        "kz": "Үлгі (орысша)",
+                        "en": "Template (Russian)"
+                      },
+                      "asset_id": "tpl_letter_rector_defense_request_ru_docx"
+                    },
+                    {
+                      "label": {
+                        "ru": "Шаблон (казахский)",
+                        "kz": "Үлгі (қазақша)",
+                        "en": "Template (Kazakh)"
+                      },
+                      "asset_id": "tpl_letter_rector_defense_request_kz_docx"
+                    },
+                    {
+                      "label": {
+                        "ru": "Template (English)",
+                        "kz": "Үлгі (ағылшынша)",
+                        "en": "Template (English)"
+                      },
+                      "asset_id": "tpl_letter_rector_defense_request_en_docx"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "confirm_ready",
+                "label": {
+                  "ru": "Подтвердить подачу заявления",
+                  "kz": "Өтінішті жіберуді растау",
+                  "en": "Confirm submission"
+                },
+                "action": "confirm_completion",
+                "confirmation_text": {
+                  "ru": "Вы уверены, что подали заявление ректору о приёме к защите?",
+                  "kz": "Ректорға қорғауға жіберу туралы өтініш бергеніңізге сенімдісіз бе?",
+                  "en": "Are you sure the letter was submitted to the Rector for defence admission?"
+                }
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": {
+                "ru": "Заявление ректору подано. Можно переходить к следующему шагу.",
+                "kz": "Ректорға өтініш тапсырылды. Келесі қадамға өтуге болады.",
+                "en": "The rector letter has been submitted. You can proceed to the next step."
+              },
+              "next_node": "IV3_publication_certificate_ncste"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": ["generate_letter", "confirm_ready"]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_ready"]
+            },
+            "completed": {
+              "message": {
+                "ru": "✅ Заявление ректору подтверждено.",
+                "kz": "✅ Ректорға өтініш расталды.",
+                "en": "✅ Rector letter confirmed."
+              },
+              "next_node": "IV3_publication_certificate_ncste"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
+          }
+        },
+        {
+          "id": "IV3_publication_certificate_ncste",
+          "module": "IV",
+          "prerequisites": ["IV_rector_application"],
+          "next": ["D2_apply_to_ds"],
+          "who_can_complete": ["student"],
+          "title": {
+            "ru": "НЦГНТЭ: справка о публикациях (подтверждение в индексируемых журналах)",
+            "kz": "НЦҒНТЭ: жарияланымдар туралы анықтама (індекстелетін журналдар)",
+            "en": "NCSTE: publication certificate (indexed journals)"
+          },
+          "type": "confirmTask",
+          "requirements": {
+            "uploads": [
+              {
+                "key": "ncste_publication_certificate",
+                "label": { "ru": "Справка НЦГНТЭ о публикациях", "kz": "НЦҒНТЭ жарияланымдар анықтамасы", "en": "NCSTE publication certificate" },
+                "required": true,
+                "mime": ["application/pdf"]
+              }
+            ]
+          },
+          
+          "screen": {
+            "question": {
+              "ru": "Вы получили справку НЦГНТЭ, подтверждающую публикации в индексируемых международных журналах?",
+              "kz": "Индекстелетін халықаралық журналдардағы жарияланымдарды растайтын НЦҒНТЭ анықтамасын алдыңыз ба?",
+              "en": "Have you received the certificate from NCSTE confirming your publications in indexed international journals?"
+            },
+            "buttons": [
+              {
+                "id": "how_to_request",
+                "label": "Как запросить справку",
+                "action": "show_instructions",
+                "instructions": {
+                  "title": "Как получить справку о публикациях",
+                  "text": [
+                    "Для получения справки необходимо написать письмо на адрес astana@ncste.kz (в произвольной форме).",
+                    "В письме указать ФИО всех авторов, выходные данные публикаций (название, журнал, номер, том, год, ISSN, DOI).",
+                    "Приложить удостоверение личности в цифровом формате.",
+                    "После обработки запроса будет отправлен образец заявления, реквизиты для оплаты и перечень документов.",
+                    "Сумма оплаты зависит от количества статей.",
+                    "Справка будет готова через 10 рабочих дней.",
+                    "Забрать справку можно лично, через представителя или курьером (например, CDEK)."
+                  ],
+                  "download": {
+                    "label": "Скачать пример письма в НЦГНТЭ",
+                    "asset_id": "tpl_letter_ncste_publication_certificate_ru_docx"
+                  }
+                }
+              },
+              {
+                "id": "confirm_certificate_received",
+                "label": "Подтвердить получение справки",
+                "action": "confirm_completion",
+                "confirmation_text": "Вы уверены, что получили справку о публикациях из НЦГНТЭ?"
+              }
+            ],
+            "on_confirm": {
+              "status": "completed",
+              "message": "Справка о публикациях получена. Можно переходить к следующему шагу.",
+              "next_node": "D2_apply_to_ds"
+            }
+          },
+          "states": {
+            "not_started": {
+              "visible_buttons": [
+                "how_to_request",
+                "confirm_certificate_received"
+              ]
+            },
+            "in_progress": {
+              "visible_buttons": ["confirm_certificate_received"]
+            },
+            "completed": {
+              "message": "✅ Получение справки из НЦГНТЭ подтверждено.",
+              "next_node": "D2_apply_to_ds"
+            }
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
+          }
+        },
+        {
+          "id": "D2_apply_to_ds",
+          "module": "IV",
+          "title": {
+            "ru": "Пакет документов в Диссертационный совет",
+            "kz": "Диссертациялық кеңеске құжаттар топтамасы",
+            "en": "Document package for Dissertation Council"
+          },
+          "description": {
+            "ru": "Перед подачей в Диссертационный совет докторанту необходимо собрать и передать Ученому секретарю полный комплект документов по Положению.",
+            "kz": "Диссертациялық кеңеске тапсырар алдында докторант Положениеге сәйкес құжаттар топтамасын жинап, Ғылыми хатшыға тапсыруы тиіс.",
+            "en": "Before submitting to the Dissertation Council, the doctoral student must prepare and deliver the complete set of documents to the Council Secretary."
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["IV3_publication_certificate_ncste"],
+          "next": ["V1_reinstatement_package"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Пакет сдан",
+                "kz": "Топтама тапсырылды",
+                "en": "Package submitted"
+              },
+              "next": ["V1_reinstatement_package"]
+            }
+          ],
+          "requirements": {
+            "templates": [
+              "tpl_app5_ru",
+              "tpl_app6_ru",
+              "tpl_app7_ru",
+              "tpl_app8_ru",
+              "tpl_app9_ru"
+            ],
+            "fields": [
+              {
+                "key": "chk_app5_statement",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заявление на имя председателя Диссертационного совета (Прил. 5)",
+                  "kz": "Диссертациялық кеңес төрағасына өтініш (Қос. 5)",
+                  "en": "Application to DC Chair (App. 5)"
+                }
+              },
+              {
+                "key": "chk_app6_reviews",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Отзывы отечественного и зарубежного консультантов (Прил. 6, перевод при необходимости)",
+                  "kz": "Отандық және шетелдік кеңесшілер пікірлері (Қос. 6, қажет болса аудармамен)",
+                  "en": "Domestic & foreign advisor reviews (App. 6, with translation if needed)"
+                }
+              },
+              {
+                "key": "chk_sc_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Выписка из протокола Научного комитета с рекомендацией к публичной защите",
+                  "kz": "Ғылыми комитет хаттамасынан үзінді (қорғауға ұсыныс)",
+                  "en": "SC protocol extract with recommendation for defense"
+                }
+              },
+              {
+                "key": "chk_dissertation_print",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Диссертация (твердый переплет — 5 экз. + электронный носитель)",
+                  "kz": "Диссертация (қатты түптелген — 5 дана + электрондық нұсқа)",
+                  "en": "Dissertation (5 hardbound copies + digital version)"
+                }
+              },
+              {
+                "key": "chk_app7_pubs",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Список научных трудов и копии (Прил. 7)",
+                  "kz": "Ғылыми еңбектер тізімі мен көшірмелері (Қос. 7)",
+                  "en": "List and copies of publications (App. 7)"
+                }
+              },
+              {
+                "key": "chk_app8_abstracts",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Аннотации на казахском, русском и английском языках (Прил. 8)",
+                  "kz": "Қазақ, орыс және ағылшын тілдеріндегі аннотациялар (Қос. 8)",
+                  "en": "Abstracts in Kazakh, Russian, and English (App. 8)"
+                }
+              },
+              {
+                "key": "chk_ac_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Выписка из протокола Ученого совета об утверждении темы и консультантов",
+                  "kz": "Ғылыми кеңес хаттамасынан үзінді (тақырып пен кеңесшілерді бекіту)",
+                  "en": "Academic Council extract confirming topic and advisors"
+                }
+              },
+              {
+                "key": "chk_transcript",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Транскрипт",
+                  "kz": "Транскрипт",
+                  "en": "Transcript"
+                }
+              },
+              {
+                "key": "chk_ncste_publication_certificate",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Справка из НЦГНТЭ о публикациях (см. п. 15)",
+                  "kz": "НЦҒНТЭ-ден жарияланымдар туралы анықтама (15-т.)",
+                  "en": "NCSTE publication certificate (see p. 15)"
+                }
+              },
+              {
+                "key": "chk_app9_ethics",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заключение Локальной комиссии по биоэтике (Прил. 9)",
+                  "kz": "Биоэтика жөніндегі жергілікті комиссия қорытындысы (Қос. 9)",
+                  "en": "Local Bioethics Commission conclusion (App. 9)"
+                }
+              },
+              {
+                "key": "chk_character_reference",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Характеристика докторанта (зав. кафедрой / работодатель)",
+                  "kz": "Докторанттың мінездемесі (кафедра меңгерушісі / жұмыс беруші)",
+                  "en": "Doctoral candidate’s reference (department head or employer)"
+                }
+              },
+              {
+                "key": "chk_cover_letter_external",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "Сопроводительное письмо (для соискателей из других вузов, при необходимости)",
+                  "kz": "Ілеспе хат (басқа ЖОО үміткерлері үшін, қажет болса)",
+                  "en": "Cover letter (for external applicants, if applicable)"
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": [
+              "Приложение 5.pdf",
+              "Приложение 6.pdf",
+              "Приложение 7.pdf",
+              "Приложение 8.pdf",
+              "Приложение 9.pdf",
+              "Положение о Диссертационном совете.pdf"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "W5",
+      "title": {
+        "ru": "V — Восстановление / Дооформление",
+        "kz": "V — Қалпына келтіру / Құжаттарды толықтыру",
+        "en": "V — Restoration / Completion"
+      },
+      "order": 5,
+      "nodes": [
+        {
+          "id": "V1_reinstatement_package",
+          "module": "V",
+          "title": {
+            "ru": "Восстановление на защиту",
+            "kz": "Қорғауға қалпына келтіру",
+            "en": "Reinstatement for defense"
+          },
+          "description": {
+            "ru": "Восстановление на защиту обязательно для всех докторантов. Подготовьте и подайте комплект документов.",
+            "kz": "Қорғауға қалпына келтіру барлық докторанттар үшін міндетті. Құжаттар топтамасын дайындап, тапсырыңыз.",
+            "en": "Reinstatement for defense is required for all doctoral candidates. Prepare and submit the package."
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["D2_apply_to_ds"],
+          "next": ["A1_post_acceptance_overview"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Пакет сдан",
+                "kz": "Топтама тапсырылды",
+                "en": "Package submitted"
+              },
+              "next": ["A1_post_acceptance_overview"]
+            }
+          ],
+          "requirements": {
+            "templates": [
+              "tpl_reinstatement_rector_ru",
+              "tpl_reinstatement_rector_kz",
+              "tpl_reinstatement_rector_en",
+              "tpl_reinstatement_dc_ru",
+              "tpl_reinstatement_dc_kz",
+              "tpl_reinstatement_dc_en"
+            ],
+            "fields": [
+              {
+                "key": "chk_reinst_letter_rector",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заявление ректору (восстановление)",
+                  "kz": "Ректорға өтініш (қалпына келтіру)",
+                  "en": "Letter to Rector (reinstatement)"
+                }
+              },
+              {
+                "key": "chk_reinst_letter_dc",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заявление в Диссертационный совет (восстановление)",
+                  "kz": "Диссертациялық кеңеске өтініш (қалпына келтіру)",
+                  "en": "Letter to Dissertation Council (reinstatement)"
+                }
+              },
+              {
+                "key": "chk_transcript",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Транскрипт",
+                  "kz": "Транскрипт",
+                  "en": "Transcript"
+                }
+              },
+              {
+                "key": "chk_id_copy",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Копия удостоверения личности",
+                  "kz": "Жеке куәлік көшірмесі",
+                  "en": "Copy of ID"
+                }
+              },
+              {
+                "key": "chk_topic_approvals",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Выписки об утверждении/переутверждении темы",
+                  "kz": "Тақырыпты бекіту/қайта бекіту туралы үзінділер",
+                  "en": "Extracts confirming (re)approval of topic"
+                }
+              },
+              {
+                "key": "chk_two_pre_reviews",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "2 рецензии с предварительной экспертизы",
+                  "kz": "Алдын ала сараптама бойынша 2 рецензия",
+                  "en": "Two preliminary review reports"
+                }
+              },
+              {
+                "key": "chk_fee_4_credits",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "Квитанция об оплате 4 кредитов (для прошлых выпусков/других вузов)",
+                  "kz": "4 кредитті төлеу түбіртегі (бұрынғы түлектер/басқа ЖОО үшін)",
+                  "en": "Receipt for 4 credits (for past cohorts/other universities)"
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "W6",
+      "title": {
+        "ru": "VI — После принятия ДС",
+        "kz": "VI — ДК қабылдағаннан кейін",
+        "en": "VI — After DC acceptance"
+      },
+      "order": 6,
+      "nodes": [
+        {
+          "id": "A1_post_acceptance_overview",
+          "module": "VI",
+          "title": {
+            "ru": "После принятия документов ДС — что происходит дальше",
+            "kz": "ДС құжаттарын қабылдағаннан кейін — әрі қарай не болады",
+            "en": "After DC acceptance — what happens next"
+          },
+          "type": "info",
+          "description": {
+            "ru": "После того как Диссертационный совет принял Ваши документы, начинается организационный этап, выполняемый Ученым секретарем ДС. Ниже приведен обзор действий, сроков и ответственных лиц.",
+            "kz": "Диссертациялық кеңес құжаттарыңызды қабылдағаннан кейін, ДК ғылыми хатшысы орындайтын ұйымдастырушылық кезең басталады. Төменде әрекеттердің, мерзімдердің және жауаптылардың қысқаша шолуы берілген.",
+            "en": "Once the Dissertation Council has accepted your documents, an administrative phase begins, carried out by the Council Secretary. Below is an overview of actions, deadlines, and responsible persons."
+          },
+          "who_can_complete": ["student"],
+          "prerequisites": ["V1_reinstatement_package"],
+          "next": ["VI1_post_defense_overview"],
+          "requirements": {
+            "ui_hints": {
+              "cards_layout": {
+                "style": "stacked",
+                "card_variant": "info"
+              }
+            },
+            "fields": [
+              {
+                "key": "note_orders",
+                "type": "note",
+                "label": {
+                  "ru": "📜 В течение 5 дней оформляются приказы о назначении временных членов и официальных рецензентов.",
+                  "kz": "📜 5 күн ішінде уақытша мүшелер мен ресми рецензенттерді тағайындау туралы бұйрықтар рәсімделеді.",
+                  "en": "📜 Within 5 days, orders appointing temporary members and official reviewers are issued."
+                }
+              },
+              {
+                "key": "note_notification",
+                "type": "note",
+                "label": {
+                  "ru": "✉️ Извещение направляется в КОКСНВО МНВО РК по почте в течение 5 дней после приёма документов.",
+                  "kz": "✉️ Құжаттар қабылданғаннан кейін 5 күн ішінде КОКСНВО ҒЖБМ РК мекенжайына хабарлама жіберіледі.",
+                  "en": "✉️ Notification is mailed to the KOKSNVO MSHE RK within 5 days after acceptance."
+                }
+              },
+              {
+                "key": "note_publication",
+                "type": "note",
+                "label": {
+                  "ru": "🌐 За 1 месяц до защиты на сайте КазНМУ размещаются: извещение, диссертация PDF, аннотации KZ/RU/EN, список публикаций, отзывы консультантов, заключение ЛКБ, отзывы рецензентов.",
+                  "kz": "🌐 Қорғауға 1 ай қалғанда ҚазҰМУ сайтында: хабарландыру, диссертация PDF, KZ/RU/EN аннотациялар, жарияланымдар тізімі, кеңесші пікірлері, ЛБК қорытындысы, рецензент пікірлері жарияланады.",
+                  "en": "🌐 One month before the defense, the KazNMU website publishes: notice, dissertation PDF, abstracts KZ/RU/EN, publication list, advisor reviews, LBC conclusion, and reviewer reports."
+                }
+              },
+              {
+                "key": "note_letters",
+                "type": "note",
+                "label": {
+                  "ru": "📮 В течение 10 рабочих дней после приёма к защите направляется письмо в НЦГНТЭ на антиплагиат (расходы несёт докторант). Также рассылаются письма временным членам и рецензентам за 1 месяц до защиты.",
+                  "kz": "📮 Қорғауға қабылдағаннан кейін 10 жұмыс күні ішінде ҰҒТАО-ға антиплагиатқа хат жіберіледі (шығын докторантта). Сондай-ақ 1 ай бұрын уақытша мүшелер мен рецензенттерге хаттар жіберіледі.",
+                  "en": "📮 Within 10 working days after acceptance, a letter to NCSTE for anti-plagiarism is sent (costs borne by candidate). Letters to temporary members and reviewers are sent 1 month before defense."
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-08",
+            "requires_upload": false,
+            "reminder_required": false,
+            "related_docs": ["Положение о Диссертационном совете.pdf"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "W7",
+      "title": {
+        "ru": "VII — Защита и После защиты",
+        "kz": "VII — Қорғау және Қорғаудан кейін",
+        "en": "VII — Defense & Post-defense"
+      },
+      "order": 7,
+      "nodes": [
+        {
+          "id": "VI1_post_defense_overview",
+          "module": "VI",
+          "title": {
+            "ru": "После защиты: что происходит дальше",
+            "kz": "Қорғаудан кейін: әрі қарай не болады",
+            "en": "After the defense: what happens next"
+          },
+          "type": "info",
+          "description": {
+            "ru": "После успешной защиты начинается административный этап, который выполняет Ученый секретарь Диссертационного совета.",
+            "kz": "Сәтті қорғаудан кейін Диссертациялық кеңестің ғылыми хатшысы орындайтын әкімшілік кезең басталады.",
+            "en": "After a successful defense, the administrative phase begins, handled by the DC Secretary."
+          },
+          "who_can_complete": ["student"],
+          "prerequisites": ["A1_post_acceptance_overview"],
+          "next": ["VI2_library_deposits"],
+          "requirements": {
+            "fields": [
+              {
+                "key": "note_orders",
+                "type": "note",
+                "label": {
+                  "ru": "📜 Отдел магистратуры и докторантуры готовит приказ о присуждении/отказе степени (на основании служебной записки и выписки из протокола ДС).",
+                  "kz": "📜 Магистратура және докторантура бөлімі дәрежені беру/бермеу туралы бұйрықты дайындайды (қызметтік хат пен ДК хаттамасынан үзінді негізінде).",
+                  "en": "📜 The Graduate Office prepares the decree to award/deny the PhD degree (based on DC memo and minutes extract)."
+                }
+              },
+              {
+                "key": "note_site",
+                "type": "note",
+                "label": {
+                  "ru": "🌐 На сайте КазНМУ размещаются видеозапись защиты (≤5 рабочих дней) и приказ (≤10 рабочих дней).",
+                  "kz": "🌐 ҚазҰМУ сайтында қорғаудың бейнежазбасы (≤5 жұмыс күні) және бұйрық (≤10 жұмыс күні) жарияланады.",
+                  "en": "🌐 The KazNMU site posts the full defense video (≤5 working days) and the decree (≤10 working days)."
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "VI2_library_deposits",
+          "module": "VI",
+          "title": {
+            "ru": "Сдача печатных экземпляров в библиотеки (≤ 7 рабочих дней)",
+            "kz": "Кітапханаларға баспа даналарын тапсыру (≤ 7 жұмыс күні)",
+            "en": "Library deposits of print copies (≤ 7 working days)"
+          },
+          "description": {
+            "ru": "Отметьте подготовку и сдачу комплектов в три библиотеки. Сопроводительные письма оформляет учёный секретарь (Salem).",
+            "kz": "Үш кітапханаға жиынтықтарды дайындау және тапсыруды белгілеңіз. Ілеспе хаттарды ғылыми хатшы (Salem) рәсімдейді.",
+            "en": "Mark preparation and delivery of sets to the three libraries. Cover letters are prepared by the DC Secretary (Salem)."
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["VI1_post_defense_overview"],
+          "next": ["VI3_ncste_state_registration"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Сдано",
+                "kz": "Тапсырылды",
+                "en": "Delivered"
+              },
+              "next": ["VI3_ncste_state_registration"]
+            }
+          ],
+          "requirements": {
+            "fields": [
+              {
+                "key": "chk_print_5_hardbound",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Подготовлены 5 экз. диссертации в твёрдом переплёте (прошитые)",
+                  "kz": "Қатты түптелген (тігілген) диссертацияның 5 данасы дайын",
+                  "en": "5 hardbound (sewn) copies of the dissertation prepared"
+                }
+              },
+              {
+                "key": "chk_cd_abstracts_pdf",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "CD с аннотациями на 3 языках (3 отдельных PDF-файла)",
+                  "kz": "3 тілдегі аннотациялармен CD (3 жеке PDF файл)",
+                  "en": "CD with abstracts in 3 languages (3 separate PDF files)"
+                }
+              },
+              {
+                "key": "chk_cd_hard_case_insert",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "CD в твёрдом чехле + вкладыш с данными как на титульном листе",
+                  "kz": "CD қатты қаптамада + титул парағындағыдай мәліметтері бар қаптама",
+                  "en": "CD in a hard case + insert mirroring the title-page info"
+                }
+              },
+              {
+                "key": "chk_salem_letters_secretary",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "Сопроводительные письма оформлены уч. секретарём через Salem",
+                  "kz": "Ілеспе хаттарды ғылыми хатшы Salem арқылы рәсімдеді",
+                  "en": "Cover letters prepared by DC Secretary via Salem"
+                }
+              },
+              {
+                "key": "chk_delivered_nal",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Комплект сдан в Национальную академическую библиотеку РК",
+                  "kz": "Жиынтық ҚР Ұлттық академиялық кітапханасына тапсырылды",
+                  "en": "Set delivered to the National Academic Library RK"
+                }
+              },
+              {
+                "key": "chk_delivered_nl",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Комплект сдан в Национальную библиотеку РК",
+                  "kz": "Жиынтық ҚР Ұлттық кітапханасына тапсырылды",
+                  "en": "Set delivered to the National Library RK"
+                }
+              },
+              {
+                "key": "chk_delivered_kaznmu_lib",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Комплект сдан в библиотеку КазНМУ",
+                  "kz": "Жиынтық ҚазҰМУ кітапханасына тапсырылды",
+                  "en": "Set delivered to KazNMU Library"
+                }
+              },
+              {
+                "key": "chk_library_receipts_obtained",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Получены справки/подтверждения из всех трёх библиотек",
+                  "kz": "Үш кітапханадан анықтамалар/растаулар алынды",
+                  "en": "Receipts/confirmations obtained from all three libraries"
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "VI3_ncste_state_registration",
+          "module": "VI",
+          "title": {
+            "ru": "НЦГНТЭ: государственная регистрация (≤ 7 календарных дней)",
+            "kz": "ҰҒТАО: мемлекеттік тіркеу (≤ 7 күн)",
+            "en": "NCSTE: state registration (≤ 7 calendar days)"
+          },
+          "description": {
+            "ru": "Сформируйте печатный и электронный пакет и передайте через учёного секретаря (сопроводительное письмо — Salem).",
+            "kz": "Баспа және электрондық пакетті қалыптастырып, ғылыми хатшы арқылы тапсырыңыз (ілеспе хат — Salem).",
+            "en": "Assemble printed and electronic package and submit via the DC Secretary (cover letter via Salem)."
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["VI2_library_deposits"],
+          "next": ["VI_attestation_file"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Отправлено",
+                "kz": "Жіберілді",
+                "en": "Submitted"
+              },
+              "next": ["VI_attestation_file"]
+            }
+          ],
+          "requirements": {
+            "fields": [
+              {
+                "key": "grp_print_header",
+                "type": "note",
+                "label": {
+                  "ru": "Печатные материалы:",
+                  "kz": "Баспадағы материалдар:",
+                  "en": "Printed materials:"
+                }
+              },
+              {
+                "key": "chk_unbound_thesis_signed",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Диссертация непереплётная в папке на завязке + подпись соискателя на титульном листе (1 экз.)",
+                  "kz": "Тігілмеген диссертация байланатын қалтада + титул бетінде ізденушінің қолы (1 дана)",
+                  "en": "Unbound dissertation in tie folder + candidate’s signature on title page (1 copy)"
+                }
+              },
+              {
+                "key": "chk_print_abstracts_3langs",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Аннотации на 3 языках (по 1 печатному экземпляру каждого языка)",
+                  "kz": "3 тілдегі аннотациялар (әр тілден 1 баспа дана)",
+                  "en": "Abstracts in 3 languages (1 printed copy per language)"
+                }
+              },
+              {
+                "key": "chk_ukd_dek_2x_heavy_paper_signed_sealed",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "УКД и ДЕК — по 2 экз., двусторонняя печать на плотной бумаге, заверены подписью председателя ДС и печатью КазНМУ",
+                  "kz": "УКД және ДЕК — әрқайсысы 2 дана, тығыз қағазға екі жақты басылып, ДК төрағасының қолымен және ҚазҰМУ мөрімен бекітілген",
+                  "en": "UKD & DEK — 2 copies each, double-sided on heavy paper, signed by DC Chair and sealed by KazNMU"
+                }
+              },
+              {
+                "key": "chk_id_copy_print",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Копия удостоверения личности (печатная)",
+                  "kz": "Жеке куәлік көшірмесі (баспа)",
+                  "en": "Copy of ID (printed)"
+                }
+              },
+              {
+                "key": "chk_certified_pub_list_print",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заверенный список публикаций (печатный)",
+                  "kz": "Расталған жарияланымдар тізімі (баспа)",
+                  "en": "Certified publications list (printed)"
+                }
+              },
+              {
+                "key": "grp_cd_header",
+                "type": "note",
+                "label": {
+                  "ru": "Электронные материалы на CD:",
+                  "kz": "CD-дегі электрондық материалдар:",
+                  "en": "Electronic materials on CD:"
+                }
+              },
+              {
+                "key": "chk_cd_thesis_word",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Диссертация (Word) на CD",
+                  "kz": "Диссертация (Word) — CD-да",
+                  "en": "Dissertation (Word) on CD"
+                }
+              },
+              {
+                "key": "chk_cd_abstracts_word",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Аннотации на 3 языках (Word) на CD",
+                  "kz": "3 тілдегі аннотациялар (Word) — CD-да",
+                  "en": "Abstracts in 3 languages (Word) on CD"
+                }
+              },
+              {
+                "key": "chk_cd_ukd_dek_word",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "УКД и ДЕК (Word) на CD",
+                  "kz": "УКД және ДЕК (Word) — CD-да",
+                  "en": "UKD & DEK (Word) on CD"
+                }
+              },
+              {
+                "key": "chk_cd_pub_list_pdf",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Заверенный список публикаций (PDF) на CD",
+                  "kz": "Расталған жарияланымдар тізімі (PDF) — CD-да",
+                  "en": "Certified publications list (PDF) on CD"
+                }
+              },
+              {
+                "key": "chk_cover_letter_salem_secretary",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "Сопроводительное письмо оформлено уч. секретарём в системе Salem",
+                  "kz": "Ілеспе хатты ғылыми хатшы Salem жүйесінде рәсімдеді",
+                  "en": "Cover letter prepared by DC Secretary in Salem"
+                }
+              },
+              {
+                "key": "chk_package_submitted_via_secretary",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "Пакет передан на госрегистрацию через уч. секретаря НЦГНТЭ",
+                  "kz": "Пакет ҰҒТАО-ға мемлекеттік тіркеуге ғылыми хатшы арқылы тапсырылды",
+                  "en": "Package submitted for state registration via DC Secretary to NCSTE"
+                }
+              },
+              {
+                "key": "attestation_file_note",
+                "type": "note",
+                "label": {
+                  "ru": "ℹ️ В течение 30 календарных дней после защиты формируется аттестационное дело (31 пункт перечня). Этот процесс ведётся университетом; убедитесь, что все Ваши документы доступны секретарю.",
+                  "kz": "ℹ️ Қорғаудан кейін 30 күн ішінде аттестаттау ісі жасалады (31 тармақ). Бұл үдерісті университет жүргізеді; барлық құжаттарыңыз хатшыға қолжетімді екеніне көз жеткізіңіз.",
+                  "en": "ℹ️ Within 30 days after defense, the attestation file is formed (31 listed items). The university handles this; ensure your documents are available to the secretary."
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        },
+        {
+          "id": "VI_attestation_file",
+          "module": "VI",
+          "title": {
+            "ru": "Аттестационное дело (≤ 30 календарных дней)",
+            "kz": "Аттестаттау ісі (≤ 30 күн)",
+            "en": "Attestation file (≤ 30 calendar days)"
+          },
+          "description": {
+            "ru": "После защиты в течение 30 календарных дней формируется аттестационное дело докторанта. Отметьте наличие каждого документа.",
+            "kz": "Қорғаудан кейін 30 күн ішінде докторанттың аттестаттау ісі қалыптастырылады. Әр құжаттың бар-жоғын белгілеңіз.",
+            "en": "Within 30 days after defense, the doctoral attestation file is formed. Check the presence of each document."
+          },
+          "type": "form",
+          "who_can_complete": ["student"],
+          "prerequisites": ["VI3_ncste_state_registration"],
+          "next": ["END"],
+          "outcomes": [
+            {
+              "value": "done",
+              "label": {
+                "ru": "Дело собрано",
+                "kz": "Іс жиналды",
+                "en": "File completed"
+              },
+              "next": ["END"]
+            }
+          ],
+          "requirements": {
+            "fields": [
+              {
+                "key": "chk_inventory",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "1) Опись документов в деле",
+                  "kz": "1) Істегі құжаттардың тізімі",
+                  "en": "1) Inventory of documents in file"
+                }
+              },
+              {
+                "key": "chk_app_to_rector_ds_choice",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "2) Заявление ректору о выборе ДС",
+                  "kz": "2) Ректорға өтініш (ДК таңдау туралы)",
+                  "en": "2) Application to Rector choosing DC"
+                }
+              },
+              {
+                "key": "chk_app_to_ds_accept",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "3) Заявление в ДС о приёме к защите",
+                  "kz": "3) ДК-ге өтініш (қорғауға қабылдау туралы)",
+                  "en": "3) Application to DC for acceptance to defense"
+                }
+              },
+              {
+                "key": "chk_cover_letter_external",
+                "type": "boolean",
+                "required": false,
+                "label": {
+                  "ru": "4) Сопроводительное письмо (для других вузов)",
+                  "kz": "4) Ілеспе хат (басқа ЖОО үшін)",
+                  "en": "4) Cover letter (for external universities)"
+                }
+              },
+              {
+                "key": "chk_app11_student_info",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "5) Сведения о докторанте (Прил. 11)",
+                  "kz": "5) Докторант туралы мәліметтер (Қос. 11)",
+                  "en": "5) Doctoral information (App. 11)"
+                }
+              },
+              {
+                "key": "chk_personal_sheet_hr",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "6) Личный листок, заверенный отделом кадров",
+                  "kz": "6) Кадр бөлімі растаған жеке парақ",
+                  "en": "6) Personal sheet certified by HR"
+                }
+              },
+              {
+                "key": "chk_diplomas_copies_notarized",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "7) Копии дипломов о высшем и послевузовском образовании (нотариально)",
+                  "kz": "7) Жоғары және ЖОО-нан кейінгі дипломдар көшірмесі (нотариалды)",
+                  "en": "7) Notarized copies of diplomas (HE + postgrad)"
+                }
+              },
+              {
+                "key": "chk_transcript_copy",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "8) Копия транскрипта по программе PhD",
+                  "kz": "8) PhD бағдарламасы бойынша транскрипт көшірмесі",
+                  "en": "8) Copy of PhD program transcript"
+                }
+              },
+              {
+                "key": "chk_topic_supervisors_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "9) Выписка из протокола (приказа) об утверждении темы и консультантов",
+                  "kz": "9) Тақырып пен кеңесшілерді бекіту туралы үзінді",
+                  "en": "9) Extract confirming topic & supervisors"
+                }
+              },
+              {
+                "key": "chk_publications_list_copies",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "10) Список и копии научных публикаций",
+                  "kz": "10) Ғылыми еңбектер тізімі мен көшірмелері",
+                  "en": "10) List and copies of publications"
+                }
+              },
+              {
+                "key": "chk_abstracts_3langs",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "11) Аннотации на 3 языках",
+                  "kz": "11) 3 тілдегі аннотациялар",
+                  "en": "11) Abstracts in 3 languages"
+                }
+              },
+              {
+                "key": "chk_sc_positive_extract",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "12) Выписка из протокола Научной комиссии (положительное заключение)",
+                  "kz": "12) Ғылыми комиссия хаттамасынан үзінді (оң қорытынды)",
+                  "en": "12) Scientific Committee extract (positive conclusion)"
+                }
+              },
+              {
+                "key": "chk_ethics_conclusion",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "13) Заключение ЛЭК",
+                  "kz": "13) ЛЭК қорытындысы",
+                  "en": "13) Ethics Committee conclusion"
+                }
+              },
+              {
+                "key": "chk_ncste_antiplag_report",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "14) Справка НЦГНТЭ о проверке на заимствования",
+                  "kz": "14) ҰҒТАО плагиатқа тексеру анықтамасы",
+                  "en": "14) NCSTE plagiarism check certificate"
+                }
+              },
+              {
+                "key": "chk_university_antiplag_report",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "15) Справка вуза о проверке на плагиат",
+                  "kz": "15) Университет плагиат анықтамасы",
+                  "en": "15) University plagiarism check report"
+                }
+              },
+              {
+                "key": "chk_consultant_reviews",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "16) Отзывы научных консультантов (заверенные)",
+                  "kz": "16) Ғылыми кеңесшілердің пікірлері (растаулы)",
+                  "en": "16) Advisor reviews (certified)"
+                }
+              },
+              {
+                "key": "chk_two_reviewer_reports",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "17) Отзывы 2 официальных рецензентов (заверенные)",
+                  "kz": "17) 2 ресми рецензенттің пікірлері (растаулы)",
+                  "en": "17) Two official reviewer reports (certified)"
+                }
+              },
+              {
+                "key": "chk_vote_protocol",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "18) Протокол счётной комиссии",
+                  "kz": "18) Санау комиссиясының хаттамасы",
+                  "en": "18) Counting commission protocol"
+                }
+              },
+              {
+                "key": "chk_ballots",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "19) Бюллетени",
+                  "kz": "19) Бюллетеньдер",
+                  "en": "19) Ballots"
+                }
+              },
+              {
+                "key": "chk_app12_attendance_list",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "20) Явочный лист членов ДС (Прил. 12)",
+                  "kz": "20) ДК мүшелерінің қатысу тізімі (Қос. 12)",
+                  "en": "20) Attendance sheet (App. 12)"
+                }
+              },
+              {
+                "key": "chk_defense_protocol",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "21) Протокол заседания ДС (с подписями)",
+                  "kz": "21) ДК отырысы хаттамасы (қол қойылған)",
+                  "en": "21) Defense meeting protocol (signed)"
+                }
+              },
+              {
+                "key": "chk_video_record_full",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "22) Видеозапись защиты в полном объёме",
+                  "kz": "22) Қорғаудың толық бейнежазбасы",
+                  "en": "22) Full video recording of defense"
+                }
+              },
+              {
+                "key": "chk_app13_reg_card",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "23) Регистрационно-учётная карточка (Прил. 13, каз/рус)",
+                  "kz": "23) Тіркеу есеп картасы (Қос. 13, қаз/орыс)",
+                  "en": "23) Registration card (App. 13, KZ/RU)"
+                }
+              },
+              {
+                "key": "chk_ncste_reg_card",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "24) Учётная карточка с регистрацией в НЦГНТЭ",
+                  "kz": "24) ҰҒТАО-да тіркелген есептік карта",
+                  "en": "24) Account card registered with NCSTE"
+                }
+              },
+              {
+                "key": "chk_library_cert_kaznmu",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "25) Справка Научной библиотеки КазНМУ",
+                  "kz": "25) ҚазҰМУ Ғылыми кітапханасының анықтамасы",
+                  "en": "25) KazNMU Library certificate"
+                }
+              },
+              {
+                "key": "chk_library_cert_nl",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "26) Справка Национальной библиотеки РК",
+                  "kz": "26) ҚР Ұлттық кітапханасының анықтамасы",
+                  "en": "26) National Library certificate"
+                }
+              },
+              {
+                "key": "chk_library_cert_nal",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "27) Справка Национальной академической библиотеки РК",
+                  "kz": "27) ҚР Ұлттық академиялық кітапханасының анықтамасы",
+                  "en": "27) National Academic Library certificate"
+                }
+              },
+              {
+                "key": "chk_final_thesis_cd",
+                "type": "boolean",
+                "required": true,
+                "label": {
+                  "ru": "28) Диссертация в твёрдом переплёте и на CD-диске",
+                  "kz": "28) Қатты түтілген және CD-дағы диссертация",
+                  "en": "28) Dissertation hardbound + CD copy"
+                }
+              }
+            ]
+          },
+          "meta": {
+            "created_by": "KazNMU PhD Portal",
+            "last_updated": "2025-10-09",
+            "requires_upload": false,
+            "reminder_required": false
+          }
+        }
+      ]
+    }
+  ]
+}
+
+$pb$::jsonb AS data
+),
+ensure_program AS (
+  INSERT INTO programs (id, tenant_id, name, code, title, description, credits, duration_months, is_active, created_at, updated_at)
+  SELECT
+    'dd200009-0000-0000-0009-000000000009'::uuid,
+    'dd000000-0000-0000-0000-d00000000001'::uuid,
+    'Doctoral Journey Program (phd-doctorant.kz)',
+    pb.data->>'playbook_id',
+    jsonb_build_object('ru','Докторантура — Путь','kz','Докторантура — Жол','en','Doctoral Journey'),
+    jsonb_build_object('en','Program template seeded from playbook.json','ru','Шаблон программы из playbook.json'),
+    180,
+    48,
+    true,
+    NOW(),
+    NOW()
+  FROM pb
+  ON CONFLICT (id) DO UPDATE SET
+    code = EXCLUDED.code,
+    title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    updated_at = NOW()
+  RETURNING id
+),
+phases AS (
+  SELECT jsonb_agg(
+    jsonb_build_object(
+      'id', w->>'id',
+      'title', w->'title',
+      'order', (w->>'order')::int,
+      'color', (pb.data->'ui'->'worlds_palette')->((w->>'order')::int - 1),
+      'position', jsonb_build_object('x', ((w->>'order')::int - 1) * 420 + 60, 'y', 50)
+    ) ORDER BY (w->>'order')::int
+  ) AS phases
+  FROM pb, LATERAL jsonb_array_elements(pb.data->'worlds') AS w
+),
+upsert_version AS (
+  INSERT INTO program_versions (id, program_id, title, version, config, is_active, created_at, updated_at)
+  SELECT
+    'dd900001-0000-0000-0001-000000000001'::uuid,
+    ensure_program.id,
+    jsonb_build_object('ru','Карта пути докторанта','kz','Докторант жол картасы','en','Doctoral Journey Map'),
+    pb.data->>'version',
+    jsonb_build_object('phases', phases.phases),
+    true,
+    NOW(),
+    NOW()
+  FROM pb, ensure_program, phases
+  ON CONFLICT (program_id, version) DO UPDATE SET
+    title = EXCLUDED.title,
+    config = EXCLUDED.config,
+    is_active = EXCLUDED.is_active,
+    updated_at = NOW()
+  RETURNING id
+)
+INSERT INTO program_version_node_definitions
+  (program_version_id, slug, type, title, description, module_key, coordinates, config, prerequisites, created_at, updated_at)
+SELECT
+  upsert_version.id,
+  n.node->>'id' AS slug,
+  n.node->>'type' AS type,
+  n.node->'title' AS title,
+  NULL::jsonb AS description,
+  w.world->>'id' AS module_key,
+  jsonb_build_object(
+    'x', ((w.world->>'order')::int - 1) * 420 + 60,
+    'y', 180 + ((n.node_idx - 1) * 160)
+  ) AS coordinates,
+  (n.node - 'id' - 'title' - 'type' - 'prerequisites') AS config,
+  COALESCE(
+    ARRAY(SELECT jsonb_array_elements_text(n.node->'prerequisites')) ,
+    ARRAY[]::text[]
+  ) AS prerequisites,
+  NOW(),
+  NOW()
+FROM pb
+JOIN upsert_version ON true
+JOIN LATERAL jsonb_array_elements(pb.data->'worlds') AS w(world) ON true
+JOIN LATERAL jsonb_array_elements(w.world->'nodes') WITH ORDINALITY AS n(node, node_idx) ON true
+ON CONFLICT (program_version_id, slug) DO UPDATE SET
+  type = EXCLUDED.type,
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  module_key = EXCLUDED.module_key,
+  coordinates = EXCLUDED.coordinates,
+  config = EXCLUDED.config,
+  prerequisites = EXCLUDED.prerequisites,
+  updated_at = NOW();
