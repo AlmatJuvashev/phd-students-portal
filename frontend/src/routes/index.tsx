@@ -91,6 +91,12 @@ const StudentAssignments = lazy(() =>
 const StudentGrades = lazy(() =>
   import("@/features/student-portal/StudentGrades").then((m) => ({ default: m.StudentGrades }))
 );
+const StartAssessmentPage = lazy(() =>
+  import("@/features/assessments/StartAssessmentPage").then((m) => ({ default: m.StartAssessmentPage }))
+);
+const AttemptPage = lazy(() =>
+  import("@/features/assessments/AttemptPage").then((m) => ({ default: m.AttemptPage }))
+);
 const ForgotPassword = lazy(() =>
   import("@/pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
 );
@@ -290,6 +296,8 @@ export const router = createBrowserRouter([
           { path: "dashboard", element: WithSuspense(<StudentDashboard />) },
           { path: "courses", element: WithSuspense(<StudentCourses />) },
           { path: "assignments", element: WithSuspense(<StudentAssignments />) },
+          { path: "assessments/:assessmentId", element: WithSuspense(<StartAssessmentPage />) },
+          { path: "attempts/:attemptId", element: WithSuspense(<AttemptPage />) },
           { path: "grades", element: WithSuspense(<StudentGrades />) },
           { index: true, element: <Navigate to="dashboard" replace /> },
         ],

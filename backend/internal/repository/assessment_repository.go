@@ -25,9 +25,13 @@ type AssessmentRepository interface {
 	// Assessments
 	CreateAssessment(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	GetAssessment(ctx context.Context, id string) (*models.Assessment, error)
+	ListAssessments(ctx context.Context, tenantID string, courseOfferingID string) ([]models.Assessment, error)
+	UpdateAssessment(ctx context.Context, a models.Assessment) error
+	DeleteAssessment(ctx context.Context, id string) error
 
 	// Attempts & Security
 	CreateAttempt(ctx context.Context, attempt models.AssessmentAttempt) (*models.AssessmentAttempt, error)
+	ListAttemptsByAssessmentAndStudent(ctx context.Context, assessmentID, studentID string) ([]models.AssessmentAttempt, error)
 	SaveItemResponse(ctx context.Context, response models.ItemResponse) error
 	CompleteAttempt(ctx context.Context, attemptID string, score float64) error
 	GetAttempt(ctx context.Context, id string) (*models.AssessmentAttempt, error)
@@ -256,10 +260,10 @@ func (r *SQLAssessmentRepository) DeleteQuestion(ctx context.Context, id string)
 
 func (r *SQLAssessmentRepository) CreateAssessment(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
 	err := r.db.QueryRowxContext(ctx, `
-		INSERT INTO assessments (tenant_id, course_offering_id, title, description, time_limit_minutes, available_from, available_until, shuffle_questions, grading_policy, passing_score, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO assessments (tenant_id, course_offering_id, title, description, time_limit_minutes, available_from, available_until, shuffle_questions, grading_policy, security_settings, passing_score, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING *
-	`, a.TenantID, a.CourseOfferingID, a.Title, a.Description, a.TimeLimitMinutes, a.AvailableFrom, a.AvailableUntil, a.ShuffleQuestions, a.GradingPolicy, a.PassingScore, a.CreatedBy).StructScan(&a)
+	`, a.TenantID, a.CourseOfferingID, a.Title, a.Description, a.TimeLimitMinutes, a.AvailableFrom, a.AvailableUntil, a.ShuffleQuestions, a.GradingPolicy, a.SecuritySettings, a.PassingScore, a.CreatedBy).StructScan(&a)
 	return &a, err
 }
 
@@ -275,6 +279,44 @@ func (r *SQLAssessmentRepository) GetAssessment(ctx context.Context, id string) 
 	return &a, nil
 }
 
+func (r *SQLAssessmentRepository) ListAssessments(ctx context.Context, tenantID string, courseOfferingID string) ([]models.Assessment, error) {
+	query := `SELECT * FROM assessments WHERE tenant_id=$1`
+	args := []interface{}{tenantID}
+	if courseOfferingID != "" {
+		query += ` AND course_offering_id=$2`
+		args = append(args, courseOfferingID)
+	}
+	query += ` ORDER BY created_at DESC`
+
+	var assessments []models.Assessment
+	err := r.db.SelectContext(ctx, &assessments, query, args...)
+	return assessments, err
+}
+
+func (r *SQLAssessmentRepository) UpdateAssessment(ctx context.Context, a models.Assessment) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE assessments
+		SET course_offering_id=$1,
+			title=$2,
+			description=$3,
+			time_limit_minutes=$4,
+			available_from=$5,
+			available_until=$6,
+			shuffle_questions=$7,
+			grading_policy=$8,
+			security_settings=$9,
+			passing_score=$10,
+			updated_at=NOW()
+		WHERE id=$11
+	`, a.CourseOfferingID, a.Title, a.Description, a.TimeLimitMinutes, a.AvailableFrom, a.AvailableUntil, a.ShuffleQuestions, a.GradingPolicy, a.SecuritySettings, a.PassingScore, a.ID)
+	return err
+}
+
+func (r *SQLAssessmentRepository) DeleteAssessment(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM assessments WHERE id=$1`, id)
+	return err
+}
+
 // --- Attempts ---
 
 func (r *SQLAssessmentRepository) CreateAttempt(ctx context.Context, attempt models.AssessmentAttempt) (*models.AssessmentAttempt, error) {
@@ -284,6 +326,17 @@ func (r *SQLAssessmentRepository) CreateAttempt(ctx context.Context, attempt mod
 		RETURNING *
 	`, attempt.AssessmentID, attempt.StudentID, models.AttemptStatusInProgress).StructScan(&attempt)
 	return &attempt, err
+}
+
+func (r *SQLAssessmentRepository) ListAttemptsByAssessmentAndStudent(ctx context.Context, assessmentID, studentID string) ([]models.AssessmentAttempt, error) {
+	var attempts []models.AssessmentAttempt
+	err := r.db.SelectContext(ctx, &attempts, `
+		SELECT *
+		FROM assessment_attempts
+		WHERE assessment_id=$1 AND student_id=$2
+		ORDER BY started_at DESC
+	`, assessmentID, studentID)
+	return attempts, err
 }
 
 func (r *SQLAssessmentRepository) SaveItemResponse(ctx context.Context, response models.ItemResponse) error {

@@ -93,12 +93,34 @@ func (m *mockAssessmentRepoForItemBank) GetAssessment(ctx context.Context, id st
 	}
 	return args.Get(0).(*models.Assessment), args.Error(1)
 }
+func (m *mockAssessmentRepoForItemBank) ListAssessments(ctx context.Context, tenantID string, courseOfferingID string) ([]models.Assessment, error) {
+	args := m.Called(ctx, tenantID, courseOfferingID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Assessment), args.Error(1)
+}
+func (m *mockAssessmentRepoForItemBank) UpdateAssessment(ctx context.Context, a models.Assessment) error {
+	args := m.Called(ctx, a)
+	return args.Error(0)
+}
+func (m *mockAssessmentRepoForItemBank) DeleteAssessment(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
 func (m *mockAssessmentRepoForItemBank) CreateAttempt(ctx context.Context, attempt models.AssessmentAttempt) (*models.AssessmentAttempt, error) {
 	args := m.Called(ctx, attempt)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.AssessmentAttempt), args.Error(1)
+}
+func (m *mockAssessmentRepoForItemBank) ListAttemptsByAssessmentAndStudent(ctx context.Context, assessmentID, studentID string) ([]models.AssessmentAttempt, error) {
+	args := m.Called(ctx, assessmentID, studentID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.AssessmentAttempt), args.Error(1)
 }
 func (m *mockAssessmentRepoForItemBank) SaveItemResponse(ctx context.Context, response models.ItemResponse) error {
 	args := m.Called(ctx, response)

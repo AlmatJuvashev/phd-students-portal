@@ -174,6 +174,10 @@ type SecuritySettings struct {
 	MaxViolations     int  `json:"max_violations"`      // 0 = unlimited
 	AutoSubmitOnLimit bool `json:"auto_submit_on_limit"`
 	RecordWebcam      bool `json:"record_webcam"`       // Future placeholder
+
+	// Attempt policy (stored in security_settings for now; may be moved to a dedicated field later)
+	MaxAttempts      int `json:"max_attempts,omitempty"`       // 0 = unlimited
+	CooldownMinutes  int `json:"cooldown_minutes,omitempty"`   // 0 = no cooldown
 }
 
 type ProctoringLog struct {

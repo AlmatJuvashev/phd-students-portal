@@ -408,13 +408,20 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		ae := protected.Group("/assessments")
 		{
 			ae.POST("", assessmentHandler.CreateAssessment)
+			ae.GET("", assessmentHandler.ListAssessments)
+			ae.GET("/:id", assessmentHandler.GetAssessment)
+			ae.PUT("/:id", assessmentHandler.UpdateAssessment)
+			ae.DELETE("/:id", assessmentHandler.DeleteAssessment)
 			ae.POST("/:id/attempts", assessmentHandler.StartAttempt)
+			ae.GET("/:id/my-attempts", assessmentHandler.ListMyAttempts)
 		}
 
 		at := protected.Group("/attempts")
 		{
+			at.GET("/:id", assessmentHandler.GetAttemptDetails)
 			at.POST("/:id/response", assessmentHandler.SubmitResponse)
 			at.POST("/:id/complete", assessmentHandler.CompleteAttempt)
+			at.POST("/:id/log", assessmentHandler.LogProctoringEvent)
 		}
 
 		// Governance Module (Phase 5)
