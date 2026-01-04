@@ -196,8 +196,9 @@ func (r *SQLTenantRepository) Exists(ctx context.Context, id string) (bool, erro
 func (r *SQLTenantRepository) AddUserToTenant(ctx context.Context, userID, tenantID, role string, isPrimary bool) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO user_tenant_memberships (user_id, tenant_id, role, roles, is_primary)
-		VALUES ($1, $2, $3, ARRAY[$3]::text[], $4)
-		ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = $3, roles = ARRAY[$3]::text[], is_primary = $4`,
+		VALUES ($1, $2, $3::user_role, ARRAY[$3::text], $4)
+		ON CONFLICT (user_id, tenant_id) DO UPDATE
+		SET role = EXCLUDED.role, roles = EXCLUDED.roles, is_primary = EXCLUDED.is_primary`,
 		userID, tenantID, role, isPrimary)
 	return err
 }

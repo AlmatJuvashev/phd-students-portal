@@ -31,6 +31,23 @@ var (
 	testOnce sync.Once
 )
 
+func sanitizeDBIdentifier(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	s = strings.ReplaceAll(s, "-", "_")
+	s = strings.ReplaceAll(s, ".", "_")
+	s = strings.ReplaceAll(s, " ", "_")
+	return s
+}
+
+func withDatabase(dbURL string, databaseName string) string {
+	u, err := url.Parse(dbURL)
+	if err != nil {
+		return dbURL
+	}
+	u.Path = "/" + databaseName
+	return u.String()
+}
+
 // SetupTestDB connects to the test database, applies migrations, and returns the connection.
 // It assumes TEST_DATABASE_URL is set, or defaults to a local test DB.
 // It returns a cleanup function that should be deferred.
@@ -108,22 +125,22 @@ func SetupTestDB() (*sqlx.DB, func()) {
 	if dbPath == "phd" {
 		log.Fatalf("[SetupTestDB] CRITICAL SAFETY BLOCK: Attempting to run tests against production 'phd' database! Aborting immediately.")
 	}
-	if !strings.Contains(dbPath, "test") {
-		log.Printf("[SetupTestDB] WARNING: Running tests against database '%s' which does not contain 'test'. This is risky.", dbPath)
+	if !strings.Contains(strings.ToLower(dbPath), "test") {
+		log.Fatalf("[SetupTestDB] CRITICAL SAFETY BLOCK: TEST_DATABASE_URL database '%s' does not look like a test database. Use 'phd_test' or 'phd-test'.", dbPath)
 	}
 
 	// Identify package name for database isolation (capture BEFORE testOnce.Do)
 	_, filename, _, _ := runtime.Caller(1)
 	pkgName := filepath.Base(filepath.Dir(filename))
 	log.Printf("[SetupTestDB] Caller file: %s, pkgName: %s", filename, pkgName)
-	targetDB := "phd_test_" + pkgName
-	targetDB = strings.ReplaceAll(targetDB, "-", "_")
-	targetDB = strings.ReplaceAll(targetDB, ".", "_")
+	dbPrefix := sanitizeDBIdentifier(dbPath)
+	targetDB := dbPrefix + "_" + sanitizeDBIdentifier(pkgName)
+	baseDB := dbPrefix + "_base"
 
 	testOnce.Do(func() {
 		ctx := context.Background()
 		// 1. Connect to 'postgres' to manage databases
-		adminDSN := strings.ReplaceAll(dbURL, "phd_test", "postgres")
+		adminDSN := withDatabase(dbURL, "postgres")
 		adminDB, err := sqlx.Connect("postgres", adminDSN)
 		if err != nil {
 			log.Fatalf("[SetupTestDB] Failed to connect to admin DB: %v", err)
@@ -144,8 +161,6 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		defer conn.ExecContext(ctx, "SELECT pg_advisory_unlock(123456)")
 
 		// 2. Ensure base template exists and is migrated
-		baseDB := "phd_test_base"
-
 		// Check for base template
 		var baseExists bool
 		conn.GetContext(ctx, &baseExists, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", baseDB)
@@ -172,7 +187,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		}
 
 		// Always migrate base template to ensure it's up to date
-		baseURL := strings.ReplaceAll(dbURL, "phd_test", baseDB)
+		baseURL := withDatabase(dbURL, baseDB)
 		_, b, _, _ := runtime.Caller(0)
 		migrationsPath := filepath.Join(filepath.Dir(b), "../../db/migrations")
 		
@@ -207,7 +222,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		}
 
 		// 4. Connect to the isolated database
-		pkgDSN := strings.ReplaceAll(dbURL, "phd_test", targetDB)
+		pkgDSN := withDatabase(dbURL, targetDB)
 		packageDB, err := sqlx.Connect("postgres", pkgDSN)
 		if err != nil {
 			log.Fatalf("[SetupTestDB] Failed to connect to isolated DB %s: %v", targetDB, err)
@@ -226,6 +241,12 @@ func SetupTestDB() (*sqlx.DB, func()) {
 }
 
 func cleanupDB(db *sqlx.DB, schema string) {
+	var dbName string
+	if err := db.Get(&dbName, "SELECT current_database()"); err == nil {
+		if dbName == "phd" || !strings.Contains(strings.ToLower(dbName), "test") {
+			log.Fatalf("[cleanupDB] CRITICAL SAFETY BLOCK: Refusing to truncate non-test database '%s'.", dbName)
+		}
+	}
 	// If schema is provided, ensure search_path is set (just in case)
 	if schema != "" {
 		db.Exec(fmt.Sprintf("SET search_path TO %s, public", schema))
@@ -314,4 +335,3 @@ func CreateTestUser(t *testing.T, db *sqlx.DB, username, role string) string {
 	}
 	return id
 }
-
