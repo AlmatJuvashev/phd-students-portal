@@ -39,6 +39,15 @@ func (s *ItemBankService) GetBank(ctx context.Context, id string) (*models.Quest
 	return s.repo.GetQuestionBank(ctx, id)
 }
 
+func (s *ItemBankService) UpdateBank(ctx context.Context, b *models.QuestionBank) error {
+	b.UpdatedAt = time.Now()
+	return s.repo.UpdateQuestionBank(ctx, *b)
+}
+
+func (s *ItemBankService) DeleteBank(ctx context.Context, id string) error {
+	return s.repo.DeleteQuestionBank(ctx, id)
+}
+
 // --- Items ---
 
 func (s *ItemBankService) CreateItem(ctx context.Context, item *models.Question) error {
@@ -58,7 +67,10 @@ func (s *ItemBankService) ListItems(ctx context.Context, bankID string) ([]model
 	return s.repo.ListQuestionsByBank(ctx, bankID)
 }
 
-// Update/Delete not yet in AssessmentRepository, skipping for now or adding TODO
+func (s *ItemBankService) GetItem(ctx context.Context, id string) (*models.Question, error) {
+	return s.repo.GetQuestion(ctx, id)
+}
+
 func (s *ItemBankService) UpdateItem(ctx context.Context, item *models.Question) error {
 	item.UpdatedAt = time.Now()
 	return s.repo.UpdateQuestion(ctx, *item)

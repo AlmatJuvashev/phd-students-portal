@@ -9,6 +9,7 @@
 ## Executive Summary
 
 ### Current Architecture
+
 ```
 frontend/src/playbooks/playbook.json  →  JourneyMap component  →  NodeDetails
          ↓                                      ↓
@@ -18,6 +19,7 @@ frontend/src/playbooks/playbook.json  →  JourneyMap component  →  NodeDetail
 ```
 
 ### Target Architecture
+
 ```
 Backend /api/curriculum/programs/:id/journey-map  →  JourneyMap component  →  NodeDetails
               ↓                                              ↓
@@ -27,6 +29,7 @@ Backend /api/curriculum/programs/:id/journey-map  →  JourneyMap component  →
 ```
 
 ### Key Constraints
+
 - ✅ Keep existing JourneyMap UI **intact**
 - ✅ Use **static templates** (no dynamic field population for now)
 - ✅ Migrate node definitions to backend database
@@ -39,19 +42,20 @@ Backend /api/curriculum/programs/:id/journey-map  →  JourneyMap component  →
 
 ### JSON Playbook → Backend Models
 
-| JSON Field | Backend Model | Database Table |
-|------------|---------------|----------------|
-| `playbook_id` | `Program.code` | `programs` |
-| `version` | `JourneyMap.version` | `program_versions` |
-| `worlds[]` | `JourneyNodeDefinition.module_key` | `program_version_node_definitions` |
-| `worlds[].nodes[]` | `JourneyNodeDefinition` | `program_version_node_definitions` |
-| `roles[]` | Static (keep in frontend) | - |
-| `conditions[]` | `JourneyNodeDefinition.config` | `program_version_node_definitions` |
-| `assets[]` | Static file (assets_list.json) | - |
+| JSON Field         | Backend Model                      | Database Table                     |
+| ------------------ | ---------------------------------- | ---------------------------------- |
+| `playbook_id`      | `Program.code`                     | `programs`                         |
+| `version`          | `JourneyMap.version`               | `program_versions`                 |
+| `worlds[]`         | `JourneyNodeDefinition.module_key` | `program_version_node_definitions` |
+| `worlds[].nodes[]` | `JourneyNodeDefinition`            | `program_version_node_definitions` |
+| `roles[]`          | Static (keep in frontend)          | -                                  |
+| `conditions[]`     | `JourneyNodeDefinition.config`     | `program_version_node_definitions` |
+| `assets[]`         | Static file (assets_list.json)     | -                                  |
 
 ### Node Definition Mapping
 
 **JSON Node (`playbook.json`):**
+
 ```json
 {
   "id": "S1_profile",
@@ -69,6 +73,7 @@ Backend /api/curriculum/programs/:id/journey-map  →  JourneyMap component  →
 ```
 
 **Backend Model (`JourneyNodeDefinition`):**
+
 ```go
 type JourneyNodeDefinition struct {
   ID            string         // UUID
@@ -169,14 +174,14 @@ type NodeResponse struct {
 func (h *JourneyHandler) GetMyJourneyMap(c *gin.Context) {
     userID := c.GetString("userID")
     tenantID := c.GetString("tenantID")
-    
+
     // 1. Get user's program enrollment
     user, err := h.userService.GetUser(c.Request.Context(), userID)
     if err != nil {
         c.JSON(500, gin.H{"error": "failed to get user"})
         return
     }
-    
+
     // 2. Get program's journey map
     programID := user.ProgramID // Assuming user has program_id
     if programID == "" {
@@ -184,20 +189,20 @@ func (h *JourneyHandler) GetMyJourneyMap(c *gin.Context) {
         c.JSON(200, h.getDefaultPlaybook())
         return
     }
-    
+
     journeyMap, err := h.curriculumService.GetJourneyMap(c.Request.Context(), programID)
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
         return
     }
-    
+
     // 3. Get all node definitions
     nodes, err := h.curriculumService.GetNodeDefinitions(c.Request.Context(), journeyMap.ID)
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
         return
     }
-    
+
     // 4. Transform to frontend format
     response := h.transformToPlaybookFormat(journeyMap, nodes)
     c.JSON(200, response)
@@ -228,26 +233,26 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     var playbook Playbook
     json.Unmarshal(data, &playbook)
-    
+
     // 2. Connect to DB
     db := connectDB()
-    
+
     // 3. Create/Get Program
     programID := ensureProgram(db, playbook.PlaybookID, "PhD Program")
-    
+
     // 4. Create JourneyMap
     journeyMapID := ensureJourneyMap(db, programID, playbook.Version)
-    
+
     // 5. Migrate each world and node
     for _, world := range playbook.Worlds {
         for _, node := range world.Nodes {
             migrateNode(db, journeyMapID, world.ID, world.Order, node)
         }
     }
-    
+
     log.Println("Migration complete!")
 }
 
@@ -265,9 +270,9 @@ func migrateNode(db *sqlx.DB, journeyMapID, worldID string, worldOrder int, node
     }
     configJSON, _ := json.Marshal(config)
     titleJSON, _ := json.Marshal(node.Title)
-    
+
     _, err := db.Exec(`
-        INSERT INTO program_version_node_definitions 
+        INSERT INTO program_version_node_definitions
         (id, program_version_id, slug, type, title, module_key, config, prerequisites, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
         ON CONFLICT (program_version_id, slug) DO UPDATE SET
@@ -275,7 +280,7 @@ func migrateNode(db *sqlx.DB, journeyMapID, worldID string, worldOrder int, node
             title = EXCLUDED.title,
             config = EXCLUDED.config,
             prerequisites = EXCLUDED.prerequisites
-    `, 
+    `,
         uuid.New().String(),
         journeyMapID,
         node.ID,           // Use original ID as slug
@@ -304,21 +309,23 @@ func migrateNode(db *sqlx.DB, journeyMapID, worldID string, worldOrder int, node
 Create `frontend/src/api/program.ts`:
 
 ```typescript
-import { api } from './client';
-import type { Playbook } from '@/lib/playbook';
+import { api } from "./client";
+import type { Playbook } from "@/lib/playbook";
 
 /**
  * Fetch the current user's program journey map from backend.
  * Returns the same Playbook structure as the static JSON.
  */
 export const getMyJourneyMap = async (): Promise<Playbook> => {
-  return api.get<Playbook>('/journey/map');
+  return api.get<Playbook>("/journey/map");
 };
 
 /**
  * Fetch a specific program's journey map (admin).
  */
-export const getProgramJourneyMap = async (programId: string): Promise<Playbook> => {
+export const getProgramJourneyMap = async (
+  programId: string
+): Promise<Playbook> => {
   return api.get<Playbook>(`/curriculum/programs/${programId}/journey-map`);
 };
 ```
@@ -337,7 +344,7 @@ import { JourneyMap } from "@/components/map/JourneyMap";
 import { ResetBar } from "@/features/journey/components/ResetBar";
 import { useJourneyState } from "@/features/journey/hooks";
 import type { Playbook } from "@/lib/playbook";
-import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getMyJourneyMap } from "@/api/program";
 
 // Static fallback for development/offline
@@ -349,8 +356,12 @@ export function DoctoralJourney() {
   const { state = {}, refetch } = useJourneyState();
 
   // Fetch journey map from API, fallback to static
-  const { data: playbook, isLoading: mapLoading, error } = useQuery({
-    queryKey: ['journey', 'map'],
+  const {
+    data: playbook,
+    isLoading: mapLoading,
+    error,
+  } = useQuery({
+    queryKey: ["journey", "map"],
     queryFn: getMyJourneyMap,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     retry: 1,
@@ -388,6 +399,7 @@ export function DoctoralJourney() {
 #### 3.3 No Changes to JourneyMap Component
 
 The `JourneyMap` component remains **unchanged** because:
+
 - It receives `playbook: Playbook` as a prop
 - The API returns the exact same structure
 - All rendering logic stays the same
@@ -405,8 +417,8 @@ Templates remain as static files. The `assets_list.json` continues to be loaded 
 import assetsList from "@/playbooks/assets_list.json";
 
 export function getAssetUrl(assetId: string): string {
-  const asset = assetsList.assets.find(a => a.id === assetId);
-  if (!asset) return '';
+  const asset = assetsList.assets.find((a) => a.id === assetId);
+  if (!asset) return "";
   return `/templates/${asset.storage.key}`;
 }
 ```
@@ -414,6 +426,7 @@ export function getAssetUrl(assetId: string): string {
 #### 4.2 Template Files Location
 
 Keep templates in `frontend/public/templates/` or serve from S3:
+
 ```
 frontend/public/templates/
 ├── Zayavlenie_v_OMiD_ru.docx
@@ -462,16 +475,17 @@ No dynamic population - users download and fill manually.
 
 The current playbook has these "worlds":
 
-| World ID | Title (RU) | Order | Node Count |
-|----------|------------|-------|------------|
-| W1 | I — Подготовка | 1 | ~15 nodes |
-| W2 | II — Экспертиза | 2 | ~20 nodes |
-| W3 | III — Условный | 3 | ~5 nodes (conditional) |
-| W4 | IV — Защита | 4 | ~15 nodes |
-| W5 | V — Пост-защита | 5 | ~10 nodes |
-| W6 | VI — Аттестация | 6 | ~8 nodes |
+| World ID | Title (RU)      | Order | Node Count             |
+| -------- | --------------- | ----- | ---------------------- |
+| W1       | I — Подготовка  | 1     | ~15 nodes              |
+| W2       | II — Экспертиза | 2     | ~20 nodes              |
+| W3       | III — Условный  | 3     | ~5 nodes (conditional) |
+| W4       | IV — Защита     | 4     | ~15 nodes              |
+| W5       | V — Пост-защита | 5     | ~10 nodes              |
+| W6       | VI — Аттестация | 6     | ~8 nodes               |
 
 These map to `program_version_node_definitions.module_key`:
+
 - `W1` → `module_key = "W1"`
 - Frontend groups by `module_key` to reconstruct worlds
 
@@ -480,11 +494,13 @@ These map to `program_version_node_definitions.module_key`:
 ## 🔀 Transition Strategy
 
 ### Option A: Big Bang (Simple)
+
 1. Migrate all data to backend
 2. Switch frontend to API
 3. Remove static JSON dependency
 
 ### Option B: Gradual (Recommended)
+
 1. **Week 1**: Backend API + migration script
 2. **Week 2**: Frontend uses API with static fallback
 3. **Week 3**: Monitor, fix issues
@@ -495,11 +511,11 @@ These map to `program_version_node_definitions.module_key`:
 ```typescript
 // config/features.ts
 export const FEATURES = {
-  USE_BACKEND_JOURNEY_MAP: import.meta.env.VITE_USE_BACKEND_MAP === 'true',
+  USE_BACKEND_JOURNEY_MAP: import.meta.env.VITE_USE_BACKEND_MAP === "true",
 };
 
 // In DoctoralJourney
-const playbook = FEATURES.USE_BACKEND_JOURNEY_MAP 
+const playbook = FEATURES.USE_BACKEND_JOURNEY_MAP
   ? await getMyJourneyMap()
   : staticPlaybook;
 ```
@@ -519,30 +535,33 @@ const playbook = FEATURES.USE_BACKEND_JOURNEY_MAP
 
 ## ⚠️ Risk Mitigation
 
-| Risk | Mitigation |
-|------|------------|
-| API failure | Static JSON fallback |
-| Data mismatch | Migration validation script |
-| Performance | Cache API response (5 min) |
-| Breaking changes | Feature flag for gradual rollout |
-| Missing nodes | Compare node counts pre/post migration |
+| Risk             | Mitigation                             |
+| ---------------- | -------------------------------------- |
+| API failure      | Static JSON fallback                   |
+| Data mismatch    | Migration validation script            |
+| Performance      | Cache API response (5 min)             |
+| Breaking changes | Feature flag for gradual rollout       |
+| Missing nodes    | Compare node counts pre/post migration |
 
 ---
 
 ## 🧪 Testing Plan
 
 ### Unit Tests
+
 - Backend: Test `GetJourneyMap` handler
 - Backend: Test node definition transformation
 - Frontend: Test API client error handling
 
 ### Integration Tests
+
 - API returns valid Playbook structure
 - All node types render correctly
 - Prerequisites work as expected
 - State transitions function properly
 
 ### Manual Tests
+
 - Complete full journey flow
 - Test each node type (form, upload, decision, etc.)
 - Test conditional nodes (W3)
@@ -552,12 +571,12 @@ const playbook = FEATURES.USE_BACKEND_JOURNEY_MAP
 
 ## 📅 Timeline
 
-| Week | Tasks |
-|------|-------|
-| 1 | Backend API, database schema, migration script |
-| 2 | Frontend integration, testing |
-| 3 | Staging deployment, bug fixes |
-| 4 | Production deployment, remove static fallback |
+| Week | Tasks                                          |
+| ---- | ---------------------------------------------- |
+| 1    | Backend API, database schema, migration script |
+| 2    | Frontend integration, testing                  |
+| 3    | Staging deployment, bug fixes                  |
+| 4    | Production deployment, remove static fallback  |
 
 ## 🏁 Next Steps: Roadmap
 

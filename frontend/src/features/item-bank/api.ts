@@ -3,8 +3,14 @@ import { CreateBankRequest, CreateQuestionRequest, Question, QuestionBank } from
 
 export const listBanks = () => api.get<QuestionBank[]>('/item-banks/banks');
 export const createBank = (data: CreateBankRequest) => api.post<QuestionBank>('/item-banks/banks', data);
+export const updateBank = (id: string, data: Partial<CreateBankRequest>) =>
+  api.put<QuestionBank>(`/item-banks/banks/${id}`, data);
+export const deleteBank = (id: string) => api.delete(`/item-banks/banks/${id}`);
 
 export const listQuestions = (bankId: string) => api.get<Question[]>(`/item-banks/banks/${bankId}/items`);
 export const createQuestion = (bankId: string, data: CreateQuestionRequest) =>
   api.post<Question>(`/item-banks/banks/${bankId}/items`, data);
-
+export const updateQuestion = (bankId: string, id: string, data: Partial<Question>) =>
+  api.put<Question>(`/item-banks/banks/${bankId}/items/${id}`, data);
+export const deleteQuestion = (bankId: string, id: string) =>
+  api.delete(`/item-banks/banks/${bankId}/items/${id}`);

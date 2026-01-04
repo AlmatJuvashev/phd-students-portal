@@ -1,27 +1,48 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, ArrowRight, Calendar, Clock, GraduationCap, Play } from 'lucide-react';
+import { AlertCircle, ArrowRight, Calendar, Clock, GraduationCap, Loader2, Play } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { getStudentDashboard } from './api';
 
 export const StudentDashboard: React.FC = () => {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const dashboardQuery = useQuery({
+    queryKey: ['student', 'dashboard'],
+    queryFn: getStudentDashboard,
+  });
+
+  const dashboard = dashboardQuery.data;
+  const deadlines = dashboard?.upcoming_deadlines || [];
+
   const activeProgram = {
-    title: user?.program || t('student.dashboard.default_program'),
+    title: dashboard?.program?.title || user?.program || t('student.dashboard.default_program'),
     type: t('student.dashboard.program_type'),
-    progress: 0,
-    overdue: 0,
+    progress: Math.round(dashboard?.program?.progress_percent || 0),
+    overdue: dashboard?.program?.overdue_count || 0,
   };
 
-  const tasks = [
-    { title: t('student.dashboard.tasks.0.title'), due: t('student.dashboard.tasks.0.due'), type: 'urgent' as const },
-    { title: t('student.dashboard.tasks.1.title'), due: t('student.dashboard.tasks.1.due'), type: 'normal' as const },
-    { title: t('student.dashboard.tasks.2.title'), due: t('student.dashboard.tasks.2.due'), type: 'normal' as const },
-  ];
+  const tasks =
+    deadlines.length > 0
+      ? deadlines.slice(0, 3).map((d) => ({
+          title: d.title,
+          due: d.due_at
+            ? new Date(d.due_at).toLocaleDateString()
+            : t('student.dashboard.due_soon', { defaultValue: 'Due soon' }),
+          type: (d.severity === 'urgent' ? 'urgent' : 'normal') as const,
+        }))
+      : [
+          { title: t('student.dashboard.tasks.0.title'), due: t('student.dashboard.tasks.0.due'), type: 'urgent' as const },
+          { title: t('student.dashboard.tasks.1.title'), due: t('student.dashboard.tasks.1.due'), type: 'normal' as const },
+          { title: t('student.dashboard.tasks.2.title'), due: t('student.dashboard.tasks.2.due'), type: 'normal' as const },
+        ];
+
+  const upNext = deadlines[0];
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -31,6 +52,19 @@ export const StudentDashboard: React.FC = () => {
         </h1>
         <p className="text-slate-500 font-medium mt-1">{t('student.dashboard.subtitle')}</p>
       </div>
+
+      {dashboardQuery.isLoading && (
+        <div className="flex items-center justify-center py-10 text-slate-500">
+          <Loader2 className="animate-spin mr-2" size={18} />
+          {t('loading', { defaultValue: 'Loading…' })}
+        </div>
+      )}
+
+      {dashboardQuery.isError && (
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-red-900 text-sm">
+          {t('student.dashboard.load_error', { defaultValue: 'Failed to load dashboard.' })}
+        </div>
+      )}
 
       <div className="relative bg-slate-900 rounded-[2.5rem] p-8 md:p-12 overflow-hidden shadow-2xl shadow-indigo-900/20 text-white">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600 rounded-full blur-[120px] opacity-30 -mr-20 -mt-20 pointer-events-none" />
@@ -64,15 +98,18 @@ export const StudentDashboard: React.FC = () => {
           </div>
 
           <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl w-full md:w-80 flex flex-col gap-4">
-            <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/30">
                 <Play size={20} fill="currentColor" className="ml-1" />
               </div>
               <div>
                 <div className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1">{t('student.dashboard.up_next')}</div>
-                <div className="font-bold text-sm leading-tight">{t('student.dashboard.up_next_title')}</div>
+                <div className="font-bold text-sm leading-tight">{upNext?.title || t('student.dashboard.up_next_title')}</div>
                 <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                  <Clock size={12} /> {t('student.dashboard.up_next_time')}
+                  <Clock size={12} />{' '}
+                  {upNext?.due_at
+                    ? new Date(upNext.due_at).toLocaleDateString()
+                    : t('student.dashboard.up_next_time')}
                 </div>
               </div>
             </div>
@@ -132,7 +169,10 @@ export const StudentDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
-            <button className="w-full py-3 text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors border-t border-slate-50 mt-2">
+            <button
+              onClick={() => navigate('/student/assignments')}
+              className="w-full py-3 text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors border-t border-slate-50 mt-2"
+            >
               {t('student.dashboard.view_all_tasks')}
             </button>
           </div>
@@ -149,4 +189,3 @@ export const StudentDashboard: React.FC = () => {
     </div>
   );
 };
-

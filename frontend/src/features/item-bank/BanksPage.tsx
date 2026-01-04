@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Loader2, Layers } from 'lucide-react';
+import { Plus, Search, Loader2, Layers, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { createBank, listBanks } from './api';
+import { createBank, deleteBank, listBanks } from './api';
 import { CreateBankRequest, QuestionBank } from './types';
 
 export const BanksPage: React.FC = () => {
@@ -25,6 +25,13 @@ export const BanksPage: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: ['item-banks', 'banks'] });
       setIsCreateOpen(false);
       setDraft({ title: '', description: '', subject: '', is_public: false });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteBank,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['item-banks', 'banks'] });
     },
   });
 
@@ -80,28 +87,48 @@ export const BanksPage: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map((b: QuestionBank) => (
-          <button
+          <div
             key={b.id}
             onClick={() => navigate(`/admin/item-banks/${b.id}`)}
             className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all cursor-pointer text-left"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') navigate(`/admin/item-banks/${b.id}`);
+            }}
           >
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
                 <Layers size={18} />
               </div>
-              <Badge
-                variant={b.is_public ? 'default' : 'secondary'}
-                className={cn(b.is_public ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : '')}
-              >
-                {b.is_public ? 'Public' : 'Private'}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={b.is_public ? 'default' : 'secondary'}
+                  className={cn(b.is_public ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : '')}
+                >
+                  {b.is_public ? 'Public' : 'Private'}
+                </Badge>
+                <button
+                  type="button"
+                  className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-red-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!window.confirm(`Delete bank "${b.title}"? This will remove all questions in it.`)) return;
+                    deleteMutation.mutate(b.id);
+                  }}
+                  disabled={deleteMutation.isPending}
+                  aria-label="Delete bank"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
             <div className="font-black text-slate-900 leading-tight">{b.title}</div>
             <div className="text-xs text-slate-500 mt-1 line-clamp-2">{b.description || '—'}</div>
             <div className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               {b.subject || 'General'}
             </div>
-          </button>
+          </div>
         ))}
 
         {filtered.length === 0 && (
@@ -164,4 +191,3 @@ export const BanksPage: React.FC = () => {
     </div>
   );
 };
-

@@ -9,6 +9,7 @@
 ## Executive Summary
 
 Your current **`frontend/`** is a working React application with:
+
 - ✅ Authentication via HttpOnly cookies (`AuthContext`)
 - ✅ Multi-tenant support (`X-Tenant-Slug` header)
 - ✅ Role-based routing (`ProtectedRoute`, `ServiceProtectedRoute`)
@@ -30,7 +31,7 @@ frontend/src/
 │   ├── user.ts             # User APIs
 │   ├── contacts.ts         # Contacts APIs
 │   └── dictionaries.ts     # Dictionary APIs
-├── contexts/               
+├── contexts/
 │   ├── AuthContext.tsx     # ✅ Auth state (cookie-based)
 │   └── TenantServicesContext.tsx  # ✅ Optional services toggle
 ├── features/               # ✅ Feature modules (preferred location for new features)
@@ -58,24 +59,24 @@ frontend/src/
 
 ## 📊 Feature Comparison: What to Migrate
 
-| Feature | Current Frontend | v11 Example | Backend API | Action |
-|---------|-----------------|-------------|-------------|--------|
-| **Auth/Login** | ✅ Cookie-based | 🔴 N/A | ✅ `/api/auth/*` | No change |
-| **Journey Map** | ✅ Working | ✅ Enhanced UI | ✅ `/api/journey/*` | Optional UI upgrade |
-| **Chat** | ✅ Working | ✅ Different UI | ✅ `/api/chat/*` | No change |
-| **Calendar** | ✅ `features/calendar/` | ✅ Different UI | ✅ `/api/calendar/*` | No change |
-| **Scheduler** | ✅ `features/scheduler/` | ✅ Enhanced | ✅ `/api/scheduler/*` | Merge UI improvements |
-| **Students Monitor** | ✅ `features/students-monitor/` | ❌ N/A | ✅ `/api/admin/*` | No change |
-| **Dictionaries** | ✅ `features/admin/dictionaries/` | ❌ N/A | ✅ `/api/admin/*` | No change |
-| **LMS: Programs** | ❌ Missing | ✅ `ProgramsPage` | ✅ `/api/curriculum/*` | **Migrate** |
-| **LMS: Courses** | ❌ Missing | ✅ `GlobalCoursesPage` | ✅ `/api/curriculum/*` | **Migrate** |
-| **Course Builder** | ❌ Missing | ✅ `CourseBuilder` | ✅ `/api/course-content/*` | **Migrate** |
-| **Enrollments** | ❌ Missing | ✅ `EnrollmentsPage` | ✅ `/api/admin/enrollments/*` | **Migrate** |
-| **Item Bank** | ❌ Missing | ✅ `BanksPage`, `QuestionsPage` | ✅ `/api/item-bank/*` | **Migrate** |
-| **Quiz Builder** | ❌ Missing | ✅ `QuizBuilder` | ✅ `/api/assessments/*` | **Migrate** |
-| **Grading** | ❌ Missing | ✅ `TeacherGradingPage` | ✅ `/api/grading/*` | **Migrate** |
-| **Student App** | ❌ Missing | ✅ Full student portal | ✅ Various APIs | **Migrate** |
-| **Teacher App** | ❌ Missing | ✅ Full teacher portal | ✅ Various APIs | **Migrate** |
+| Feature              | Current Frontend                  | v11 Example                     | Backend API                   | Action                |
+| -------------------- | --------------------------------- | ------------------------------- | ----------------------------- | --------------------- |
+| **Auth/Login**       | ✅ Cookie-based                   | 🔴 N/A                          | ✅ `/api/auth/*`              | No change             |
+| **Journey Map**      | ✅ Working                        | ✅ Enhanced UI                  | ✅ `/api/journey/*`           | Optional UI upgrade   |
+| **Chat**             | ✅ Working                        | ✅ Different UI                 | ✅ `/api/chat/*`              | No change             |
+| **Calendar**         | ✅ `features/calendar/`           | ✅ Different UI                 | ✅ `/api/calendar/*`          | No change             |
+| **Scheduler**        | ✅ `features/scheduler/`          | ✅ Enhanced                     | ✅ `/api/scheduler/*`         | Merge UI improvements |
+| **Students Monitor** | ✅ `features/students-monitor/`   | ❌ N/A                          | ✅ `/api/admin/*`             | No change             |
+| **Dictionaries**     | ✅ `features/admin/dictionaries/` | ❌ N/A                          | ✅ `/api/admin/*`             | No change             |
+| **LMS: Programs**    | ❌ Missing                        | ✅ `ProgramsPage`               | ✅ `/api/curriculum/*`        | **Migrate**           |
+| **LMS: Courses**     | ❌ Missing                        | ✅ `GlobalCoursesPage`          | ✅ `/api/curriculum/*`        | **Migrate**           |
+| **Course Builder**   | ❌ Missing                        | ✅ `CourseBuilder`              | ✅ `/api/course-content/*`    | **Migrate**           |
+| **Enrollments**      | ❌ Missing                        | ✅ `EnrollmentsPage`            | ✅ `/api/admin/enrollments/*` | **Migrate**           |
+| **Item Bank**        | ❌ Missing                        | ✅ `BanksPage`, `QuestionsPage` | ✅ `/api/item-bank/*`         | **Migrate**           |
+| **Quiz Builder**     | ❌ Missing                        | ✅ `QuizBuilder`                | ✅ `/api/assessments/*`       | **Migrate**           |
+| **Grading**          | ❌ Missing                        | ✅ `TeacherGradingPage`         | ✅ `/api/grading/*`           | **Migrate**           |
+| **Student App**      | ❌ Missing                        | ✅ Full student portal          | ✅ Various APIs               | **Migrate**           |
+| **Teacher App**      | ❌ Missing                        | ✅ Full teacher portal          | ✅ Various APIs               | **Migrate**           |
 
 ---
 
@@ -101,25 +102,33 @@ frontend/src/features/curriculum/
 **Create `frontend/src/features/curriculum/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { Program, Course } from './types';
+import { api } from "@/api/client";
+import { Program, Course } from "./types";
 
 // Programs
-export const getPrograms = () => api.get<Program[]>('/curriculum/programs');
-export const getProgram = (id: string) => api.get<Program>(`/curriculum/programs/${id}`);
-export const createProgram = (data: Partial<Program>) => api.post('/curriculum/programs', data);
-export const updateProgram = (id: string, data: Partial<Program>) => 
+export const getPrograms = () => api.get<Program[]>("/curriculum/programs");
+export const getProgram = (id: string) =>
+  api.get<Program>(`/curriculum/programs/${id}`);
+export const createProgram = (data: Partial<Program>) =>
+  api.post("/curriculum/programs", data);
+export const updateProgram = (id: string, data: Partial<Program>) =>
   api.put(`/curriculum/programs/${id}`, data);
-export const deleteProgram = (id: string) => api.delete(`/curriculum/programs/${id}`);
+export const deleteProgram = (id: string) =>
+  api.delete(`/curriculum/programs/${id}`);
 
-// Courses  
-export const getCourses = (programId?: string) => 
-  api.get<Course[]>(`/curriculum/courses${programId ? `?program_id=${programId}` : ''}`);
-export const getCourse = (id: string) => api.get<Course>(`/curriculum/courses/${id}`);
-export const createCourse = (data: Partial<Course>) => api.post('/curriculum/courses', data);
-export const updateCourse = (id: string, data: Partial<Course>) => 
+// Courses
+export const getCourses = (programId?: string) =>
+  api.get<Course[]>(
+    `/curriculum/courses${programId ? `?program_id=${programId}` : ""}`
+  );
+export const getCourse = (id: string) =>
+  api.get<Course>(`/curriculum/courses/${id}`);
+export const createCourse = (data: Partial<Course>) =>
+  api.post("/curriculum/courses", data);
+export const updateCourse = (id: string, data: Partial<Course>) =>
   api.put(`/curriculum/courses/${id}`, data);
-export const deleteCourse = (id: string) => api.delete(`/curriculum/courses/${id}`);
+export const deleteCourse = (id: string) =>
+  api.delete(`/curriculum/courses/${id}`);
 ```
 
 **Create `frontend/src/features/curriculum/types.ts`:**
@@ -131,10 +140,10 @@ export interface Program {
   title: string;
   code: string;
   description: string;
-  type: 'bachelor' | 'master' | 'doctoral' | 'certificate';
+  type: "bachelor" | "master" | "doctoral" | "certificate";
   total_credits: number;
   duration_semesters: number;
-  status: 'draft' | 'active' | 'archived';
+  status: "draft" | "active" | "archived";
   created_at: string;
   updated_at: string;
 }
@@ -147,9 +156,9 @@ export interface Course {
   title: string;
   description: string;
   credits: number;
-  category: 'core' | 'elective' | 'research';
+  category: "core" | "elective" | "research";
   prerequisites?: string[];
-  status: 'draft' | 'active' | 'archived';
+  status: "draft" | "active" | "archived";
   created_at: string;
   updated_at: string;
 }
@@ -159,35 +168,41 @@ export interface Course {
 
 ```typescript
 // BEFORE (v11 with mock data):
-import { getPrograms, Program } from '../../data/opsData';
-useEffect(() => { setPrograms(getPrograms()); }, []);
+import { getPrograms, Program } from "../../data/opsData";
+useEffect(() => {
+  setPrograms(getPrograms());
+}, []);
 
 // AFTER (with real API):
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPrograms, createProgram, deleteProgram } from './api';
-import { Program } from './types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPrograms, createProgram, deleteProgram } from "./api";
+import { Program } from "./types";
 
 export function ProgramsPage() {
   const queryClient = useQueryClient();
-  
-  const { data: programs = [], isLoading, error } = useQuery({
-    queryKey: ['programs'],
+
+  const {
+    data: programs = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["programs"],
     queryFn: getPrograms,
   });
-  
+
   const createMutation = useMutation({
     mutationFn: createProgram,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['programs'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["programs"] }),
   });
-  
+
   const deleteMutation = useMutation({
     mutationFn: deleteProgram,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['programs'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["programs"] }),
   });
-  
+
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error loading programs</div>;
-  
+
   // ... rest of UI from v11 (keep the JSX layout)
 }
 ```
@@ -264,23 +279,28 @@ frontend/src/features/enrollments/
 **Create `frontend/src/features/enrollments/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { Enrollment, EnrollmentCreateRequest } from './types';
+import { api } from "@/api/client";
+import { Enrollment, EnrollmentCreateRequest } from "./types";
 
-export const getEnrollments = (filters?: { course_id?: string; student_id?: string }) => {
+export const getEnrollments = (filters?: {
+  course_id?: string;
+  student_id?: string;
+}) => {
   const params = new URLSearchParams();
-  if (filters?.course_id) params.append('course_id', filters.course_id);
-  if (filters?.student_id) params.append('student_id', filters.student_id);
+  if (filters?.course_id) params.append("course_id", filters.course_id);
+  if (filters?.student_id) params.append("student_id", filters.student_id);
   return api.get<Enrollment[]>(`/admin/enrollments?${params}`);
 };
 
-export const createEnrollment = (data: EnrollmentCreateRequest) => 
-  api.post('/admin/enrollments', data);
+export const createEnrollment = (data: EnrollmentCreateRequest) =>
+  api.post("/admin/enrollments", data);
 
-export const bulkEnroll = (data: { course_id: string; student_ids: string[] }) =>
-  api.post('/admin/enrollments/bulk', data);
+export const bulkEnroll = (data: {
+  course_id: string;
+  student_ids: string[];
+}) => api.post("/admin/enrollments/bulk", data);
 
-export const dropEnrollment = (id: string) => 
+export const dropEnrollment = (id: string) =>
   api.delete(`/admin/enrollments/${id}`);
 ```
 
@@ -299,32 +319,35 @@ frontend/src/features/course-content/
 **Create `frontend/src/features/course-content/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { CourseModule, CourseLesson, CourseActivity } from './types';
+import { api } from "@/api/client";
+import { CourseModule, CourseLesson, CourseActivity } from "./types";
 
 // Modules
-export const getModules = (courseId: string) => 
+export const getModules = (courseId: string) =>
   api.get<CourseModule[]>(`/course-content/modules?course_id=${courseId}`);
-export const createModule = (data: Partial<CourseModule>) => 
-  api.post('/course-content/modules', data);
-export const updateModule = (id: string, data: Partial<CourseModule>) => 
+export const createModule = (data: Partial<CourseModule>) =>
+  api.post("/course-content/modules", data);
+export const updateModule = (id: string, data: Partial<CourseModule>) =>
   api.put(`/course-content/modules/${id}`, data);
 export const reorderModules = (courseId: string, moduleIds: string[]) =>
-  api.post(`/course-content/modules/reorder`, { course_id: courseId, module_ids: moduleIds });
+  api.post(`/course-content/modules/reorder`, {
+    course_id: courseId,
+    module_ids: moduleIds,
+  });
 
 // Lessons
-export const getLessons = (moduleId: string) => 
+export const getLessons = (moduleId: string) =>
   api.get<CourseLesson[]>(`/course-content/lessons?module_id=${moduleId}`);
-export const createLesson = (data: Partial<CourseLesson>) => 
-  api.post('/course-content/lessons', data);
-export const updateLesson = (id: string, data: Partial<CourseLesson>) => 
+export const createLesson = (data: Partial<CourseLesson>) =>
+  api.post("/course-content/lessons", data);
+export const updateLesson = (id: string, data: Partial<CourseLesson>) =>
   api.put(`/course-content/lessons/${id}`, data);
 
-// Activities  
-export const getActivities = (lessonId: string) => 
+// Activities
+export const getActivities = (lessonId: string) =>
   api.get<CourseActivity[]>(`/course-content/activities?lesson_id=${lessonId}`);
-export const createActivity = (data: Partial<CourseActivity>) => 
-  api.post('/course-content/activities', data);
+export const createActivity = (data: Partial<CourseActivity>) =>
+  api.post("/course-content/activities", data);
 ```
 
 ---
@@ -348,35 +371,42 @@ frontend/src/features/item-bank/
 **Create `frontend/src/features/item-bank/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { QuestionBank, Question, QuestionCreateRequest } from './types';
+import { api } from "@/api/client";
+import { QuestionBank, Question, QuestionCreateRequest } from "./types";
 
 // Banks
-export const getBanks = () => api.get<QuestionBank[]>('/item-bank/banks');
-export const getBank = (id: string) => api.get<QuestionBank>(`/item-bank/banks/${id}`);
-export const createBank = (data: Partial<QuestionBank>) => api.post('/item-bank/banks', data);
-export const updateBank = (id: string, data: Partial<QuestionBank>) => 
+export const getBanks = () => api.get<QuestionBank[]>("/item-bank/banks");
+export const getBank = (id: string) =>
+  api.get<QuestionBank>(`/item-bank/banks/${id}`);
+export const createBank = (data: Partial<QuestionBank>) =>
+  api.post("/item-bank/banks", data);
+export const updateBank = (id: string, data: Partial<QuestionBank>) =>
   api.put(`/item-bank/banks/${id}`, data);
 export const deleteBank = (id: string) => api.delete(`/item-bank/banks/${id}`);
 
 // Questions
-export const getQuestions = (bankId: string, filters?: { type?: string; difficulty?: string }) => {
+export const getQuestions = (
+  bankId: string,
+  filters?: { type?: string; difficulty?: string }
+) => {
   const params = new URLSearchParams({ bank_id: bankId });
-  if (filters?.type) params.append('type', filters.type);
-  if (filters?.difficulty) params.append('difficulty', filters.difficulty);
+  if (filters?.type) params.append("type", filters.type);
+  if (filters?.difficulty) params.append("difficulty", filters.difficulty);
   return api.get<Question[]>(`/item-bank/questions?${params}`);
 };
-export const getQuestion = (id: string) => api.get<Question>(`/item-bank/questions/${id}`);
-export const createQuestion = (data: QuestionCreateRequest) => 
-  api.post('/item-bank/questions', data);
-export const updateQuestion = (id: string, data: Partial<Question>) => 
+export const getQuestion = (id: string) =>
+  api.get<Question>(`/item-bank/questions/${id}`);
+export const createQuestion = (data: QuestionCreateRequest) =>
+  api.post("/item-bank/questions", data);
+export const updateQuestion = (id: string, data: Partial<Question>) =>
   api.put(`/item-bank/questions/${id}`, data);
-export const deleteQuestion = (id: string) => api.delete(`/item-bank/questions/${id}`);
+export const deleteQuestion = (id: string) =>
+  api.delete(`/item-bank/questions/${id}`);
 
 // Bulk import
 export const importQuestions = (bankId: string, file: File) => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
   return api.postFormData(`/item-bank/banks/${bankId}/import`, formData);
 };
 ```
@@ -398,25 +428,35 @@ frontend/src/features/assessment/
 **Create `frontend/src/features/assessment/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { Assessment, AssessmentAttempt, AssessmentSubmission } from './types';
+import { api } from "@/api/client";
+import { Assessment, AssessmentAttempt, AssessmentSubmission } from "./types";
 
 // Assessments (quizzes, exams, surveys)
 export const getAssessments = (courseId?: string) => {
-  const params = courseId ? `?course_id=${courseId}` : '';
+  const params = courseId ? `?course_id=${courseId}` : "";
   return api.get<Assessment[]>(`/assessments${params}`);
 };
-export const getAssessment = (id: string) => api.get<Assessment>(`/assessments/${id}`);
-export const createAssessment = (data: Partial<Assessment>) => api.post('/assessments', data);
-export const updateAssessment = (id: string, data: Partial<Assessment>) => 
+export const getAssessment = (id: string) =>
+  api.get<Assessment>(`/assessments/${id}`);
+export const createAssessment = (data: Partial<Assessment>) =>
+  api.post("/assessments", data);
+export const updateAssessment = (id: string, data: Partial<Assessment>) =>
   api.put(`/assessments/${id}`, data);
-export const publishAssessment = (id: string) => api.post(`/assessments/${id}/publish`);
+export const publishAssessment = (id: string) =>
+  api.post(`/assessments/${id}/publish`);
 
 // Student attempts
-export const startAttempt = (assessmentId: string) => 
+export const startAttempt = (assessmentId: string) =>
   api.post<AssessmentAttempt>(`/assessments/${assessmentId}/attempts`);
-export const submitAnswer = (attemptId: string, questionId: string, answer: any) =>
-  api.post(`/assessments/attempts/${attemptId}/answers`, { question_id: questionId, answer });
+export const submitAnswer = (
+  attemptId: string,
+  questionId: string,
+  answer: any
+) =>
+  api.post(`/assessments/attempts/${attemptId}/answers`, {
+    question_id: questionId,
+    answer,
+  });
 export const finishAttempt = (attemptId: string) =>
   api.post(`/assessments/attempts/${attemptId}/finish`);
 export const getAttemptResult = (attemptId: string) =>
@@ -445,34 +485,40 @@ frontend/src/features/grading/
 **Create `frontend/src/features/grading/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { Submission, GradeEntry, Gradebook, GradingSchema } from './types';
+import { api } from "@/api/client";
+import { Submission, GradeEntry, Gradebook, GradingSchema } from "./types";
 
 // Grading schemas
-export const getGradingSchema = (courseId: string) => 
+export const getGradingSchema = (courseId: string) =>
   api.get<GradingSchema>(`/grading/schema?course_id=${courseId}`);
-export const updateGradingSchema = (courseId: string, schema: Partial<GradingSchema>) =>
-  api.put(`/grading/schema/${courseId}`, schema);
+export const updateGradingSchema = (
+  courseId: string,
+  schema: Partial<GradingSchema>
+) => api.put(`/grading/schema/${courseId}`, schema);
 
 // Submissions (for teachers)
 export const getPendingSubmissions = (courseId: string) =>
-  api.get<Submission[]>(`/grading/courses/${courseId}/submissions?status=pending`);
-export const getSubmission = (id: string) => api.get<Submission>(`/grading/submissions/${id}`);
+  api.get<Submission[]>(
+    `/grading/courses/${courseId}/submissions?status=pending`
+  );
+export const getSubmission = (id: string) =>
+  api.get<Submission>(`/grading/submissions/${id}`);
 
 // Grading
-export const submitGrade = (entry: GradeEntry) => api.post('/grading/entries', entry);
+export const submitGrade = (entry: GradeEntry) =>
+  api.post("/grading/entries", entry);
 export const updateGrade = (entryId: string, data: Partial<GradeEntry>) =>
   api.put(`/grading/entries/${entryId}`, data);
 
 // Gradebook
-export const getGradebook = (courseId: string) => 
+export const getGradebook = (courseId: string) =>
   api.get<Gradebook>(`/grading/gradebook/${courseId}`);
-export const getStudentGrades = () => api.get('/grading/gradebook/my');
+export const getStudentGrades = () => api.get("/grading/gradebook/my");
 
 // Export
-export const exportGradebook = (courseId: string, format: 'csv' | 'xlsx') =>
-  api.get(`/grading/gradebook/${courseId}/export?format=${format}`, { 
-    responseType: 'blob' 
+export const exportGradebook = (courseId: string, format: "csv" | "xlsx") =>
+  api.get(`/grading/gradebook/${courseId}/export?format=${format}`, {
+    responseType: "blob",
   });
 ```
 
@@ -500,34 +546,37 @@ frontend/src/features/student-portal/
 **Create `frontend/src/features/student-portal/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { MyEnrollment, MyCourse, MyAssignment, MyGrade } from './types';
+import { api } from "@/api/client";
+import { MyEnrollment, MyCourse, MyAssignment, MyGrade } from "./types";
 
 // Dashboard
-export const getStudentDashboard = () => api.get('/student/dashboard');
+export const getStudentDashboard = () => api.get("/student/dashboard");
 
 // Enrollments
-export const getMyEnrollments = () => api.get<MyEnrollment[]>('/lms/enrollments/my');
-export const getMyEnrollment = (courseId: string) => 
+export const getMyEnrollments = () =>
+  api.get<MyEnrollment[]>("/lms/enrollments/my");
+export const getMyEnrollment = (courseId: string) =>
   api.get<MyEnrollment>(`/lms/enrollments/my/${courseId}`);
 
 // Course content
-export const getMyCourseContent = (courseId: string) => 
+export const getMyCourseContent = (courseId: string) =>
   api.get<MyCourse>(`/lms/courses/${courseId}/content`);
 export const markLessonComplete = (lessonId: string) =>
   api.post(`/lms/lessons/${lessonId}/complete`);
 
 // Assignments
-export const getMyAssignments = (status?: 'pending' | 'submitted' | 'graded') => {
-  const params = status ? `?status=${status}` : '';
+export const getMyAssignments = (
+  status?: "pending" | "submitted" | "graded"
+) => {
+  const params = status ? `?status=${status}` : "";
   return api.get<MyAssignment[]>(`/student/assignments${params}`);
 };
 export const submitAssignment = (assignmentId: string, data: FormData) =>
   api.postFormData(`/student/assignments/${assignmentId}/submit`, data);
 
 // Grades
-export const getMyGrades = () => api.get<MyGrade[]>('/grading/gradebook/my');
-export const getMyTranscript = () => api.get('/transcript/student/me');
+export const getMyGrades = () => api.get<MyGrade[]>("/grading/gradebook/my");
+export const getMyTranscript = () => api.get("/transcript/student/me");
 ```
 
 #### 5.2 Create `features/teacher-portal/` Module
@@ -547,20 +596,23 @@ frontend/src/features/teacher-portal/
 **Create `frontend/src/features/teacher-portal/api.ts`:**
 
 ```typescript
-import { api } from '@/api/client';
-import { TeacherCourse, CourseRoster, StudentProgress } from './types';
+import { api } from "@/api/client";
+import { TeacherCourse, CourseRoster, StudentProgress } from "./types";
 
 // Dashboard
-export const getTeacherDashboard = () => api.get('/teacher/dashboard');
+export const getTeacherDashboard = () => api.get("/teacher/dashboard");
 
 // Courses
-export const getMyCourses = () => api.get<TeacherCourse[]>('/lms/courses/teaching');
-export const getCourseRoster = (courseId: string) => 
+export const getMyCourses = () =>
+  api.get<TeacherCourse[]>("/lms/courses/teaching");
+export const getCourseRoster = (courseId: string) =>
   api.get<CourseRoster>(`/lms/courses/${courseId}/roster`);
 
 // Student tracking
 export const getStudentProgress = (courseId: string, studentId: string) =>
-  api.get<StudentProgress>(`/lms/courses/${courseId}/students/${studentId}/progress`);
+  api.get<StudentProgress>(
+    `/lms/courses/${courseId}/students/${studentId}/progress`
+  );
 export const getCourseAnalytics = (courseId: string) =>
   api.get(`/analytics/courses/${courseId}`);
 
@@ -576,21 +628,23 @@ export const recordAttendance = (sessionId: string, attendees: string[]) =>
 When migrating any component from v11, follow this checklist:
 
 ### Step 1: Copy the Component File
+
 ```bash
 cp ui-examples/phd-journey-tracker_v11/admin/pages/ops/ProgramsPage.tsx \
    frontend/src/features/curriculum/ProgramsPage.tsx
 ```
 
 ### Step 2: Update Imports
+
 ```typescript
 // ❌ BEFORE (v11 imports)
-import { getPrograms, Program } from '../../data/opsData';
-import { Button } from '../../components/ui/Button';
+import { getPrograms, Program } from "../../data/opsData";
+import { Button } from "../../components/ui/Button";
 
 // ✅ AFTER (current frontend imports)
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPrograms, createProgram, Program } from './api';
-import { Button } from '@/components/ui/button';  // shadcn/ui
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPrograms, createProgram, Program } from "./api";
+import { Button } from "@/components/ui/button"; // shadcn/ui
 ```
 
 ### Step 3: Replace Mock Data with React Query
@@ -603,8 +657,13 @@ useEffect(() => {
 }, []);
 
 // ✅ AFTER (React Query)
-const { data: programs = [], isLoading, error, refetch } = useQuery({
-  queryKey: ['programs'],
+const {
+  data: programs = [],
+  isLoading,
+  error,
+  refetch,
+} = useQuery({
+  queryKey: ["programs"],
   queryFn: getPrograms,
 });
 ```
@@ -623,8 +682,8 @@ const queryClient = useQueryClient();
 const createMutation = useMutation({
   mutationFn: createProgram,
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['programs'] });
-    toast.success('Program created successfully');
+    queryClient.invalidateQueries({ queryKey: ["programs"] });
+    toast.success("Program created successfully");
   },
   onError: (error) => {
     toast.error(error.message);
@@ -641,13 +700,13 @@ const handleCreate = (data: Partial<Program>) => {
 ```typescript
 // ❌ BEFORE (v11 onNavigate prop)
 const { onNavigate } = props;
-<Button onClick={() => onNavigate(`/admin/ops/programs/${id}`)}>View</Button>
+<Button onClick={() => onNavigate(`/admin/ops/programs/${id}`)}>View</Button>;
 
 // ✅ AFTER (React Router)
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const navigate = useNavigate();
-<Button onClick={() => navigate(`/admin/programs/${id}`)}>View</Button>
+<Button onClick={() => navigate(`/admin/programs/${id}`)}>View</Button>;
 ```
 
 ### Step 6: Add Loading and Error States
@@ -664,9 +723,7 @@ if (isLoading) {
 if (error) {
   return (
     <Alert variant="destructive">
-      <AlertDescription>
-        Failed to load data: {error.message}
-      </AlertDescription>
+      <AlertDescription>Failed to load data: {error.message}</AlertDescription>
     </Alert>
   );
 }
@@ -696,6 +753,7 @@ const ProgramsPage = lazy(() =>
 ## 📋 Files to Create Summary
 
 ### New API Files
+
 ```
 frontend/src/features/
 ├── curriculum/api.ts        # Programs, Courses
@@ -709,6 +767,7 @@ frontend/src/features/
 ```
 
 ### New Route Groups to Add
+
 ```typescript
 // Admin routes (add to /admin children)
 /admin/programs           # ProgramsPage
@@ -741,39 +800,39 @@ frontend/src/features/
 
 ### Already Implemented in Backend
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/curriculum/programs` | GET, POST | List/Create programs |
-| `/api/curriculum/programs/:id` | GET, PUT, DELETE | CRUD program |
-| `/api/curriculum/courses` | GET, POST | List/Create courses |
-| `/api/curriculum/courses/:id` | GET, PUT, DELETE | CRUD course |
-| `/api/course-content/modules` | GET, POST | List/Create modules |
-| `/api/course-content/lessons` | GET, POST | List/Create lessons |
-| `/api/course-content/activities` | GET, POST | List/Create activities |
-| `/api/admin/enrollments` | GET, POST | List/Create enrollments |
-| `/api/item-bank/banks` | GET, POST | List/Create banks |
-| `/api/item-bank/questions` | GET, POST | List/Create questions |
-| `/api/assessments` | GET, POST | List/Create assessments |
-| `/api/assessments/:id/attempts` | POST, GET | Quiz attempts |
-| `/api/grading/schema` | GET, PUT | Grading schema |
-| `/api/grading/entries` | POST | Submit grades |
-| `/api/grading/gradebook/:courseId` | GET | Course gradebook |
-| `/api/scheduler/terms` | GET, POST | Academic terms |
-| `/api/scheduler/rooms` | GET, POST | Rooms |
-| `/api/scheduler/sessions` | GET, POST | Class sessions |
-| `/api/calendar/events` | GET, POST | Calendar events |
+| Endpoint                           | Method           | Description             |
+| ---------------------------------- | ---------------- | ----------------------- |
+| `/api/curriculum/programs`         | GET, POST        | List/Create programs    |
+| `/api/curriculum/programs/:id`     | GET, PUT, DELETE | CRUD program            |
+| `/api/curriculum/courses`          | GET, POST        | List/Create courses     |
+| `/api/curriculum/courses/:id`      | GET, PUT, DELETE | CRUD course             |
+| `/api/course-content/modules`      | GET, POST        | List/Create modules     |
+| `/api/course-content/lessons`      | GET, POST        | List/Create lessons     |
+| `/api/course-content/activities`   | GET, POST        | List/Create activities  |
+| `/api/admin/enrollments`           | GET, POST        | List/Create enrollments |
+| `/api/item-bank/banks`             | GET, POST        | List/Create banks       |
+| `/api/item-bank/questions`         | GET, POST        | List/Create questions   |
+| `/api/assessments`                 | GET, POST        | List/Create assessments |
+| `/api/assessments/:id/attempts`    | POST, GET        | Quiz attempts           |
+| `/api/grading/schema`              | GET, PUT         | Grading schema          |
+| `/api/grading/entries`             | POST             | Submit grades           |
+| `/api/grading/gradebook/:courseId` | GET              | Course gradebook        |
+| `/api/scheduler/terms`             | GET, POST        | Academic terms          |
+| `/api/scheduler/rooms`             | GET, POST        | Rooms                   |
+| `/api/scheduler/sessions`          | GET, POST        | Class sessions          |
+| `/api/calendar/events`             | GET, POST        | Calendar events         |
 
 ---
 
 ## 🎯 Estimated Timeline
 
-| Phase | Features | Duration | Dependencies |
-|-------|----------|----------|--------------|
-| 1 | LMS Core (Programs, Courses) | 1 week | None |
-| 2 | Enrollments, Course Content | 1 week | Phase 1 |
-| 3 | Item Bank, Assessment | 1 week | Phase 2 |
-| 4 | Grading System | 1 week | Phase 3 |
-| 5 | Student & Teacher Portals | 1-2 weeks | Phase 4 |
+| Phase | Features                     | Duration  | Dependencies |
+| ----- | ---------------------------- | --------- | ------------ |
+| 1     | LMS Core (Programs, Courses) | 1 week    | None         |
+| 2     | Enrollments, Course Content  | 1 week    | Phase 1      |
+| 3     | Item Bank, Assessment        | 1 week    | Phase 2      |
+| 4     | Grading System               | 1 week    | Phase 3      |
+| 5     | Student & Teacher Portals    | 1-2 weeks | Phase 4      |
 
 **Total: 5-6 weeks** for complete migration
 
@@ -790,6 +849,7 @@ After migration, verify:
 5. **CRUD operations** - create, read, update, delete all work
 6. **Error handling** - proper error messages shown
 7. **Loading states** - spinners during API calls
+
 ## 🏁 Next Steps: Getting Started
 
 1.  **Initialize Features**: Create the `api.ts` and `types.ts` files for the `curriculum` module.

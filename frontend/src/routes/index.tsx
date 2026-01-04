@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantServices, OptionalService } from "@/contexts/TenantServicesContext";
 import { AdminLayout } from "@/layouts/AdminLayout";
+import { StudentLayout } from "@/layouts/StudentLayout";
 
 const LoginPage = lazy(() =>
   import("@/pages/login").then((m) => ({ default: m.LoginPage }))
@@ -81,6 +82,15 @@ const Dashboard = lazy(() =>
 const StudentDashboard = lazy(() =>
   import("@/features/student-portal/StudentDashboard").then((m) => ({ default: m.StudentDashboard }))
 );
+const StudentCourses = lazy(() =>
+  import("@/features/student-portal/StudentCourses").then((m) => ({ default: m.StudentCourses }))
+);
+const StudentAssignments = lazy(() =>
+  import("@/features/student-portal/StudentAssignments").then((m) => ({ default: m.StudentAssignments }))
+);
+const StudentGrades = lazy(() =>
+  import("@/features/student-portal/StudentGrades").then((m) => ({ default: m.StudentGrades }))
+);
 const ForgotPassword = lazy(() =>
   import("@/pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
 );
@@ -117,6 +127,9 @@ const SchedulerPage = lazy(() =>
 );
 const ProgramsPage = lazy(() =>
   import("@/features/curriculum/ProgramsPage").then((m) => ({ default: m.ProgramsPage }))
+);
+const ProgramDetailPage = lazy(() =>
+  import("@/features/curriculum/ProgramDetailPage").then((m) => ({ default: m.ProgramDetailPage }))
 );
 const CoursesPage = lazy(() =>
   import("@/features/curriculum/CoursesPage").then((m) => ({ default: m.CoursesPage }))
@@ -267,12 +280,19 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute>{WithSuspense(<Dashboard />)}</ProtectedRoute>,
       },
       {
-        path: "student/dashboard",
+        path: "student",
         element: (
           <ProtectedRoute requiredRole="student">
-            {WithSuspense(<StudentDashboard />)}
+            {WithSuspense(<StudentLayout />)}
           </ProtectedRoute>
         ),
+        children: [
+          { path: "dashboard", element: WithSuspense(<StudentDashboard />) },
+          { path: "courses", element: WithSuspense(<StudentCourses />) },
+          { path: "assignments", element: WithSuspense(<StudentAssignments />) },
+          { path: "grades", element: WithSuspense(<StudentGrades />) },
+          { index: true, element: <Navigate to="dashboard" replace /> },
+        ],
       },
       {
         path: "profile",
@@ -422,6 +442,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<ProgramsPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "programs/:id",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ProgramDetailPage />)}
           </ProtectedRoute>
         ),
       },

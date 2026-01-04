@@ -25,7 +25,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// CORS for frontend dev and configured origin
 	// Clean FrontendBase in case env var has embedded quotes
 	cleanedFrontendBase := strings.Trim(cfg.FrontendBase, "\"' \t")
-	
+
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
 			if origin == "" {
@@ -33,7 +33,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			}
 			// Log CORS check for debugging
 			log.Printf("[CORS] Origin=%q, FrontendBase=%q, Cleaned=%q", origin, cfg.FrontendBase, cleanedFrontendBase)
-			
+
 			if origin == cleanedFrontendBase {
 				return true
 			}
@@ -71,13 +71,13 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-	
+
 	// Add tenant middleware for all API routes
 	// This resolves tenant from subdomain or X-Tenant-Slug header
 	r.Use(middleware.TenantMiddleware(db))
-	
+
 	api := r.Group("/api")
-	
+
 	// Serve static files from uploads directory
 	// This maps /uploads/... to the configured upload directory on disk
 	r.Static("/uploads", cfg.UploadDir)
@@ -95,11 +95,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		})
 	})
 
-
-
 	// Services
 	emailService := services.NewEmailService()
-	
+
 	// Journey Service Dependencies
 	// S3 Client
 	s3Svc, err := services.NewS3FromEnv()
@@ -122,7 +120,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	users := NewUsersHandler(userService, cfg)
 	_ = users
-	
+
 	// Documents
 	docRepo := repository.NewSQLDocumentRepository(db)
 	docService := services.NewDocumentService(docRepo, cfg, s3Svc)
@@ -184,11 +182,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	// I need to move their definition UP or move Analytics definition DOWN.
 	// LMS and Attendance are defined around lines 205 and 211.
 	// I will move Analytics instantiation DOWN after them.
-	
+
 	// Moving "analyticsService := ..." line to be AFTER lmsRepo and attendanceRepo are initialized.
 	// So I will comment out/remove the lines here and insert them later.
 	// But `analyticsHandler` is used? No, just created here.
-
 
 	// Scheduler
 	schedulerRepo := repository.NewSQLSchedulerRepository(db)
@@ -199,7 +196,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	curriculumRepo := repository.NewSQLCurriculumRepository(db)
 	curriculumService := services.NewCurriculumService(curriculumRepo)
 	curriculumHandler := NewCurriculumHandler(curriculumService)
-	
+
 	// Program Builder
 	programBuilderService := services.NewProgramBuilderService(curriculumRepo)
 	programBuilderHandler := NewProgramBuilderHandler(programBuilderService)
@@ -214,6 +211,9 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	gradingRepo := repository.NewSQLGradingRepository(db)
 	teacherService := services.NewTeacherService(schedulerRepo, lmsRepo, gradingRepo)
 	teacherHandler := NewTeacherHandler(teacherService)
+
+	studentService := services.NewStudentService(userRepo, journeyRepo, lmsRepo, schedulerRepo, curriculumRepo, gradingRepo, playbookManager)
+	studentHandler := NewStudentHandler(studentService)
 
 	// Attendance (Phase 17)
 	attendanceRepo := repository.NewSQLAttendanceRepository(db)
@@ -244,7 +244,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	api.GET("/lti/login_init", ltiHandler.LoginInit)
 	api.POST("/lti/launch", ltiHandler.Launch)
 	api.GET("/.well-known/jwks.json", ltiHandler.GetJWKS)
-	
+
 	// ===========================================
 	// RBAC (Phase 20)
 	// ===========================================
@@ -259,22 +259,21 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	auditService := services.NewAuditService(auditRepo, curriculumRepo)
 	auditHandler := NewAuditHandler(auditService, curriculumService)
 
-
 	// ===========================================
 	// SUPERADMIN ROUTES (global platform admin)
 	// ===========================================
-	
+
 	// Create Repos & Services for SuperAdmin/Tenant
 	// tenantRepo moved up
 	tenantService := services.NewTenantService(tenantRepo)
-	
+
 	superAdminRepo := repository.NewSQLSuperAdminRepository(db)
 	superAdminService := services.NewSuperAdminService(superAdminRepo)
-	
+
 	// Update MeHandler with dependencies (UserService, TenantService)
 	// Note: NewMeHandler signature: (userSvc, tenantSvc, cfg)
 	meHandler := NewMeHandler(userService, tenantService, cfg, rds)
-	// Current NewMeHandler signature from previous edit might only take (userService, tenantService, cfg) 
+	// Current NewMeHandler signature from previous edit might only take (userService, tenantService, cfg)
 	// Or did I change it? I need to check MeHandler constructor.
 	// Looking at me.go previous changes: NewMeHandler(userSvc, tenantSvc, cfg)
 
@@ -287,13 +286,24 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	{
 		meGroup.GET("", meHandler.Me)
 		meGroup.GET("/tenants", meHandler.MyTenants)
-	meGroup.GET("/tenant", meHandler.MyTenant)
+		meGroup.GET("/tenant", meHandler.MyTenant)
 	}
 
 	// Authenticated Routes Group
 	protected := api.Group("")
 	protected.Use(middleware.AuthMiddleware([]byte(cfg.JWTSecret), db, rds))
 	{
+		// Student Portal
+		student := protected.Group("/student")
+		student.Use(middleware.RequireRoles("student"))
+		{
+			student.GET("/dashboard", studentHandler.GetDashboard)
+			student.GET("/courses", studentHandler.ListCourses)
+			student.GET("/assignments", studentHandler.ListAssignments)
+			student.GET("/grades", studentHandler.ListGrades)
+			student.GET("/transcript", transcriptHandler.GetStudentTranscript)
+		}
+
 		// Calendar
 		cal := protected.Group("/calendar")
 		{
@@ -319,7 +329,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			teacher.POST("/submissions/:id/annotations", teacherHandler.AddAnnotation)
 			teacher.GET("/submissions/:id/annotations", teacherHandler.GetAnnotations)
 			teacher.DELETE("/submissions/:id/annotations/:annId", teacherHandler.DeleteAnnotation)
-            teacher.POST("/sessions/:session_id/attendance", attendanceHandler.BatchRecordAttendance)
+			teacher.POST("/sessions/:session_id/attendance", attendanceHandler.BatchRecordAttendance)
 		}
 
 		// Checklist
@@ -333,10 +343,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		{
 			sched.GET("/terms", schedulerHandler.ListTerms)
 			sched.POST("/terms", schedulerHandler.CreateTerm)
-			
+
 			sched.POST("/offerings", schedulerHandler.CreateOffering)
 			sched.GET("/offerings", schedulerHandler.ListOfferings)
-			
+
 			sched.GET("/sessions", schedulerHandler.ListSessions)
 			sched.POST("/sessions", schedulerHandler.CreateSession)
 			sched.POST("/optimize", schedulerHandler.AutoSchedule)
@@ -365,7 +375,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		gradingRepo := repository.NewSQLGradingRepository(db)
 		gradingService := services.NewGradingService(gradingRepo)
 		gradingHandler := NewGradingHandler(gradingService)
-		
+
 		gr := protected.Group("/grading")
 		{
 			gr.GET("/schemas", gradingHandler.ListSchemas)
@@ -383,8 +393,12 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		{
 			ib.GET("/banks", ibHandler.ListBanks)
 			ib.POST("/banks", ibHandler.CreateBank)
+			ib.PUT("/banks/:bankId", ibHandler.UpdateBank)
+			ib.DELETE("/banks/:bankId", ibHandler.DeleteBank)
 			ib.GET("/banks/:bankId/items", ibHandler.ListItems)
 			ib.POST("/banks/:bankId/items", ibHandler.CreateItem)
+			ib.PUT("/banks/:bankId/items/:itemId", ibHandler.UpdateItem)
+			ib.DELETE("/banks/:bankId/items/:itemId", ibHandler.DeleteItem)
 		}
 
 		// Assessment Engine Module (Phase 25)
@@ -440,7 +454,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 				nodes.GET("/submission", nodeSubmission.GetSubmission)
 				nodes.PUT("/submission", nodeSubmission.PutSubmission)
 				nodes.PATCH("/state", nodeSubmission.PatchState)
-				
+
 				uploads := nodes.Group("/uploads")
 				{
 					uploads.POST("/presign", nodeSubmission.PresignUpload)
@@ -449,9 +463,6 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			}
 		}
 
-		// Student Academic Record (Phase 17)
-		protected.GET("/student/transcript", transcriptHandler.GetStudentTranscript)
-
 		// Admin/Advisor Progress Monitoring & Review
 		adm := protected.Group("/admin")
 		// Note: We deliberately do NOT apply a blanket middleware here anymore.
@@ -459,7 +470,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 		// 1. Monitor & Student Data (Accessible to Advisor)
 		// Includes: Progress, Journey, Attachments, Reminders
-		monitorGrp := adm.Group("") 
+		monitorGrp := adm.Group("")
 		monitorGrp.Use(middleware.RequireRoles("admin", "advisor", "superadmin"))
 		{
 			monitorGrp.GET("/student-progress", adminHandler.StudentProgress)
@@ -471,15 +482,15 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			monitorGrp.GET("/students/:id/deadlines", adminHandler.GetStudentDeadlines)
 			monitorGrp.GET("/students/:id/nodes/:nodeId/files", adminHandler.ListStudentNodeFiles)
 			monitorGrp.PATCH("/students/:id/nodes/:nodeId/state", adminHandler.PatchStudentNodeState)
-			
+
 			// Review actions
 			monitorGrp.POST("/attachments/:attachmentId/review", adminHandler.ReviewAttachment)
 			monitorGrp.POST("/attachments/:attachmentId/presign", adminHandler.PresignReviewedDocumentUpload)
 			monitorGrp.POST("/attachments/:attachmentId/attach-reviewed", adminHandler.AttachReviewedDocument)
-			
+
 			// Reminders
 			monitorGrp.POST("/reminders", adminHandler.PostReminders)
-			
+
 			// Admin notifications (Advisors need to see alerts too)
 			admNotif := monitorGrp.Group("/notifications")
 			{
@@ -489,7 +500,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 				admNotif.POST("/:id/read", notificationHandler.MarkAsRead)
 				admNotif.POST("/read-all", notificationHandler.MarkAllAsRead)
 			}
-			
+
 			// Contacts Search (Advisors might need this)
 			monitorGrp.GET("/contacts", contactsHandler.AdminList)
 		}
@@ -504,7 +515,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			sysAdminGrp.PATCH("/users/:id/active", users.SetActive)
 			sysAdminGrp.POST("/users/:id/reset-password", users.ResetPasswordForUser)
 			sysAdminGrp.POST("/bulk/enroll", bulkHandler.BulkEnrollStudents)
-			
+
 			// Manage Contacts
 			sysAdminGrp.POST("/contacts", contactsHandler.Create)
 			sysAdminGrp.PUT("/contacts/:id", contactsHandler.Update)
@@ -530,17 +541,17 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 				admDict.POST("/programs", dictionaryHandler.CreateProgram)
 				admDict.PUT("/programs/:id", dictionaryHandler.UpdateProgram)
 				admDict.DELETE("/programs/:id", dictionaryHandler.DeleteProgram)
-				
+
 				admDict.GET("/specialties", dictionaryHandler.ListSpecialties)
 				admDict.POST("/specialties", dictionaryHandler.CreateSpecialty)
 				admDict.PUT("/specialties/:id", dictionaryHandler.UpdateSpecialty)
 				admDict.DELETE("/specialties/:id", dictionaryHandler.DeleteSpecialty)
-				
+
 				admDict.GET("/cohorts", dictionaryHandler.ListCohorts)
 				admDict.POST("/cohorts", dictionaryHandler.CreateCohort)
 				admDict.PUT("/cohorts/:id", dictionaryHandler.UpdateCohort)
 				admDict.DELETE("/cohorts/:id", dictionaryHandler.DeleteCohort)
-				
+
 				admDict.GET("/departments", dictionaryHandler.ListDepartments)
 				admDict.POST("/departments", dictionaryHandler.CreateDepartment)
 				admDict.PUT("/departments/:id", dictionaryHandler.UpdateDepartment)
@@ -564,7 +575,6 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			contentGrp.POST("/ai/generate-assessment-items", aiHandler.GenerateAssessmentItems)
 		}
 
-
 		// Chat
 		chat := protected.Group("/chat")
 		{
@@ -573,7 +583,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			chat.GET("/rooms/:roomId/messages", chatHandler.ListMessages)
 			chat.POST("/rooms/:roomId/messages", chatHandler.CreateMessage)
 			chat.POST("/rooms/:roomId/read", chatHandler.MarkAsRead)
-			
+
 			// File upload/download - available to all chat members
 			chat.POST("/rooms/:roomId/upload", chatHandler.UploadFile)
 			chat.GET("/rooms/:roomId/files/:filename", chatHandler.DownloadFile)
@@ -590,7 +600,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 				adminChat.POST("/rooms/:roomId/members/batch", chatHandler.AddRoomMembersBatch)
 				adminChat.DELETE("/rooms/:roomId/members/batch", chatHandler.RemoveRoomMembersBatch)
 			}
-			
+
 			// Message editing/deletion
 			chat.PATCH("/messages/:messageId", chatHandler.UpdateMessage)
 			chat.DELETE("/messages/:messageId", chatHandler.DeleteMessage)
@@ -690,10 +700,10 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		protected.POST("/courses/:id/rubrics", rubricHandler.CreateRubric)
 		protected.GET("/courses/:id/rubrics", rubricHandler.ListRubrics)
 		protected.GET("/rubrics/:id", rubricHandler.GetRubric)
-		
+
 		protected.POST("/submissions/:id/rubric_grade", rubricHandler.SubmitGrade)
 	}
-	
+
 	// SuperAdmin Handlers
 	superadminTenantsHandler := NewSuperadminTenantsHandler(tenantService, superAdminService, cfg)
 	superadminAdminsHandler := NewSuperadminAdminsHandler(superAdminService, cfg)

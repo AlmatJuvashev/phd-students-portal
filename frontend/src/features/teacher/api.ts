@@ -7,6 +7,7 @@ import {
   GradebookEntry,
   GradeSubmissionRequest
 } from './types';
+import { submitGrade } from '@/features/grading/api';
 
 export const getTeacherDashboard = () =>
   api.get<TeacherDashboardStats>('/teacher/dashboard');
@@ -24,4 +25,4 @@ export const getTeacherSubmissions = () =>
   api.get<ActivitySubmission[]>('/teacher/submissions');
 
 export const submitGradeForSubmission = (data: GradeSubmissionRequest) =>
-  api.post<GradebookEntry>('/grading/entries', data);
+  submitGrade(data);

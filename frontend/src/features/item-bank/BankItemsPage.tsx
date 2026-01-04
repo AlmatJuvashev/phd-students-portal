@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { createQuestion, listBanks, listQuestions } from './api';
+import { createQuestion, deleteBank, deleteQuestion, listBanks, listQuestions } from './api';
 import { CreateQuestionRequest, Question, QuestionOption, QuestionType } from './types';
 
 const QUESTION_TYPES: QuestionType[] = ['MCQ', 'MRQ', 'TRUE_FALSE', 'TEXT', 'LIKERT'];
@@ -52,6 +52,21 @@ export const BankItemsPage: React.FC = () => {
           { text: 'Option B', is_correct: false },
         ],
       });
+    },
+  });
+
+  const deleteBankMutation = useMutation({
+    mutationFn: () => deleteBank(bankId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['item-banks', 'banks'] });
+      navigate('/admin/item-banks');
+    },
+  });
+
+  const deleteQuestionMutation = useMutation({
+    mutationFn: (id: string) => deleteQuestion(bankId!, id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['item-banks', 'banks', bankId, 'items'] });
     },
   });
 
@@ -127,6 +142,19 @@ export const BankItemsPage: React.FC = () => {
           <div className="text-xs text-slate-500">Item Bank</div>
           <h1 className="text-xl font-black text-slate-900 truncate">{bank?.title || bankId}</h1>
         </div>
+        <Button
+          variant="outline"
+          className="border-red-200 text-red-700 hover:bg-red-50"
+          disabled={deleteBankMutation.isPending}
+          onClick={() => {
+            if (!bankId) return;
+            if (!window.confirm(`Delete bank "${bank?.title || bankId}"? This will remove all questions in it.`)) return;
+            deleteBankMutation.mutate();
+          }}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete Bank
+        </Button>
         <Button onClick={() => setIsCreateOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New Question
@@ -153,6 +181,7 @@ export const BankItemsPage: React.FC = () => {
               <th className="px-6 py-4">Stem</th>
               <th className="px-6 py-4">Points</th>
               <th className="px-6 py-4">Difficulty</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -166,11 +195,26 @@ export const BankItemsPage: React.FC = () => {
                 <td className="px-6 py-4 max-w-[600px] truncate">{q.stem}</td>
                 <td className="px-6 py-4">{q.points_default}</td>
                 <td className="px-6 py-4">{q.difficulty_level || '—'}</td>
+                <td className="px-6 py-4 text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-slate-400 hover:text-red-600"
+                    disabled={deleteQuestionMutation.isPending}
+                    onClick={() => {
+                      if (!bankId) return;
+                      if (!window.confirm('Delete this question?')) return;
+                      deleteQuestionMutation.mutate(q.id);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
                   No questions found.
                 </td>
               </tr>
@@ -291,4 +335,3 @@ export const BankItemsPage: React.FC = () => {
     </div>
   );
 };
-

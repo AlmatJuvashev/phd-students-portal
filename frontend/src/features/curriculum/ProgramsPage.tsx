@@ -106,7 +106,7 @@ export const ProgramsPage: React.FC = () => {
           {filteredPrograms.map((program: Program) => (
              <div 
                key={program.id}
-               onClick={() => navigate(`/admin/studio/programs/${program.id}/builder`)}
+               onClick={() => navigate(`/admin/programs/${program.id}`)}
                className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-emerald-300 transition-all cursor-pointer flex flex-col relative overflow-hidden"
              >
                 {/* Status Stripe */}
@@ -119,12 +119,27 @@ export const ProgramsPage: React.FC = () => {
                    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
                       <GraduationCap size={24} />
                    </div>
-                   <Badge variant={program.status === 'active' ? 'default' : program.status === 'draft' ? 'secondary' : 'outline'} className={cn(
-                      program.status === 'active' && "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
-                      program.status === 'draft' && "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                   )}>
-                      {t(`curriculum.programs.status.${program.status}`)}
-                   </Badge>
+                   <div className="flex items-center gap-2">
+                      <Badge
+                        variant={program.status === 'active' ? 'default' : program.status === 'draft' ? 'secondary' : 'outline'}
+                        className={cn(
+                          program.status === 'active' && "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
+                          program.status === 'draft' && "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                        )}
+                      >
+                        {t(`curriculum.programs.status.${program.status}`)}
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin/studio/programs/${program.id}/builder`);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold hover:bg-indigo-100 transition-colors"
+                      >
+                        Builder
+                      </button>
+                   </div>
                 </div>
 
                 <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{program.title}</h3>

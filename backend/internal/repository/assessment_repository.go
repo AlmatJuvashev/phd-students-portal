@@ -12,18 +12,20 @@ type AssessmentRepository interface {
 	CreateQuestionBank(ctx context.Context, bank models.QuestionBank) (*models.QuestionBank, error)
 	GetQuestionBank(ctx context.Context, id string) (*models.QuestionBank, error)
 	ListQuestionBanks(ctx context.Context, tenantID string) ([]models.QuestionBank, error)
-	
+	UpdateQuestionBank(ctx context.Context, bank models.QuestionBank) error
+	DeleteQuestionBank(ctx context.Context, id string) error
+
 	// Questions
 	CreateQuestion(ctx context.Context, q models.Question) (*models.Question, error)
 	GetQuestion(ctx context.Context, id string) (*models.Question, error)
 	ListQuestionsByBank(ctx context.Context, bankID string) ([]models.Question, error)
 	UpdateQuestion(ctx context.Context, q models.Question) error
 	DeleteQuestion(ctx context.Context, id string) error
-	
+
 	// Assessments
 	CreateAssessment(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	GetAssessment(ctx context.Context, id string) (*models.Assessment, error)
-	
+
 	// Attempts & Security
 	CreateAttempt(ctx context.Context, attempt models.AssessmentAttempt) (*models.AssessmentAttempt, error)
 	SaveItemResponse(ctx context.Context, response models.ItemResponse) error
@@ -78,7 +80,7 @@ func (r *SQLAssessmentRepository) GetAssessmentQuestions(ctx context.Context, as
 		return nil, err
 	}
 	optsQuery = r.db.Rebind(optsQuery)
-	
+
 	var options []models.QuestionOption
 	err = r.db.SelectContext(ctx, &options, optsQuery, args...)
 	if err != nil {
@@ -104,7 +106,6 @@ func (r *SQLAssessmentRepository) ListResponses(ctx context.Context, attemptID s
 	return responses, err
 }
 
-
 // --- Question Banks ---
 
 func (r *SQLAssessmentRepository) CreateQuestionBank(ctx context.Context, bank models.QuestionBank) (*models.QuestionBank, error) {
@@ -129,6 +130,20 @@ func (r *SQLAssessmentRepository) ListQuestionBanks(ctx context.Context, tenantI
 	var banks []models.QuestionBank
 	err := r.db.SelectContext(ctx, &banks, `SELECT * FROM question_banks WHERE tenant_id = $1`, tenantID)
 	return banks, err
+}
+
+func (r *SQLAssessmentRepository) UpdateQuestionBank(ctx context.Context, bank models.QuestionBank) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE question_banks
+		SET title=$1, description=$2, subject=$3, blooms_taxonomy=$4, is_public=$5, updated_at=NOW()
+		WHERE id=$6
+	`, bank.Title, bank.Description, bank.Subject, bank.BloomsTaxonomy, bank.IsPublic, bank.ID)
+	return err
+}
+
+func (r *SQLAssessmentRepository) DeleteQuestionBank(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM question_banks WHERE id=$1`, id)
+	return err
 }
 
 // --- Questions ---
@@ -203,9 +218,9 @@ func (r *SQLAssessmentRepository) UpdateQuestion(ctx context.Context, q models.Q
 	// Update Question Data
 	_, err = tx.ExecContext(ctx, `
 		UPDATE questions 
-		SET stem=$1, media_url=$2, points_default=$3, difficulty_level=$4, learning_outcome_id=$5, updated_at=NOW()
-		WHERE id=$6
-	`, q.Stem, q.MediaURL, q.PointsDefault, q.DifficultyLevel, q.LearningOutcomeID, q.ID)
+		SET type=$1, stem=$2, media_url=$3, points_default=$4, difficulty_level=$5, learning_outcome_id=$6, updated_at=NOW()
+		WHERE id=$7
+	`, q.Type, q.Stem, q.MediaURL, q.PointsDefault, q.DifficultyLevel, q.LearningOutcomeID, q.ID)
 	if err != nil {
 		return err
 	}
@@ -254,7 +269,7 @@ func (r *SQLAssessmentRepository) GetAssessment(ctx context.Context, id string) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Fetch Items/Sections would go here
 	// skipping for brevity in this initial implementation
 	return &a, nil

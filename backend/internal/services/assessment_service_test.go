@@ -35,6 +35,14 @@ func (m *MockAssessmentRepo) ListQuestionBanks(ctx context.Context, tenantID str
 	args := m.Called(ctx, tenantID)
 	return args.Get(0).([]models.QuestionBank), args.Error(1)
 }
+func (m *MockAssessmentRepo) UpdateQuestionBank(ctx context.Context, bank models.QuestionBank) error {
+	args := m.Called(ctx, bank)
+	return args.Error(0)
+}
+func (m *MockAssessmentRepo) DeleteQuestionBank(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
 func (m *MockAssessmentRepo) CreateQuestion(ctx context.Context, q models.Question) (*models.Question, error) {
 	args := m.Called(ctx, q)
 	if args.Get(0) == nil {
@@ -120,15 +128,15 @@ func TestAssessmentService_ReportProctoringEvent_AutoSubmit(t *testing.T) {
 	ctx := context.Background()
 
 	attemptID := "att_spy"
-	
+
 	// Settings: Max 3 violations
 	settingsJSON := []byte(`{"max_violations": 3, "auto_submit_on_limit": true}`)
-	
+
 	// Mock Fetch Attempt & Assessment
 	mockRepo.On("GetAttempt", ctx, attemptID).Return(&models.AssessmentAttempt{
 		ID: attemptID, AssessmentID: "exam_spy", Status: models.AttemptStatusInProgress,
 	}, nil)
-	
+
 	mockRepo.On("GetAssessment", ctx, "exam_spy").Return(&models.Assessment{
 		ID: "exam_spy", SecuritySettings: types.JSONText(settingsJSON),
 	}, nil)
@@ -140,7 +148,7 @@ func TestAssessmentService_ReportProctoringEvent_AutoSubmit(t *testing.T) {
 	mockRepo.On("CountProctoringEvents", ctx, attemptID).Return(3, nil)
 
 	// Expect Termination (CompleteAttempt with score calculation)
-	// We need to support GetAssessmentQuestions etc for CompleteAttempt to work, 
+	// We need to support GetAssessmentQuestions etc for CompleteAttempt to work,
 	// OR we assume terminateAttempt calls CompleteAttempt which calls those methods.
 	// For this test, let's mock the dependencies of CompleteAttempt too.
 	// 1. GetAssessmentQuestions
@@ -154,7 +162,7 @@ func TestAssessmentService_ReportProctoringEvent_AutoSubmit(t *testing.T) {
 
 	// Action: Report 3rd violation
 	err := svc.ReportProctoringEvent(ctx, attemptID, models.ProctoringEventTabSwitch, nil)
-	
+
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
@@ -219,10 +227,10 @@ func TestAssessmentService_CompleteAttempt_AutoGrading(t *testing.T) {
 	// Student answered q2 incorrectly (optFalse)
 	optA := "optA"
 	optFalse := "optFalse"
-	
+
 	resp1 := models.ItemResponse{QuestionID: "q1", SelectedOptionID: &optA}
 	resp2 := models.ItemResponse{QuestionID: "q2", SelectedOptionID: &optFalse}
-	
+
 	mockRepo.On("ListResponses", ctx, attemptID).Return([]models.ItemResponse{resp1, resp2}, nil)
 
 	// Expect SaveItemResponse calls with graded result
@@ -230,7 +238,7 @@ func TestAssessmentService_CompleteAttempt_AutoGrading(t *testing.T) {
 	mockRepo.On("SaveItemResponse", ctx, mock.MatchedBy(func(r models.ItemResponse) bool {
 		return r.QuestionID == "q1" && r.Score == 5.0 && r.IsCorrect == true
 	})).Return(nil)
-	
+
 	// q2 -> Score 0, IsCorrect false
 	mockRepo.On("SaveItemResponse", ctx, mock.MatchedBy(func(r models.ItemResponse) bool {
 		return r.QuestionID == "q2" && r.Score == 0.0 && r.IsCorrect == false
