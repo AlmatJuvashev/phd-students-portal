@@ -49,6 +49,8 @@ seed:
 
 seed-demo:
 	@echo "Seeding comprehensive demo data for demo.university tenant..."
+	@psql "$(DB_URL)" -f backend/db/seeds/0103_demo_university_scheduler_data.sql > /dev/null
+	@psql "$(DB_URL)" -f backend/db/seeds/0107_demo_university_scheduler_data_more.sql > /dev/null
 	go run ./cmd/mock
 
 dev:

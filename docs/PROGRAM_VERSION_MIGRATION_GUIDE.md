@@ -38,19 +38,38 @@ Backend /api/curriculum/programs/:id/journey-map  →  JourneyMap component  →
 
 ---
 
-## 📊 Data Structure Mapping
+# Program Version Migration Guide
 
-### JSON Playbook → Backend Models
+This document outlines the plan to migrate from the static `playbook.json` to a dynamic database-driven `ProgramVersion`.
 
-| JSON Field         | Backend Model                      | Database Table                     |
-| ------------------ | ---------------------------------- | ---------------------------------- |
-| `playbook_id`      | `Program.code`                     | `programs`                         |
-| `version`          | `JourneyMap.version`               | `program_versions`                 |
-| `worlds[]`         | `JourneyNodeDefinition.module_key` | `program_version_node_definitions` |
-| `worlds[].nodes[]` | `JourneyNodeDefinition`            | `program_version_node_definitions` |
-| `roles[]`          | Static (keep in frontend)          | -                                  |
-| `conditions[]`     | `JourneyNodeDefinition.config`     | `program_version_node_definitions` |
-| `assets[]`         | Static file (assets_list.json)     | -                                  |
+> [!NOTE]
+> **Terminology Update:** The backend implementation refers to this feature as `ProgramVersion` to better reflect that it defines the structure of a program for a specific version/cohort. The user-facing term remains "Journey Map".
+
+## Database Schema
+
+We are introducing the following tables:
+
+1.  **`program_versions`**
+    *   `id`: UUID
+    *   `program_id`: UUID (FK to `programs` dictionary)
+    *   `version`: String (e.g., "v1", "2024-Fall")
+    *   `is_active`: Boolean
+    *   `created_at`: Timestamp
+    *   `meta`: JSONB (Stores global playbook settings)
+
+2.  **`program_version_node_definitions`**
+    *   `id`: UUID (This is the `node_id` from playbook, e.g., "n1")
+    *   `program_version_id`: UUID (FK)
+    *   `world_id`: String (e.g., "W1")
+    *   `type`: String ("milestone", "task")
+    *   `title`: JSONB (Localized)
+    *   `description`: JSONB
+    *   `prerequisites`: JSONB Array
+    *   `meta`: JSONB (Coordinates, icon)
+
+## Migration Phase 1: Database Seeding
+
+We will create a migration script to parse `playbook.json` and populate these tables.
 
 ### Node Definition Mapping
 
