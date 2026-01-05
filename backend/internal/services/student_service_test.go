@@ -49,6 +49,14 @@ func (s *stubStudentLMSRepo) GetStudentEnrollments(ctx context.Context, studentI
 	return s.enrollmentsByStudent[studentID], nil
 }
 
+func (s *stubStudentLMSRepo) CreateSubmission(ctx context.Context, sub *models.ActivitySubmission) error {
+	return nil
+}
+
+func (s *stubStudentLMSRepo) GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
+	return nil, nil
+}
+
 type stubStudentSchedulerRepo struct {
 	offeringsByID map[string]*models.CourseOffering
 	staffByOffer  map[string][]models.CourseStaff
@@ -130,6 +138,8 @@ func TestStudentService_GetDashboard_ComputesProgressAndUpcoming(t *testing.T) {
 		&stubStudentSchedulerRepo{},
 		&stubStudentCurriculumRepo{},
 		gradingRepo,
+		nil,
+		nil,
 		pbm,
 	)
 
@@ -199,6 +209,8 @@ func TestStudentService_ListCourses_MapsInstructorAndNextSession(t *testing.T) {
 		currRepo,
 		&stubStudentGradingRepo{},
 		nil,
+		nil,
+		nil,
 	)
 
 	list, err := svc.ListCourses(context.Background(), "tenant-1", "stud-1")
@@ -264,6 +276,8 @@ func TestStudentService_ListGrades_EnrichesCourseInfo(t *testing.T) {
 		schedulerRepo,
 		currRepo,
 		gradingRepo,
+		nil,
+		nil,
 		nil,
 	)
 

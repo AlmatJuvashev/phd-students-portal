@@ -81,10 +81,10 @@ func TestTeacherService_GetDashboardStats(t *testing.T) {
 	mockSched := new(MockSchedulerRepo)
 	mockLMS := new(MockLMSRepo)
 	mockGrading := new(MockGradingRepo)
-	svc := NewTeacherService(mockSched, mockLMS, mockGrading)
+	svc := NewTeacherService(mockSched, mockLMS, mockGrading, nil)
 
 	instructorID := "inst-123"
-	
+
 	// Mock ListSessionsByInstructor (Today)
 	todaySessions := []models.ClassSession{
 		{ID: "sess-1", StartTime: "09:00", Date: time.Now()}, // Passed? or future? Logic checks time.
@@ -118,7 +118,7 @@ func TestTeacherService_GetDashboardStats(t *testing.T) {
 
 func TestTeacherService_GetMyCourses(t *testing.T) {
 	mockSched := new(MockSchedulerRepo)
-	svc := NewTeacherService(mockSched, new(MockLMSRepo), new(MockGradingRepo))
+	svc := NewTeacherService(mockSched, new(MockLMSRepo), new(MockGradingRepo), nil)
 
 	instructorID := "inst-123"
 	expected := []models.CourseOffering{{ID: "off-1"}}
@@ -131,7 +131,7 @@ func TestTeacherService_GetMyCourses(t *testing.T) {
 
 func TestTeacherService_GetCourseRoster(t *testing.T) {
 	mockLMS := new(MockLMSRepo)
-	svc := NewTeacherService(new(MockSchedulerRepo), mockLMS, new(MockGradingRepo))
+	svc := NewTeacherService(new(MockSchedulerRepo), mockLMS, new(MockGradingRepo), nil)
 
 	offeringID := "off-1"
 	expected := []models.CourseEnrollment{{Status: "ENROLLED"}}
@@ -145,12 +145,12 @@ func TestTeacherService_GetCourseRoster(t *testing.T) {
 func TestTeacherService_GetSubmissions(t *testing.T) {
 	mockSched := new(MockSchedulerRepo)
 	mockLMS := new(MockLMSRepo)
-	svc := NewTeacherService(mockSched, mockLMS, new(MockGradingRepo))
+	svc := NewTeacherService(mockSched, mockLMS, new(MockGradingRepo), nil)
 
 	instructorID := "inst-123"
 	offerings := []models.CourseOffering{{ID: "off-1"}}
 	mockSched.On("ListOfferingsByInstructor", mock.Anything, instructorID, "").Return(offerings, nil)
-	
+
 	expected := []models.ActivitySubmission{{ID: "sub-1"}}
 	mockLMS.On("ListSubmissions", mock.Anything, "off-1").Return(expected, nil)
 
@@ -165,7 +165,7 @@ func TestTeacherService_Annotations(t *testing.T) {
 	mockScheduler := new(MockSchedulerRepo)
 	mockLMS := new(MockLMSRepo)
 	mockGrading := new(MockGradingRepo)
-	svc := NewTeacherService(mockScheduler, mockLMS, mockGrading)
+	svc := NewTeacherService(mockScheduler, mockLMS, mockGrading, nil)
 
 	ctx := context.Background()
 	content := "Good job"
@@ -195,4 +195,3 @@ func TestTeacherService_Annotations(t *testing.T) {
 
 	mockLMS.AssertExpectations(t)
 }
-

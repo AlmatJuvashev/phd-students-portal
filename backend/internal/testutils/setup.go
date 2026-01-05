@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	testDB *sqlx.DB
+	testDB   *sqlx.DB
 	testOnce sync.Once
 )
 
@@ -50,6 +50,20 @@ func withDatabase(dbURL string, databaseName string) string {
 
 func deriveTestDatabaseURL() string {
 	if v := os.Getenv("TEST_DATABASE_URL"); v != "" {
+		u, err := url.Parse(v)
+		if err != nil {
+			return v
+		}
+		dbName := strings.TrimPrefix(u.Path, "/")
+		if dbName == "" {
+			return v
+		}
+		if !strings.Contains(strings.ToLower(dbName), "test") {
+			// Safety: never allow tests to run against non-test DB names, even if user misconfigured TEST_DATABASE_URL.
+			dbName = dbName + "_test"
+			u.Path = "/" + dbName
+			return u.String()
+		}
 		return v
 	}
 	if v := os.Getenv("DATABASE_URL"); v != "" {
@@ -76,7 +90,7 @@ func deriveTestDatabaseURL() string {
 func SetupTestDB() (*sqlx.DB, func()) {
 	// Check if running in CI or explicitly requested to use Testcontainers
 	useContainer := os.Getenv("USE_TESTCONTAINERS") == "true"
-	
+
 	if useContainer {
 		ctx := context.Background()
 		dbUser := "postgres"
@@ -111,7 +125,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		// We need to construct file source url
 		_, b, _, _ := runtime.Caller(0)
 		migrationsPath := filepath.Join(filepath.Dir(b), "../../db/migrations")
-		
+
 		m, err := migrate.New("file://"+migrationsPath, connStr)
 		if err != nil {
 			log.Fatalf("[SetupTestDB] Failed to init migrate: %v", err)
@@ -122,7 +136,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		m.Close()
 
 		testDB = db
-		
+
 		return db, func() {
 			db.Close()
 			if err := pgContainer.Terminate(ctx); err != nil {
@@ -199,7 +213,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 			}
 			baseExists = false
 		}
-		
+
 		if !baseExists {
 			log.Printf("[SetupTestDB] Creating base template database: %s", baseDB)
 			_, err := conn.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", baseDB))
@@ -212,7 +226,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		baseURL := withDatabase(dbURL, baseDB)
 		_, b, _, _ := runtime.Caller(0)
 		migrationsPath := filepath.Join(filepath.Dir(b), "../../db/migrations")
-		
+
 		m, err := migrate.New("file://"+migrationsPath, baseURL)
 		if err != nil {
 			log.Fatalf("[SetupTestDB] Failed to migrate base template: %v", err)
@@ -226,7 +240,7 @@ func SetupTestDB() (*sqlx.DB, func()) {
 		// Always drop if exists to ensure fresh clone from updated base
 		var targetExists bool
 		conn.GetContext(ctx, &targetExists, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", targetDB)
-		
+
 		if targetExists {
 			log.Printf("[SetupTestDB] Dropping stale database %s", targetDB)
 			// Terminate connections
@@ -269,45 +283,29 @@ func cleanupDB(db *sqlx.DB, schema string) {
 			log.Fatalf("[cleanupDB] CRITICAL SAFETY BLOCK: Refusing to truncate non-test database '%s'.", dbName)
 		}
 	}
-	// If schema is provided, ensure search_path is set (just in case)
+
+	// If schema is provided, ensure search_path is set (just in case).
 	if schema != "" {
 		db.Exec(fmt.Sprintf("SET search_path TO %s, public", schema))
 	}
-	// Cleanup logic - order matters for foreign key constraints
-	// Clean child tables first, then parent tables
-	tables := []string{
-		// Child tables first (those with foreign keys)
-		"node_instance_slot_attachments", "node_instance_slots", "node_instance_form_revisions", "node_outcomes", "node_events",
-		"node_instances",
-		"journey_states", "node_deadlines",
-		"student_advisors",
-		"chat_room_read_status", "chat_messages", "chat_room_members", "chat_rooms",
-		"event_attendees", "events",
-		"student_steps", "checklist_steps", "checklist_modules",
-		"document_versions", "documents",
-		"comments",
-		"notifications",
-		"admin_notifications",
-		"user_tenant_memberships",
-		"profile_submissions", "profile_audit_log", "email_verification_tokens", "rate_limit_events",
-		"specialty_programs",
-		"playbook_active_version", "playbook_versions",
-		"contacts",
-		// Parent tables last
-		"users",
-		"programs", "specialties", "cohorts", "departments",
-		"tenants",
+
+	// Truncate ALL user tables in public schema (except schema_migrations),
+	// so new tables introduced by migrations don't leak data across tests.
+	var tables []string
+	if err := db.Select(&tables, `
+		SELECT 'public.' || quote_ident(tablename)
+		FROM pg_tables
+		WHERE schemaname = 'public'
+			AND tablename <> 'schema_migrations'
+		ORDER BY tablename
+	`); err != nil {
+		log.Printf("[cleanupDB] Failed to list tables: %v", err)
+	} else if len(tables) > 0 {
+		_, err := db.Exec("TRUNCATE TABLE " + strings.Join(tables, ", ") + " CASCADE")
+		if err != nil {
+			log.Printf("[cleanupDB] Failed to truncate tables: %v", err)
+		}
 	}
-	
-	// Use a single TRUNCATE command for all tables - much faster than a loop
-	allTables := strings.Join(tables, ", ")
-	_, err := db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", allTables))
-	if err != nil {
-		log.Printf("[cleanupDB] Failed to truncate tables: %v", err)
-	}
-	
-	// Truncate node_state_transitions separately (it's often handled differently)
-	db.Exec("TRUNCATE TABLE node_state_transitions CASCADE")
 
 	// Seed default transitions (from migration 0006)
 	db.Exec(`INSERT INTO node_state_transitions(from_state, to_state, allowed_roles) VALUES

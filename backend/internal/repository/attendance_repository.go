@@ -22,14 +22,13 @@ func NewSQLAttendanceRepository(db *sqlx.DB) *SQLAttendanceRepository {
 	return &SQLAttendanceRepository{db: db}
 }
 
-// ... existing Upsert ... (omitted from replace for brevity if possible, but I must match target). 
+// ... existing Upsert ... (omitted from replace for brevity if possible, but I must match target).
 // I'll append implementation at end and update interface at top.
 // Or actually I can replace the interface definition AND append function at end?
 // replace_file_content does replace.
 // I'll do two chunks if possible, or one big chunk if small. file is small.
 
 // OK, replace interface first.
-
 
 // BatchUpsertAttendance records multiple attendance entries
 func (r *SQLAttendanceRepository) BatchUpsertAttendance(ctx context.Context, sessionID string, records []models.ClassAttendance, recordedBy string) error {
@@ -62,14 +61,14 @@ func (r *SQLAttendanceRepository) BatchUpsertAttendance(ctx context.Context, ses
 }
 
 func (r *SQLAttendanceRepository) GetSessionAttendance(ctx context.Context, sessionID string) ([]models.ClassAttendance, error) {
-	query := `SELECT * FROM class_attendance WHERE session_id = $1`
+	query := `SELECT * FROM class_attendance WHERE class_session_id = $1`
 	var records []models.ClassAttendance
 	err := r.db.SelectContext(ctx, &records, query, sessionID)
 	return records, err
 }
 
 func (r *SQLAttendanceRepository) GetStudentAttendance(ctx context.Context, studentID string) ([]models.ClassAttendance, error) {
-	query := `SELECT * FROM class_attendance WHERE student_id = $1 ORDER BY recorded_at DESC`
+	query := `SELECT * FROM class_attendance WHERE student_id = $1 ORDER BY updated_at DESC`
 	var records []models.ClassAttendance
 	err := r.db.SelectContext(ctx, &records, query, studentID)
 	return records, err

@@ -65,4 +65,33 @@ export interface ActivitySubmission {
   student_email?: string;
 }
 
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+export interface StudentRiskProfile {
+  student_id: string;
+  student_name: string;
+  overall_progress: number;
+  assignments_completed: number;
+  assignments_total: number;
+  assignments_overdue: number;
+  last_activity: string;
+  days_inactive: number;
+  average_grade: number;
+  risk_level: RiskLevel;
+  risk_factors: string[];
+  suggested_actions: string[];
+}
+
+export interface TeacherStudentActivityEvent {
+  kind: 'submission' | 'grade';
+  occurred_at: string;
+  title: string;
+  status?: string | null;
+  activity_id?: string | null;
+  submission_id?: string | null;
+  score?: number | null;
+  max_score?: number | null;
+  grade?: string | null;
+}
+
 export type { GradebookEntry, GradeSubmissionRequest } from '@/features/grading/types';

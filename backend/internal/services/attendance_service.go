@@ -20,3 +20,7 @@ func (s *AttendanceService) BatchRecordAttendance(ctx context.Context, sessionID
 	// Simple pass-through for now, but could add validation logic here (e.g. check if session exists)
 	return s.attendanceRepo.BatchUpsertAttendance(ctx, sessionID, updates, recordedBy)
 }
+
+func (s *AttendanceService) GetSessionAttendance(ctx context.Context, sessionID string) ([]models.ClassAttendance, error) {
+	return s.attendanceRepo.GetSessionAttendance(ctx, sessionID)
+}

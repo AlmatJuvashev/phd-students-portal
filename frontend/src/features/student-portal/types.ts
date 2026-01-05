@@ -65,6 +65,62 @@ export interface StudentCourse {
   next_session?: StudentCourseNextSession | null;
 }
 
+export interface StudentCourseDetail {
+  course: StudentCourse;
+  sessions: StudentCourseNextSession[];
+}
+
+export interface CourseActivity {
+  id: string;
+  lesson_id: string;
+  type: string;
+  title: string;
+  order: number;
+  points: number;
+  is_optional: boolean;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseLesson {
+  id: string;
+  module_id: string;
+  title: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  activities: CourseActivity[];
+}
+
+export interface CourseModule {
+  id: string;
+  course_id: string;
+  title: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  lessons: CourseLesson[];
+}
+
+export interface ActivitySubmission {
+  id: string;
+  activity_id: string;
+  student_id: string;
+  course_offering_id: string;
+  content: any;
+  submitted_at: string;
+  status: string;
+}
+
+export interface StudentAssignmentDetail {
+  activity: CourseActivity;
+  submission?: ActivitySubmission | null;
+  course_offering_id: string;
+}
+
 export interface StudentAssignment {
   id: string;
   title: string;
@@ -81,4 +137,3 @@ export interface StudentDashboard {
   recent_grades: StudentGradeEntry[];
   announcements: StudentAnnouncement[];
 }
-

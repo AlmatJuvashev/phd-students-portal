@@ -43,6 +43,14 @@ func (s *hStudentLMSRepo) GetStudentEnrollments(ctx context.Context, studentID s
 	return s.enrollments, nil
 }
 
+func (s *hStudentLMSRepo) CreateSubmission(ctx context.Context, sub *models.ActivitySubmission) error {
+	return nil
+}
+
+func (s *hStudentLMSRepo) GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
+	return nil, nil
+}
+
 type hStudentSchedulerRepo struct {
 	offering *models.CourseOffering
 	staff    []models.CourseStaff
@@ -120,6 +128,8 @@ func TestStudentHandler_GetDashboard_Success(t *testing.T) {
 		&hStudentSchedulerRepo{},
 		&hStudentCurriculumRepo{},
 		gradingRepo,
+		nil,
+		nil,
 		pbm,
 	)
 	h := NewStudentHandler(svc)
@@ -175,6 +185,8 @@ func TestStudentHandler_ListCourses_Success(t *testing.T) {
 		currRepo,
 		&hStudentGradingRepo{},
 		nil,
+		nil,
+		nil,
 	)
 	h := NewStudentHandler(svc)
 
@@ -217,6 +229,8 @@ func TestStudentHandler_ListAssignments_Success(t *testing.T) {
 		&hStudentSchedulerRepo{},
 		&hStudentCurriculumRepo{},
 		&hStudentGradingRepo{},
+		nil,
+		nil,
 		pbm,
 	)
 	h := NewStudentHandler(svc)
@@ -273,6 +287,8 @@ func TestStudentHandler_ListGrades_Success(t *testing.T) {
 		schedulerRepo,
 		currRepo,
 		gradingRepo,
+		nil,
+		nil,
 		nil,
 	)
 	h := NewStudentHandler(svc)

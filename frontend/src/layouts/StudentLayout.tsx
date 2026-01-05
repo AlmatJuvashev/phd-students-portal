@@ -11,7 +11,9 @@ export const StudentLayout: React.FC = () => {
   const location = useLocation();
 
   const active = (to: string) =>
-    location.pathname === to ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900';
+    location.pathname === to || location.pathname.startsWith(`${to}/`)
+      ? 'bg-slate-900 text-white'
+      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900';
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -52,4 +54,3 @@ export const StudentLayout: React.FC = () => {
     </div>
   );
 };
-

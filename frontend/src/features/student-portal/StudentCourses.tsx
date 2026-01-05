@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, GraduationCap, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +8,7 @@ import { getStudentCourses } from './api';
 
 export const StudentCourses: React.FC = () => {
   const { t } = useTranslation('common');
+  const navigate = useNavigate();
 
   const coursesQuery = useQuery({
     queryKey: ['student', 'courses'],
@@ -46,9 +48,11 @@ export const StudentCourses: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((c) => (
-          <div
+          <button
             key={c.course_offering_id}
-            className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 flex flex-col gap-3"
+            type="button"
+            onClick={() => navigate(`/student/courses/${c.course_offering_id}`)}
+            className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 flex flex-col gap-3 text-left hover:bg-slate-50 transition-colors"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -91,7 +95,7 @@ export const StudentCourses: React.FC = () => {
                 {t('student.courses.no_upcoming', { defaultValue: 'No upcoming sessions scheduled.' })}
               </div>
             )}
-          </div>
+          </button>
         ))}
 
         {courses.length === 0 && (
@@ -103,4 +107,3 @@ export const StudentCourses: React.FC = () => {
     </div>
   );
 };
-

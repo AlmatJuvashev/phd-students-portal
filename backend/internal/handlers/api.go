@@ -209,10 +209,12 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 
 	lmsRepo := repository.NewSQLLMSRepository(db)
 	gradingRepo := repository.NewSQLGradingRepository(db)
-	teacherService := services.NewTeacherService(schedulerRepo, lmsRepo, gradingRepo)
+	courseContentRepo := repository.NewSQLCourseContentRepository(db)
+	teacherService := services.NewTeacherService(schedulerRepo, lmsRepo, gradingRepo, courseContentRepo)
 	teacherHandler := NewTeacherHandler(teacherService)
 
-	studentService := services.NewStudentService(userRepo, journeyRepo, lmsRepo, schedulerRepo, curriculumRepo, gradingRepo, playbookManager)
+	forumRepo := repository.NewSQLForumRepository(db)
+	studentService := services.NewStudentService(userRepo, journeyRepo, lmsRepo, schedulerRepo, curriculumRepo, gradingRepo, courseContentRepo, forumRepo, playbookManager)
 	studentHandler := NewStudentHandler(studentService)
 
 	// Attendance (Phase 17)
@@ -299,7 +301,14 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		{
 			student.GET("/dashboard", studentHandler.GetDashboard)
 			student.GET("/courses", studentHandler.ListCourses)
+			student.GET("/courses/:id", studentHandler.GetCourseDetail)
+			student.GET("/courses/:id/modules", studentHandler.GetCourseModules)
+			student.GET("/courses/:id/announcements", studentHandler.ListCourseAnnouncements)
+			student.GET("/courses/:id/resources", studentHandler.ListCourseResources)
 			student.GET("/assignments", studentHandler.ListAssignments)
+			student.GET("/assignments/:id", studentHandler.GetAssignmentDetail)
+			student.GET("/assignments/:id/submission", studentHandler.GetMySubmission)
+			student.POST("/assignments/:id/submit", studentHandler.SubmitAssignment)
 			student.GET("/grades", studentHandler.ListGrades)
 			student.GET("/transcript", transcriptHandler.GetStudentTranscript)
 		}
@@ -324,11 +333,15 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			teacher.GET("/courses", teacherHandler.GetMyCourses)
 			// Context-Aware check: Must have 'course.view' for this SPECIFIC course ID
 			teacher.GET("/courses/:id/roster", rbac.RequirePermission("course.view", models.ContextCourse, "id"), teacherHandler.GetCourseRoster)
+			teacher.GET("/courses/:id/students", rbac.RequirePermission("course.view", models.ContextCourse, "id"), teacherHandler.GetCourseStudents)
+			teacher.GET("/courses/:id/at-risk", rbac.RequirePermission("course.view", models.ContextCourse, "id"), teacherHandler.GetAtRiskStudents)
+			teacher.GET("/students/:id/activity", teacherHandler.GetStudentActivityLog)
 			teacher.GET("/courses/:id/gradebook", teacherHandler.GetGradebook)
 			teacher.GET("/submissions", teacherHandler.GetSubmissions)
 			teacher.POST("/submissions/:id/annotations", teacherHandler.AddAnnotation)
 			teacher.GET("/submissions/:id/annotations", teacherHandler.GetAnnotations)
 			teacher.DELETE("/submissions/:id/annotations/:annId", teacherHandler.DeleteAnnotation)
+			teacher.GET("/sessions/:session_id/attendance", attendanceHandler.GetSessionAttendance)
 			teacher.POST("/sessions/:session_id/attendance", attendanceHandler.BatchRecordAttendance)
 		}
 
@@ -677,7 +690,6 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		}
 
 		// Discussion Forums (Phase 26)
-		forumRepo := repository.NewSQLForumRepository(db)
 		forumService := services.NewForumService(forumRepo)
 		forumHandler := NewForumHandler(forumService)
 

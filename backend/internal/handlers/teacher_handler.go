@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
@@ -57,6 +58,52 @@ func (h *TeacherHandler) GetCourseRoster(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, roster)
+}
+
+// GetCourseStudents GET /teacher/courses/:id/students
+func (h *TeacherHandler) GetCourseStudents(c *gin.Context) {
+	offeringID := c.Param("id")
+	students, err := h.svc.GetCourseStudents(c.Request.Context(), offeringID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, students)
+}
+
+// GetAtRiskStudents GET /teacher/courses/:id/at-risk
+func (h *TeacherHandler) GetAtRiskStudents(c *gin.Context) {
+	offeringID := c.Param("id")
+	students, err := h.svc.GetCourseAtRisk(c.Request.Context(), offeringID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, students)
+}
+
+// GetStudentActivityLog GET /teacher/students/:id/activity?course_offering_id=...&limit=...
+func (h *TeacherHandler) GetStudentActivityLog(c *gin.Context) {
+	studentID := c.Param("id")
+	offeringID := c.Query("course_offering_id")
+	if offeringID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing course_offering_id"})
+		return
+	}
+
+	limit := 50
+	if v := c.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			limit = n
+		}
+	}
+
+	events, err := h.svc.GetStudentActivity(c.Request.Context(), studentID, offeringID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, events)
 }
 
 // GetGradebook GET /teacher/courses/:id/gradebook

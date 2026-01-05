@@ -20,7 +20,7 @@ type LMSRepository interface {
 	GetSubmission(ctx context.Context, id string) (*models.ActivitySubmission, error)
 	GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error)
 	ListSubmissions(ctx context.Context, activityID string) ([]models.ActivitySubmission, error)
-	
+
 	// Annotations
 	CreateAnnotation(ctx context.Context, ann models.SubmissionAnnotation) (*models.SubmissionAnnotation, error)
 	ListAnnotations(ctx context.Context, submissionID string) ([]models.SubmissionAnnotation, error)
@@ -107,9 +107,13 @@ func (r *SQLLMSRepository) GetSubmissionByStudent(ctx context.Context, activityI
 
 func (r *SQLLMSRepository) ListSubmissions(ctx context.Context, offeringID string) ([]models.ActivitySubmission, error) {
 	var list []models.ActivitySubmission
-	// Should probably join with users and activities, but keeping it simple for now
+	// Include activity title for teacher dashboards/trackers when possible.
 	err := r.db.SelectContext(ctx, &list, `
-		SELECT * FROM activity_submissions WHERE course_offering_id=$1 ORDER BY submitted_at DESC`, offeringID)
+		SELECT s.*, COALESCE(a.title, '') AS activity_title
+		FROM activity_submissions s
+		LEFT JOIN course_activities a ON a.id = s.activity_id
+		WHERE s.course_offering_id = $1
+		ORDER BY s.submitted_at DESC`, offeringID)
 	return list, err
 }
 
@@ -129,7 +133,7 @@ func (r *SQLLMSRepository) CreateAnnotation(ctx context.Context, ann models.Subm
 		ann.XPercent, ann.YPercent, ann.WidthPercent, ann.HeightPercent,
 		ann.Content, ann.Color, ann.CreatedAt, ann.UpdatedAt,
 	).Scan(&ann.ID)
-	
+
 	if err != nil {
 		return nil, err
 	}

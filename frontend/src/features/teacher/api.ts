@@ -5,7 +5,9 @@ import {
   CourseEnrollment,
   ActivitySubmission,
   GradebookEntry,
-  GradeSubmissionRequest
+  GradeSubmissionRequest,
+  StudentRiskProfile,
+  TeacherStudentActivityEvent
 } from './types';
 import { submitGrade } from '@/features/grading/api';
 
@@ -26,3 +28,14 @@ export const getTeacherSubmissions = () =>
 
 export const submitGradeForSubmission = (data: GradeSubmissionRequest) =>
   submitGrade(data);
+
+export const getCourseStudents = (id: string) =>
+  api.get<StudentRiskProfile[]>(`/teacher/courses/${id}/students`);
+
+export const getAtRiskStudents = (id: string) =>
+  api.get<StudentRiskProfile[]>(`/teacher/courses/${id}/at-risk`);
+
+export const getStudentActivityLog = (studentId: string, courseOfferingId: string, limit = 50) =>
+  api.get<TeacherStudentActivityEvent[]>(
+    `/teacher/students/${studentId}/activity?course_offering_id=${encodeURIComponent(courseOfferingId)}&limit=${limit}`
+  );

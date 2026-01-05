@@ -8,6 +8,7 @@ frontend/.env
 # Go / Backend
 backend/bin/
 backend/tmp/
+backend/.gocache/
 backend/.env
 backend/uploads/
 

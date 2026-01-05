@@ -1183,6 +1183,9 @@
       "not_found": "Course not found.",
       "back": "Back to Courses",
       "edit_content": "Edit Content",
+      "open_tracker": "Student Tracker",
+      "open_attendance": "Attendance",
+      "open_forums": "Forums",
       "open_grading": "Grade Submissions",
       "stats": {
         "enrolled": "Enrolled",
@@ -1209,6 +1212,54 @@
         "score": "Score",
         "grade": "Grade",
         "empty": "No grades yet."
+      }
+    },
+    "tracker": {
+      "title": "Student Progress Tracker",
+      "subtitle": "Tracking progress for {{course}}",
+      "back": "Back to Course",
+      "open_grading": "Grade Submissions",
+      "not_found": "Course not found.",
+      "search_placeholder": "Search students...",
+      "days_ago": "{{count}} days ago",
+      "stats": {
+        "total": "Students",
+        "at_risk": "At Risk",
+        "on_track": "On Track"
+      },
+      "filters": {
+        "all": "All",
+        "at_risk": "At Risk",
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "table": {
+        "student": "Student",
+        "progress": "Progress",
+        "grade": "Grade",
+        "last_active": "Last Active",
+        "status": "Status"
+      },
+      "risk": {
+        "low": "On Track",
+        "medium": "Needs Help",
+        "high": "At Risk",
+        "critical": "Critical"
+      },
+      "empty": "No students found.",
+      "api_hint": "API check: {{count}} students returned by /at-risk endpoint.",
+      "drawer": {
+        "progress": "{{percent}}% • {{completed}}/{{total}} completed",
+        "avg": "Average",
+        "last": "Last Active",
+        "factors": "Risk Factors",
+        "no_factors": "No risk factors.",
+        "actions": "Suggested Actions",
+        "no_actions": "No suggested actions.",
+        "activity": "Recent Activity",
+        "no_activity": "No activity yet."
       }
     },
     "grading": {

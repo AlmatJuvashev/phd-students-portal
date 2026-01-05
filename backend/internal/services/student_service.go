@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,6 +13,7 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/dto"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	pb "github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/playbook"
+	"github.com/jmoiron/sqlx/types"
 )
 
 type studentUserRepo interface {
@@ -23,6 +26,8 @@ type studentJourneyRepo interface {
 
 type studentLMSRepo interface {
 	GetStudentEnrollments(ctx context.Context, studentID string) ([]models.CourseEnrollment, error)
+	CreateSubmission(ctx context.Context, sub *models.ActivitySubmission) error
+	GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error)
 }
 
 type studentSchedulerRepo interface {
@@ -39,6 +44,21 @@ type studentGradingRepo interface {
 	ListStudentEntries(ctx context.Context, studentID string) ([]models.GradebookEntry, error)
 }
 
+type studentCourseContentRepo interface {
+	// Read-only operations needed for the student portal.
+	GetModule(ctx context.Context, id string) (*models.CourseModule, error)
+	GetLesson(ctx context.Context, id string) (*models.CourseLesson, error)
+	GetActivity(ctx context.Context, id string) (*models.CourseActivity, error)
+	ListModules(ctx context.Context, courseID string) ([]models.CourseModule, error)
+	ListLessons(ctx context.Context, moduleID string) ([]models.CourseLesson, error)
+	ListActivities(ctx context.Context, lessonID string) ([]models.CourseActivity, error)
+}
+
+type studentForumRepo interface {
+	ListForums(ctx context.Context, courseOfferingID string) ([]models.Forum, error)
+	ListTopics(ctx context.Context, forumID string, limit, offset int) ([]models.Topic, error)
+}
+
 type StudentService struct {
 	userRepo      studentUserRepo
 	journeyRepo   studentJourneyRepo
@@ -46,6 +66,8 @@ type StudentService struct {
 	schedulerRepo studentSchedulerRepo
 	currRepo      studentCurriculumRepo
 	gradingRepo   studentGradingRepo
+	contentRepo   studentCourseContentRepo
+	forumRepo     studentForumRepo
 	pb            *pb.Manager
 }
 
@@ -56,6 +78,8 @@ func NewStudentService(
 	schedulerRepo studentSchedulerRepo,
 	currRepo studentCurriculumRepo,
 	gradingRepo studentGradingRepo,
+	contentRepo studentCourseContentRepo,
+	forumRepo studentForumRepo,
 	pbm *pb.Manager,
 ) *StudentService {
 	return &StudentService{
@@ -65,6 +89,8 @@ func NewStudentService(
 		schedulerRepo: schedulerRepo,
 		currRepo:      currRepo,
 		gradingRepo:   gradingRepo,
+		contentRepo:   contentRepo,
+		forumRepo:     forumRepo,
 		pb:            pbm,
 	}
 }
@@ -434,4 +460,353 @@ func (s *StudentService) resolvePrimaryInstructorName(ctx context.Context, offer
 		return nil
 	}
 	return &name
+}
+
+func (s *StudentService) GetCourseDetail(ctx context.Context, tenantID, studentID, courseOfferingID string) (*dto.StudentCourseDetail, error) {
+	if courseOfferingID == "" {
+		return nil, errors.New("course_offering_id is required")
+	}
+	if err := s.ensureStudentEnrolled(ctx, studentID, courseOfferingID); err != nil {
+		return nil, err
+	}
+
+	offering, err := s.schedulerRepo.GetOffering(ctx, courseOfferingID)
+	if err != nil {
+		return nil, err
+	}
+	if offering == nil {
+		return nil, errors.New("course offering not found")
+	}
+
+	course, err := s.currRepo.GetCourse(ctx, offering.CourseID)
+	if err != nil {
+		return nil, err
+	}
+	if course == nil {
+		return nil, errors.New("course not found")
+	}
+
+	instructorName := s.resolvePrimaryInstructorName(ctx, offering.ID)
+
+	now := time.Now()
+	windowEnd := now.Add(60 * 24 * time.Hour)
+	sessions, err := s.schedulerRepo.ListSessions(ctx, offering.ID, now.Add(-24*time.Hour), windowEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	outSessions := make([]dto.StudentCourseNextSession, 0, len(sessions))
+	for _, sess := range sessions {
+		if sess.IsCancelled {
+			continue
+		}
+		outSessions = append(outSessions, dto.StudentCourseNextSession{
+			ID:         sess.ID,
+			Date:       sess.Date.Format("2006-01-02"),
+			StartTime:  sess.StartTime,
+			EndTime:    sess.EndTime,
+			RoomID:     sess.RoomID,
+			MeetingURL: sess.MeetingURL,
+			Type:       sess.Type,
+		})
+	}
+
+	c := dto.StudentCourse{
+		EnrollmentID:     "",
+		CourseOfferingID: offering.ID,
+		Status:           models.EnrollmentStatusEnrolled,
+		CourseID:         offering.CourseID,
+		Code:             course.Code,
+		Title:            pickLocalizedTitle(course.Title, "en"),
+		Section:          offering.Section,
+		TermID:           offering.TermID,
+		DeliveryFormat:   offering.DeliveryFormat,
+		InstructorName:   instructorName,
+		ProgressPercent:  0,
+		NextSession:      nil,
+	}
+	if len(outSessions) > 0 {
+		next := outSessions[0]
+		c.NextSession = &next
+	}
+
+	return &dto.StudentCourseDetail{
+		Course:   c,
+		Sessions: outSessions,
+	}, nil
+}
+
+func (s *StudentService) GetCourseModules(ctx context.Context, tenantID, studentID, courseOfferingID string) ([]models.CourseModule, error) {
+	if courseOfferingID == "" {
+		return nil, errors.New("course_offering_id is required")
+	}
+	if s.contentRepo == nil {
+		return nil, errors.New("course content repository not configured")
+	}
+	if err := s.ensureStudentEnrolled(ctx, studentID, courseOfferingID); err != nil {
+		return nil, err
+	}
+
+	offering, err := s.schedulerRepo.GetOffering(ctx, courseOfferingID)
+	if err != nil {
+		return nil, err
+	}
+	if offering == nil {
+		return nil, errors.New("course offering not found")
+	}
+
+	modules, err := s.contentRepo.ListModules(ctx, offering.CourseID)
+	if err != nil {
+		return nil, err
+	}
+
+	for mi := range modules {
+		lessons, err := s.contentRepo.ListLessons(ctx, modules[mi].ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for li := range lessons {
+			acts, err := s.contentRepo.ListActivities(ctx, lessons[li].ID)
+			if err != nil {
+				return nil, err
+			}
+			lessons[li].Activities = acts
+		}
+
+		modules[mi].Lessons = lessons
+	}
+
+	return modules, nil
+}
+
+func (s *StudentService) ListCourseAnnouncements(ctx context.Context, tenantID, studentID, courseOfferingID string) ([]dto.StudentAnnouncement, error) {
+	if courseOfferingID == "" {
+		return nil, errors.New("course_offering_id is required")
+	}
+	if s.forumRepo == nil {
+		return nil, errors.New("forum repository not configured")
+	}
+	if err := s.ensureStudentEnrolled(ctx, studentID, courseOfferingID); err != nil {
+		return nil, err
+	}
+
+	forums, err := s.forumRepo.ListForums(ctx, courseOfferingID)
+	if err != nil {
+		return nil, err
+	}
+
+	var annForumID string
+	for _, f := range forums {
+		if f.Type == models.ForumTypeAnnouncement {
+			annForumID = f.ID
+			break
+		}
+	}
+	if annForumID == "" {
+		return []dto.StudentAnnouncement{}, nil
+	}
+
+	topics, err := s.forumRepo.ListTopics(ctx, annForumID, 20, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]dto.StudentAnnouncement, 0, len(topics))
+	for _, t := range topics {
+		out = append(out, dto.StudentAnnouncement{
+			ID:      t.ID,
+			Title:   t.Title,
+			Body:    t.Content,
+			Created: t.CreatedAt.Format(time.RFC3339),
+			Link:    nil,
+		})
+	}
+	return out, nil
+}
+
+func (s *StudentService) ListCourseResources(ctx context.Context, tenantID, studentID, courseOfferingID string) ([]models.CourseActivity, error) {
+	modules, err := s.GetCourseModules(ctx, tenantID, studentID, courseOfferingID)
+	if err != nil {
+		return nil, err
+	}
+
+	var resources []models.CourseActivity
+	for _, m := range modules {
+		for _, l := range m.Lessons {
+			for _, a := range l.Activities {
+				if strings.EqualFold(a.Type, "resource") {
+					resources = append(resources, a)
+				}
+			}
+		}
+	}
+	return resources, nil
+}
+
+func (s *StudentService) GetAssignmentDetail(ctx context.Context, tenantID, studentID, activityID, courseOfferingID string) (*models.CourseActivity, *models.ActivitySubmission, string, error) {
+	if activityID == "" {
+		return nil, nil, "", errors.New("activity_id is required")
+	}
+	if s.contentRepo == nil {
+		return nil, nil, "", errors.New("course content repository not configured")
+	}
+
+	resolvedOfferingID, err := s.resolveStudentOfferingForActivity(ctx, studentID, activityID, courseOfferingID)
+	if err != nil {
+		return nil, nil, "", err
+	}
+
+	activity, err := s.contentRepo.GetActivity(ctx, activityID)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	if activity == nil {
+		return nil, nil, "", errors.New("activity not found")
+	}
+
+	var sub *models.ActivitySubmission
+	if s.lmsRepo != nil {
+		found, err := s.lmsRepo.GetSubmissionByStudent(ctx, activityID, studentID)
+		if err == nil {
+			sub = found
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, "", err
+		}
+	}
+
+	return activity, sub, resolvedOfferingID, nil
+}
+
+func (s *StudentService) SubmitAssignment(ctx context.Context, tenantID, studentID, activityID, courseOfferingID string, content json.RawMessage, status string) (*models.ActivitySubmission, error) {
+	if activityID == "" {
+		return nil, errors.New("activity_id is required")
+	}
+	if status == "" {
+		status = "SUBMITTED"
+	}
+
+	resolvedOfferingID, err := s.resolveStudentOfferingForActivity(ctx, studentID, activityID, courseOfferingID)
+	if err != nil {
+		return nil, err
+	}
+
+	sub := &models.ActivitySubmission{
+		ActivityID:       activityID,
+		StudentID:        studentID,
+		CourseOfferingID: resolvedOfferingID,
+		Content:          types.JSONText(content),
+		Status:           status,
+	}
+	if err := s.lmsRepo.CreateSubmission(ctx, sub); err != nil {
+		return nil, err
+	}
+	return sub, nil
+}
+
+func (s *StudentService) ensureStudentEnrolled(ctx context.Context, studentID, courseOfferingID string) error {
+	enrollments, err := s.lmsRepo.GetStudentEnrollments(ctx, studentID)
+	if err != nil {
+		return err
+	}
+	for _, e := range enrollments {
+		if e.CourseOfferingID == courseOfferingID {
+			return nil
+		}
+	}
+	return ErrForbidden
+}
+
+func (s *StudentService) resolveStudentOfferingForActivity(ctx context.Context, studentID, activityID, requestedOfferingID string) (string, error) {
+	if requestedOfferingID != "" {
+		if err := s.ensureStudentEnrolled(ctx, studentID, requestedOfferingID); err != nil {
+			return "", err
+		}
+		if err := s.ensureActivityBelongsToOffering(ctx, activityID, requestedOfferingID); err != nil {
+			return "", err
+		}
+		return requestedOfferingID, nil
+	}
+
+	activity, err := s.contentRepo.GetActivity(ctx, activityID)
+	if err != nil {
+		return "", err
+	}
+	if activity == nil {
+		return "", errors.New("activity not found")
+	}
+	lesson, err := s.contentRepo.GetLesson(ctx, activity.LessonID)
+	if err != nil {
+		return "", err
+	}
+	if lesson == nil {
+		return "", errors.New("lesson not found")
+	}
+	module, err := s.contentRepo.GetModule(ctx, lesson.ModuleID)
+	if err != nil {
+		return "", err
+	}
+	if module == nil {
+		return "", errors.New("module not found")
+	}
+
+	enrollments, err := s.lmsRepo.GetStudentEnrollments(ctx, studentID)
+	if err != nil {
+		return "", err
+	}
+
+	var matches []string
+	for _, e := range enrollments {
+		offering, err := s.schedulerRepo.GetOffering(ctx, e.CourseOfferingID)
+		if err != nil || offering == nil {
+			continue
+		}
+		if offering.CourseID == module.CourseID {
+			matches = append(matches, offering.ID)
+		}
+	}
+
+	if len(matches) == 0 {
+		return "", ErrForbidden
+	}
+	if len(matches) > 1 {
+		return "", errors.New("multiple course offerings match this activity; course_offering_id is required")
+	}
+	return matches[0], nil
+}
+
+func (s *StudentService) ensureActivityBelongsToOffering(ctx context.Context, activityID, offeringID string) error {
+	offering, err := s.schedulerRepo.GetOffering(ctx, offeringID)
+	if err != nil {
+		return err
+	}
+	if offering == nil {
+		return errors.New("course offering not found")
+	}
+
+	activity, err := s.contentRepo.GetActivity(ctx, activityID)
+	if err != nil {
+		return err
+	}
+	if activity == nil {
+		return errors.New("activity not found")
+	}
+	lesson, err := s.contentRepo.GetLesson(ctx, activity.LessonID)
+	if err != nil {
+		return err
+	}
+	if lesson == nil {
+		return errors.New("lesson not found")
+	}
+	module, err := s.contentRepo.GetModule(ctx, lesson.ModuleID)
+	if err != nil {
+		return err
+	}
+	if module == nil {
+		return errors.New("module not found")
+	}
+	if module.CourseID != offering.CourseID {
+		return errors.New("activity does not belong to this course offering")
+	}
+	return nil
 }

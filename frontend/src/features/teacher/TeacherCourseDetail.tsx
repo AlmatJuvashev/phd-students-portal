@@ -93,6 +93,15 @@ export const TeacherCourseDetail: React.FC = () => {
               <ExternalLink className="mr-2 h-4 w-4" />
               {t('teacher.detail.edit_content')}
             </Button>
+            <Button variant="secondary" onClick={() => navigate(`/admin/teacher/courses/${offeringId}/tracker`)}>
+              {t('teacher.detail.open_tracker')}
+            </Button>
+            <Button variant="secondary" onClick={() => navigate(`/admin/teacher/courses/${offeringId}/attendance`)}>
+              {t('teacher.detail.open_attendance')}
+            </Button>
+            <Button variant="secondary" onClick={() => navigate(`/forums/course/${offeringId}`)}>
+              {t('teacher.detail.open_forums')}
+            </Button>
             <Button onClick={() => navigate('/admin/teacher/grading')}>{t('teacher.detail.open_grading')}</Button>
           </div>
         </div>
@@ -241,4 +250,3 @@ export const TeacherCourseDetail: React.FC = () => {
     </div>
   );
 };
-

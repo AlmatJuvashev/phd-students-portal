@@ -91,6 +91,12 @@ const StudentAssignments = lazy(() =>
 const StudentGrades = lazy(() =>
   import("@/features/student-portal/StudentGrades").then((m) => ({ default: m.StudentGrades }))
 );
+const StudentCourseDetail = lazy(() =>
+  import("@/features/student-portal/StudentCourseDetail").then((m) => ({ default: m.StudentCourseDetail }))
+);
+const StudentAssignmentDetail = lazy(() =>
+  import("@/features/student-portal/StudentAssignmentDetail").then((m) => ({ default: m.StudentAssignmentDetail }))
+);
 const StartAssessmentPage = lazy(() =>
   import("@/features/assessments/StartAssessmentPage").then((m) => ({ default: m.StartAssessmentPage }))
 );
@@ -164,8 +170,23 @@ const TeacherCoursesPage = lazy(() =>
 const TeacherCourseDetail = lazy(() =>
   import("@/features/teacher/TeacherCourseDetail").then((m) => ({ default: m.TeacherCourseDetail }))
 );
+const StudentTracker = lazy(() =>
+  import("@/features/teacher/StudentTracker").then((m) => ({ default: m.StudentTracker }))
+);
+const TeacherAttendancePage = lazy(() =>
+  import("@/features/attendance/TeacherAttendancePage").then((m) => ({ default: m.TeacherAttendancePage }))
+);
 const TeacherGradingPage = lazy(() =>
   import("@/features/teacher/TeacherGradingPage").then((m) => ({ default: m.TeacherGradingPage }))
+);
+const CourseForumsPage = lazy(() =>
+  import("@/features/forums/CourseForumsPage").then((m) => ({ default: m.CourseForumsPage }))
+);
+const ForumTopicsPage = lazy(() =>
+  import("@/features/forums/ForumTopicsPage").then((m) => ({ default: m.ForumTopicsPage }))
+);
+const TopicDetailPage = lazy(() =>
+  import("@/features/forums/TopicDetailPage").then((m) => ({ default: m.TopicDetailPage }))
 );
 
 // Superadmin pages
@@ -264,6 +285,18 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: "forums/course/:courseOfferingId",
+        element: <ProtectedRoute>{WithSuspense(<CourseForumsPage />)}</ProtectedRoute>,
+      },
+      {
+        path: "forums/course/:courseOfferingId/forums/:forumId",
+        element: <ProtectedRoute>{WithSuspense(<ForumTopicsPage />)}</ProtectedRoute>,
+      },
+      {
+        path: "forums/course/:courseOfferingId/topics/:topicId",
+        element: <ProtectedRoute>{WithSuspense(<TopicDetailPage />)}</ProtectedRoute>,
+      },
       { path: "contacts", element: WithSuspense(<ContactsPage />) },
       {
         path: "login",
@@ -295,7 +328,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "dashboard", element: WithSuspense(<StudentDashboard />) },
           { path: "courses", element: WithSuspense(<StudentCourses />) },
+          { path: "courses/:courseOfferingId", element: WithSuspense(<StudentCourseDetail />) },
           { path: "assignments", element: WithSuspense(<StudentAssignments />) },
+          { path: "assignments/:assignmentId", element: WithSuspense(<StudentAssignmentDetail />) },
           { path: "assessments/:assessmentId", element: WithSuspense(<StartAssessmentPage />) },
           { path: "attempts/:attemptId", element: WithSuspense(<AttemptPage />) },
           { path: "grades", element: WithSuspense(<StudentGrades />) },
@@ -530,6 +565,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             {WithSuspense(<TeacherCourseDetail />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/courses/:courseId/tracker",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<StudentTracker />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/courses/:courseId/attendance",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<TeacherAttendancePage />)}
           </ProtectedRoute>
         ),
       },

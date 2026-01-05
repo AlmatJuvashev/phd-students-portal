@@ -1,23 +1,132 @@
 # Remaining Features Implementation Guide
 
-> **Document Version:** 1.0  
+> **Document Version:** 2.0  
 > **Created:** January 4, 2026  
-> **Purpose:** Detailed implementation guide for remaining features from v11 and backend
+> **Last Updated:** January 4, 2026  
+> **Purpose:** Comprehensive implementation guide for remaining features to achieve best-in-class education platform
 
 ---
 
 ## Executive Summary
 
-Based on the audit, **36% of functionality** (37 features) is not yet implemented. This document provides detailed implementation plans organized into 4 phases with estimated timelines.
+Based on the complete audit (January 4, 2026):
+
+- **Backend:** ~92% implemented (32 services, 35+ handlers)
+- **Frontend:** ~75% implemented (22 modules fully working, 4 partial)
+- **Overall Integration:** ~78% complete
+
+This document provides detailed implementation plans for the remaining **~22%** organized into 4 phases.
+
+### Current Implementation Status
+
+| Category         | Implemented | Partial | Missing | Total |
+| ---------------- | ----------- | ------- | ------- | ----- |
+| Backend Services | 32          | 0       | 2       | 34    |
+| Backend Handlers | 35+         | 2       | 3       | 40    |
+| Frontend Modules | 22          | 4       | 5       | 31    |
+| API Integration  | 85%         | 10%     | 5%      | 100%  |
 
 ### Implementation Priority Matrix
 
-| Priority | Features | Complexity | Timeline |
-|----------|----------|------------|----------|
-| 🔴 Critical | Student Course/Assignment, Quiz Builder | High | 2-3 weeks |
-| 🟠 High | Survey/Form Builder, Teacher Tracker | Medium-High | 2-3 weeks |
-| 🟡 Medium | Rich Editor, Forums, Attendance | Medium | 3-4 weeks |
-| 🟢 Low | Gamification, AI Tools, LTI | Variable | As needed |
+| Priority    | Features                                                         | Complexity  | Timeline  |
+| ----------- | ---------------------------------------------------------------- | ----------- | --------- |
+| 🔴 Critical | Student Course/Assignment Detail Pages                           | High        | 1-2 weeks |
+| 🟠 High     | Forums UI, Attendance UI, Teacher Student Tracker                | Medium-High | 2-3 weeks |
+| 🟡 Medium   | Rich Editor, Quiz Builder Enhancement, Transcript UI             | Medium      | 2-3 weeks |
+| 🟢 Low      | Gamification (Full Stack), AI Tools UI, LTI Admin, Global Search | Variable    | 3-4 weeks |
+
+---
+
+## ✅ Already Implemented (Reference)
+
+### Frontend Modules (Fully Working)
+
+| Module                | Key Files                                                              | Routes                          |
+| --------------------- | ---------------------------------------------------------------------- | ------------------------------- |
+| `assessments/`        | api.ts, types.ts, AssessmentTaking.tsx, AssessmentResults.tsx          | `/student/assessments/:id/take` |
+| `student-portal/`     | api.ts, types.ts, Dashboard, Courses, Assignments, Grades              | `/student/*`                    |
+| `teacher/`            | api.ts, types.ts, Dashboard, Courses, CourseDetail, Grading            | `/admin/teacher/*`              |
+| `studio/`             | api.ts, types.ts, CourseBuilder, ProgramJourneyBuilder + 10 components | `/admin/studio/*`               |
+| `item-bank/`          | api.ts, types.ts, BanksPage, BankItemsPage                             | `/admin/item-banks/*`           |
+| `curriculum/`         | api.ts, types.ts, Programs, Courses, ProgramDetail                     | `/admin/programs/*`             |
+| `grading/`            | api.ts, types.ts                                                       | (API only, no dedicated pages)  |
+| `enrollments/`        | api.ts, types.ts, EnrollmentsPage                                      | `/admin/enrollments`            |
+| `calendar/`           | Full module with components                                            | `/calendar`, `/admin/calendar`  |
+| `chat/`               | Full module with rooms, messages                                       | Chat integration                |
+| `analytics/`          | AnalyticsDashboard                                                     | `/admin/analytics`              |
+| `admin/dictionaries/` | Full CRUD for all dictionaries                                         | `/admin/dictionaries`           |
+| `superadmin/`         | Tenants, Admins, Logs, Settings, Services                              | `/superadmin/*`                 |
+| `journey/`            | Full PhD journey tracking                                              | `/journey`                      |
+| `students-monitor/`   | Full monitoring with pages                                             | `/admin/students-monitor`       |
+| `scheduler/`          | Full scheduling module                                                 | `/admin/scheduler`              |
+| `profile/`            | Profile editing, avatar                                                | `/profile`                      |
+
+### Backend Services (All Operational)
+
+All 32+ services working: `admin`, `ai`, `analytics`, `assessment`, `attendance`, `audit`, `auth`, `authz`, `bulk`, `calendar`, `chat`, `checklist`, `comment`, `contact`, `course_content`, `curriculum`, `dictionary`, `document`, `email`, `forum`, `governance`, `grading`, `item_bank`, `journey`, `lti`, `notification`, `program_builder`, `resource`, `rubric`, `s3`, `scheduler`, `search`, `student`, `superadmin`, `teacher`, `tenant`, `transcript`, `user`.
+
+### Frontend API Clients (Implemented)
+
+```typescript
+// assessments/api.ts - ✅ COMPLETE
+startAttempt,
+  getAssessmentForTaking,
+  getAttemptDetails,
+  submitResponse,
+  completeAttempt,
+  listMyAttempts;
+
+// student-portal/api.ts - ✅ COMPLETE (basic)
+getStudentDashboard, getStudentCourses, getStudentAssignments, getStudentGrades;
+
+// teacher/api.ts - ✅ COMPLETE
+getTeacherDashboard,
+  getTeacherCourses,
+  getCourseRoster,
+  getCourseGradebook,
+  getTeacherSubmissions,
+  submitGradeForSubmission;
+
+// item-bank/api.ts - ✅ COMPLETE
+listBanks,
+  createBank,
+  updateBank,
+  deleteBank,
+  listQuestions,
+  createQuestion,
+  updateQuestion,
+  deleteQuestion;
+
+// grading/api.ts - ✅ COMPLETE
+listGradingSchemas, createGradingSchema, submitGrade, listStudentGrades;
+
+// studio/api.ts - ✅ COMPLETE
+getCourseContent,
+  updateCourseContent,
+  addModule,
+  updateModule,
+  deleteModule,
+  addLesson,
+  addActivity,
+  updateActivity;
+
+// curriculum/api.ts - ✅ COMPLETE
+getPrograms,
+  getProgramVersionMap,
+  getProgramVersionNodes,
+  createProgramVersionNode,
+  updateProgramVersionNode,
+  updateProgramVersionMap,
+  getProgram,
+  createProgram,
+  updateProgram,
+  deleteProgram,
+  getCourses,
+  getCourse,
+  createCourse,
+  updateCourse,
+  deleteCourse;
+```
 
 ---
 
@@ -79,7 +188,7 @@ frontend/src/features/student-portal/
     <InstructorInfo />
     <ProgressBar percent={75} />
   </CourseHeader>
-  
+
   <Tabs defaultValue="content">
     <Tab value="content">
       <CourseModules>
@@ -136,16 +245,19 @@ frontend/src/features/student-portal/
 #### Key Features
 
 1. **Assignment Info:**
+
    - Title, description, due date
    - Points possible
    - Submission type (file, text, quiz)
    - Attempts allowed/remaining
 
 2. **Rubric Display:**
+
    - Criteria and point values
    - Performance levels
 
 3. **Submission Area:**
+
    - File upload (drag & drop)
    - Rich text editor for essays
    - Link submission option
@@ -304,18 +416,18 @@ frontend/src/features/assessment/
 
 #### Supported Question Types
 
-| Type | v11 | Backend | Current | Action |
-|------|-----|---------|---------|--------|
-| Multiple Choice (MCQ) | ✅ | ✅ | ✅ | OK |
-| Multiple Response (MRQ) | ✅ | ✅ | ✅ | OK |
-| True/False | ✅ | ✅ | ❌ | Add |
-| Short Text | ✅ | ✅ | ✅ | OK |
-| Long Text (Essay) | ✅ | ✅ | ❌ | Add |
-| Ordering | ✅ | ❌ | ✅ | Backend |
-| Matrix/Grid | ✅ | ❌ | ❌ | Add |
-| Fill in Blank | ✅ | ❌ | ❌ | Add |
-| Math/LaTeX | ✅ | ❌ | ❌ | Add |
-| Section Header | ✅ | ❌ | ❌ | Add |
+| Type                    | v11 | Backend | Current | Action  |
+| ----------------------- | --- | ------- | ------- | ------- |
+| Multiple Choice (MCQ)   | ✅  | ✅      | ✅      | OK      |
+| Multiple Response (MRQ) | ✅  | ✅      | ✅      | OK      |
+| True/False              | ✅  | ✅      | ❌      | Add     |
+| Short Text              | ✅  | ✅      | ✅      | OK      |
+| Long Text (Essay)       | ✅  | ✅      | ❌      | Add     |
+| Ordering                | ✅  | ❌      | ✅      | Backend |
+| Matrix/Grid             | ✅  | ❌      | ❌      | Add     |
+| Fill in Blank           | ✅  | ❌      | ❌      | Add     |
+| Math/LaTeX              | ✅  | ❌      | ❌      | Add     |
+| Section Header          | ✅  | ❌      | ❌      | Add     |
 
 #### Enhanced Quiz Builder Structure
 
@@ -349,38 +461,38 @@ frontend/src/features/studio/components/
 interface QuizSettings {
   title: string;
   description?: string;
-  
+
   // Timing
-  time_limit_minutes?: number;      // null = unlimited
-  late_submission: 'allow' | 'penalize' | 'block';
+  time_limit_minutes?: number; // null = unlimited
+  late_submission: "allow" | "penalize" | "block";
   late_penalty_percent?: number;
-  
+
   // Attempts
-  max_attempts: number;             // 0 = unlimited
-  attempt_grading: 'highest' | 'latest' | 'average';
-  
+  max_attempts: number; // 0 = unlimited
+  attempt_grading: "highest" | "latest" | "average";
+
   // Display
   shuffle_questions: boolean;
   shuffle_answers: boolean;
   show_one_at_a_time: boolean;
   allow_backtrack: boolean;
-  
+
   // Feedback
-  show_correct_answers: 'immediately' | 'after_due' | 'never';
+  show_correct_answers: "immediately" | "after_due" | "never";
   show_points_per_question: boolean;
-  
+
   // Proctoring
   require_proctoring: boolean;
   lock_browser: boolean;
   webcam_required: boolean;
-  
+
   // Availability
-  available_from?: string;          // ISO date
+  available_from?: string; // ISO date
   available_until?: string;
-  
+
   // Grading
   grading_schema_id?: string;
-  passing_score?: number;           // Percentage
+  passing_score?: number; // Percentage
 }
 ```
 
@@ -390,51 +502,51 @@ interface QuizSettings {
 interface QuizQuestion {
   id: string;
   type: QuestionType;
-  stem: string;                     // Question text (supports HTML/Markdown)
-  stem_format: 'plain' | 'html' | 'markdown' | 'latex';
-  
+  stem: string; // Question text (supports HTML/Markdown)
+  stem_format: "plain" | "html" | "markdown" | "latex";
+
   // For MCQ/MRQ
   options?: QuestionOption[];
-  
+
   // For Ordering
   items_to_order?: string[];
   correct_order?: number[];
-  
+
   // For Matrix
   rows?: string[];
   columns?: string[];
   correct_matrix?: boolean[][];
-  
+
   // For Fill in Blank
-  blank_answers?: string[];         // Acceptable answers
+  blank_answers?: string[]; // Acceptable answers
   case_sensitive?: boolean;
-  
+
   // Scoring
   points: number;
   partial_credit: boolean;
-  
+
   // Feedback
   feedback_correct?: string;
   feedback_incorrect?: string;
   feedback_hint?: string;
-  
+
   // Media
   image_url?: string;
   audio_url?: string;
   video_url?: string;
-  
+
   // Metadata
-  difficulty?: 'easy' | 'medium' | 'hard';
+  difficulty?: "easy" | "medium" | "hard";
   tags?: string[];
-  source_bank_id?: string;          // If imported from bank
+  source_bank_id?: string; // If imported from bank
 }
 
 interface QuestionOption {
   id: string;
   text: string;
   is_correct: boolean;
-  points?: number;                  // For partial credit
-  feedback?: string;                // Option-specific feedback
+  points?: number; // For partial credit
+  feedback?: string; // Option-specific feedback
 }
 ```
 
@@ -452,14 +564,14 @@ interface QuestionOption {
     <DialogHeader>
       <DialogTitle>Import Questions</DialogTitle>
     </DialogHeader>
-    
+
     <div className="grid grid-cols-3 gap-4">
       {/* Left: Bank list */}
       <div className="border rounded-lg p-4">
         <h4>Question Banks</h4>
         <BankList onSelect={setSelectedBank} />
       </div>
-      
+
       {/* Middle: Questions */}
       <div className="col-span-2 border rounded-lg p-4">
         <div className="flex justify-between mb-4">
@@ -472,7 +584,7 @@ interface QuestionOption {
             </SelectContent>
           </Select>
         </div>
-        
+
         <QuestionList
           questions={bankQuestions}
           selectedIds={selectedQuestionIds}
@@ -480,7 +592,7 @@ interface QuestionOption {
         />
       </div>
     </div>
-    
+
     <DialogFooter>
       <Button onClick={importSelected}>
         Import {selectedQuestionIds.length} Questions
@@ -500,18 +612,18 @@ npm install katex react-katex
 
 ```tsx
 // components/MathRenderer.tsx
-import 'katex/dist/katex.min.css';
-import { InlineMath, BlockMath } from 'react-katex';
+import "katex/dist/katex.min.css";
+import { InlineMath, BlockMath } from "react-katex";
 
 export const MathRenderer: React.FC<{ content: string }> = ({ content }) => {
   // Parse content for LaTeX delimiters
   // $...$ for inline, $$...$$ for block
   return (
     <div>
-      {parseLatex(content).map((part, i) => 
-        part.type === 'latex-inline' ? (
+      {parseLatex(content).map((part, i) =>
+        part.type === "latex-inline" ? (
           <InlineMath key={i} math={part.content} />
-        ) : part.type === 'latex-block' ? (
+        ) : part.type === "latex-block" ? (
           <BlockMath key={i} math={part.content} />
         ) : (
           <span key={i}>{part.content}</span>
@@ -536,17 +648,17 @@ export const MathRenderer: React.FC<{ content: string }> = ({ content }) => {
 
 #### Additional Survey Question Types
 
-| Type | Description | Status |
-|------|-------------|--------|
-| Star Rating | 1-5 stars | ✅ Exists |
-| NPS (0-10) | Net Promoter Score | ✅ Exists |
-| Likert Matrix | Agreement scale grid | ✅ Exists |
-| Open Text | Long text feedback | ✅ Exists |
-| Dropdown | Single select dropdown | ❌ Add |
-| Ranking | Rank items in order | ❌ Add |
-| Slider | Numeric slider | ❌ Add |
-| Date/Time | Date picker | ❌ Add |
-| File Upload | Attachment | ❌ Add |
+| Type          | Description            | Status    |
+| ------------- | ---------------------- | --------- |
+| Star Rating   | 1-5 stars              | ✅ Exists |
+| NPS (0-10)    | Net Promoter Score     | ✅ Exists |
+| Likert Matrix | Agreement scale grid   | ✅ Exists |
+| Open Text     | Long text feedback     | ✅ Exists |
+| Dropdown      | Single select dropdown | ❌ Add    |
+| Ranking       | Rank items in order    | ❌ Add    |
+| Slider        | Numeric slider         | ❌ Add    |
+| Date/Time     | Date picker            | ❌ Add    |
+| File Upload   | Attachment             | ❌ Add    |
 
 #### Survey Settings
 
@@ -554,33 +666,33 @@ export const MathRenderer: React.FC<{ content: string }> = ({ content }) => {
 interface SurveySettings {
   title: string;
   description?: string;
-  
+
   // Privacy
   anonymous: boolean;
   collect_email: boolean;
-  
+
   // Display
   show_progress_bar: boolean;
   show_question_numbers: boolean;
   one_question_per_page: boolean;
   allow_back_navigation: boolean;
-  
+
   // Completion
   thank_you_message: string;
   redirect_url?: string;
-  
+
   // Availability
   available_from?: string;
   available_until?: string;
   max_responses?: number;
-  
+
   // Logic
   conditional_logic: ConditionalRule[];
 }
 
 interface ConditionalRule {
   if_question_id: string;
-  condition: 'equals' | 'not_equals' | 'contains' | 'greater_than';
+  condition: "equals" | "not_equals" | "contains" | "greater_than";
   value: any;
   then_show_question_id: string;
 }
@@ -593,40 +705,39 @@ interface ConditionalRule {
 
 #### Form Field Types
 
-| Field Type | Description | Validation |
-|------------|-------------|------------|
-| Text | Single line | Required, min/max length, regex |
-| Textarea | Multi-line | Required, min/max length |
-| Number | Numeric input | Required, min/max, step |
-| Email | Email address | Format validation |
-| Phone | Phone number | Format validation |
-| Date | Date picker | Min/max date |
-| DateTime | Date + time | - |
-| Select | Dropdown | Required |
-| Multi-Select | Multiple choice | Min/max selections |
-| Checkbox | Boolean | - |
-| Radio | Single choice | Required |
-| File | File upload | Types, max size |
-| Signature | Signature pad | Required |
-| Dictionary | Link to dictionary | Auto-populate options |
+| Field Type   | Description        | Validation                      |
+| ------------ | ------------------ | ------------------------------- |
+| Text         | Single line        | Required, min/max length, regex |
+| Textarea     | Multi-line         | Required, min/max length        |
+| Number       | Numeric input      | Required, min/max, step         |
+| Email        | Email address      | Format validation               |
+| Phone        | Phone number       | Format validation               |
+| Date         | Date picker        | Min/max date                    |
+| DateTime     | Date + time        | -                               |
+| Select       | Dropdown           | Required                        |
+| Multi-Select | Multiple choice    | Min/max selections              |
+| Checkbox     | Boolean            | -                               |
+| Radio        | Single choice      | Required                        |
+| File         | File upload        | Types, max size                 |
+| Signature    | Signature pad      | Required                        |
+| Dictionary   | Link to dictionary | Auto-populate options           |
 
 #### Dictionary Integration
 
 ```tsx
 // Connect form fields to dictionaries
-<FormFieldEditor
-  field={field}
-  onChange={updateField}
->
-  {field.type === 'select' && (
+<FormFieldEditor field={field} onChange={updateField}>
+  {field.type === "select" && (
     <DictionaryPicker
       label="Options Source"
       value={field.dictionary_id}
-      onChange={(dictId) => updateField({ 
-        ...field, 
-        dictionary_id: dictId,
-        options: 'from_dictionary' 
-      })}
+      onChange={(dictId) =>
+        updateField({
+          ...field,
+          dictionary_id: dictId,
+          options: "from_dictionary",
+        })
+      }
     />
   )}
 </FormFieldEditor>
@@ -664,20 +775,20 @@ frontend/src/features/teacher/
 interface StudentRiskProfile {
   student_id: string;
   student_name: string;
-  
+
   // Metrics
-  overall_progress: number;         // 0-100%
+  overall_progress: number; // 0-100%
   assignments_completed: number;
   assignments_total: number;
   assignments_overdue: number;
-  last_activity: string;            // ISO date
+  last_activity: string; // ISO date
   days_inactive: number;
   average_grade: number;
-  
+
   // Risk assessment
-  risk_level: 'low' | 'medium' | 'high' | 'critical';
-  risk_factors: string[];           // ["3 overdue assignments", "14 days inactive"]
-  
+  risk_level: "low" | "medium" | "high" | "critical";
+  risk_factors: string[]; // ["3 overdue assignments", "14 days inactive"]
+
   // Recommendations
   suggested_actions: string[];
 }
@@ -740,24 +851,24 @@ A central place for admins to browse all courses and course templates.
 
 #### Features
 
-| Feature | Description | Implementation |
-|---------|-------------|----------------|
-| Rich Text | Bold, italic, lists, links | TipTap or Lexical |
-| Math | LaTeX equations | KaTeX |
-| Images | Inline images | Upload to S3 |
-| Audio | Audio clips | HTML5 Audio |
-| Video | Embedded video | iframe/player |
-| Code | Syntax highlighting | Prism.js |
-| Tables | Data tables | TipTap table extension |
+| Feature   | Description                | Implementation         |
+| --------- | -------------------------- | ---------------------- |
+| Rich Text | Bold, italic, lists, links | TipTap or Lexical      |
+| Math      | LaTeX equations            | KaTeX                  |
+| Images    | Inline images              | Upload to S3           |
+| Audio     | Audio clips                | HTML5 Audio            |
+| Video     | Embedded video             | iframe/player          |
+| Code      | Syntax highlighting        | Prism.js               |
+| Tables    | Data tables                | TipTap table extension |
 
 #### Implementation
 
 ```tsx
 // QuestionEditor.tsx
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Mathematics from '@tiptap/extension-mathematics';
-import Image from '@tiptap/extension-image';
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Mathematics from "@tiptap/extension-mathematics";
+import Image from "@tiptap/extension-image";
 
 export const QuestionEditor: React.FC = () => {
   const editor = useEditor({
@@ -862,7 +973,7 @@ GET  /api/attendance/student/:id/summary     # Student summary
         </TableRow>
       </TableHeader>
       <TableBody>
-        {students.map(student => (
+        {students.map((student) => (
           <TableRow key={student.id}>
             <TableCell>{student.name}</TableCell>
             <TableCell>
@@ -910,67 +1021,554 @@ Students can scan QR code to check in:
 
 ---
 
-## Phase 4: Nice-to-Have Features (Low Priority)
+## Phase 4: Advanced Features (Nice-to-Have)
 
-**Timeline:** As needed  
-**Goal:** Advanced features for enhanced experience
+**Timeline:** 3-4 weeks  
+**Goal:** Advanced features for best-in-class experience and student engagement
 
-### 4.1 Gamification System
+### 4.1 Gamification System (Full Stack)
 
-**Backend Required:** Yes (new tables and logic)
+**Current State:** ❌ Not implemented  
+**Backend Required:** Yes (new tables, service, handler)  
+**Frontend Required:** Yes (new module)
 
-#### Database Schema
+This is a **complete full-stack feature** requiring both backend and frontend work.
+
+#### 4.1.1 Database Schema
+
+**File:** `backend/db/migrations/XXXXXX_create_gamification_tables.sql`
 
 ```sql
+-- User XP and Level tracking
 CREATE TABLE user_xp (
-    id UUID PRIMARY KEY,
-    tenant_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     total_xp INT DEFAULT 0,
     level INT DEFAULT 1,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
+    current_streak INT DEFAULT 0,
+    longest_streak INT DEFAULT 0,
+    last_activity_date DATE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(tenant_id, user_id)
 );
 
+-- Badge definitions
 CREATE TABLE badges (
-    id UUID PRIMARY KEY,
-    tenant_id UUID NOT NULL,
-    name VARCHAR(255),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    code VARCHAR(50) NOT NULL,           -- 'first_submission', 'perfect_quiz', etc.
+    name VARCHAR(255) NOT NULL,
     description TEXT,
     icon_url VARCHAR(500),
-    criteria JSONB,
-    xp_reward INT DEFAULT 0
+    category VARCHAR(50) DEFAULT 'achievement', -- 'achievement', 'milestone', 'special'
+    criteria JSONB NOT NULL,              -- {"type": "count", "event": "quiz_perfect", "threshold": 5}
+    xp_reward INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(tenant_id, code)
 );
 
+-- User earned badges
 CREATE TABLE user_badges (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    badge_id UUID NOT NULL,
-    earned_at TIMESTAMP
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    badge_id UUID NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
+    earned_at TIMESTAMP DEFAULT NOW(),
+    notified BOOLEAN DEFAULT false,
+    UNIQUE(user_id, badge_id)
 );
 
+-- XP transaction log
 CREATE TABLE xp_events (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    event_type VARCHAR(50),  -- 'assignment_complete', 'quiz_perfect', etc.
-    xp_amount INT,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL,
+    xp_amount INT NOT NULL,
+    source_type VARCHAR(50),              -- 'assignment', 'quiz', 'forum', 'streak'
+    source_id UUID,                       -- Reference to the entity that triggered XP
     metadata JSONB,
-    created_at TIMESTAMP
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Leaderboard cache (refreshed periodically)
+CREATE TABLE leaderboard_cache (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    period VARCHAR(20) NOT NULL,          -- 'daily', 'weekly', 'monthly', 'all_time'
+    rank INT NOT NULL,
+    total_xp INT NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(tenant_id, user_id, period)
+);
+
+CREATE INDEX idx_xp_events_user ON xp_events(tenant_id, user_id, created_at DESC);
+CREATE INDEX idx_leaderboard_rank ON leaderboard_cache(tenant_id, period, rank);
 ```
 
-#### XP Event Types
+#### 4.1.2 Backend Implementation
 
-| Event | XP | Description |
-|-------|-----|-------------|
-| Assignment Submitted | 10 | Submit any assignment |
-| Assignment On Time | 5 | Submit before deadline |
-| Quiz Completed | 10 | Complete any quiz |
-| Quiz Perfect Score | 25 | 100% on quiz |
-| Course Completed | 100 | Finish all course items |
-| Daily Login Streak | 5 | Login daily (multiplied by streak) |
-| Forum Post | 5 | Post in forums |
-| Helpful Post | 10 | Post marked as helpful |
+**File:** `backend/internal/services/gamification_service.go`
+
+```go
+package services
+
+import (
+    "context"
+    "time"
+)
+
+type GamificationService struct {
+    db     *sqlx.DB
+    notify *NotificationService
+}
+
+// XP Event Types and Rewards
+var XPRewards = map[string]int{
+    "assignment_submitted":   10,
+    "assignment_on_time":     5,
+    "assignment_early":       10,  // More than 24h before deadline
+    "quiz_completed":         10,
+    "quiz_passed":            15,
+    "quiz_perfect":           25,
+    "course_completed":       100,
+    "module_completed":       20,
+    "daily_login":            5,
+    "streak_bonus":           2,   // Per day of streak
+    "forum_post":             5,
+    "forum_helpful":          10,
+    "first_submission":       20,
+    "profile_complete":       15,
+}
+
+// Level thresholds (XP required for each level)
+var LevelThresholds = []int{
+    0,      // Level 1
+    100,    // Level 2
+    300,    // Level 3
+    600,    // Level 4
+    1000,   // Level 5
+    1500,   // Level 6
+    2100,   // Level 7
+    2800,   // Level 8
+    3600,   // Level 9
+    4500,   // Level 10
+    // ... continues
+}
+
+
+
+XP Event Configuration
+Event Type	Base XP	Multipliers	Description
+assignment_submitted	10	-	Submit any assignment
+assignment_on_time	+5	-	Bonus for on-time submission
+assignment_perfect	+15	-	100% score on assignment
+quiz_completed	10	-	Complete any quiz
+quiz_passed	+5	-	Pass quiz (≥70%)
+quiz_perfect	+25	-	100% on quiz
+course_module_completed	15	-	Complete a course module
+course_completed	100	-	Complete entire course
+daily_login	5	×streak	Daily login (5×streak days)
+forum_post	5	-	Create forum post
+forum_helpful	+10	-	Post marked helpful
+forum_best_answer	+20	-	Answer selected as best
+attendance_present	3	-	Attend class
+attendance_streak	+2	×week	Weekly attendance streak
+first_submission	50	-	First ever submission (one-time)
+journey_node_completed	20	-	Complete journey node
+Level Progression
+Level	XP Required	Title
+1	0	Newcomer
+2	100	Learner
+3	250	Student
+4	500	Scholar
+5	1000	Advanced Scholar
+6	2000	Expert
+7	3500	Master
+8	5500	Grandmaster
+9	8000	Legend
+10	12000	Champion
+Badge Categories
+Academic Badges:
+
+Badge	Criteria	XP Reward	Rarity
+First Steps	Complete first assignment	25	Common
+Quiz Whiz	Pass 10 quizzes	50	Common
+Perfect Score	Get 100% on any assessment	30	Uncommon
+Honor Roll	Maintain 90%+ average for a month	100	Rare
+Valedictorian	Complete program with highest GPA	500	Legendary
+Engagement Badges:
+
+Badge	Criteria	XP Reward	Rarity
+Early Bird	Submit 5 assignments before deadline	30	Common
+Consistent	7-day login streak	40	Common
+Dedicated	30-day login streak	150	Rare
+Contributor	Create 10 helpful forum posts	75	Uncommon
+Mentor	Have 5 answers marked as best	200	Epic
+Milestone Badges:
+
+Badge	Criteria	XP Reward	Rarity
+First Course	Complete first course	50	Common
+Halfway There	Complete 50% of program	150	Uncommon
+Almost Done	Complete 90% of program	300	Rare
+Graduate	Complete entire program	1000	Epic
+
+
+func (s *GamificationService) AwardXP(ctx context.Context, tenantID, userID, eventType string, sourceType string, sourceID *string) error {
+    xpAmount := XPRewards[eventType]
+    if xpAmount == 0 {
+        return nil
+    }
+
+    // Record XP event
+    _, err := s.db.ExecContext(ctx, `
+        INSERT INTO xp_events (tenant_id, user_id, event_type, xp_amount, source_type, source_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+    `, tenantID, userID, eventType, xpAmount, sourceType, sourceID)
+    if err != nil {
+        return err
+    }
+
+    // Update user XP and check for level up
+    return s.updateUserXP(ctx, tenantID, userID, xpAmount)
+}
+
+func (s *GamificationService) CheckAndAwardBadges(ctx context.Context, tenantID, userID string) ([]Badge, error) {
+    // Get all badges user doesn't have yet
+    // Check criteria for each
+    // Award if criteria met
+    // Return newly earned badges
+}
+
+func (s *GamificationService) GetUserProfile(ctx context.Context, tenantID, userID string) (*GamificationProfile, error) {
+    // Return XP, level, badges, rank, streak
+}
+
+func (s *GamificationService) GetLeaderboard(ctx context.Context, tenantID, period string, limit int) ([]LeaderboardEntry, error) {
+    // Return top users for period
+}
+
+func (s *GamificationService) UpdateStreak(ctx context.Context, tenantID, userID string) error {
+    // Check last activity, update streak
+}
+```
+
+**File:** `backend/internal/handlers/gamification_handler.go`
+
+```go
+package handlers
+
+type GamificationHandler struct {
+    svc *services.GamificationService
+}
+
+// GET /api/gamification/profile
+func (h *GamificationHandler) GetProfile(c *gin.Context)
+
+// GET /api/gamification/leaderboard?period=weekly&limit=10
+func (h *GamificationHandler) GetLeaderboard(c *gin.Context)
+
+// GET /api/gamification/badges
+func (h *GamificationHandler) ListBadges(c *gin.Context)
+
+// GET /api/gamification/history?limit=20
+func (h *GamificationHandler) GetXPHistory(c *gin.Context)
+
+// Admin endpoints
+// POST /api/admin/gamification/badges
+func (h *GamificationHandler) CreateBadge(c *gin.Context)
+
+// PUT /api/admin/gamification/badges/:id
+func (h *GamificationHandler) UpdateBadge(c *gin.Context)
+
+// POST /api/admin/gamification/award-xp
+func (h *GamificationHandler) ManualAwardXP(c *gin.Context)
+```
+
+#### 4.1.3 Integration Points
+
+Add XP awards to existing services:
+
+```go
+// In assessment_service.go - after quiz completion
+func (s *AssessmentService) CompleteAttempt(...) {
+    // ... existing logic ...
+
+    // Award XP
+    s.gamification.AwardXP(ctx, tenantID, userID, "quiz_completed", "quiz", &quizID)
+    if score == maxScore {
+        s.gamification.AwardXP(ctx, tenantID, userID, "quiz_perfect", "quiz", &quizID)
+    }
+    s.gamification.CheckAndAwardBadges(ctx, tenantID, userID)
+}
+
+// In node_handler.go - after journey submission
+func (h *NodeHandler) SubmitNode(...) {
+    // ... existing logic ...
+
+    h.gamification.AwardXP(ctx, tenantID, userID, "assignment_submitted", "node", &nodeID)
+    if submittedBeforeDeadline {
+        h.gamification.AwardXP(ctx, tenantID, userID, "assignment_on_time", "node", &nodeID)
+    }
+}
+
+// In auth_handler.go - after login
+func (h *AuthHandler) Login(...) {
+    // ... existing logic ...
+
+    h.gamification.UpdateStreak(ctx, tenantID, userID)
+    h.gamification.AwardXP(ctx, tenantID, userID, "daily_login", "login", nil)
+}
+```
+
+#### 4.1.4 Frontend Implementation
+
+**File structure:**
+
+```
+frontend/src/features/gamification/
+├── api.ts
+├── types.ts
+├── GamificationProfile.tsx         # User's XP, level, badges
+├── Leaderboard.tsx                  # Weekly/monthly rankings
+├── BadgeShowcase.tsx                # Display earned badges
+├── XPHistory.tsx                    # XP transaction history
+├── components/
+│   ├── XPProgress.tsx               # Level progress bar
+│   ├── BadgeCard.tsx                # Single badge display
+│   ├── LeaderboardRow.tsx           # Leaderboard entry
+│   ├── XPNotification.tsx           # Toast when XP earned
+│   ├── LevelUpModal.tsx             # Celebration on level up
+│   └── StreakIndicator.tsx          # Daily streak display
+└── hooks/
+    ├── useGamification.ts           # Main hook
+    └── useXPNotifications.ts        # Real-time XP toasts
+```
+
+**Types:**
+
+```typescript
+// frontend/src/features/gamification/types.ts
+
+export interface GamificationProfile {
+  user_id: string;
+  total_xp: number;
+  level: number;
+  xp_to_next_level: number;
+  current_streak: number;
+  longest_streak: number;
+  rank: number;
+  badges: Badge[];
+  recent_xp: XPEvent[];
+}
+
+export interface Badge {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  icon_url: string;
+  category: "achievement" | "milestone" | "special";
+  xp_reward: number;
+  earned_at?: string;
+  is_earned: boolean;
+}
+
+export interface XPEvent {
+  id: string;
+  event_type: string;
+  xp_amount: number;
+  source_type: string;
+  created_at: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  user_name: string;
+  avatar_url?: string;
+  total_xp: number;
+  level: number;
+}
+```
+
+**API:**
+
+```typescript
+// frontend/src/features/gamification/api.ts
+
+import { api } from "@/api/client";
+import type {
+  GamificationProfile,
+  Badge,
+  LeaderboardEntry,
+  XPEvent,
+} from "./types";
+
+export const getGamificationProfile = () =>
+  api.get<GamificationProfile>("/gamification/profile");
+
+export const getLeaderboard = (
+  period: "daily" | "weekly" | "monthly" | "all_time",
+  limit = 10
+) =>
+  api.get<LeaderboardEntry[]>(
+    `/gamification/leaderboard?period=${period}&limit=${limit}`
+  );
+
+export const getAllBadges = () => api.get<Badge[]>("/gamification/badges");
+
+export const getXPHistory = (limit = 20) =>
+  api.get<XPEvent[]>(`/gamification/history?limit=${limit}`);
+```
+
+**Main Component:**
+
+```tsx
+// frontend/src/features/gamification/GamificationProfile.tsx
+
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Trophy, Flame, Star, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { getGamificationProfile } from "./api";
+
+export const GamificationProfile: React.FC = () => {
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["gamification", "profile"],
+    queryFn: getGamificationProfile,
+  });
+
+  if (isLoading || !profile) return <div>Loading...</div>;
+
+  const progressPercent = ((profile.total_xp % 100) / 100) * 100; // Simplified
+
+  return (
+    <div className="space-y-6">
+      {/* Level & XP Card */}
+      <Card className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm opacity-80">Level</div>
+              <div className="text-5xl font-black">{profile.level}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm opacity-80">Total XP</div>
+              <div className="text-3xl font-bold">
+                {profile.total_xp.toLocaleString()}
+              </div>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between text-sm mb-1">
+              <span>Progress to Level {profile.level + 1}</span>
+              <span>{profile.xp_to_next_level} XP needed</span>
+            </div>
+            <Progress value={progressPercent} className="h-3" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <Flame className="mx-auto text-orange-500" size={24} />
+            <div className="text-2xl font-bold mt-2">
+              {profile.current_streak}
+            </div>
+            <div className="text-xs text-muted-foreground">Day Streak</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <Trophy className="mx-auto text-yellow-500" size={24} />
+            <div className="text-2xl font-bold mt-2">#{profile.rank}</div>
+            <div className="text-xs text-muted-foreground">Global Rank</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
+            <Star className="mx-auto text-blue-500" size={24} />
+            <div className="text-2xl font-bold mt-2">
+              {profile.badges.length}
+            </div>
+            <div className="text-xs text-muted-foreground">Badges</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Badges */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Badges Earned</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-4">
+            {profile.badges.map((badge) => (
+              <div key={badge.id} className="text-center">
+                <img
+                  src={badge.icon_url}
+                  alt={badge.name}
+                  className="w-16 h-16 mx-auto"
+                />
+                <div className="text-sm font-medium mt-2">{badge.name}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+```
+
+#### 4.1.5 XP Event Types (Complete List)
+
+| Event                  | XP  | Trigger                    | Category   |
+| ---------------------- | --- | -------------------------- | ---------- |
+| `daily_login`          | 5   | First login of the day     | Engagement |
+| `streak_3_days`        | 15  | 3-day login streak         | Streak     |
+| `streak_7_days`        | 50  | 7-day login streak         | Streak     |
+| `streak_30_days`       | 200 | 30-day login streak        | Streak     |
+| `assignment_submitted` | 10  | Submit any assignment      | Academic   |
+| `assignment_on_time`   | 5   | Submit before deadline     | Academic   |
+| `assignment_early`     | 10  | Submit 24h+ early          | Academic   |
+| `quiz_completed`       | 10  | Complete any quiz          | Academic   |
+| `quiz_passed`          | 15  | Score >= passing threshold | Academic   |
+| `quiz_perfect`         | 25  | 100% score                 | Academic   |
+| `module_completed`     | 20  | Complete all module items  | Progress   |
+| `course_completed`     | 100 | Complete entire course     | Progress   |
+| `program_milestone`    | 50  | Complete program stage     | Progress   |
+| `forum_post`           | 5   | Create forum post          | Community  |
+| `forum_reply`          | 3   | Reply to a thread          | Community  |
+| `forum_helpful`        | 10  | Post marked as helpful     | Community  |
+| `profile_complete`     | 15  | Fill all profile fields    | Onboarding |
+| `first_submission`     | 20  | First ever submission      | Onboarding |
+| `peer_review`          | 10  | Complete peer review       | Community  |
+
+#### 4.1.6 Badge Definitions
+
+| Badge            | Code                  | Criteria                | XP Reward |
+| ---------------- | --------------------- | ----------------------- | --------- |
+| 🌟 First Steps   | `first_submission`    | Submit first assignment | 20        |
+| 🔥 On Fire       | `streak_7`            | 7-day streak            | 50        |
+| 🏆 Perfect Score | `quiz_perfect_first`  | First 100% quiz         | 25        |
+| 📚 Bookworm      | `courses_3`           | Complete 3 courses      | 100       |
+| 🎯 Sharpshooter  | `quiz_perfect_5`      | 5 perfect quizzes       | 100       |
+| 💬 Contributor   | `forum_posts_10`      | 10 forum posts          | 50        |
+| ⭐ Helpful       | `helpful_5`           | 5 helpful answers       | 75        |
+| 🚀 Early Bird    | `early_submissions_5` | 5 early submissions     | 50        |
+| 🎓 Scholar       | `level_10`            | Reach level 10          | 200       |
+| 👑 Master        | `level_25`            | Reach level 25          | 500       |
 
 ### 4.2 Global Search
 
@@ -996,27 +1594,27 @@ frontend/src/features/search/
       <CommandInput placeholder="Search courses, students, assignments..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        
+
         <CommandGroup heading="Courses">
-          {results.courses.map(course => (
+          {results.courses.map((course) => (
             <CommandItem onSelect={() => navigate(`/courses/${course.id}`)}>
               <BookOpen className="mr-2" />
               {course.title}
             </CommandItem>
           ))}
         </CommandGroup>
-        
+
         <CommandGroup heading="Students">
-          {results.students.map(student => (
+          {results.students.map((student) => (
             <CommandItem>
               <User className="mr-2" />
               {student.name}
             </CommandItem>
           ))}
         </CommandGroup>
-        
+
         <CommandGroup heading="Assignments">
-          {results.assignments.map(assignment => (
+          {results.assignments.map((assignment) => (
             <CommandItem>
               <FileText className="mr-2" />
               {assignment.title}
@@ -1062,29 +1660,94 @@ frontend/src/features/admin/lti/
 
 ## Backend Gaps Summary
 
-### Critical (Need for Phase 1)
+### ✅ Already Implemented Backend APIs
 
-| Endpoint | Handler | Status |
-|----------|---------|--------|
-| `POST /api/assessments` | assessment_handler.go | ⚠️ Not Implemented |
-| `GET /api/assessments/:id` | assessment_handler.go | ⚠️ Not Implemented |
-| `PUT /api/assessments/:id` | assessment_handler.go | ⚠️ Not Implemented |
-| `GET /api/student/courses/:id` | student_handler.go | Need to verify |
-| `GET /api/student/courses/:id/modules` | course_content_handler.go | Need to verify |
-| `POST /api/student/assignments/:id/submit` | - | ⚠️ Needs handler |
+Based on audit (January 4, 2026), the following are **fully operational**:
 
-### High Priority (Phase 2)
+| Category          | Endpoints                                              | Handler                  |
+| ----------------- | ------------------------------------------------------ | ------------------------ |
+| Assessment Engine | `/api/assessments/*/attempts`, submit, proctor         | assessment_handler.go ✅ |
+| Student Portal    | `/api/student/dashboard`, courses, assignments, grades | student_handler.go ✅    |
+| Teacher Portal    | `/api/teacher/dashboard`, courses, roster, gradebook   | teacher_handler.go ✅    |
+| Item Bank         | `/api/item-banks/*` full CRUD                          | item_bank_handler.go ✅  |
+| Grading           | `/api/grading/*` schemas, entries                      | grading_handler.go ✅    |
+| Forums            | `/api/forums/*` full CRUD                              | forum_handler.go ✅      |
+| Attendance        | `/api/attendance/*` sessions, check-in                 | attendance_handler.go ✅ |
+| AI Generation     | `/api/ai/*` generate, summarize                        | ai_handler.go ✅         |
+| LTI 1.3           | `/api/lti/*` login, launch, jwks                       | lti_handler.go ✅        |
+| Search            | `/api/search` global search                            | search_handler.go ✅     |
+| Transcript        | `/api/transcript/:studentId`                           | transcript_handler.go ✅ |
 
-| Endpoint | Handler | Status |
-|----------|---------|--------|
-| `GET /api/teacher/courses/:id/students` | teacher_handler.go | Need to verify |
-| `GET /api/teacher/courses/:id/at-risk` | - | ⚠️ New endpoint |
-| `POST /api/surveys` | - | ⚠️ Similar to assessments |
-| `POST /api/forms` | - | ⚠️ Similar to assessments |
+### 🔴 Critical Gaps (Phase 1)
 
-### Medium Priority (Phase 3)
+| Endpoint                                   | Handler                   | Status     | Action                          |
+| ------------------------------------------ | ------------------------- | ---------- | ------------------------------- |
+| `GET /api/student/courses/:id`             | student_handler.go        | ⚠️ Verify  | Check if exists, add if missing |
+| `GET /api/student/courses/:id/modules`     | course_content_handler.go | ⚠️ Verify  | May need student-facing wrapper |
+| `POST /api/student/assignments/:id/submit` | -                         | ❌ Missing | Create new endpoint             |
+| `GET /api/student/assignments/:id`         | student_handler.go        | ⚠️ Verify  | Assignment detail for student   |
 
-Most endpoints already exist - just need UI.
+### 🟠 High Priority Gaps (Phase 2)
+
+| Endpoint                                 | Handler            | Status     | Action                        |
+| ---------------------------------------- | ------------------ | ---------- | ----------------------------- |
+| `GET /api/teacher/courses/:id/at-risk`   | teacher_handler.go | ❌ Missing | Add risk calculation endpoint |
+| `GET /api/teacher/students/:id/activity` | teacher_handler.go | ❌ Missing | Student activity log          |
+
+### 🟢 New Backend for Phase 4 (Gamification)
+
+| Endpoint                                | Handler                 | Status     | Action                 |
+| --------------------------------------- | ----------------------- | ---------- | ---------------------- |
+| `GET /api/gamification/profile`         | gamification_handler.go | ❌ Missing | Create full module     |
+| `GET /api/gamification/leaderboard`     | gamification_handler.go | ❌ Missing | Create full module     |
+| `GET /api/gamification/badges`          | gamification_handler.go | ❌ Missing | Create full module     |
+| `GET /api/gamification/history`         | gamification_handler.go | ❌ Missing | Create full module     |
+| `POST /api/admin/gamification/badges`   | gamification_handler.go | ❌ Missing | Admin badge management |
+| `POST /api/admin/gamification/award-xp` | gamification_handler.go | ❌ Missing | Manual XP award        |
+
+### Frontend Gaps Summary
+
+#### 🔴 Critical (Phase 1)
+
+| Component                         | Location                       | Status    |
+| --------------------------------- | ------------------------------ | --------- |
+| StudentCourseDetail.tsx           | features/student-portal/       | ❌ Create |
+| StudentAssignmentDetail.tsx       | features/student-portal/       | ❌ Create |
+| API functions for detail pages    | features/student-portal/api.ts | ❌ Add    |
+| Routes `/student/courses/:id`     | routes/index.tsx               | ❌ Add    |
+| Routes `/student/assignments/:id` | routes/index.tsx               | ❌ Add    |
+
+#### 🟠 High Priority (Phase 2)
+
+| Component                 | Location             | Status           |
+| ------------------------- | -------------------- | ---------------- |
+| ForumList.tsx             | features/forums/     | ❌ Create module |
+| ForumDetail.tsx           | features/forums/     | ❌ Create module |
+| ThreadDetail.tsx          | features/forums/     | ❌ Create module |
+| AttendanceSession.tsx     | features/attendance/ | ❌ Create module |
+| AttendanceHistory.tsx     | features/attendance/ | ❌ Create module |
+| StudentTracker.tsx        | features/teacher/    | ❌ Add           |
+| Route `/admin/forums`     | routes/index.tsx     | ❌ Add           |
+| Route `/admin/attendance` | routes/index.tsx     | ❌ Add           |
+
+#### 🟡 Medium Priority (Phase 3)
+
+| Component               | Location                       | Status     |
+| ----------------------- | ------------------------------ | ---------- |
+| GradebookPage.tsx       | features/grading/              | ❌ Create  |
+| TranscriptView.tsx      | features/student-portal/       | ❌ Create  |
+| Enhanced QuestionEditor | features/item-bank/components/ | ⚠️ Enhance |
+
+#### 🟢 Low Priority (Phase 4)
+
+| Component               | Location               | Status           |
+| ----------------------- | ---------------------- | ---------------- |
+| GamificationProfile.tsx | features/gamification/ | ❌ Create module |
+| Leaderboard.tsx         | features/gamification/ | ❌ Create module |
+| BadgeShowcase.tsx       | features/gamification/ | ❌ Create module |
+| GlobalSearch.tsx        | features/search/       | ❌ Create module |
+| AIToolsPanel.tsx        | features/admin/ai/     | ❌ Create module |
+| LTIToolsPage.tsx        | features/admin/lti/    | ❌ Create module |
 
 ---
 
@@ -1094,22 +1757,22 @@ Most endpoints already exist - just need UI.
 
 ```typescript
 // Assessment taking
-describe('AssessmentTaking', () => {
-  it('should start an attempt when component mounts');
-  it('should save answer when user selects option');
-  it('should auto-save periodically');
-  it('should show timer and warn when low');
-  it('should submit all answers on completion');
-  it('should handle network errors gracefully');
+describe("AssessmentTaking", () => {
+  it("should start an attempt when component mounts");
+  it("should save answer when user selects option");
+  it("should auto-save periodically");
+  it("should show timer and warn when low");
+  it("should submit all answers on completion");
+  it("should handle network errors gracefully");
 });
 
 // Quiz Builder
-describe('QuizBuilder', () => {
-  it('should add new question of each type');
-  it('should reorder questions via drag and drop');
-  it('should import questions from bank');
-  it('should validate required fields');
-  it('should save quiz to backend');
+describe("QuizBuilder", () => {
+  it("should add new question of each type");
+  it("should reorder questions via drag and drop");
+  it("should import questions from bank");
+  it("should validate required fields");
+  it("should save quiz to backend");
 });
 ```
 
@@ -1117,19 +1780,19 @@ describe('QuizBuilder', () => {
 
 ```typescript
 // Playwright tests
-test('student can complete quiz', async ({ page }) => {
-  await page.goto('/student/courses/cs101');
-  await page.click('text=Midterm Quiz');
-  await page.click('text=Start Quiz');
-  
+test("student can complete quiz", async ({ page }) => {
+  await page.goto("/student/courses/cs101");
+  await page.click("text=Midterm Quiz");
+  await page.click("text=Start Quiz");
+
   // Answer questions
   for (let i = 0; i < 10; i++) {
     await page.click(`input[value="option_${i}_correct"]`);
-    await page.click('text=Next');
+    await page.click("text=Next");
   }
-  
-  await page.click('text=Submit Quiz');
-  await expect(page.locator('text=Your score')).toBeVisible();
+
+  await page.click("text=Submit Quiz");
+  await expect(page.locator("text=Your score")).toBeVisible();
 });
 ```
 
@@ -1142,24 +1805,24 @@ test('student can complete quiz', async ({ page }) => {
 ```typescript
 // frontend/src/features/assessment/types.ts
 
-export type QuestionType = 
-  | 'MCQ' 
-  | 'MRQ' 
-  | 'TRUE_FALSE' 
-  | 'TEXT' 
-  | 'ESSAY'
-  | 'ORDERING'
-  | 'MATRIX'
-  | 'FILL_BLANK'
-  | 'LIKERT';
+export type QuestionType =
+  | "MCQ"
+  | "MRQ"
+  | "TRUE_FALSE"
+  | "TEXT"
+  | "ESSAY"
+  | "ORDERING"
+  | "MATRIX"
+  | "FILL_BLANK"
+  | "LIKERT";
 
 export interface Assessment {
   id: string;
   tenant_id: string;
   title: string;
   description?: string;
-  type: 'quiz' | 'exam' | 'survey' | 'form';
-  status: 'draft' | 'published' | 'closed';
+  type: "quiz" | "exam" | "survey" | "form";
+  status: "draft" | "published" | "closed";
   settings: AssessmentSettings;
   questions: AssessmentQuestion[];
   created_by_id: string;
@@ -1174,7 +1837,7 @@ export interface AssessmentSettings {
   shuffle_answers: boolean;
   show_one_at_a_time: boolean;
   allow_backtrack: boolean;
-  show_correct_answers: 'immediately' | 'after_due' | 'never';
+  show_correct_answers: "immediately" | "after_due" | "never";
   require_proctoring: boolean;
   available_from?: string;
   available_until?: string;
@@ -1186,7 +1849,7 @@ export interface AssessmentQuestion {
   order: number;
   type: QuestionType;
   stem: string;
-  stem_format: 'plain' | 'html' | 'markdown';
+  stem_format: "plain" | "html" | "markdown";
   options?: QuestionOption[];
   correct_answer?: any;
   points: number;
@@ -1207,7 +1870,7 @@ export interface AssessmentAttempt {
   id: string;
   assessment_id: string;
   student_id: string;
-  status: 'in_progress' | 'submitted' | 'graded';
+  status: "in_progress" | "submitted" | "graded";
   started_at: string;
   submitted_at?: string;
   graded_at?: string;
@@ -1220,7 +1883,7 @@ export interface AssessmentAttempt {
 
 export interface AttemptAnswer {
   question_id: string;
-  answer: any;               // Type depends on question type
+  answer: any; // Type depends on question type
   is_correct?: boolean;
   points_earned?: number;
   feedback?: string;
@@ -1235,12 +1898,16 @@ export interface AttemptAnswer {
 ```typescript
 // frontend/src/features/assessment/api.ts
 
-import { api } from '@/api/client';
-import type { Assessment, AssessmentAttempt, AssessmentQuestion } from './types';
+import { api } from "@/api/client";
+import type {
+  Assessment,
+  AssessmentAttempt,
+  AssessmentQuestion,
+} from "./types";
 
 // Assessments CRUD
 export const createAssessment = (data: Partial<Assessment>) =>
-  api.post<Assessment>('/assessments', data);
+  api.post<Assessment>("/assessments", data);
 
 export const getAssessment = (id: string) =>
   api.get<Assessment>(`/assessments/${id}`);
@@ -1256,7 +1923,7 @@ export const publishAssessment = (id: string) =>
 
 // Student-facing
 export const getAvailableAssessments = () =>
-  api.get<Assessment[]>('/student/assessments');
+  api.get<Assessment[]>("/student/assessments");
 
 export const getAssessmentForTaking = (id: string) =>
   api.get<Assessment>(`/student/assessments/${id}`);
@@ -1265,8 +1932,14 @@ export const getAssessmentForTaking = (id: string) =>
 export const startAttempt = (assessmentId: string) =>
   api.post<AssessmentAttempt>(`/assessments/${assessmentId}/attempts`);
 
-export const saveAnswer = (attemptId: string, questionId: string, answer: any) =>
-  api.post(`/assessments/attempts/${attemptId}/answers/${questionId}`, { answer });
+export const saveAnswer = (
+  attemptId: string,
+  questionId: string,
+  answer: any
+) =>
+  api.post(`/assessments/attempts/${attemptId}/answers/${questionId}`, {
+    answer,
+  });
 
 export const submitAttempt = (attemptId: string) =>
   api.post<AssessmentAttempt>(`/assessments/attempts/${attemptId}/submit`);
@@ -1309,12 +1982,66 @@ export const sendProctorEvent = (attemptId: string, event: ProctorEvent) =>
 
 - [ ] Rich text editor working in question editor
 - [ ] Math/LaTeX renders in questions
-- [ ] Discussion forums functional
-- [ ] Attendance tracking working
+- [ ] Discussion forums functional (UI connected to existing backend)
+- [ ] Attendance tracking working (UI connected to existing backend)
+- [ ] GradebookPage implemented
+- [ ] TranscriptView for students implemented
 
 ### Phase 4 Completion Criteria
 
-- [ ] Gamification points accumulating
-- [ ] Global search finding all entities
-- [ ] AI generation producing useful content
-- [ ] LTI tools can be configured
+- [ ] Gamification database tables created
+- [ ] Gamification service and handler implemented
+- [ ] XP awarded on key actions (login, submission, quiz)
+- [ ] Badges system working
+- [ ] Leaderboard displaying correctly
+- [ ] Global search (Cmd+K) finding all entities
+- [ ] AI tools panel accessible to admins
+- [ ] LTI tools can be configured and launched
+
+---
+
+## Final Roadmap Summary
+
+### Total Effort Estimate
+
+| Phase   | Duration  | Backend Work | Frontend Work | Priority    |
+| ------- | --------- | ------------ | ------------- | ----------- |
+| Phase 1 | 1-2 weeks | ~20%         | ~80%          | 🔴 Critical |
+| Phase 2 | 2-3 weeks | ~10%         | ~90%          | 🟠 High     |
+| Phase 3 | 2-3 weeks | ~5%          | ~95%          | 🟡 Medium   |
+| Phase 4 | 3-4 weeks | ~60%         | ~40%          | 🟢 Low      |
+
+### Quick Wins (Can be done in 1-2 days each)
+
+1. **Forums UI** - Backend 100% ready, just needs React components
+2. **Attendance UI** - Backend 100% ready, just needs React components
+3. **Global Search** - Backend 100% ready, just needs Command palette UI
+4. **AI Tools Panel** - Backend 100% ready, just needs admin UI
+5. **LTI Admin** - Backend 100% ready, just needs admin UI
+
+### Requires Backend Work
+
+1. **Student Course Detail** - May need new endpoint or verify existing
+2. **Student Assignment Submit** - Needs new endpoint
+3. **Teacher At-Risk** - Needs new endpoint
+4. **Gamification** - Full new module (backend + frontend)
+
+### Success Metrics
+
+After completing all phases:
+
+| Metric              | Current | Target |
+| ------------------- | ------- | ------ |
+| Backend Coverage    | 92%     | 100%   |
+| Frontend Coverage   | 75%     | 100%   |
+| Overall Integration | 78%     | 100%   |
+| Student Experience  | 60%     | 100%   |
+| Teacher Experience  | 90%     | 100%   |
+| Admin Experience    | 95%     | 100%   |
+| Engagement Features | 0%      | 100%   |
+
+---
+
+**Document maintained by:** Development Team  
+**Last audit:** January 4, 2026  
+**Next review:** After Phase 1 completion
