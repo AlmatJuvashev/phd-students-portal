@@ -15,23 +15,56 @@ import (
 type MockGradingRepo struct {
 	mock.Mock
 }
-func (m *MockGradingRepo) CreateSchema(ctx context.Context, s *models.GradingSchema) error { return nil }
-func (m *MockGradingRepo) GetSchema(ctx context.Context, id string) (*models.GradingSchema, error) { return nil, nil }
-func (m *MockGradingRepo) ListSchemas(ctx context.Context, tenantID string) ([]models.GradingSchema, error) { return nil, nil }
+func (m *MockGradingRepo) CreateSchema(ctx context.Context, s *models.GradingSchema) error {
+	args := m.Called(ctx, s)
+	return args.Error(0)
+}
+func (m *MockGradingRepo) GetSchema(ctx context.Context, id string) (*models.GradingSchema, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.GradingSchema), args.Error(1)
+}
+func (m *MockGradingRepo) ListSchemas(ctx context.Context, tenantID string) ([]models.GradingSchema, error) {
+	args := m.Called(ctx, tenantID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.GradingSchema), args.Error(1)
+}
 func (m *MockGradingRepo) GetDefaultSchema(ctx context.Context, tenantID string) (*models.GradingSchema, error) {
 	args := m.Called(ctx, tenantID)
 	return args.Get(0).(*models.GradingSchema), args.Error(1)
 }
-func (m *MockGradingRepo) UpdateSchema(ctx context.Context, s *models.GradingSchema) error { return nil }
-func (m *MockGradingRepo) DeleteSchema(ctx context.Context, id string) error { return nil }
+func (m *MockGradingRepo) UpdateSchema(ctx context.Context, s *models.GradingSchema) error {
+	args := m.Called(ctx, s)
+	return args.Error(0)
+}
+func (m *MockGradingRepo) DeleteSchema(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
 func (m *MockGradingRepo) CreateEntry(ctx context.Context, e *models.GradebookEntry) error { 
 	args := m.Called(ctx, e)
 	return args.Error(0)
 }
-func (m *MockGradingRepo) GetEntry(ctx context.Context, id string) (*models.GradebookEntry, error) { return nil, nil }
-func (m *MockGradingRepo) GetEntryByActivity(ctx context.Context, o, a, s string) (*models.GradebookEntry, error) { return nil, nil }
-func (m *MockGradingRepo) ListEntries(ctx context.Context, oID string) ([]models.GradebookEntry, error) { return nil, nil }
-func (m *MockGradingRepo) ListStudentEntries(ctx context.Context, sID string) ([]models.GradebookEntry, error) { return nil, nil }
+func (m *MockGradingRepo) GetEntry(ctx context.Context, id string) (*models.GradebookEntry, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.GradebookEntry), args.Error(1)
+}
+func (m *MockGradingRepo) GetEntryByActivity(ctx context.Context, o, a, s string) (*models.GradebookEntry, error) {
+	args := m.Called(ctx, o, a, s)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.GradebookEntry), args.Error(1)
+}
+func (m *MockGradingRepo) ListEntries(ctx context.Context, oID string) ([]models.GradebookEntry, error) {
+	args := m.Called(ctx, oID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.GradebookEntry), args.Error(1)
+}
+func (m *MockGradingRepo) ListStudentEntries(ctx context.Context, sID string) ([]models.GradebookEntry, error) {
+	args := m.Called(ctx, sID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.GradebookEntry), args.Error(1)
+}
 
 
 func TestGradingService_SubmitGrade(t *testing.T) {

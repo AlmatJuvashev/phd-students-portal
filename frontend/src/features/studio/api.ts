@@ -24,3 +24,15 @@ export const addActivity = (lessonId: string, data: Partial<Activity>) =>
 
 export const updateActivity = (activityId: string, data: Partial<Activity>) => 
   api.put(`/admin/studio/activities/${activityId}`, data);
+
+export const generateCourseStructure = (syllabus: string) =>
+  api.post<{ modules: Module[] }>('/admin/ai/generate-course', { syllabus_text: syllabus });
+
+export const generateQuiz = (topic: string, difficulty: string, count: number) =>
+  api.post<any>('/admin/ai/generate-quiz', { topic, difficulty, count });
+
+export const generateSurvey = (topic: string, count: number) =>
+  api.post<any>('/admin/ai/generate-survey', { topic, count });
+
+export const generateAssessmentItems = (topic: string, type: string, count: number) =>
+  api.post<{ items: any[] }>('/admin/ai/generate-assessment-items', { topic, type, count });

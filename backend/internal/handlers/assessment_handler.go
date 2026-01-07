@@ -62,6 +62,10 @@ func (h *AssessmentHandler) GetAssessment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	if assessment == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "assessment not found"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"assessment": assessment, "questions": questions})
 }

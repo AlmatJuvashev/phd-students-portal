@@ -99,7 +99,7 @@ func (s *SchedulerService) ScheduleSession(ctx context.Context, session *models.
 	}
 	
 	// Conflict Checks
-	warnings, err := s.CheckConflicts(ctx, session)
+	warnings, err := s.CheckConflicts(ctx, session, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -130,9 +130,12 @@ func (s *SchedulerService) ScheduleSession(ctx context.Context, session *models.
 // Returns warnings ([]string) and error (if Critical Conflict)
 // Respects delivery format: ONLINE_ASYNC has no scheduling constraints,
 // ONLINE_SYNC skips room constraints but checks instructor conflicts
-func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.ClassSession) ([]string, error) {
+func (s *SchedulerService) CheckConflicts(ctx context.Context, session *models.ClassSession, config *solver.SolverConfig) ([]string, error) {
 	var warnings []string
-	cfg := solver.DefaultConfig() // Use defaults for Manual Entry
+	cfg := solver.DefaultConfig()
+	if config != nil {
+		cfg = *config
+	}
 
 	// Fetch offering for capacity check and delivery format
 	offering, err := s.repo.GetOffering(ctx, session.CourseOfferingID)

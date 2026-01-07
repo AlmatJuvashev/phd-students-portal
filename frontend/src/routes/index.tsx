@@ -85,6 +85,9 @@ const StudentDashboard = lazy(() =>
 const StudentCourses = lazy(() =>
   import("@/features/student-portal/StudentCourses").then((m) => ({ default: m.StudentCourses }))
 );
+const CourseLibraryPage = lazy(() =>
+  import("@/features/student-portal/CourseLibraryPage").then((m) => ({ default: m.CourseLibraryPage }))
+);
 const StudentAssignments = lazy(() =>
   import("@/features/student-portal/StudentAssignments").then((m) => ({ default: m.StudentAssignments }))
 );
@@ -96,6 +99,9 @@ const StudentCourseDetail = lazy(() =>
 );
 const StudentAssignmentDetail = lazy(() =>
   import("@/features/student-portal/StudentAssignmentDetail").then((m) => ({ default: m.StudentAssignmentDetail }))
+);
+const StudentTranscript = lazy(() =>
+  import("@/features/student-portal/StudentTranscript").then((m) => ({ default: m.StudentTranscript }))
 );
 const StartAssessmentPage = lazy(() =>
   import("@/features/assessments/StartAssessmentPage").then((m) => ({ default: m.StartAssessmentPage }))
@@ -150,10 +156,13 @@ const EnrollmentsPage = lazy(() =>
   import("@/features/enrollments/EnrollmentsPage").then((m) => ({ default: m.EnrollmentsPage }))
 );
 const ItemBanksPage = lazy(() =>
-  import("@/features/item-bank/BanksPage").then((m) => ({ default: m.BanksPage }))
+  import("@/features/studio/itemBank/ItemBanksPage").then((m) => ({ default: m.ItemBanksPage }))
 );
-const ItemBankItemsPage = lazy(() =>
-  import("@/features/item-bank/BankItemsPage").then((m) => ({ default: m.BankItemsPage }))
+const QuestionsPage = lazy(() =>
+  import("@/features/studio/itemBank/QuestionsPage").then((m) => ({ default: m.QuestionsPage }))
+);
+const QuestionEditor = lazy(() =>
+  import("@/features/studio/itemBank/QuestionEditor").then((m) => ({ default: m.QuestionEditor }))
 );
 const CourseBuilder = lazy(() =>
   import("@/features/studio/CourseBuilder").then((m) => ({ default: m.CourseBuilder }))
@@ -187,6 +196,18 @@ const ForumTopicsPage = lazy(() =>
 );
 const TopicDetailPage = lazy(() =>
   import("@/features/forums/TopicDetailPage").then((m) => ({ default: m.TopicDetailPage }))
+);
+const AssessmentsPage = lazy(() =>
+  import("@/features/assessments/AssessmentsPage").then((m) => ({ default: m.AssessmentsPage }))
+);
+const QuizBuilderPage = lazy(() =>
+  import("@/features/assessments/QuizBuilderPage").then((m) => ({ default: m.QuizBuilderPage }))
+);
+const AssessmentPreviewPage = lazy(() =>
+  import("@/features/assessments/AssessmentPreviewPage").then((m) => ({ default: m.AssessmentPreviewPage }))
+);
+const GamificationDashboard = lazy(() =>
+  import("@/features/gamification/GamificationDashboard").then((m) => ({ default: m.GamificationDashboard }))
 );
 
 // Superadmin pages
@@ -327,6 +348,7 @@ export const router = createBrowserRouter([
         ),
         children: [
           { path: "dashboard", element: WithSuspense(<StudentDashboard />) },
+          { path: "library", element: WithSuspense(<CourseLibraryPage />) },
           { path: "courses", element: WithSuspense(<StudentCourses />) },
           { path: "courses/:courseOfferingId", element: WithSuspense(<StudentCourseDetail />) },
           { path: "assignments", element: WithSuspense(<StudentAssignments />) },
@@ -334,6 +356,8 @@ export const router = createBrowserRouter([
           { path: "assessments/:assessmentId", element: WithSuspense(<StartAssessmentPage />) },
           { path: "attempts/:attemptId", element: WithSuspense(<AttemptPage />) },
           { path: "grades", element: WithSuspense(<StudentGrades />) },
+          { path: "achievements", element: WithSuspense(<GamificationDashboard />) },
+          { path: "transcript", element: WithSuspense(<StudentTranscript />) },
           { index: true, element: <Navigate to="dashboard" replace /> },
         ],
       },
@@ -524,7 +548,15 @@ export const router = createBrowserRouter([
         path: "item-banks/:bankId",
         element: (
           <ProtectedRoute requiredAnyRole={["admin"]}>
-            {WithSuspense(<ItemBankItemsPage />)}
+            {WithSuspense(<QuestionsPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "item-banks/:bankId/questions/:questionId",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<QuestionEditor />)}
           </ProtectedRoute>
         ),
       },
@@ -589,6 +621,30 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             {WithSuspense(<TeacherGradingPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "assessments",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<AssessmentsPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "assessments/:id/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<QuizBuilderPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "assessments/:id/preview",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+            {WithSuspense(<AssessmentPreviewPage />)}
           </ProtectedRoute>
         ),
       },

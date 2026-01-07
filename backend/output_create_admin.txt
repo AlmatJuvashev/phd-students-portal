@@ -1,0 +1,26 @@
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin
+2026/01/07 10:54:26 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+2026/01/07 10:54:26 [SetupTestDB] Dropping stale base template: phd_test_base
+2026/01/07 10:54:26 [SetupTestDB] Creating base template database: phd_test_base
+2026/01/07 10:54:27 [SetupTestDB] Dropping stale database phd_test_handlers
+2026/01/07 10:54:28 [SetupTestDB] Cloning database phd_test_handlers from template phd_test_base
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] POST   /superadmin/admins        --> github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers.(*SuperadminAdminsHandler).CreateAdmin-fm (2 handlers)
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success
+    superadmin_admins_test.go:110: CreateAdmin failed response: {"error":"failed to create admin: pq: inconsistent types deduced for parameter $3"}
+    superadmin_admins_test.go:112: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go:112
+        	Error:      	Not equal: 
+        	            	expected: 201
+        	            	actual  : 500
+        	Test:       	TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Validation_Fail
+--- FAIL: TestSuperadminAdminsHandler_CreateAdmin (2.41s)
+    --- FAIL: TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success (0.07s)
+    --- PASS: TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Validation_Fail (0.00s)
+FAIL
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	3.296s
+FAIL

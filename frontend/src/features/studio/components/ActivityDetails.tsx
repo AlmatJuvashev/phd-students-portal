@@ -15,6 +15,7 @@ import { MarkdownEditor } from './MarkdownEditor';
 import { FormBuilderModal } from './FormBuilderModal';
 import { ChecklistBuilderModal } from './ChecklistBuilderModal';
 import { QuizBuilderModal } from './QuizBuilderModal';
+import { AssignmentBuilderModal } from './AssignmentBuilderModal';
 import { SurveyBuilderModal } from './SurveyBuilderModal';
 import { ConfirmTaskBuilderModal } from './ConfirmTaskBuilderModal';
 import { EduStudioHub } from './EduStudioHub';
@@ -37,6 +38,7 @@ export const ActivityDetails: React.FC<ActivityDetailsProps> = ({ activity, onUp
   const [showFormBuilder, setShowFormBuilder] = useState(false);
   const [showChecklistBuilder, setShowChecklistBuilder] = useState(false);
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const [showAssignmentBuilder, setShowAssignmentBuilder] = useState(false);
   const [showSurveyBuilder, setShowSurveyBuilder] = useState(false);
 
   return (
@@ -137,58 +139,19 @@ export const ActivityDetails: React.FC<ActivityDetailsProps> = ({ activity, onUp
         )}
 
         {activity.type === 'assignment' && (
-          <div className="space-y-4">
-             {/* Sub-type Selection */}
-             <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-4">
-                 <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant={(activity.assignment_config?.submission_types || []).includes('form') ? 'default' : 'outline'}
-                      onClick={() => onUpdate({ 
-                        assignment_config: { ...activity.assignment_config, submission_types: ['form'], group_assignment: false, peer_review: false } 
-                      })}
-                    >
-                      Custom Form
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant={(activity.assignment_config?.submission_types || []).includes('checklist') ? 'default' : 'outline'}
-                      onClick={() => onUpdate({ 
-                        assignment_config: { ...activity.assignment_config, submission_types: ['checklist'], group_assignment: false, peer_review: false } 
-                      })}
-                    >
-                      Checklist
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant={(activity.assignment_config?.submission_types || []).includes('file_upload') ? 'default' : 'outline'}
-                      onClick={() => onUpdate({ 
-                        assignment_config: { ...activity.assignment_config, submission_types: ['file_upload'], group_assignment: false, peer_review: false } 
-                      })}
-                    >
-                      File Upload
-                    </Button>
-                 </div>
-
-                 {(activity.assignment_config?.submission_types || []).includes('form') && (
-                   <div className="pt-2 border-t border-indigo-200/50 flex items-center justify-between">
-                     <span className="text-xs font-bold text-indigo-700">
-                        {activity.assignment_config?.form_fields?.length || 0} fields configured
-                     </span>
-                     <Button onClick={() => setShowFormBuilder(true)} size="sm" variant="secondary">Configure Form</Button>
+           <div className="p-6 bg-purple-50 rounded-2xl border border-purple-100 border-dashed flex flex-col items-center justify-center text-center gap-4">
+               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-purple-600 shadow-sm">
+                   <FormInput size={24} />
+               </div>
+               <div>
+                   <h3 className="font-bold text-slate-900">Assignment Configuration</h3>
+                   <div className="text-xs text-slate-500 flex gap-2 justify-center mt-1">
+                      {activity.assignment_config?.rubric ? <Badge variant="outline" className="bg-white">Rubric Configured</Badge> : null}
+                      {activity.assignment_config?.submission_types?.length ? <Badge variant="outline" className="bg-white">{activity.assignment_config.submission_types.length} Types</Badge> : null}
                    </div>
-                 )}
-
-                 {(activity.assignment_config?.submission_types || []).includes('checklist') && (
-                   <div className="pt-2 border-t border-indigo-200/50 flex items-center justify-between">
-                     <span className="text-xs font-bold text-indigo-700">
-                        {activity.assignment_config?.checklist_config?.items.length || 0} tasks configured
-                     </span>
-                     <Button onClick={() => setShowChecklistBuilder(true)} size="sm" variant="secondary">Configure Checklist</Button>
-                   </div>
-                 )}
-             </div>
-          </div>
+               </div>
+               <Button onClick={() => setShowAssignmentBuilder(true)} variant="default" className="bg-purple-600 hover:bg-purple-700">Open Assignment Builder</Button>
+           </div>
         )}
 
         {/* Content Editor */}
@@ -247,6 +210,32 @@ export const ActivityDetails: React.FC<ActivityDetailsProps> = ({ activity, onUp
            </div>
         </div>
       </div>
+
+      {showAssignmentBuilder && (
+        <AssignmentBuilderModal 
+          isOpen={showAssignmentBuilder}
+          onClose={() => setShowAssignmentBuilder(false)}
+          initialConfig={activity.assignment_config as any}
+          onSave={(config) => {
+            // Map AssignmentConfig to Activity updates
+            onUpdate({
+                title: config.title,
+                points: config.points,
+                content: config.description, // Sync description to content
+                assignment_config: {
+                    ...activity.assignment_config,
+                    submission_types: config.submission_types,
+                    group_assignment: config.group_assignment,
+                    peer_review: config.peer_review,
+                    rubric: config.rubric,
+                    instruction_files: config.instruction_files,
+                    peer_review_count: config.peer_review_count
+                }
+            });
+            setShowAssignmentBuilder(false);
+          }}
+        />
+      )}
 
       {showFormBuilder && (
         <FormBuilderModal 

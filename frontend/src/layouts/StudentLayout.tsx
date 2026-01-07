@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, GraduationCap, LayoutDashboard, ListChecks, Map } from 'lucide-react';
+import { BookOpen, GraduationCap, LayoutDashboard, ListChecks, Map, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -34,6 +34,9 @@ export const StudentLayout: React.FC = () => {
           </NavLink>
           <NavLink to="/student/courses" className={cn('px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2', active('/student/courses'))}>
             <BookOpen size={16} /> {t('student.nav.courses', { defaultValue: 'My Courses' })}
+          </NavLink>
+          <NavLink to="/student/library" className={cn('px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2', active('/student/library'))}>
+            <Search size={16} /> {t('student.nav.library', { defaultValue: 'Library' })}
           </NavLink>
           <NavLink
             to="/student/assignments"

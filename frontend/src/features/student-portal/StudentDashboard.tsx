@@ -1,16 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, ArrowRight, Calendar, Clock, GraduationCap, Loader2, Play } from 'lucide-react';
+import { AlertCircle, ArrowRight, Calendar, Clock, GraduationCap, Loader2, Play, QrCode, Trophy } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { getStudentDashboard } from './api';
+import { CheckInModal } from './components/CheckInModal';
+import { useState } from 'react';
 
 export const StudentDashboard: React.FC = () => {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [checkInOpen, setCheckInOpen] = useState(false);
 
   const dashboardQuery = useQuery({
     queryKey: ['student', 'dashboard'],
@@ -46,12 +50,19 @@ export const StudentDashboard: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-          {t('student.dashboard.welcome', { name: user?.first_name || '' })}
-        </h1>
-        <p className="text-slate-500 font-medium mt-1">{t('student.dashboard.subtitle')}</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            {t('student.dashboard.welcome', { name: user?.first_name || '' })}
+          </h1>
+          <p className="text-slate-500 font-medium mt-1">{t('student.dashboard.subtitle')}</p>
+        </div>
+        <Button onClick={() => setCheckInOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200">
+          <QrCode className="mr-2 h-4 w-4" /> Check In
+        </Button>
       </div>
+
+      <CheckInModal open={checkInOpen} onOpenChange={setCheckInOpen} />
 
       {dashboardQuery.isLoading && (
         <div className="flex items-center justify-center py-10 text-slate-500">
@@ -144,6 +155,30 @@ export const StudentDashboard: React.FC = () => {
         </div>
 
         <div className="space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h3 className="font-bold text-slate-900 text-lg mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => navigate('/student/achievements')}
+                className="flex flex-col items-center justify-center p-3 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors gap-2"
+              >
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-sm">
+                    <Trophy size={20} />
+                </div>
+                <span className="text-xs font-bold text-indigo-900">My Badges</span>
+              </button>
+              <button 
+                onClick={() => setCheckInOpen(true)}
+                className="flex flex-col items-center justify-center p-3 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors gap-2"
+              >
+                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm">
+                    <QrCode size={20} />
+                </div>
+                <span className="text-xs font-bold text-emerald-900">Check In</span>
+              </button>
+            </div>
+          </div>
+
           <h3 className="font-bold text-slate-900 text-lg">{t('student.dashboard.upcoming_tasks')}</h3>
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-2">
             <div className="space-y-1">

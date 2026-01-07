@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+
+
 func TestTenantService_GetTenants(t *testing.T) {
 	db, teardown := testutils.SetupTestDB()
 	defer teardown()
@@ -108,4 +110,50 @@ func TestTenantService_UserMembership(t *testing.T) {
 	membership, err = svc.GetUserMembershipInTenant(ctx, userID, tenantID)
 	require.NoError(t, err)
 	assert.Nil(t, membership) // Should not be found (nil result)
+}
+
+func TestTenantService_Management(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	repo := repository.NewSQLTenantRepository(db)
+	svc := services.NewTenantService(repo)
+	ctx := context.Background()
+
+	// 1. Create
+	newTenant := &models.Tenant{
+		Slug: "new-tenant",
+		Name: "New Tenant",
+		TenantType: "university",
+		AppName: services.ToPtr("App"),
+	}
+	id, err := svc.Create(ctx, newTenant)
+	require.NoError(t, err)
+	assert.NotEmpty(t, id)
+
+	// 2. Update
+	updated, err := svc.Update(ctx, id, map[string]interface{}{"name": "Renamed Tenant"})
+	require.NoError(t, err)
+	assert.Equal(t, "Renamed Tenant", updated.Name)
+
+	// 3. UpdateServices
+	name, err := svc.UpdateServices(ctx, id, []string{"chat"})
+	require.NoError(t, err)
+	assert.Equal(t, "Renamed Tenant", name)
+
+	fetched, err := svc.GetTenantByID(ctx, id)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"chat"}, []string(fetched.EnabledServices))
+
+	// 4. UpdateLogo
+	err = svc.UpdateLogo(ctx, id, "http://logo.png")
+	require.NoError(t, err)
+
+	// 5. Delete
+	err = svc.Delete(ctx, id)
+	require.NoError(t, err)
+
+	fetched, err = svc.GetTenantByID(ctx, id)
+	require.NoError(t, err)
+	assert.False(t, fetched.IsActive)
 }

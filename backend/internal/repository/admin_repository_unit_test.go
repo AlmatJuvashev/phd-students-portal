@@ -622,3 +622,64 @@ func TestSQLAdminRepository_Notifications_Unit(t *testing.T) {
 	})
 }
 
+
+func TestSQLAdminRepository_ListAdminNotifications_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLAdminRepository(sqlx.NewDb(db, "sqlmock"))
+
+	t.Run("Success", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{
+			"id", "student_id", "student_name", "student_email", "node_id", "node_instance_id",
+			"event_type", "is_read", "message", "metadata", "created_at",
+		}).AddRow(
+			"n1", "s1", "John Doe", "j@ex.com", "node1", "inst1", "event", false, "msg", "{}", "2023-01-01T00:00:00Z",
+		)
+
+		mock.ExpectQuery(`SELECT (.+) FROM admin_notifications n JOIN users u ON u.id = n.student_id WHERE n.is_read = false ORDER BY n.created_at DESC LIMIT 100`).
+			WillReturnRows(rows)
+
+		notifs, err := repo.ListAdminNotifications(context.Background(), true)
+		assert.NoError(t, err)
+		assert.Len(t, notifs, 1)
+		assert.Equal(t, "n1", notifs[0].ID)
+	})
+}
+
+func TestSQLAdminRepository_CheckAdvisorAccess_Unit(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLAdminRepository(sqlx.NewDb(db, "sqlmock"))
+
+	t.Run("Exists", func(t *testing.T) {
+		mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM student_advisors WHERE student_id=\$1 AND advisor_id=\$2\)`).
+			WithArgs("s1", "a1").
+			WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(true))
+
+		exists, err := repo.CheckAdvisorAccess(context.Background(), "s1", "a1")
+		assert.NoError(t, err)
+		assert.True(t, exists)
+	})
+}
+
+func TestSQLAdminRepository_GetAnalytics_Unit(t *testing.T) {
+	db, _, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("stub open error: %s", err)
+	}
+	defer db.Close()
+	repo := NewSQLAdminRepository(sqlx.NewDb(db, "sqlmock"))
+
+	t.Run("Stub", func(t *testing.T) {
+		// Just verify it returns nil/nil as hardcoded
+		res, err := repo.GetAnalytics(context.Background(), models.FilterParams{}, "v1")
+		assert.NoError(t, err)
+		assert.Nil(t, res)
+	})
+}

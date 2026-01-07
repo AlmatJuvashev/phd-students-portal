@@ -40,6 +40,7 @@ func (s *stubStudentJourneyRepo) GetJourneyState(ctx context.Context, userID, te
 
 type stubStudentLMSRepo struct {
 	enrollmentsByStudent map[string][]models.CourseEnrollment
+	submissions          []*models.ActivitySubmission
 }
 
 func (s *stubStudentLMSRepo) GetStudentEnrollments(ctx context.Context, studentID string) ([]models.CourseEnrollment, error) {
@@ -50,6 +51,7 @@ func (s *stubStudentLMSRepo) GetStudentEnrollments(ctx context.Context, studentI
 }
 
 func (s *stubStudentLMSRepo) CreateSubmission(ctx context.Context, sub *models.ActivitySubmission) error {
+	s.submissions = append(s.submissions, sub)
 	return nil
 }
 
@@ -95,6 +97,17 @@ func (s *stubStudentCurriculumRepo) GetCourse(ctx context.Context, id string) (*
 	return s.coursesByID[id], nil
 }
 
+func (s *stubStudentCurriculumRepo) ListCourses(ctx context.Context, tenantID string, programID *string) ([]models.Course, error) {
+	if s.coursesByID == nil {
+		return nil, nil
+	}
+	var list []models.Course
+	for _, c := range s.coursesByID {
+		list = append(list, *c)
+	}
+	return list, nil
+}
+
 type stubStudentGradingRepo struct {
 	entriesByStudent map[string][]models.GradebookEntry
 }
@@ -138,6 +151,7 @@ func TestStudentService_GetDashboard_ComputesProgressAndUpcoming(t *testing.T) {
 		&stubStudentSchedulerRepo{},
 		&stubStudentCurriculumRepo{},
 		gradingRepo,
+		nil,
 		nil,
 		nil,
 		pbm,
@@ -211,6 +225,7 @@ func TestStudentService_ListCourses_MapsInstructorAndNextSession(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 	)
 
 	list, err := svc.ListCourses(context.Background(), "tenant-1", "stud-1")
@@ -279,6 +294,7 @@ func TestStudentService_ListGrades_EnrichesCourseInfo(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 	)
 
 	list, err := svc.ListGrades(context.Background(), "tenant-1", "stud-1")
@@ -296,3 +312,185 @@ func TestStudentService_ListGrades_EnrichesCourseInfo(t *testing.T) {
 	assert.Equal(t, "A", g.Grade)
 	assert.Equal(t, gradedAt.Format(time.RFC3339), g.GradedAt)
 }
+
+type stubStudentAttendanceRepo struct {
+	recorded []models.ClassAttendance
+}
+
+func (s *stubStudentAttendanceRepo) RecordAttendance(ctx context.Context, sessionID string, record models.ClassAttendance) error {
+	s.recorded = append(s.recorded, record)
+	return nil
+}
+
+func TestStudentService_CheckIn(t *testing.T) {
+	attendanceRepo := &stubStudentAttendanceRepo{}
+	
+	svc := NewStudentService(
+		&stubStudentUserRepo{},
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		attendanceRepo,
+		nil,
+	)
+
+	err := svc.CheckIn(context.Background(), "t1", "u1", "sess1", "code")
+	assert.NoError(t, err)
+	
+	require.Len(t, attendanceRepo.recorded, 1)
+	assert.Equal(t, "sess1", attendanceRepo.recorded[0].ClassSessionID)
+	assert.Equal(t, "u1", attendanceRepo.recorded[0].StudentID)
+	assert.Equal(t, "PRESENT", attendanceRepo.recorded[0].Status)
+	assert.Equal(t, "u1", attendanceRepo.recorded[0].RecordedByID)
+}
+
+func TestStudentService_CheckIn_NoRepo(t *testing.T) {
+	svc := NewStudentService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	err := svc.CheckIn(context.Background(), "t1", "u1", "sess1", "code")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "attendance repo not configured")
+}
+
+// Stub for content repo
+type stubStudentCourseContentRepo struct {
+	activitiesByID map[string]*models.CourseActivity
+	lessonsByID    map[string]*models.CourseLesson
+	modulesByID    map[string]*models.CourseModule
+}
+
+func (s *stubStudentCourseContentRepo) GetActivity(ctx context.Context, id string) (*models.CourseActivity, error) {
+	if s.activitiesByID == nil { return nil, nil }
+	return s.activitiesByID[id], nil
+}
+
+func (s *stubStudentCourseContentRepo) GetLesson(ctx context.Context, id string) (*models.CourseLesson, error) {
+	if s.lessonsByID == nil { return nil, nil }
+	return s.lessonsByID[id], nil
+}
+
+func (s *stubStudentCourseContentRepo) GetModule(ctx context.Context, id string) (*models.CourseModule, error) {
+	if s.modulesByID == nil { return nil, nil }
+	return s.modulesByID[id], nil
+}
+
+func (s *stubStudentCourseContentRepo) ListModules(ctx context.Context, courseID string) ([]models.CourseModule, error) { return nil, nil }
+func (s *stubStudentCourseContentRepo) ListLessons(ctx context.Context, moduleID string) ([]models.CourseLesson, error) { return nil, nil }
+func (s *stubStudentCourseContentRepo) ListActivities(ctx context.Context, lessonID string) ([]models.CourseActivity, error) { return nil, nil }
+
+
+func TestStudentService_SubmitAssignment(t *testing.T) {
+	lmsRepo := &stubStudentLMSRepo{
+		enrollmentsByStudent: map[string][]models.CourseEnrollment{
+			"u1": {{CourseOfferingID: "off1"}},
+		},
+	}
+	schedulerRepo := &stubStudentSchedulerRepo{
+		offeringsByID: map[string]*models.CourseOffering{
+			"off1": {ID: "off1", CourseID: "c1"},
+		},
+	}
+	contentRepo := &stubStudentCourseContentRepo{
+		activitiesByID: map[string]*models.CourseActivity{
+			"act1": {ID: "act1", LessonID: "l1"},
+		},
+		lessonsByID: map[string]*models.CourseLesson{
+			"l1": {ID: "l1", ModuleID: "m1"},
+		},
+		modulesByID: map[string]*models.CourseModule{
+			"m1": {ID: "m1", CourseID: "c1"},
+		},
+	}
+	
+	svc := NewStudentService(
+		&stubStudentUserRepo{},
+		nil,
+		lmsRepo,
+		schedulerRepo,
+		nil,
+		nil,
+		contentRepo,
+		nil,
+		nil,
+		nil,
+	)
+
+	sub, err := svc.SubmitAssignment(context.Background(), "t1", "u1", "act1", "off1", []byte(`{"answer":"A"}`), "submitted")
+	require.NoError(t, err)
+	assert.Equal(t, "act1", sub.ActivityID)
+	assert.Equal(t, "off1", sub.CourseOfferingID)
+	
+	require.Len(t, lmsRepo.submissions, 1)
+	assert.Equal(t, "act1", lmsRepo.submissions[0].ActivityID)
+}
+
+func TestStudentService_ListAssignments_ComputesFromJourney(t *testing.T) {
+	pbm := &pb.Manager{
+		DefaultLocale: "en",
+		Nodes: map[string]pb.Node{
+			"n1": {ID: "n1", Title: map[string]string{"en": "Submit Paper"}},
+		},
+		NodeWorlds: map[string]string{"n1": "W1"},
+	}
+
+	journeyRepo := &stubStudentJourneyRepo{
+		stateByUser: map[string]map[string]string{
+			"stud-1": {"n1": "todo"},
+		},
+	}
+
+	svc := NewStudentService(nil, journeyRepo, nil, nil, nil, nil, nil, nil, nil, pbm)
+
+	assignments, err := svc.ListAssignments(context.Background(), "t1", "stud-1")
+	require.NoError(t, err)
+	require.Len(t, assignments, 1)
+	assert.Equal(t, "n1", assignments[0].ID)
+	assert.Equal(t, "Submit Paper", assignments[0].Title)
+	assert.Equal(t, "normal", assignments[0].Severity)
+}
+
+func TestStudentService_GetCourseDetail(t *testing.T) {
+	lmsRepo := &stubStudentLMSRepo{
+		enrollmentsByStudent: map[string][]models.CourseEnrollment{
+			"stud-1": {{CourseOfferingID: "off-1", Status: "ENROLLED"}},
+		},
+	}
+	schedulerRepo := &stubStudentSchedulerRepo{
+		offeringsByID: map[string]*models.CourseOffering{
+			"off-1": {ID: "off-1", CourseID: "c1", Section: "A"},
+		},
+		sessionsByOff: map[string][]models.ClassSession{
+			"off-1": {{ID: "sess-1", Date: time.Now().Add(24 * time.Hour), StartTime: "10:00", EndTime: "11:00", Type: "LECTURE"}},
+		},
+	}
+	currRepo := &stubStudentCurriculumRepo{
+		coursesByID: map[string]*models.Course{
+			"c1": {ID: "c1", Code: "CODE1", Title: "Course 1"},
+		},
+	}
+	userRepo := &stubStudentUserRepo{}
+
+	svc := NewStudentService(
+		userRepo,
+		nil,
+		lmsRepo,
+		schedulerRepo,
+		currRepo,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+
+	detail, err := svc.GetCourseDetail(context.Background(), "t1", "stud-1", "off-1")
+	require.NoError(t, err)
+	assert.Equal(t, "off-1", detail.Course.CourseOfferingID)
+	assert.Equal(t, "CODE1", detail.Course.Code)
+	require.Len(t, detail.Sessions, 1)
+	assert.Equal(t, "sess-1", detail.Sessions[0].ID)
+}
+

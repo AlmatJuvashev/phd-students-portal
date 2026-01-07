@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   ArrowLeft, Eye, Share, Undo, Redo, 
-  Loader2, Save, CheckCircle2
+  Loader2, Save, CheckCircle2, Wand2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,8 @@ import { ActivityList } from './components/ActivityList';
 import { ActivityDetails } from './components/ActivityDetails';
 import { getCourseContent, updateCourseContent } from './api';
 import { CourseContent, Activity, Module, Lesson } from './types';
+
+import { AIAssistantModal } from './components/AIAssistantModal';
 
 export const CourseBuilder: React.FC = () => {
   const { t } = useTranslation('common');
@@ -21,6 +23,7 @@ export const CourseBuilder: React.FC = () => {
   
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [courseStatus, setCourseStatus] = useState<'draft' | 'published'>('draft');
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   
   // Queries
   const { data: content, isLoading, isError } = useQuery({
@@ -127,6 +130,24 @@ export const CourseBuilder: React.FC = () => {
     notifyChange(newContent);
   };
 
+  const handleApplyAIStructure = (generatedModules: Module[]) => {
+    if (!localContent) return;
+    
+    // Append generated modules to existing ones
+    // Adjust order
+    const startingOrder = localContent.modules.length + 1;
+    const orderedModules = generatedModules.map((m, idx) => ({
+      ...m,
+      order: startingOrder + idx
+    }));
+
+    const newContent = {
+      ...localContent,
+      modules: [...localContent.modules, ...orderedModules]
+    };
+    notifyChange(newContent);
+  };
+
   const activeActivity = useMemo(() => {
     if (!localContent || !selectedActivityId) return null;
     for (const m of localContent.modules) {
@@ -166,6 +187,9 @@ export const CourseBuilder: React.FC = () => {
            {saveMutation.isPending && <span className="text-xs text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Saving...</span>}
            {saveMutation.isSuccess && !saveMutation.isPending && <span className="text-xs text-emerald-500 flex items-center gap-2"><CheckCircle2 size={14} /> Saved</span>}
            <div className="h-6 w-px bg-slate-200" />
+           <Button variant="ghost" size="sm" onClick={() => setIsAIModalOpen(true)} className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+             <Wand2 size={16} className="mr-2" /> AI Assistant
+           </Button>
            <Button variant="outline" size="sm">
               <Eye size={16} className="mr-2" /> {t('studio.preview')}
            </Button>
@@ -197,6 +221,12 @@ export const CourseBuilder: React.FC = () => {
           )}
         </div>
       </div>
+
+      <AIAssistantModal 
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+        onApply={handleApplyAIStructure}
+      />
     </div>
   );
 };

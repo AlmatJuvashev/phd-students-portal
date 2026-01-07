@@ -83,6 +83,17 @@ func (s *hStudentCurriculumRepo) GetCourse(ctx context.Context, id string) (*mod
 	return s.byID[id], nil
 }
 
+func (s *hStudentCurriculumRepo) ListCourses(ctx context.Context, tenantID string, programID *string) ([]models.Course, error) {
+	if s.byID == nil {
+		return nil, nil
+	}
+	var list []models.Course
+	for _, c := range s.byID {
+		list = append(list, *c)
+	}
+	return list, nil
+}
+
 type hStudentGradingRepo struct {
 	entries []models.GradebookEntry
 }
@@ -128,6 +139,7 @@ func TestStudentHandler_GetDashboard_Success(t *testing.T) {
 		&hStudentSchedulerRepo{},
 		&hStudentCurriculumRepo{},
 		gradingRepo,
+		nil,
 		nil,
 		nil,
 		pbm,
@@ -187,6 +199,7 @@ func TestStudentHandler_ListCourses_Success(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 	)
 	h := NewStudentHandler(svc)
 
@@ -229,6 +242,7 @@ func TestStudentHandler_ListAssignments_Success(t *testing.T) {
 		&hStudentSchedulerRepo{},
 		&hStudentCurriculumRepo{},
 		&hStudentGradingRepo{},
+		nil,
 		nil,
 		nil,
 		pbm,
@@ -287,6 +301,7 @@ func TestStudentHandler_ListGrades_Success(t *testing.T) {
 		schedulerRepo,
 		currRepo,
 		gradingRepo,
+		nil,
 		nil,
 		nil,
 		nil,

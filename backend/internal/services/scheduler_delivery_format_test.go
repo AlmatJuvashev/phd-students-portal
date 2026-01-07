@@ -98,7 +98,7 @@ func TestDeliveryFormat_OnlineAsync_NoConstraints(t *testing.T) {
 		// No InstructorID - this is OK for async (self-paced)
 	}
 
-	warnings, err := svc.CheckConflicts(ctx, session)
+	warnings, err := svc.CheckConflicts(ctx, session, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, warnings, "ONLINE_ASYNC should have no scheduling warnings")
 
@@ -143,7 +143,7 @@ func TestDeliveryFormat_OnlineSync_SkipsRoomChecks(t *testing.T) {
 		InstructorID:     &instID,
 	}
 
-	warnings, err := svc.CheckConflicts(ctx, session)
+	warnings, err := svc.CheckConflicts(ctx, session, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
 
@@ -190,7 +190,7 @@ func TestDeliveryFormat_OnlineSync_InstructorConflict(t *testing.T) {
 		InstructorID:     &instID,
 	}
 
-	_, err := svc.CheckConflicts(ctx, session)
+	_, err := svc.CheckConflicts(ctx, session, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "already teaching another class")
 }
@@ -240,7 +240,7 @@ func TestDeliveryFormat_InPerson_FullConstraints(t *testing.T) {
 		RoomID:           &roomID,
 	}
 
-	warnings, err := svc.CheckConflicts(ctx, session)
+	warnings, err := svc.CheckConflicts(ctx, session, nil)
 	// Default config has CapacityConstraint as HARD, so should get error
 	assert.Error(t, err) // Hard constraint violation
 	assert.Contains(t, err.Error(), "capacity")
@@ -282,7 +282,7 @@ func TestDeliveryFormat_Hybrid_SessionOverride(t *testing.T) {
 		}
 
 		// No instructor, so no instructor checks
-		warnings, err := svc.CheckConflicts(ctx, session)
+		warnings, err := svc.CheckConflicts(ctx, session, nil)
 		assert.NoError(t, err)
 		assert.Empty(t, warnings)
 

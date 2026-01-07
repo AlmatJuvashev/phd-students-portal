@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS xp_events;
+DROP TABLE IF EXISTS user_badges;
+DROP TABLE IF EXISTS badges;
+DROP TABLE IF EXISTS user_xp;
+DROP TABLE IF EXISTS xp_levels;

@@ -40,28 +40,105 @@ func (m *HMockSchedulerRepo) GetTerm(ctx context.Context, id string) (*models.Ac
 }
 
 // Satisfy Interface stubbing (minimal)
-func (m *HMockSchedulerRepo) CreateTerm(ctx context.Context, term *models.AcademicTerm) error { return nil }
-func (m *HMockSchedulerRepo) ListTerms(ctx context.Context, tenantID string) ([]models.AcademicTerm, error) { return nil, nil }
-func (m *HMockSchedulerRepo) UpdateTerm(ctx context.Context, term *models.AcademicTerm) error { return nil }
-func (m *HMockSchedulerRepo) DeleteTerm(ctx context.Context, id string) error { return nil }
-func (m *HMockSchedulerRepo) CreateOffering(ctx context.Context, offering *models.CourseOffering) error { return nil }
-func (m *HMockSchedulerRepo) GetOffering(ctx context.Context, id string) (*models.CourseOffering, error) { return nil, nil }
-func (m *HMockSchedulerRepo) ListOfferings(ctx context.Context, tenantID string, termID string) ([]models.CourseOffering, error) { return nil, nil }
-func (m *HMockSchedulerRepo) ListOfferingsByInstructor(ctx context.Context, instructorID string, termID string) ([]models.CourseOffering, error) { return nil, nil }
-func (m *HMockSchedulerRepo) UpdateOffering(ctx context.Context, offering *models.CourseOffering) error { return nil }
-func (m *HMockSchedulerRepo) AddStaff(ctx context.Context, staff *models.CourseStaff) error { return nil }
-func (m *HMockSchedulerRepo) ListStaff(ctx context.Context, offeringID string) ([]models.CourseStaff, error) { return nil, nil }
-func (m *HMockSchedulerRepo) RemoveStaff(ctx context.Context, id string) error { return nil }
-func (m *HMockSchedulerRepo) CreateSession(ctx context.Context, session *models.ClassSession) error { return nil }
-func (m *HMockSchedulerRepo) ListSessions(ctx context.Context, offeringID string, startDate, endDate time.Time) ([]models.ClassSession, error) { return nil, nil }
-func (m *HMockSchedulerRepo) ListSessionsByRoom(ctx context.Context, roomID string, startDate, endDate time.Time) ([]models.ClassSession, error) { return nil, nil }
-func (m *HMockSchedulerRepo) ListSessionsByInstructor(ctx context.Context, instructorID string, startDate, endDate time.Time) ([]models.ClassSession, error) { return nil, nil }
-func (m *HMockSchedulerRepo) ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error) { return nil, nil }
-func (m *HMockSchedulerRepo) UpdateSession(ctx context.Context, session *models.ClassSession) error { return nil }
-func (m *HMockSchedulerRepo) DeleteSession(ctx context.Context, id string) error { return nil }
-func (m *HMockSchedulerRepo) AddCohortToOffering(ctx context.Context, offeringID, cohortID string) error { return nil }
-func (m *HMockSchedulerRepo) GetOfferingCohorts(ctx context.Context, offeringID string) ([]string, error) { return nil, nil }
-func (m *HMockSchedulerRepo) ListSessionsForCohorts(ctx context.Context, cohortIDs []string, startTime, endTime time.Time) ([]models.ClassSession, error) { return nil, nil }
+func (m *HMockSchedulerRepo) CreateTerm(ctx context.Context, term *models.AcademicTerm) error {
+	args := m.Called(ctx, term)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) ListTerms(ctx context.Context, tenantID string) ([]models.AcademicTerm, error) {
+	args := m.Called(ctx, tenantID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.AcademicTerm), args.Error(1)
+}
+func (m *HMockSchedulerRepo) UpdateTerm(ctx context.Context, term *models.AcademicTerm) error {
+	args := m.Called(ctx, term)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) DeleteTerm(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) CreateOffering(ctx context.Context, offering *models.CourseOffering) error {
+	args := m.Called(ctx, offering)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) GetOffering(ctx context.Context, id string) (*models.CourseOffering, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseOffering), args.Error(1)
+}
+func (m *HMockSchedulerRepo) ListOfferings(ctx context.Context, tenantID string, termID string) ([]models.CourseOffering, error) {
+	args := m.Called(ctx, tenantID, termID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseOffering), args.Error(1)
+}
+func (m *HMockSchedulerRepo) ListOfferingsByInstructor(ctx context.Context, instructorID string, termID string) ([]models.CourseOffering, error) {
+	args := m.Called(ctx, instructorID, termID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseOffering), args.Error(1)
+}
+func (m *HMockSchedulerRepo) UpdateOffering(ctx context.Context, offering *models.CourseOffering) error {
+	args := m.Called(ctx, offering)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) AddStaff(ctx context.Context, staff *models.CourseStaff) error {
+	args := m.Called(ctx, staff)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) ListStaff(ctx context.Context, offeringID string) ([]models.CourseStaff, error) {
+	args := m.Called(ctx, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseStaff), args.Error(1)
+}
+func (m *HMockSchedulerRepo) RemoveStaff(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) CreateSession(ctx context.Context, session *models.ClassSession) error {
+	args := m.Called(ctx, session)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) ListSessions(ctx context.Context, offeringID string, startDate, endDate time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, offeringID, startDate, endDate)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
+func (m *HMockSchedulerRepo) ListSessionsByRoom(ctx context.Context, roomID string, startDate, endDate time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, roomID, startDate, endDate)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
+func (m *HMockSchedulerRepo) ListSessionsByInstructor(ctx context.Context, instructorID string, startDate, endDate time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, instructorID, startDate, endDate)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
+func (m *HMockSchedulerRepo) ListSessionsForTerm(ctx context.Context, termID string) ([]models.ClassSession, error) {
+	args := m.Called(ctx, termID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
+func (m *HMockSchedulerRepo) UpdateSession(ctx context.Context, session *models.ClassSession) error {
+	args := m.Called(ctx, session)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) DeleteSession(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) AddCohortToOffering(ctx context.Context, offeringID, cohortID string) error {
+	args := m.Called(ctx, offeringID, cohortID)
+	return args.Error(0)
+}
+func (m *HMockSchedulerRepo) GetOfferingCohorts(ctx context.Context, offeringID string) ([]string, error) {
+	args := m.Called(ctx, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]string), args.Error(1)
+}
+func (m *HMockSchedulerRepo) ListSessionsForCohorts(ctx context.Context, cohortIDs []string, startTime, endTime time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, cohortIDs, startTime, endTime)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
 
 
 func TestTranscriptHandler_GetStudentTranscript(t *testing.T) {

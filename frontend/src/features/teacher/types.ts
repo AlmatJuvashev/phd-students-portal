@@ -20,6 +20,7 @@ export interface TeacherDashboardStats {
   active_courses: number;
   pending_grading: number;
   today_classes_count: number;
+  at_risk_count?: number;
 }
 
 export interface CourseOffering {

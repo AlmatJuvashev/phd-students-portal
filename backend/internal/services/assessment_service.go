@@ -83,6 +83,9 @@ func (s *AssessmentService) GetAssessmentForTaking(ctx context.Context, tenantID
 	if err != nil {
 		return nil, nil, err
 	}
+	if assessment == nil {
+		return nil, nil, nil
+	}
 	if assessment.TenantID != tenantID {
 		return nil, nil, ErrForbidden
 	}

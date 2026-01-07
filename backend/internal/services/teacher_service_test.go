@@ -195,3 +195,161 @@ func TestTeacherService_Annotations(t *testing.T) {
 
 	mockLMS.AssertExpectations(t)
 }
+
+// MockContentRepo
+type MockContentRepo struct {
+	mock.Mock
+}
+func (m *MockContentRepo) GetModule(ctx context.Context, id string) (*models.CourseModule, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseModule), args.Error(1)
+}
+func (m *MockContentRepo) GetLesson(ctx context.Context, id string) (*models.CourseLesson, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseLesson), args.Error(1)
+}
+func (m *MockContentRepo) GetActivity(ctx context.Context, id string) (*models.CourseActivity, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseActivity), args.Error(1)
+}
+func (m *MockContentRepo) ListModules(ctx context.Context, courseID string) ([]models.CourseModule, error) {
+	args := m.Called(ctx, courseID)
+	return args.Get(0).([]models.CourseModule), args.Error(1)
+}
+func (m *MockContentRepo) ListLessons(ctx context.Context, moduleID string) ([]models.CourseLesson, error) {
+	args := m.Called(ctx, moduleID)
+	return args.Get(0).([]models.CourseLesson), args.Error(1)
+}
+func (m *MockContentRepo) ListActivities(ctx context.Context, lessonID string) ([]models.CourseActivity, error) {
+	args := m.Called(ctx, lessonID)
+	return args.Get(0).([]models.CourseActivity), args.Error(1)
+}
+
+// Missing methods required by interface
+func (m *MockContentRepo) CreateModule(ctx context.Context, mod *models.CourseModule) error {
+	args := m.Called(ctx, mod)
+	return args.Error(0)
+}
+func (m *MockContentRepo) UpdateModule(ctx context.Context, mod *models.CourseModule) error {
+	args := m.Called(ctx, mod)
+	return args.Error(0)
+}
+func (m *MockContentRepo) DeleteModule(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockContentRepo) CreateLesson(ctx context.Context, l *models.CourseLesson) error {
+	args := m.Called(ctx, l)
+	return args.Error(0)
+}
+func (m *MockContentRepo) UpdateLesson(ctx context.Context, l *models.CourseLesson) error {
+	args := m.Called(ctx, l)
+	return args.Error(0)
+}
+func (m *MockContentRepo) DeleteLesson(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockContentRepo) CreateActivity(ctx context.Context, a *models.CourseActivity) error {
+	args := m.Called(ctx, a)
+	return args.Error(0)
+}
+func (m *MockContentRepo) UpdateActivity(ctx context.Context, a *models.CourseActivity) error {
+	args := m.Called(ctx, a)
+	return args.Error(0)
+}
+func (m *MockContentRepo) DeleteActivity(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+
+func TestTeacherService_GetCourseStudents_RiskLogic(t *testing.T) {
+	mockSched := new(MockSchedulerRepo)
+	mockLMS := new(MockLMSRepo)
+	mockGrading := new(MockGradingRepo)
+	mockContent := new(MockContentRepo)
+	
+	svc := NewTeacherService(mockSched, mockLMS, mockGrading, mockContent)
+
+	offeringID := "off-1"
+	
+	// 1. Roster
+	mockLMS.On("GetCourseRoster", mock.Anything, offeringID).Return([]models.CourseEnrollment{
+		{StudentID: "s1", StudentName: "Student One"},
+		{StudentID: "s2", StudentName: "Student Two"}, // Inactive
+	}, nil)
+
+	// 2. Content (Total Items calculation)
+	mockSched.On("GetOffering", mock.Anything, offeringID).Return(&models.CourseOffering{CourseID: "c1"}, nil)
+	mockContent.On("ListModules", mock.Anything, "c1").Return([]models.CourseModule{{ID: "m1"}}, nil)
+	mockContent.On("ListLessons", mock.Anything, "m1").Return([]models.CourseLesson{{ID: "l1"}}, nil)
+	mockContent.On("ListActivities", mock.Anything, "l1").Return([]models.CourseActivity{
+		{ID: "a1", Type: "assignment"},
+		{ID: "a2", Type: "assignment"},
+	}, nil)
+	
+	// 3. Submissions
+	lastWeek := time.Now().Add(-7 * 24 * time.Hour)
+	longAgo := time.Now().Add(-35 * 24 * time.Hour)
+
+	mockLMS.On("ListSubmissions", mock.Anything, offeringID).Return([]models.ActivitySubmission{
+		{StudentID: "s1", ActivityID: "a1", Status: "SUBMITTED", SubmittedAt: lastWeek}, // 1/2 done
+		{StudentID: "s2", ActivityID: "a1", Status: "SUBMITTED", SubmittedAt: longAgo},  // Inactive
+	}, nil)
+
+	// 4. Grades
+	mockGrading.On("ListEntries", mock.Anything, offeringID).Return([]models.GradebookEntry{
+		{StudentID: "s1", Score: 90, MaxScore: 100},
+		{StudentID: "s2", Score: 40, MaxScore: 100},
+	}, nil)
+
+	profiles, err := svc.GetCourseStudents(context.Background(), offeringID)
+	assert.NoError(t, err)
+	assert.Len(t, profiles, 2)
+
+	// Check s1 (Active, Good Grade)
+	// We iterate roster, so order should match roster if not map iteration
+	// But it uses studentSubmissionCounts iteration? No, iterates roster.
+	p1 := profiles[0]
+	assert.Equal(t, "s1", p1.StudentID)
+	assert.Equal(t, 50.0, p1.OverallProgress)
+	assert.Equal(t, 90.0, p1.AverageGrade)
+	assert.Equal(t, "medium", p1.RiskLevel) // Inactive 7 days -> medium
+
+	// Check s2 (Inactive, Bad Grade)
+	p2 := profiles[1]
+	assert.Equal(t, "s2", p2.StudentID)
+	assert.Equal(t, 40.0, p2.AverageGrade)
+	assert.Equal(t, "critical", p2.RiskLevel) // Inactive 30+ days -> critical
+	assert.Contains(t, p2.RiskFactors, "35 days inactive")
+}
+
+func TestTeacherService_GetStudentActivity(t *testing.T) {
+	mockLMS := new(MockLMSRepo)
+	mockGrading := new(MockGradingRepo)
+	svc := NewTeacherService(nil, mockLMS, mockGrading, nil)
+
+	offID := "off-1"
+	studID := "s1"
+	now := time.Now()
+
+	mockLMS.On("ListSubmissions", mock.Anything, offID).Return([]models.ActivitySubmission{
+		{ID: "sub1", StudentID: studID, ActivityTitle: "Lab 1", SubmittedAt: now},
+	}, nil)
+
+	mockGrading.On("ListEntries", mock.Anything, offID).Return([]models.GradebookEntry{
+		{StudentID: studID, ActivityID: "act1", Score: 95, MaxScore: 100, GradedAt: now.Add(time.Hour)},
+	}, nil)
+
+	events, err := svc.GetStudentActivity(context.Background(), studID, offID, 10)
+	assert.NoError(t, err)
+	assert.Len(t, events, 2)
+	assert.Equal(t, "grade", events[0].Kind) // newer first
+	assert.Equal(t, "submission", events[1].Kind)
+}

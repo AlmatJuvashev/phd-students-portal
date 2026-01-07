@@ -29,8 +29,14 @@ func (m *MockRBACRepo) GetRolePermissions(ctx context.Context, roleID uuid.UUID)
 	return args.Get(0).([]string), args.Error(1)
 }
 
-func (m *MockRBACRepo) CreateRole(ctx context.Context, role models.RoleDef) error { return nil }
-func (m *MockRBACRepo) AssignRoleToUser(ctx context.Context, assignment models.UserContextRole) error { return nil }
+func (m *MockRBACRepo) CreateRole(ctx context.Context, role models.RoleDef) error {
+	args := m.Called(ctx, role)
+	return args.Error(0)
+}
+func (m *MockRBACRepo) AssignRoleToUser(ctx context.Context, assignment models.UserContextRole) error {
+	args := m.Called(ctx, assignment)
+	return args.Error(0)
+}
 
 func TestRequirePermission(t *testing.T) {
 	gin.SetMode(gin.TestMode)

@@ -8,6 +8,7 @@ import "./i18n";
 import { AuthProvider } from '@/contexts/AuthContext'
 import { TenantServicesProvider } from '@/contexts/TenantServicesContext';
 import { registerSW } from "virtual:pwa-register";
+import { DevNavigation } from "@/components/DevNavigation";
 
 registerSW({ immediate: true });
 
@@ -31,6 +32,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <AuthProvider>
           <TenantServicesProvider>
             <RouterProvider router={router} />
+            {import.meta.env.DEV && (
+              <DevNavigation onNavigate={(path: string) => router.navigate(path)} />
+            )}
           </TenantServicesProvider>
         </AuthProvider>
       </Suspense>

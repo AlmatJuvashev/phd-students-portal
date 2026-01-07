@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, QrCode, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ export const TeacherAttendancePage: React.FC = () => {
   const qc = useQueryClient();
 
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [showQR, setShowQR] = useState(false);
   const [draft, setDraft] = useState<Record<string, { status: string; notes: string }>>({});
 
   const offeringsQuery = useQuery({ queryKey: ['teacher', 'courses'], queryFn: getTeacherCourses });
@@ -199,6 +201,11 @@ export const TeacherAttendancePage: React.FC = () => {
                 <Loader2 className="animate-spin h-3 w-3" /> Loading
               </div>
             ) : null}
+            {selectedSessionId && (
+              <Button size="sm" variant="outline" onClick={() => setShowQR(true)}>
+                <QrCode className="mr-2 h-4 w-4" /> Show QR Code
+              </Button>
+            )}
           </div>
 
           <table className="w-full text-sm text-left">
@@ -256,6 +263,38 @@ export const TeacherAttendancePage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {showQR && selectedSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowQR(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X size={24} />
+            </button>
+            <div className="text-center space-y-6">
+              <div>
+                <h3 className="text-2xl font-black text-slate-900">Scan to Check-In</h3>
+                <p className="text-slate-500 font-medium mt-1">{selectedSession.title}</p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border-2 border-slate-900 inline-block">
+                <QRCodeSVG
+                  value={JSON.stringify({ session_id: selectedSession.id, code: 'TODO_SECRET' })}
+                  size={200}
+                  level="H"
+                />
+              </div>
+              <div className="text-xs font-mono bg-slate-100 p-3 rounded-lg text-slate-600 break-all">
+                Session ID: {selectedSession.id}
+              </div>
+              <p className="text-sm text-slate-500">
+                Students can scan this code using the portal app to mark themselves present.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

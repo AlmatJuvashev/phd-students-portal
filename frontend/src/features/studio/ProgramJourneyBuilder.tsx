@@ -38,7 +38,7 @@ const DEFAULT_PHASES: ProgramPhase[] = [
   { id: 'I', title: 'Phase I', order: 1, color: '#6366f1', position: { x: 50, y: 50 } },
 ];
 
-export const ProgramJourneyBuilder: React.FC<ProgramJourneyBuilderProps> = ({ initialMap, onSave }) => {
+export const ProgramJourneyBuilder: React.FC<ProgramJourneyBuilderProps> = ({ initialMap, onSave, onNavigate }) => {
   const { t } = useTranslation('common');
   
   // State
@@ -267,10 +267,18 @@ export const ProgramJourneyBuilder: React.FC<ProgramJourneyBuilderProps> = ({ in
                                     <Button 
                                         variant="outline" 
                                         size="sm" 
-                                        className="w-full bg-white text-xs"
+                                        className="w-full bg-white text-xs mb-2"
                                         onClick={() => setShowCoursePicker(true)}
                                     >
                                         Change Course
+                                    </Button>
+                                    <Button 
+                                        variant="default" 
+                                        size="sm" 
+                                        className="w-full bg-purple-600 hover:bg-purple-700 text-xs"
+                                        onClick={() => onNavigate(`/admin/studio/courses/${selectedNode.config.course_id}/builder`)}
+                                    >
+                                        Edit Content
                                     </Button>
                                 </div>
                             ) : (

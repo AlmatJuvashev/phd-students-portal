@@ -123,18 +123,50 @@ func (m *MockSchedResourceRepo) GetRoom(ctx context.Context, id string) (*models
 	return args.Get(0).(*models.Room), args.Error(1)
 }
 // Stubs
-func (m *MockSchedResourceRepo) CreateBuilding(ctx context.Context, b *models.Building) error { return nil }
-func (m *MockSchedResourceRepo) GetBuilding(ctx context.Context, id string) (*models.Building, error) { return nil, nil }
-func (m *MockSchedResourceRepo) ListBuildings(ctx context.Context, tenantID string) ([]models.Building, error) { return nil, nil }
-func (m *MockSchedResourceRepo) UpdateBuilding(ctx context.Context, b *models.Building) error { return nil }
-func (m *MockSchedResourceRepo) DeleteBuilding(ctx context.Context, id string, userID string) error { return nil }
-func (m *MockSchedResourceRepo) CreateRoom(ctx context.Context, r *models.Room) error { return nil }
-func (m *MockSchedResourceRepo) ListRooms(ctx context.Context, tenantID string, buildingID string) ([]models.Room, error) {
-	return nil, nil
+func (m *MockSchedResourceRepo) CreateBuilding(ctx context.Context, b *models.Building) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
 }
-func (m *MockSchedResourceRepo) UpdateRoom(ctx context.Context, r *models.Room) error { return nil }
-func (m *MockSchedResourceRepo) DeleteRoom(ctx context.Context, id string, userID string) error { return nil }
-func (m *MockSchedResourceRepo) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error { return nil }
+func (m *MockSchedResourceRepo) GetBuilding(ctx context.Context, id string) (*models.Building, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.Building), args.Error(1)
+}
+func (m *MockSchedResourceRepo) ListBuildings(ctx context.Context, tenantID string) ([]models.Building, error) {
+	args := m.Called(ctx, tenantID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.Building), args.Error(1)
+}
+func (m *MockSchedResourceRepo) UpdateBuilding(ctx context.Context, b *models.Building) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
+}
+func (m *MockSchedResourceRepo) DeleteBuilding(ctx context.Context, id string, userID string) error {
+	args := m.Called(ctx, id, userID)
+	return args.Error(0)
+}
+func (m *MockSchedResourceRepo) CreateRoom(ctx context.Context, r *models.Room) error {
+	args := m.Called(ctx, r)
+	return args.Error(0)
+}
+func (m *MockSchedResourceRepo) ListRooms(ctx context.Context, tenantID string, buildingID string) ([]models.Room, error) {
+	args := m.Called(ctx, tenantID, buildingID)
+	// Handle nil return safely
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.Room), args.Error(1)
+}
+func (m *MockSchedResourceRepo) UpdateRoom(ctx context.Context, r *models.Room) error {
+	args := m.Called(ctx, r)
+	return args.Error(0)
+}
+func (m *MockSchedResourceRepo) DeleteRoom(ctx context.Context, id string, userID string) error {
+	args := m.Called(ctx, id, userID)
+	return args.Error(0)
+}
+func (m *MockSchedResourceRepo) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error {
+	args := m.Called(ctx, avail)
+	return args.Error(0)
+}
 func (m *MockSchedResourceRepo) GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error) {
 	args := m.Called(ctx, instructorID)
 	// Return empty list by default if not mocked otherwise
@@ -142,7 +174,8 @@ func (m *MockSchedResourceRepo) GetAvailability(ctx context.Context, instructorI
 	return args.Get(0).([]models.InstructorAvailability), args.Error(1)
 }
 func (m *MockSchedResourceRepo) SetRoomAttribute(ctx context.Context, attr *models.RoomAttribute) error {
-	return nil 
+	args := m.Called(ctx, attr)
+	return args.Error(0)
 }
 func (m *MockSchedResourceRepo) GetRoomAttributes(ctx context.Context, roomID string) ([]models.RoomAttribute, error) {
 	args := m.Called(ctx, roomID)
@@ -194,7 +227,7 @@ func TestSchedulerService_ConflictDetection(t *testing.T) {
 
 	// Case 1: Time Overlap (11:00 - 12:00) -> Should Fail
 	newSession := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "11:00", EndTime: "12:00", RoomID: &roomID}
-	_, err := svc.CheckConflicts(ctx, newSession)
+	_, err := svc.CheckConflicts(ctx, newSession, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Room room-101 is already booked")
 
@@ -222,7 +255,7 @@ func TestSchedulerService_CapacityConflict(t *testing.T) {
 	// Session
 	session := &models.ClassSession{CourseOfferingID: offeringID, Date: time.Now(), StartTime: "10:00", EndTime: "11:00", RoomID: &roomID}
 
-	_, err := svc.CheckConflicts(ctx, session)
+	_, err := svc.CheckConflicts(ctx, session, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Room capacity (10) is less than")
 }
@@ -246,7 +279,7 @@ func TestSchedulerService_InstructorConflict(t *testing.T) {
 
 	newSession := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "09:30", EndTime: "11:00", InstructorID: &instID}
 
-	_, err := svc.CheckConflicts(ctx, newSession)
+	_, err := svc.CheckConflicts(ctx, newSession, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Instructor is already teaching")
 }
@@ -281,7 +314,7 @@ func TestSchedulerService_InstructorUnavailability(t *testing.T) {
 	newSession := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "14:30", EndTime: "15:30", InstructorID: &instID}
 
 	// Default Config is HARD constraints for Time? Check ConflictError
-	_, err := svc.CheckConflicts(ctx, newSession)
+	_, err := svc.CheckConflicts(ctx, newSession, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Instructor is unavailable")
 }
@@ -518,5 +551,155 @@ func TestSchedulerService_ListSessions(t *testing.T) {
 		result, err := svc.ListSessions(ctx, "off1", startDate, endDate)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
+	})
+}
+
+// TestSchedulerService_GetTerm tests the GetTerm function
+func TestSchedulerService_GetTerm(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		term := &models.AcademicTerm{ID: "t1", Name: "Fall 2025"}
+		mockRepo.On("GetTerm", ctx, "t1").Return(term, nil)
+
+		result, err := svc.GetTerm(ctx, "t1")
+		assert.NoError(t, err)
+		assert.Equal(t, term, result)
+	})
+
+	t.Run("Not Found", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		mockRepo.On("GetTerm", ctx, "t99").Return(nil, assert.AnError)
+
+		result, err := svc.GetTerm(ctx, "t99")
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+// TestSchedulerService_ListOfferings tests the ListOfferings function
+func TestSchedulerService_ListOfferings(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		offerings := []models.CourseOffering{
+			{ID: "o1", CourseID: "c1"},
+			{ID: "o2", CourseID: "c2"},
+		}
+		mockRepo.On("ListOfferings", ctx, "tenant1", "term1").Return(offerings, nil)
+
+		result, err := svc.ListOfferings(ctx, "tenant1", "term1")
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+	})
+}
+
+// TestSchedulerService_CreateOffering tests the CreateOffering function
+func TestSchedulerService_CreateOffering(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		offering := &models.CourseOffering{
+			CourseID: "c1",
+			TermID:   "t1",
+			DeliveryFormat: "IN_PERSON",
+		}
+		mockRepo.On("CreateOffering", ctx, mock.AnythingOfType("*models.CourseOffering")).Return(nil)
+
+		err := svc.CreateOffering(ctx, offering)
+		assert.NoError(t, err)
+		assert.NotEqual(t, time.Time{}, offering.CreatedAt, "CreatedAt should be set")
+		assert.Equal(t, "DRAFT", offering.Status, "Default status should be DRAFT")
+	})
+
+	t.Run("Validation Error", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		offering := &models.CourseOffering{
+			CourseID: "", // Missing
+			TermID:   "t1",
+		}
+
+		err := svc.CreateOffering(ctx, offering)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "course_id and term_id are required")
+	})
+}
+
+// TestSchedulerService_AutoSchedule tests the AutoSchedule function
+func TestSchedulerService_AutoSchedule(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(MockSchedulerRepo)
+		mockResource := new(MockSchedResourceRepo)
+		mockCurriculum := new(MockCurriculumRepo)
+		mockUser := new(MockUserRepository)
+		mockMailer := new(MockMailer)
+		svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, mockUser, mockMailer)
+
+		tenantID := "tenant1"
+		termID := "term1"
+
+		// Mock Data
+		sessions := []models.ClassSession{
+			{ID: "s1", CourseOfferingID: "o1", StartTime: "09:00", EndTime: "10:00", Date: time.Now()},
+		}
+		rooms := []models.Room{
+			{ID: "r1", Capacity: 30},
+		}
+		offerings := []models.CourseOffering{
+			{ID: "o1", CourseID: "c1", MaxCapacity: 20},
+		}
+		courses := []models.Course{
+			{ID: "c1"},
+		}
+
+		mockRepo.On("ListSessionsForTerm", ctx, termID).Return(sessions, nil)
+		mockResource.On("ListRooms", ctx, tenantID, "").Return(rooms, nil)
+		mockRepo.On("ListOfferings", ctx, tenantID, termID).Return(offerings, nil)
+		mockCurriculum.On("ListCourses", ctx, tenantID, mock.Anything).Return(courses, nil) // nil filter
+		
+		// Additional mocks found during inspection of AutoSchedule
+		mockRepo.On("GetOfferingCohorts", ctx, "o1").Return([]string{}, nil)
+		mockCurriculum.On("GetCourseRequirements", ctx, "c1").Return([]models.CourseRequirement{}, nil)
+		mockResource.On("GetRoomAttributes", ctx, "r1").Return([]models.RoomAttribute{}, nil)
+
+		solution, err := svc.AutoSchedule(ctx, tenantID, termID, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, solution)
+		assert.NotNil(t, solution.Assignments)
 	})
 }

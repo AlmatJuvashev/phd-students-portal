@@ -60,6 +60,24 @@ func TestUsersHandler_CreateUser(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, count)
 	})
+
+	t.Run("Create User Missing Fields", func(t *testing.T) {
+		reqBody := map[string]interface{}{
+			"first_name": "Miss",
+			// Missing last_name, role
+		}
+		body, _ := json.Marshal(reqBody)
+		req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.Contains(t, resp, "error")
+	})
 }
 
 func TestUsersHandler_ListUsers(t *testing.T) {
@@ -274,7 +292,7 @@ func TestUsersHandler_SetActive(t *testing.T) {
 	r.POST("/users/:id/set-active", h.SetActive)
 
 	t.Run("Set Active False", func(t *testing.T) {
-		reqBody := map[string]bool{"is_active": false}
+		reqBody := map[string]bool{"active": false}
 		body, _ := json.Marshal(reqBody)
 		req, _ := http.NewRequest("POST", "/users/"+userID+"/set-active", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
@@ -289,5 +307,7 @@ func TestUsersHandler_SetActive(t *testing.T) {
 		assert.False(t, isActive)
 	})
 }
+
+
 
 

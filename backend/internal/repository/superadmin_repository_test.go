@@ -340,7 +340,4 @@ func TestSuperAdminRepository_ActivityLogs(t *testing.T) {
 	})
 }
 
-// Helper function to create string pointers
-func strPtr(s string) *string {
-	return &s
-}
+

@@ -6,99 +6,103 @@ import (
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-// MockForumRepo
-type MockForumRepo struct {
-	mock.Mock
-}
-
-func (m *MockForumRepo) CreateForum(ctx context.Context, f *models.Forum) error {
-	return m.Called(ctx, f).Error(0)
-}
-func (m *MockForumRepo) ListForums(ctx context.Context, courseID string) ([]models.Forum, error) {
-	args := m.Called(ctx, courseID)
-	return args.Get(0).([]models.Forum), args.Error(1)
-}
-func (m *MockForumRepo) GetForum(ctx context.Context, id string) (*models.Forum, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Forum), args.Error(1)
-}
-
-func (m *MockForumRepo) CreateTopic(ctx context.Context, t *models.Topic) error {
-	return m.Called(ctx, t).Error(0)
-}
-func (m *MockForumRepo) GetTopic(ctx context.Context, id string) (*models.Topic, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Topic), args.Error(1)
-}
-func (m *MockForumRepo) ListTopics(ctx context.Context, forumID string, limit, offset int) ([]models.Topic, error) {
-	args := m.Called(ctx, forumID, limit, offset)
-	return args.Get(0).([]models.Topic), args.Error(1)
-}
-func (m *MockForumRepo) IncrementViews(ctx context.Context, topicID string) error {
-	return m.Called(ctx, topicID).Error(0)
-}
-
-func (m *MockForumRepo) CreatePost(ctx context.Context, p *models.Post) error {
-	return m.Called(ctx, p).Error(0)
-}
-func (m *MockForumRepo) ListPosts(ctx context.Context, topicID string) ([]models.Post, error) {
-	args := m.Called(ctx, topicID)
-	return args.Get(0).([]models.Post), args.Error(1)
-}
-func (m *MockForumRepo) GetPost(ctx context.Context, id string) (*models.Post, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Post), args.Error(1)
-}
-
-
-func TestForumService_CreateTopic_Success(t *testing.T) {
-	mockRepo := new(MockForumRepo)
-	svc := NewForumService(mockRepo)
+func TestForumService_CreateForum(t *testing.T) {
 	ctx := context.Background()
+	repo := new(MockForumRepository)
+	svc := NewForumService(repo)
 
-	forumID := "forum-1"
-	topic := &models.Topic{
-		ForumID: forumID,
-		Title:   "Help me",
-	}
+	f := &models.Forum{Title: "General Discussion"}
+	repo.On("CreateForum", ctx, f).Return(nil)
 
-	// Mock GetForum (check lock)
-	mockRepo.On("GetForum", ctx, forumID).Return(&models.Forum{ID: forumID, IsLocked: false}, nil)
-	// Mock Create
-	mockRepo.On("CreateTopic", ctx, topic).Return(nil)
-
-	created, err := svc.CreateTopic(ctx, topic)
+	res, err := svc.CreateForum(ctx, f)
 	assert.NoError(t, err)
-	assert.Equal(t, "Help me", created.Title)
-	mockRepo.AssertExpectations(t)
+	assert.Equal(t, f, res)
+	repo.AssertExpectations(t)
 }
 
-
-func TestForumService_CreatePost_Success(t *testing.T) {
-	mockRepo := new(MockForumRepo)
-	svc := NewForumService(mockRepo)
+func TestForumService_ListForums(t *testing.T) {
 	ctx := context.Background()
+	repo := new(MockForumRepository)
+	svc := NewForumService(repo)
 
-	post := &models.Post{TopicID: "topic-1", Content: "Reply"}
-	
-	// Mock GetTopic (not locked)
-	mockRepo.On("GetTopic", ctx, "topic-1").Return(&models.Topic{ID: "topic-1", IsLocked: false}, nil)
-	mockRepo.On("CreatePost", ctx, post).Return(nil)
+	forums := []models.Forum{{ID: "f1", Title: "F1"}}
+	repo.On("ListForums", ctx, "c1").Return(forums, nil)
 
-	res, err := svc.CreatePost(ctx, post)
+	res, err := svc.ListForums(ctx, "c1")
 	assert.NoError(t, err)
-	assert.Equal(t, "Reply", res.Content)
-	mockRepo.AssertExpectations(t)
+	assert.Equal(t, forums, res)
+}
+
+func TestForumService_CreateTopic(t *testing.T) {
+	ctx := context.Background()
+	repo := new(MockForumRepository)
+	svc := NewForumService(repo)
+
+	t.Run("Success", func(t *testing.T) {
+		repo.On("GetForum", ctx, "f1").Return(&models.Forum{ID: "f1"}, nil)
+		topic := &models.Topic{ForumID: "f1", Title: "T1"}
+		repo.On("CreateTopic", ctx, topic).Return(nil)
+
+		res, err := svc.CreateTopic(ctx, topic)
+		assert.NoError(t, err)
+		assert.Equal(t, topic, res)
+	})
+}
+
+func TestForumService_GetTopic(t *testing.T) {
+	ctx := context.Background()
+	repo := new(MockForumRepository)
+	svc := NewForumService(repo)
+
+	topic := &models.Topic{ID: "t1", Title: "T1"}
+	repo.On("IncrementViews", ctx, "t1").Return(nil)
+	repo.On("GetTopic", ctx, "t1").Return(topic, nil)
+
+	res, err := svc.GetTopic(ctx, "t1")
+	assert.NoError(t, err)
+	assert.Equal(t, topic, res)
+}
+
+func TestForumService_ListTopics(t *testing.T) {
+	ctx := context.Background()
+	repo := new(MockForumRepository)
+	svc := NewForumService(repo)
+
+	topics := []models.Topic{{ID: "t1", Title: "T1"}}
+	repo.On("ListTopics", ctx, "f1", 10, 0).Return(topics, nil)
+
+	res, err := svc.ListTopics(ctx, "f1", 10, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, topics, res)
+}
+
+func TestForumService_CreatePost(t *testing.T) {
+	ctx := context.Background()
+	repo := new(MockForumRepository)
+	svc := NewForumService(repo)
+
+	t.Run("Success", func(t *testing.T) {
+		repo.On("GetTopic", ctx, "t1").Return(&models.Topic{ID: "t1"}, nil)
+		post := &models.Post{TopicID: "t1", Content: "Hello"}
+		repo.On("CreatePost", ctx, post).Return(nil)
+
+		res, err := svc.CreatePost(ctx, post)
+		assert.NoError(t, err)
+		assert.Equal(t, post, res)
+	})
+}
+
+func TestForumService_ListPosts(t *testing.T) {
+	ctx := context.Background()
+	repo := new(MockForumRepository)
+	svc := NewForumService(repo)
+
+	posts := []models.Post{{ID: "p1", Content: "P1"}}
+	repo.On("ListPosts", ctx, "t1").Return(posts, nil)
+
+	res, err := svc.ListPosts(ctx, "t1")
+	assert.NoError(t, err)
+	assert.Equal(t, posts, res)
 }

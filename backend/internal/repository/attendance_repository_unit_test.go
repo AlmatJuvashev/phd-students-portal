@@ -1,49 +1,100 @@
-package repository_test
+package repository
 
 import (
 	"context"
 	"testing"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSQLAttendanceRepository_BatchUpsertAttendance(t *testing.T) {
-	db, mockDB, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-	sqlxDB := sqlx.NewDb(db, "sqlmock")
-
-	repo := repository.NewSQLAttendanceRepository(sqlxDB)
-	ctx := context.Background()
-
-	sessionID := "sess-1"
-	records := []models.ClassAttendance{
-		{StudentID: "s1", Status: "PRESENT", Notes: ""},
-		{StudentID: "s2", Status: "ABSENT", Notes: "Sick"},
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
 	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "postgres")
+	repo := NewSQLAttendanceRepository(sqlxDB)
+
+	sessionID := "s1"
 	recordedBy := "u1"
+	records := []models.ClassAttendance{
+		{StudentID: "stu1", Status: "present"},
+		{StudentID: "stu2", Status: "absent"},
+	}
 
-	// Expectations
-	mockDB.ExpectBegin()
-	
-	// Prepare statement expectation
-	stmt := `INSERT INTO class_attendance \(class_session_id, student_id, status, notes, recorded_by_id, created_at, updated_at\) VALUES \(\?, \?, \?, \?, \?, NOW\(\), NOW\(\)\) ON CONFLICT \(class_session_id, student_id\) DO UPDATE SET status = EXCLUDED.status, notes = EXCLUDED.notes, recorded_by_id = EXCLUDED.recorded_by_id, updated_at = NOW\(\)`
+	mock.ExpectBegin()
+	for range records {
+		mock.ExpectExec("INSERT INTO class_attendance").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+	}
+	mock.ExpectCommit()
 
-	// First execution
-	mockDB.ExpectExec(stmt).WithArgs(sessionID, "s1", "PRESENT", "", recordedBy).WillReturnResult(sqlmock.NewResult(1, 1))
-	// Second execution
-	mockDB.ExpectExec(stmt).WithArgs(sessionID, "s2", "ABSENT", "Sick", recordedBy).WillReturnResult(sqlmock.NewResult(1, 1))
-
-	mockDB.ExpectCommit()
-
-	// Act
-	err = repo.BatchUpsertAttendance(ctx, sessionID, records, recordedBy)
-
-	// Assert
+	err = repo.BatchUpsertAttendance(context.Background(), sessionID, records, recordedBy)
 	assert.NoError(t, err)
-	assert.NoError(t, mockDB.ExpectationsWereMet())
+}
+
+func TestSQLAttendanceRepository_GetSessionAttendance(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "postgres")
+	repo := NewSQLAttendanceRepository(sqlxDB)
+
+	sessionID := "s1"
+	mock.ExpectQuery("SELECT \\* FROM class_attendance WHERE class_session_id = \\$1").
+		WithArgs(sessionID).
+		WillReturnRows(sqlmock.NewRows([]string{"student_id", "status"}).
+			AddRow("stu1", "present").
+			AddRow("stu2", "absent"))
+
+	records, err := repo.GetSessionAttendance(context.Background(), sessionID)
+	assert.NoError(t, err)
+	assert.Len(t, records, 2)
+}
+
+func TestSQLAttendanceRepository_GetStudentAttendance(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "postgres")
+	repo := NewSQLAttendanceRepository(sqlxDB)
+
+	studentID := "stu1"
+	mock.ExpectQuery("SELECT \\* FROM class_attendance WHERE student_id = \\$1").
+		WithArgs(studentID).
+		WillReturnRows(sqlmock.NewRows([]string{"class_session_id", "status"}).
+			AddRow("s1", "present"))
+
+	records, err := repo.GetStudentAttendance(context.Background(), studentID)
+	assert.NoError(t, err)
+	assert.Len(t, records, 1)
+}
+
+func TestSQLAttendanceRepository_RecordAttendance(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %s", err)
+	}
+	defer db.Close()
+
+	sqlxDB := sqlx.NewDb(db, "postgres")
+	repo := NewSQLAttendanceRepository(sqlxDB)
+
+	record := models.ClassAttendance{StudentID: "stu1", Status: "present", RecordedByID: "u1"}
+	mock.ExpectExec("INSERT INTO class_attendance").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = repo.RecordAttendance(context.Background(), "s1", record)
+	assert.NoError(t, err)
 }

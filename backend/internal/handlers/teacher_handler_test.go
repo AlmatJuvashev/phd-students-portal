@@ -140,18 +140,27 @@ func (m *HMockSchedulerRepo) ListSessionsForCohorts(ctx context.Context, cohortI
 type HMockLMSRepo struct{ mock.Mock }
 
 func (m *HMockLMSRepo) EnrollStudent(ctx context.Context, e *models.CourseEnrollment) error {
-	return nil
+	args := m.Called(ctx, e)
+	return args.Error(0)
 }
 func (m *HMockLMSRepo) GetCourseRoster(ctx context.Context, offeringID string) ([]models.CourseEnrollment, error) {
 	args := m.Called(ctx, offeringID)
 	return args.Get(0).([]models.CourseEnrollment), args.Error(1)
 }
 func (m *HMockLMSRepo) GetStudentEnrollments(ctx context.Context, studentID string) ([]models.CourseEnrollment, error) {
-	return nil, nil
+	args := m.Called(ctx, studentID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.CourseEnrollment), args.Error(1)
 }
-func (m *HMockLMSRepo) UpdateEnrollmentStatus(ctx context.Context, id, s string) error { return nil }
+func (m *HMockLMSRepo) UpdateEnrollmentStatus(ctx context.Context, id, s string) error {
+	args := m.Called(ctx, id, s)
+	return args.Error(0)
+}
 func (m *HMockLMSRepo) CreateSubmission(ctx context.Context, s *models.ActivitySubmission) error {
-	return nil
+	args := m.Called(ctx, s)
+	return args.Error(0)
 }
 func (m *HMockLMSRepo) GetSubmission(ctx context.Context, id string) (*models.ActivitySubmission, error) {
 	args := m.Called(ctx, id)
@@ -194,7 +203,9 @@ func (m *HMockLMSRepo) DeleteAnnotation(ctx context.Context, id string) error {
 	return args.Error(0)
 }
 func (m *HMockLMSRepo) GetSessionAttendance(ctx context.Context, s string) ([]models.ClassAttendance, error) {
-	return nil, nil
+	args := m.Called(ctx, s)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassAttendance), args.Error(1)
 }
 
 // Need full interface compliance
@@ -204,36 +215,54 @@ func (m *HMockLMSRepo) GetSessionAttendance(ctx context.Context, s string) ([]mo
 type HMockGradingRepo struct{ mock.Mock }
 
 func (m *HMockGradingRepo) CreateSchema(ctx context.Context, s *models.GradingSchema) error {
-	return nil
+	args := m.Called(ctx, s)
+	return args.Error(0)
 }
 func (m *HMockGradingRepo) GetSchema(ctx context.Context, id string) (*models.GradingSchema, error) {
-	return nil, nil
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.GradingSchema), args.Error(1)
 }
 func (m *HMockGradingRepo) ListSchemas(ctx context.Context, t string) ([]models.GradingSchema, error) {
-	return nil, nil
+	args := m.Called(ctx, t)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.GradingSchema), args.Error(1)
 }
 func (m *HMockGradingRepo) GetDefaultSchema(ctx context.Context, t string) (*models.GradingSchema, error) {
-	return nil, nil
+	args := m.Called(ctx, t)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.GradingSchema), args.Error(1)
 }
 func (m *HMockGradingRepo) UpdateSchema(ctx context.Context, s *models.GradingSchema) error {
-	return nil
+	args := m.Called(ctx, s)
+	return args.Error(0)
 }
-func (m *HMockGradingRepo) DeleteSchema(ctx context.Context, id string) error { return nil }
+func (m *HMockGradingRepo) DeleteSchema(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
 func (m *HMockGradingRepo) CreateEntry(ctx context.Context, e *models.GradebookEntry) error {
-	return nil
+	args := m.Called(ctx, e)
+	return args.Error(0)
 }
 func (m *HMockGradingRepo) GetEntry(ctx context.Context, id string) (*models.GradebookEntry, error) {
-	return nil, nil
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.GradebookEntry), args.Error(1)
 }
 func (m *HMockGradingRepo) GetEntryByActivity(ctx context.Context, o, a, s string) (*models.GradebookEntry, error) {
-	return nil, nil
+	args := m.Called(ctx, o, a, s)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.GradebookEntry), args.Error(1)
 }
 func (m *HMockGradingRepo) ListEntries(ctx context.Context, o string) ([]models.GradebookEntry, error) {
 	args := m.Called(ctx, o)
 	return args.Get(0).([]models.GradebookEntry), args.Error(1)
 }
 func (m *HMockGradingRepo) ListStudentEntries(ctx context.Context, s string) ([]models.GradebookEntry, error) {
-	return nil, nil
+	args := m.Called(ctx, s)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.GradebookEntry), args.Error(1)
 }
 
 func setupTeacherHandler() (*TeacherHandler, *HMocks) {

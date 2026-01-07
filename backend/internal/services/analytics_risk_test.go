@@ -62,6 +62,10 @@ type RiskMockAttendanceRepo struct {
 	mock.Mock
 }
 
+func (m *RiskMockAttendanceRepo) RecordAttendance(ctx context.Context, sessionID string, record models.ClassAttendance) error {
+	return nil
+}
+
 func (m *RiskMockAttendanceRepo) BatchUpsertAttendance(ctx context.Context, sessionID string, records []models.ClassAttendance, recordedBy string) error {
 	return nil
 }

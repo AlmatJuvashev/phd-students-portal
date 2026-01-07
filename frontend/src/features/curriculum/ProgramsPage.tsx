@@ -9,10 +9,11 @@ import { cn } from '@/lib/utils';
 import { getPrograms } from './api';
 import { Program } from './types';
 
+import { getLocalized } from '@/lib/i18n-utils';
 import { EduStudioHub } from '../studio/components/EduStudioHub';
 
 export const ProgramsPage: React.FC = () => {
-  const { t } = useTranslation('common');
+  const { t, i18n } = useTranslation('common');
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState('all');
   const [search, setSearch] = useState('');
@@ -142,8 +143,8 @@ export const ProgramsPage: React.FC = () => {
                    </div>
                 </div>
 
-                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{program.title}</h3>
-                <p className="text-xs text-slate-500 mb-6 line-clamp-2 flex-1">{program.description}</p>
+                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">{getLocalized(program.title, i18n.language)}</h3>
+                <p className="text-xs text-slate-500 mb-6 line-clamp-2 flex-1">{getLocalized(program.description, i18n.language)}</p>
 
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                    <div>

@@ -12,6 +12,7 @@ type AttendanceRepository interface {
 	BatchUpsertAttendance(ctx context.Context, sessionID string, records []models.ClassAttendance, recordedBy string) error
 	GetSessionAttendance(ctx context.Context, sessionID string) ([]models.ClassAttendance, error)
 	GetStudentAttendance(ctx context.Context, studentID string) ([]models.ClassAttendance, error)
+	RecordAttendance(ctx context.Context, sessionID string, record models.ClassAttendance) error
 }
 
 type SQLAttendanceRepository struct {
@@ -72,4 +73,22 @@ func (r *SQLAttendanceRepository) GetStudentAttendance(ctx context.Context, stud
 	var records []models.ClassAttendance
 	err := r.db.SelectContext(ctx, &records, query, studentID)
 	return records, err
+}
+
+func (r *SQLAttendanceRepository) RecordAttendance(ctx context.Context, sessionID string, rec models.ClassAttendance) error {
+	query := `
+		INSERT INTO class_attendance (class_session_id, student_id, status, notes, created_at, updated_at, recorded_by_id)
+		VALUES (:class_session_id, :student_id, :status, :notes, NOW(), NOW(), :recorded_by_id)
+		ON CONFLICT (class_session_id, student_id) 
+		DO UPDATE SET 
+			status = EXCLUDED.status,
+			notes = EXCLUDED.notes,
+			updated_at = NOW(),
+			recorded_by_id = EXCLUDED.recorded_by_id`
+
+	rec.ClassSessionID = sessionID
+	// recorded_by_id is already in rec
+
+	_, err := r.db.NamedExecContext(ctx, query, rec)
+	return err
 }

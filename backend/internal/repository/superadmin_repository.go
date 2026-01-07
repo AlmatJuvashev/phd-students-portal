@@ -129,8 +129,8 @@ func (r *SQLSuperAdminRepository) CreateAdmin(ctx context.Context, params models
 		isPrimary := i == 0
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO user_tenant_memberships (user_id, tenant_id, role, roles, is_primary)
-			VALUES ($1, $2, $3, ARRAY[$3]::text[], $4)
-			ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = $3, roles = ARRAY[$3]::text[], is_primary = $4
+			VALUES ($1, $2, $3::user_role, ARRAY[$3::text], $4)
+			ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = $3::user_role, roles = ARRAY[$3::text], is_primary = $4
 		`, userID, tenantID, params.Role, isPrimary)
 		if err != nil {
 			return "", err
@@ -180,7 +180,7 @@ func (r *SQLSuperAdminRepository) UpdateAdmin(ctx context.Context, id string, pa
 			isPrimary := i == 0
 			_, err = tx.ExecContext(ctx, `
 				INSERT INTO user_tenant_memberships (user_id, tenant_id, role, roles, is_primary)
-				VALUES ($1, $2, $3, ARRAY[$3]::text[], $4)
+				VALUES ($1, $2, $3::user_role, ARRAY[$3::text], $4)
 			`, id, tenantID, role, isPrimary)
 			if err != nil {
 				return "", err

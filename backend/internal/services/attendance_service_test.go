@@ -31,6 +31,10 @@ func (m *MockAttendanceRepo) GetStudentAttendance(ctx context.Context, studentID
     return args.Get(0).([]models.ClassAttendance), args.Error(1)
 }
 
+func (m *MockAttendanceRepo) RecordAttendance(ctx context.Context, sessionID string, record models.ClassAttendance) error {
+	return nil
+}
+
 // -- Tests --
 
 func TestAttendanceService_BatchRecordAttendance(t *testing.T) {
@@ -55,4 +59,19 @@ func TestAttendanceService_BatchRecordAttendance(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
+}
+func TestAttendanceService_GetSessionAttendance(t *testing.T) {
+	mockRepo := new(MockAttendanceRepo)
+	svc := services.NewAttendanceService(mockRepo)
+	ctx := context.Background()
+
+	sessionID := "session-123"
+	expected := []models.ClassAttendance{{StudentID: "s1", Status: "PRESENT"}}
+
+	mockRepo.On("GetSessionAttendance", ctx, sessionID).Return(expected, nil)
+
+	res, err := svc.GetSessionAttendance(ctx, sessionID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, res)
 }

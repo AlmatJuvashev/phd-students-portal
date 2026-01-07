@@ -213,14 +213,18 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	teacherService := services.NewTeacherService(schedulerRepo, lmsRepo, gradingRepo, courseContentRepo)
 	teacherHandler := NewTeacherHandler(teacherService)
 
-	forumRepo := repository.NewSQLForumRepository(db)
-	studentService := services.NewStudentService(userRepo, journeyRepo, lmsRepo, schedulerRepo, curriculumRepo, gradingRepo, courseContentRepo, forumRepo, playbookManager)
-	studentHandler := NewStudentHandler(studentService)
-
-	// Attendance (Phase 17)
 	attendanceRepo := repository.NewSQLAttendanceRepository(db)
 	attendanceService := services.NewAttendanceService(attendanceRepo)
 	attendanceHandler := NewAttendanceHandler(attendanceService)
+    
+    // Gamification
+    gamificationRepo := repository.NewSQLGamificationRepository(db)
+    gamificationService := services.NewGamificationService(gamificationRepo)
+    gamificationHandler := NewGamificationHandler(gamificationService)
+
+	forumRepo := repository.NewSQLForumRepository(db)
+	studentService := services.NewStudentService(userRepo, journeyRepo, lmsRepo, schedulerRepo, curriculumRepo, gradingRepo, courseContentRepo, forumRepo, attendanceRepo, playbookManager)
+	studentHandler := NewStudentHandler(studentService)
 	// Initialize AnalyticsService (depends on AnalyticsRepo, LMSRepo, AttendanceRepo, UserRepo)
 	analyticsService := services.NewAnalyticsService(analyticsRepo, lmsRepo, attendanceRepo, userRepo)
 	analyticsHandler := NewAnalyticsHandler(analyticsService)
@@ -300,6 +304,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 		student.Use(middleware.RequireRoles("student"))
 		{
 			student.GET("/dashboard", studentHandler.GetDashboard)
+			student.GET("/catalog", studentHandler.ListAvailableCourses)
 			student.GET("/courses", studentHandler.ListCourses)
 			student.GET("/courses/:id", studentHandler.GetCourseDetail)
 			student.GET("/courses/:id/modules", studentHandler.GetCourseModules)
@@ -311,6 +316,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			student.POST("/assignments/:id/submit", studentHandler.SubmitAssignment)
 			student.GET("/grades", studentHandler.ListGrades)
 			student.GET("/transcript", transcriptHandler.GetStudentTranscript)
+			student.POST("/attendance/check-in", studentHandler.CheckIn)
 		}
 
 		// Calendar
@@ -450,6 +456,13 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 			gov.POST("/proposals/:id/review", govHandler.ReviewProposal) // Approve/Reject
 			gov.GET("/proposals/:id/reviews", govHandler.ListReviews)
 		}
+
+        // Gamification
+        api.GET("/gamification/stats", gamificationHandler.GetMyStats)
+        api.GET("/gamification/leaderboard", gamificationHandler.GetLeaderboard)
+        api.GET("/gamification/badges", gamificationHandler.ListAllBadges)
+        api.GET("/gamification/badges/mine", gamificationHandler.GetMyBadges)
+        api.POST("/admin/gamification/badges", gamificationHandler.CreateBadge)
 
 		// Notifications
 		notif := protected.Group("/notifications")

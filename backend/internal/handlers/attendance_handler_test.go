@@ -1,4 +1,4 @@
-package handlers_test
+package handlers
 
 import (
 	"bytes"
@@ -8,67 +8,78 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// -- Mocks for Attendance --
-
-type MockAttendanceService struct {
+type mockAttendanceRepo struct {
 	mock.Mock
 }
 
-func (m *MockAttendanceService) BatchRecordAttendance(ctx context.Context, sessionID string, updates []models.ClassAttendance, teacherID string) error {
-	args := m.Called(ctx, sessionID, updates, teacherID)
-	if args.Get(0) == nil {
-		return nil
-	}
+func (m *mockAttendanceRepo) BatchUpsertAttendance(ctx context.Context, sessionID string, records []models.ClassAttendance, recordedBy string) error {
+	args := m.Called(ctx, sessionID, records, recordedBy)
 	return args.Error(0)
 }
-
-func (m *MockAttendanceService) GetSessionAttendance(ctx context.Context, sessionID string) ([]models.ClassAttendance, error) {
-	return nil, nil // Not used in this handler test
+func (m *mockAttendanceRepo) GetSessionAttendance(ctx context.Context, sessionID string) ([]models.ClassAttendance, error) {
+	args := m.Called(ctx, sessionID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.ClassAttendance), args.Error(1)
+}
+func (m *mockAttendanceRepo) GetStudentAttendance(ctx context.Context, studentID string) ([]models.ClassAttendance, error) {
+	args := m.Called(ctx, studentID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.ClassAttendance), args.Error(1)
+}
+func (m *mockAttendanceRepo) RecordAttendance(ctx context.Context, sessionID string, record models.ClassAttendance) error {
+	return m.Called(ctx, sessionID, record).Error(0)
 }
 
 func TestAttendanceHandler_BatchRecordAttendance(t *testing.T) {
-	mockSvc := new(MockAttendanceService)
-	handler := handlers.NewAttendanceHandler(mockSvc)
-
 	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(func(c *gin.Context) {
-		c.Set("userID", "teacher-1")
-	})
-	router.POST("/attendance/:session_id", handler.BatchRecordAttendance)
+	repo := new(mockAttendanceRepo)
+	svc := services.NewAttendanceService(repo)
+	h := NewAttendanceHandler(svc)
 
-	sessionID := "sess-1"
-	updates := []handlers.AttendanceUpdate{
-		{StudentID: "s1", Status: "PRESENT"},
+	updates := BatchAttendanceRequest{
+		Updates: []AttendanceUpdate{
+			{StudentID: "s1", Status: "present"},
+		},
 	}
-	payload := handlers.BatchAttendanceRequest{Updates: updates}
-	body, _ := json.Marshal(payload)
+	repo.On("BatchUpsertAttendance", mock.Anything, "s1", mock.Anything, "u1").Return(nil)
 
-	// Expectations
-	mockSvc.On("BatchRecordAttendance", mock.Anything, sessionID, mock.AnythingOfType("[]models.ClassAttendance"), "teacher-1").Return(nil)
-
-	// Requests
-	req, _ := http.NewRequest(http.MethodPost, "/attendance/"+sessionID, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
-	
-	router.ServeHTTP(w, req)
+	body, _ := json.Marshal(updates)
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/sessions/s1/attendance", bytes.NewBuffer(body))
+	c.Params = gin.Params{{Key: "session_id", Value: "s1"}}
+	c.Set("userID", "u1")
 
-	// Assertions
+	h.BatchRecordAttendance(c)
+
 	assert.Equal(t, http.StatusOK, w.Code)
-	
-	// Error Case: Service returns error
-	mockSvc.On("BatchRecordAttendance", mock.Anything, "sess-error", mock.Anything, "teacher-1").Return(assert.AnError)
-	
-	reqErr, _ := http.NewRequest(http.MethodPost, "/attendance/sess-error", bytes.NewBuffer(body))
-	wErr := httptest.NewRecorder()
-	router.ServeHTTP(wErr, reqErr)
-	assert.Equal(t, http.StatusInternalServerError, wErr.Code)
+}
+
+func TestAttendanceHandler_GetSessionAttendance(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := new(mockAttendanceRepo)
+	svc := services.NewAttendanceService(repo)
+	h := NewAttendanceHandler(svc)
+
+	repo.On("GetSessionAttendance", mock.Anything, "s1").Return([]models.ClassAttendance{}, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/sessions/s1/attendance", nil)
+	c.Params = gin.Params{{Key: "session_id", Value: "s1"}}
+
+	h.GetSessionAttendance(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
 }

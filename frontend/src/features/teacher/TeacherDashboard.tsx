@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Calendar, CheckCircle2, ChevronRight, Loader2, Play, TrendingUp } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle2, ChevronRight, Loader2, Play, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -93,7 +93,7 @@ export const TeacherDashboard: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatWidget
           index={0}
           title={t('teacher.dashboard.stats.to_grade')}
@@ -129,6 +129,15 @@ export const TeacherDashboard: React.FC = () => {
           icon={Play}
           color="bg-slate-50 text-slate-700"
           onClick={() => navigate('/admin/scheduler')}
+        />
+        <StatWidget
+          index={4}
+          title={t('teacher.dashboard.stats.students_at_risk') || 'At Risk'}
+          value={stats?.at_risk_count || 0}
+          sub={t('teacher.dashboard.stats.at_risk_subtitle') || 'Requires attention'}
+          icon={AlertTriangle}
+          color="bg-red-50 text-red-600"
+          onClick={() => navigate('/admin/teacher/students')}
         />
       </div>
 

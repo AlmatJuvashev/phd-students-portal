@@ -10,9 +10,13 @@ import type {
   StudentDashboard,
   StudentGradeEntry,
   StudentAnnouncement,
+  Transcript,
 } from './types';
 
 export const getStudentDashboard = () => api.get<StudentDashboard>('/student/dashboard');
+
+export const getStudentCatalog = () => api.get<StudentCourse[]>('/student/catalog');
+
 export const getStudentCourses = () => api.get<StudentCourse[]>('/student/courses');
 export const getStudentAssignments = () => api.get<StudentAssignment[]>('/student/assignments');
 export const getStudentGrades = () => api.get<StudentGradeEntry[]>('/student/grades');
@@ -43,3 +47,8 @@ export const submitAssignment = (
   activityId: string,
   payload: { course_offering_id?: string; content: any; status?: string }
 ) => api.post<ActivitySubmission>(`/student/assignments/${activityId}/submit`, payload);
+
+export const getStudentTranscript = () => api.get<Transcript>('/student/transcript');
+
+export const checkInStudent = (payload: { session_id: string; code: string }) =>
+  api.post<{ status: string }>('/student/attendance/check-in', payload);

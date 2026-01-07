@@ -60,6 +60,7 @@ func (r *SQLRubricRepository) CreateRubric(ctx context.Context, d *models.Rubric
 		if err != nil {
 			return err
 		}
+		d.Criteria[i].ID = c.ID
 
 		for j, l := range c.Levels {
 			l.CriterionID = c.ID
@@ -106,15 +107,16 @@ func (r *SQLRubricRepository) GetRubric(ctx context.Context, id string) (*models
 		query = r.db.Rebind(query)
 		
 		var allLevels []models.RubricLevel
-		if err = r.db.SelectContext(ctx, &allLevels, query, args...); err == nil {
-			// Map levels to criteria
-			levelMap := make(map[string][]models.RubricLevel)
-			for _, l := range allLevels {
-				levelMap[l.CriterionID] = append(levelMap[l.CriterionID], l)
-			}
-			for i := range criteria {
-				criteria[i].Levels = levelMap[criteria[i].ID]
-			}
+		if err = r.db.SelectContext(ctx, &allLevels, query, args...); err != nil {
+			return nil, err
+		}
+		// Map levels to criteria
+		levelMap := make(map[string][]models.RubricLevel)
+		for _, l := range allLevels {
+			levelMap[l.CriterionID] = append(levelMap[l.CriterionID], l)
+		}
+		for i := range criteria {
+			criteria[i].Levels = levelMap[criteria[i].ID]
 		}
 	}
 	

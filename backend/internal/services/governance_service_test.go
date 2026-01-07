@@ -25,7 +25,11 @@ func (m *MockGovernanceRepo) GetProposal(ctx context.Context, id string) (*model
 	}
 	return args.Get(0).(*models.Proposal), args.Error(1)
 }
-func (m *MockGovernanceRepo) ListProposals(ctx context.Context, t, s string) ([]models.Proposal, error) { return nil, nil }
+func (m *MockGovernanceRepo) ListProposals(ctx context.Context, t, s string) ([]models.Proposal, error) {
+	args := m.Called(ctx, t, s)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.Proposal), args.Error(1)
+}
 func (m *MockGovernanceRepo) UpdateProposalStatus(ctx context.Context, id, s string, step int) error {
 	args := m.Called(ctx, id, s, step)
 	return args.Error(0)
@@ -34,7 +38,11 @@ func (m *MockGovernanceRepo) CreateReview(ctx context.Context, r *models.Proposa
 	args := m.Called(ctx, r)
 	return args.Error(0)
 }
-func (m *MockGovernanceRepo) ListReviews(ctx context.Context, id string) ([]models.ProposalReview, error) { return nil, nil }
+func (m *MockGovernanceRepo) ListReviews(ctx context.Context, id string) ([]models.ProposalReview, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ProposalReview), args.Error(1)
+}
 
 func TestGovernanceService_ReviewProposal(t *testing.T) {
 	mockRepo := new(MockGovernanceRepo)

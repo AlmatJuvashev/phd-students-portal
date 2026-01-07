@@ -30,7 +30,7 @@ func TestCurriculumHandler_CreateProgram_Success(t *testing.T) {
 
 	// Mock DB Expectation for Repo call
 	mock.ExpectQuery(`INSERT INTO programs`).
-		WithArgs("tenant-1", "P1", `{"en":"Title"}`, `{"en":"Desc"}`, 120, 36, true).
+		WithArgs("tenant-1", "P1", "P1", `{"en":"Title"}`, `{"en":"Desc"}`, 120, 36, true).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
 			AddRow("prog-1", time.Now(), time.Now()))
 

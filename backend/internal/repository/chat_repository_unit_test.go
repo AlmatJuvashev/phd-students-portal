@@ -130,3 +130,119 @@ func TestSQLChatRepository_Members(t *testing.T) {
 		assert.True(t, isMem)
 	})
 }
+
+func TestSQLChatRepository_ListRoomsForTenant(t *testing.T) {
+	repo, mock, teardown := newTestChatRepo(t)
+	defer teardown()
+	ctx := context.Background()
+
+	rows := sqlmock.NewRows([]string{"id", "name", "unread_count"}).AddRow("r1", "General", 0)
+	mock.ExpectQuery(`SELECT r\.id, r\.name`).WithArgs("t1").WillReturnRows(rows)
+
+	list, err := repo.ListRoomsForTenant(ctx, "t1")
+	assert.NoError(t, err)
+	assert.Len(t, list, 1)
+}
+
+func TestSQLChatRepository_ListMembers(t *testing.T) {
+	repo, mock, teardown := newTestChatRepo(t)
+	defer teardown()
+	ctx := context.Background()
+
+	rows := sqlmock.NewRows([]string{"room_id", "user_id", "first_name"}).AddRow("r1", "u1", "John")
+	mock.ExpectQuery(`SELECT m\.tenant_id`).WithArgs("r1").WillReturnRows(rows)
+
+	list, err := repo.ListMembers(ctx, "r1")
+	assert.NoError(t, err)
+	assert.Len(t, list, 1)
+}
+
+func TestSQLChatRepository_Messages(t *testing.T) {
+	repo, mock, teardown := newTestChatRepo(t)
+	defer teardown()
+	ctx := context.Background()
+
+	t.Run("CreateMessage", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "room_id", "sender_id", "body", "created_at"}).
+			AddRow("m1", "t1", "r1", "u1", "Hello", time.Now())
+
+		mock.ExpectQuery(`WITH room_tenant AS`).
+			WithArgs("r1", "u1", "Hello", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+			WillReturnRows(rows)
+
+		msg, err := repo.CreateMessage(ctx, "r1", "u1", "Hello", nil, nil, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "m1", msg.ID)
+	})
+
+	t.Run("ListMessages", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "body", "sender_id"}).AddRow("m1", "Hello", "u1")
+		mock.ExpectQuery(`SELECT m\.id`).WithArgs("r1", 50).WillReturnRows(rows)
+
+		msgs, err := repo.ListMessages(ctx, "r1", 50, nil, nil)
+		assert.NoError(t, err)
+		assert.Len(t, msgs, 1)
+	})
+
+	t.Run("UpdateMessage", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "body"}).AddRow("m1", "New Body")
+		mock.ExpectQuery(`UPDATE chat_messages SET body = \$1`).
+			WithArgs("New Body", "m1", "u1").
+			WillReturnRows(rows)
+
+		msg, err := repo.UpdateMessage(ctx, "m1", "u1", "New Body")
+		assert.NoError(t, err)
+		assert.Equal(t, "New Body", msg.Body)
+	})
+
+	t.Run("DeleteMessage", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE chat_messages SET deleted_at = NOW`).
+			WithArgs("m1", "u1").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		err := repo.DeleteMessage(ctx, "m1", "u1")
+		assert.NoError(t, err)
+	})
+}
+
+func TestSQLChatRepository_MarkRoomAsRead(t *testing.T) {
+	repo, mock, teardown := newTestChatRepo(t)
+	defer teardown()
+	ctx := context.Background()
+
+	mock.ExpectExec(`INSERT INTO chat_room_read_status`).
+		WithArgs("r1", "u1").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := repo.MarkRoomAsRead(ctx, "r1", "u1")
+	assert.NoError(t, err)
+}
+
+func TestSQLChatRepository_Helpers(t *testing.T) {
+	repo, mock, teardown := newTestChatRepo(t)
+	defer teardown()
+	ctx := context.Background()
+
+	t.Run("GetUsersByFilters", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id"}).AddRow("u1")
+		mock.ExpectQuery(`SELECT id FROM users WHERE is_active=true AND role=\$1`).
+			WithArgs("student").
+			WillReturnRows(rows)
+
+		ids, err := repo.GetUsersByFilters(ctx, map[string]string{"role": "student"})
+		assert.NoError(t, err)
+		assert.Len(t, ids, 1)
+	})
+
+	t.Run("GetUsersByIDs", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "email", "first_name", "last_name"}).
+			AddRow("u1", "e@x.com", "F", "L")
+		mock.ExpectQuery(`SELECT id, email`).
+			WithArgs("u1", "u2").
+			WillReturnRows(rows)
+
+		users, err := repo.GetUsersByIDs(ctx, []string{"u1", "u2"})
+		assert.NoError(t, err)
+		assert.Len(t, users, 1)
+	})
+}

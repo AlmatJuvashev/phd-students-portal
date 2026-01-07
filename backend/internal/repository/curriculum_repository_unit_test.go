@@ -358,3 +358,40 @@ func TestSQLCurriculumRepository_CourseRequirements(t *testing.T) {
 		assert.Equal(t, "true", reqs[0].Value)
 	})
 }
+
+func TestSQLCurriculumRepository_Courses_More(t *testing.T) {
+	repo, mock, teardown := newTestCurriculumRepo(t)
+	defer teardown()
+	ctx := context.Background()
+
+	t.Run("ListCourses_WithProgramID", func(t *testing.T) {
+		pid := "p1"
+		rows := sqlmock.NewRows([]string{"id", "code"}).AddRow("c1", "CS101")
+		mock.ExpectQuery("SELECT \\* FROM courses WHERE tenant_id=\\$1 AND program_id=\\$2 ORDER BY code ASC").
+			WithArgs("t1", pid).
+			WillReturnRows(rows)
+
+		list, err := repo.ListCourses(ctx, "t1", &pid)
+		assert.NoError(t, err)
+		assert.Len(t, list, 1)
+	})
+
+	t.Run("GetCourse_NotFound", func(t *testing.T) {
+		mock.ExpectQuery("SELECT \\* FROM courses WHERE id=\\$1").
+			WithArgs("c99").
+			WillReturnError(sql.ErrNoRows)
+
+		_, err := repo.GetCourse(ctx, "c99")
+		assert.Error(t, err)
+		assert.Equal(t, sql.ErrNoRows, err)
+	})
+
+	t.Run("CreateCourse_Error", func(t *testing.T) {
+		course := &models.Course{TenantID: "t1", Code: "FAIL"}
+		mock.ExpectQuery("INSERT INTO courses").
+			WillReturnError(fmt.Errorf("db error"))
+
+		err := repo.CreateCourse(ctx, course)
+		assert.Error(t, err)
+	})
+}

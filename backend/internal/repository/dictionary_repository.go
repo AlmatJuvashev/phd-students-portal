@@ -309,9 +309,6 @@ func (r *SQLDictionaryRepository) ListCohorts(ctx context.Context, tenantID stri
 		cohorts[i] = c
 	}
 	
-	if cohorts == nil {
-		return []models.Cohort{}, nil
-	}
 	return cohorts, nil
 }
 

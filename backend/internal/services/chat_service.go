@@ -16,6 +16,7 @@ import (
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 )
 
+
 type ChatService struct {
 	repo         repository.ChatRepository
 	emailService EmailSender

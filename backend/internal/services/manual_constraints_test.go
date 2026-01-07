@@ -62,7 +62,7 @@ func TestManualConstraints(t *testing.T) {
 	// GetOfferingCohorts
 	mockSchedRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
 
-	warnings, err := svc.CheckConflicts(ctx, session)
+	warnings, err := svc.CheckConflicts(ctx, session, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, warnings)
 
@@ -73,7 +73,7 @@ func TestManualConstraints(t *testing.T) {
 		DepartmentID: &deptMath,
 	}, nil).Once()
 
-	warnings, err = svc.CheckConflicts(ctx, session)
+	warnings, err = svc.CheckConflicts(ctx, session, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Department Mismatch")
 	assert.Nil(t, warnings) // Error takes precedence in current logic? 
@@ -95,7 +95,7 @@ func TestManualConstraints(t *testing.T) {
 		DepartmentID: &deptAnatomy,
 	}, nil).Once()
 
-	warnings, err = svc.CheckConflicts(ctx, session)
+	warnings, err = svc.CheckConflicts(ctx, session, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Room capacity")
 }

@@ -1,0 +1,83 @@
+=== RUN   TestCurriculumHandler_CreateProgram_Success
+    curriculum_mock_test.go:58: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/curriculum_mock_test.go:58
+        	Error:      	Not equal: 
+        	            	expected: 201
+        	            	actual  : 400
+        	Test:       	TestCurriculumHandler_CreateProgram_Success
+--- FAIL: TestCurriculumHandler_CreateProgram_Success (0.00s)
+=== RUN   TestCurriculumHandler_ListPrograms_Success
+--- PASS: TestCurriculumHandler_ListPrograms_Success (0.00s)
+=== RUN   TestCurriculumHandler_GetProgram_Success
+--- PASS: TestCurriculumHandler_GetProgram_Success (0.00s)
+=== RUN   TestCurriculumHandler_GetProgram_NotFound
+--- PASS: TestCurriculumHandler_GetProgram_NotFound (0.00s)
+=== RUN   TestCurriculumHandler_UpdateProgram_Success
+--- PASS: TestCurriculumHandler_UpdateProgram_Success (0.00s)
+=== RUN   TestCurriculumHandler_DeleteProgram_Success
+--- PASS: TestCurriculumHandler_DeleteProgram_Success (0.00s)
+=== RUN   TestCurriculumHandler_CreateCourse_Success
+--- PASS: TestCurriculumHandler_CreateCourse_Success (0.00s)
+=== RUN   TestCurriculumHandler_ListCourses_Success
+--- PASS: TestCurriculumHandler_ListCourses_Success (0.00s)
+=== RUN   TestItemBankHandler_UpdateAndDeleteBank
+=== RUN   TestItemBankHandler_UpdateAndDeleteBank/UpdateBank
+=== RUN   TestItemBankHandler_UpdateAndDeleteBank/DeleteBank
+--- PASS: TestItemBankHandler_UpdateAndDeleteBank (0.00s)
+    --- PASS: TestItemBankHandler_UpdateAndDeleteBank/UpdateBank (0.00s)
+    --- PASS: TestItemBankHandler_UpdateAndDeleteBank/DeleteBank (0.00s)
+=== RUN   TestItemBankHandler_UpdateAndDeleteItem
+=== RUN   TestItemBankHandler_UpdateAndDeleteItem/UpdateItem
+=== RUN   TestItemBankHandler_UpdateAndDeleteItem/DeleteItem
+--- PASS: TestItemBankHandler_UpdateAndDeleteItem (0.00s)
+    --- PASS: TestItemBankHandler_UpdateAndDeleteItem/UpdateItem (0.00s)
+    --- PASS: TestItemBankHandler_UpdateAndDeleteItem/DeleteItem (0.00s)
+=== RUN   TestSuperadminAdminsHandler_ListAdmins
+2026/01/07 10:49:46 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+2026/01/07 10:49:46 [SetupTestDB] Dropping stale base template: phd_test_base
+2026/01/07 10:49:57 [SetupTestDB] Creating base template database: phd_test_base
+2026/01/07 10:49:58 [SetupTestDB] Dropping stale database phd_test_handlers
+2026/01/07 10:49:59 [SetupTestDB] Cloning database phd_test_handlers from template phd_test_base
+=== RUN   TestSuperadminAdminsHandler_ListAdmins/List_Admins_Success
+--- PASS: TestSuperadminAdminsHandler_ListAdmins (13.53s)
+    --- PASS: TestSuperadminAdminsHandler_ListAdmins/List_Admins_Success (0.00s)
+=== RUN   TestSuperadminAdminsHandler_GetAdmin
+2026/01/07 10:49:59 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_GetAdmin/Get_Admin_Success
+--- PASS: TestSuperadminAdminsHandler_GetAdmin (0.30s)
+    --- PASS: TestSuperadminAdminsHandler_GetAdmin/Get_Admin_Success (0.00s)
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin
+2026/01/07 10:49:59 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success
+    superadmin_admins_test.go:109: 
+        	Error Trace:	/Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go:109
+        	Error:      	Not equal: 
+        	            	expected: 201
+        	            	actual  : 500
+        	Test:       	TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success
+=== RUN   TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Validation_Fail
+--- FAIL: TestSuperadminAdminsHandler_CreateAdmin (0.40s)
+    --- FAIL: TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Success (0.08s)
+    --- PASS: TestSuperadminAdminsHandler_CreateAdmin/Create_Admin_Validation_Fail (0.00s)
+=== RUN   TestSuperadminAdminsHandler_DeleteAdmin
+2026/01/07 10:50:00 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_DeleteAdmin/Delete_Success
+--- PASS: TestSuperadminAdminsHandler_DeleteAdmin (0.33s)
+    --- PASS: TestSuperadminAdminsHandler_DeleteAdmin/Delete_Success (0.00s)
+=== RUN   TestSuperadminAdminsHandler_UpdateAdmin
+2026/01/07 10:50:00 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_UpdateAdmin/Update_Admin_Success
+=== RUN   TestSuperadminAdminsHandler_UpdateAdmin/Update_Admin_Invalid_JSON
+--- PASS: TestSuperadminAdminsHandler_UpdateAdmin (0.36s)
+    --- PASS: TestSuperadminAdminsHandler_UpdateAdmin/Update_Admin_Success (0.00s)
+    --- PASS: TestSuperadminAdminsHandler_UpdateAdmin/Update_Admin_Invalid_JSON (0.00s)
+=== RUN   TestSuperadminAdminsHandler_ResetPassword
+2026/01/07 10:50:01 [SetupTestDB] Caller file: /Users/almatjuvashev/Documents/Projects/KazNMU/kaznmu_phd_bot/checklist/phd-student-portal-starter-v8/backend/internal/handlers/superadmin_admins_test.go, pkgName: handlers
+=== RUN   TestSuperadminAdminsHandler_ResetPassword/Reset_Success
+=== RUN   TestSuperadminAdminsHandler_ResetPassword/Reset_Short_Password
+--- PASS: TestSuperadminAdminsHandler_ResetPassword (0.51s)
+    --- PASS: TestSuperadminAdminsHandler_ResetPassword/Reset_Success (0.07s)
+    --- PASS: TestSuperadminAdminsHandler_ResetPassword/Reset_Short_Password (0.00s)
+FAIL
+FAIL	github.com/AlmatJuvashev/phd-students-portal/backend/internal/handlers	16.075s
+FAIL

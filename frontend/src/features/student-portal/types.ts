@@ -137,3 +137,36 @@ export interface StudentDashboard {
   recent_grades: StudentGradeEntry[];
   announcements: StudentAnnouncement[];
 }
+
+export interface TermGrade {
+  id: string;
+  student_id: string;
+  term_id: string;
+  course_offering_id: string;
+  course_title: string;
+  course_code: string;
+  credits: number;
+  grade: string;
+  grade_points: number;
+  percentage: number;
+  is_passed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TranscriptTerm {
+  term_id: string;
+  term_name: string;
+  term_gpa: number;
+  term_credits: number;
+  grades: TermGrade[];
+}
+
+export interface Transcript {
+  student_id: string;
+  cumulative_gpa: number;
+  total_credits: number;
+  total_points: number;
+  terms: TranscriptTerm[];
+  generated_at: string;
+}

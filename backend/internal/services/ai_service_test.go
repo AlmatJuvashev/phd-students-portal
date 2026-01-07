@@ -23,11 +23,35 @@ func TestAIService_Disabled(t *testing.T) {
 }
 
 func TestAIService_Enabled_ButNoNetwork(t *testing.T) {
-    // This tests the struct initialization essentially
-    cfg := config.AppConfig{OpenAIKey: "sk-test-key"}
-    svc := NewAIService(cfg)
-    
-    // We cannot mock the external SDK easily without an interface wrapper, 
-    // but we can verify the service believes it is enabled.
-    assert.True(t, svc.enabled)
+	// This tests the struct initialization essentially
+	cfg := config.AppConfig{OpenAIKey: "sk-test-key"}
+	svc := NewAIService(cfg)
+
+	// We cannot mock the external SDK easily without an interface wrapper, 
+	// but we can verify the service believes it is enabled.
+	assert.True(t, svc.enabled)
+}
+
+func TestAIService_Methods_Disabled(t *testing.T) {
+	cfg := config.AppConfig{OpenAIKey: ""}
+	svc := NewAIService(cfg)
+	ctx := context.Background()
+
+	t.Run("GenerateQuizConfig", func(t *testing.T) {
+		res, err := svc.GenerateQuizConfig(ctx, "topic", "easy", 5)
+		assert.Error(t, err)
+		assert.Nil(t, res)
+	})
+
+	t.Run("GenerateSurveyConfig", func(t *testing.T) {
+		res, err := svc.GenerateSurveyConfig(ctx, "topic", 5)
+		assert.Error(t, err)
+		assert.Nil(t, res)
+	})
+
+	t.Run("GenerateAssessmentItems", func(t *testing.T) {
+		res, err := svc.GenerateAssessmentItems(ctx, "topic", "multiple_choice", 5)
+		assert.Error(t, err)
+		assert.Nil(t, res)
+	})
 }

@@ -1,5 +1,5 @@
 export type ActivityType = 'text' | 'video' | 'quiz' | 'survey' | 'assignment' | 'resource' | 'live';
-export type QuestionType = 'multiple_choice' | 'multi_select' | 'short_text' | 'ordering' | 'section_header' | 'page_break';
+export type QuestionType = 'multiple_choice' | 'multi_select' | 'short_text' | 'ordering' | 'section_header' | 'page_break' | 'matrix';
 export type FormFieldType = 'text' | 'number' | 'select' | 'date' | 'boolean' | 'upload' | 'collection' | 'note';
 
 export interface FormField {
@@ -31,6 +31,8 @@ export interface QuizQuestion {
     condition: 'equals' | 'not_equals' | 'contains';
     value: string;
   };
+  matrixRows?: string[];
+  matrixCols?: string[];
 }
 
 export interface Attachment {
@@ -65,9 +67,14 @@ export interface AssignmentConfig {
   submission_types: string[]; // 'file_upload', 'text_entry', 'form', 'checklist'
   group_assignment: boolean;
   peer_review: boolean;
+  rubric?: any[]; // Full rubric structure
   rubric_id?: string;
+  points?: number;
+  instruction_files?: { name: string; size: string; type: string }[];
   form_fields?: FormField[]; // Custom form structure for 'form' type
   checklist_config?: ChecklistConfig; // For 'checklist' type
+  allowed_extensions?: string;
+  peer_review_count?: number;
 }
 
 export interface Activity {

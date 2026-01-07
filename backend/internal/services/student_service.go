@@ -38,6 +38,7 @@ type studentSchedulerRepo interface {
 
 type studentCurriculumRepo interface {
 	GetCourse(ctx context.Context, id string) (*models.Course, error)
+	ListCourses(ctx context.Context, tenantID string, programID *string) ([]models.Course, error)
 }
 
 type studentGradingRepo interface {
@@ -59,6 +60,10 @@ type studentForumRepo interface {
 	ListTopics(ctx context.Context, forumID string, limit, offset int) ([]models.Topic, error)
 }
 
+type studentAttendanceRepo interface {
+	RecordAttendance(ctx context.Context, sessionID string, record models.ClassAttendance) error
+}
+
 type StudentService struct {
 	userRepo      studentUserRepo
 	journeyRepo   studentJourneyRepo
@@ -68,6 +73,7 @@ type StudentService struct {
 	gradingRepo   studentGradingRepo
 	contentRepo   studentCourseContentRepo
 	forumRepo     studentForumRepo
+	attendanceRepo studentAttendanceRepo
 	pb            *pb.Manager
 }
 
@@ -80,6 +86,7 @@ func NewStudentService(
 	gradingRepo studentGradingRepo,
 	contentRepo studentCourseContentRepo,
 	forumRepo studentForumRepo,
+	attendanceRepo studentAttendanceRepo,
 	pbm *pb.Manager,
 ) *StudentService {
 	return &StudentService{
@@ -91,6 +98,7 @@ func NewStudentService(
 		gradingRepo:   gradingRepo,
 		contentRepo:   contentRepo,
 		forumRepo:     forumRepo,
+		attendanceRepo: attendanceRepo,
 		pb:            pbm,
 	}
 }
@@ -809,4 +817,35 @@ func (s *StudentService) ensureActivityBelongsToOffering(ctx context.Context, ac
 		return errors.New("activity does not belong to this course offering")
 	}
 	return nil
+}
+
+func (s *StudentService) ListAvailableCourses(ctx context.Context, tenantID string) ([]models.Course, error) {
+	courses, err := s.currRepo.ListCourses(ctx, tenantID, nil)
+	if err != nil {
+		return nil, err
+	}
+	return courses, nil
+}
+
+// CheckIn allows a student to self-check-in to a session via code or QR
+func (s *StudentService) CheckIn(ctx context.Context, tenantID, userID, sessionID, code string) error {
+	// 1. In a real app, verify code matches session code.
+	// For demo, we trust the student scanning the QR code (which contains sessionID).
+    
+    if s.attendanceRepo == nil {
+        return errors.New("attendance repo not configured")
+    }
+
+	// Double check session exists? Or just record.
+	// We'll just record.
+
+    rec := models.ClassAttendance{
+        ClassSessionID: sessionID,
+        StudentID:      userID,
+        Status:         "PRESENT",
+        Notes:          "Self check-in via QR",
+        RecordedByID:   userID, // Check-in by self
+    }
+
+	return s.attendanceRepo.RecordAttendance(ctx, sessionID, rec)
 }

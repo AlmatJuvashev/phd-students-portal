@@ -50,6 +50,8 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ isOpen, onCl
       options: ['multiple_choice', 'multi_select'].includes(type) 
         ? [{ id: `o${Date.now()}_1`, text: 'Option 1', is_correct: true }, { id: `o${Date.now()}_2`, text: 'Option 2', is_correct: false }] 
         : undefined,
+      matrixRows: type === 'matrix' ? ['Statement 1', 'Statement 2'] : undefined,
+      matrixCols: type === 'matrix' ? ['Disagree', 'Neutral', 'Agree'] : undefined,
     };
     setQuestions([...questions, newQ]);
     setActiveQuestionId(newQ.id);
@@ -93,9 +95,10 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ isOpen, onCl
                      {[
                         { id: 'multiple_choice', icon: CheckSquare, label: 'Choice' },
                         { id: 'short_text', icon: MessageCircle, label: 'Text' },
-                        { id: 'ordering', icon: Layers, label: 'Order' },
-                        { id: 'section_header', icon: Bookmark, label: 'Section' }
-                     ].map(type => (
+                         { id: 'matrix', icon: TableIcon, label: 'Matrix' },
+                         { id: 'ordering', icon: Layers, label: 'Order' },
+                         { id: 'section_header', icon: Bookmark, label: 'Section' }
+                      ].map(type => (
                          <button 
                             key={type.id}
                             onClick={() => addQuestion(type.id as QuestionType)}
@@ -157,51 +160,129 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ isOpen, onCl
                                     />
                                 </div>
 
-                                {/* Options Editor */}
-                                {['multiple_choice', 'multi_select'].includes(activeQuestion.type) && (
-                                    <div className="space-y-4">
-                                        <label className="text-xs font-black text-slate-400 uppercase">Answer Options</label>
-                                        <div className="space-y-2">
-                                            {activeQuestion.options?.map((opt, idx) => (
-                                                <div key={opt.id} className="flex items-center gap-3 p-2 rounded-lg border border-transparent hover:border-slate-200 group">
-                                                    <button 
-                                                        onClick={() => {
-                                                            const newOpts = activeQuestion.options?.map(o => 
-                                                                activeQuestion.type === 'multiple_choice'
-                                                                    ? { ...o, is_correct: o.id === opt.id }
-                                                                    : (o.id === opt.id ? { ...o, is_correct: !o.is_correct } : o)
-                                                            );
-                                                            updateActiveQuestion({ options: newOpts });
-                                                        }}
-                                                        className={cn(
-                                                            "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
-                                                            opt.is_correct ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-300 text-slate-300"
-                                                        )}
-                                                    >
-                                                        {opt.is_correct && <CheckSquare size={14} />}
-                                                    </button>
-                                                    <Input 
-                                                        value={opt.text}
-                                                        onChange={(e) => {
-                                                            const newOpts = [...(activeQuestion.options || [])];
-                                                            newOpts[idx].text = e.target.value;
-                                                            updateActiveQuestion({ options: newOpts });
-                                                        }}
-                                                        className="flex-1"
-                                                    />
-                                                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100" onClick={() => {
-                                                        const newOpts = activeQuestion.options?.filter(o => o.id !== opt.id);
-                                                        updateActiveQuestion({ options: newOpts });
-                                                    }}><X size={14}/></Button>
-                                                </div>
-                                            ))}
-                                            <Button variant="outline" size="sm" onClick={() => {
-                                                const newOpts = [...(activeQuestion.options || []), { id: `o${Date.now()}`, text: '', is_correct: false }];
-                                                updateActiveQuestion({ options: newOpts });
-                                            }} className="ml-11 border-dashed text-slate-500"><Plus size={14} className="mr-2"/> Add Option</Button>
+                            {/* Matrix Editor */}
+                            {activeQuestion.type === 'matrix' && (
+                                <div className="space-y-6">
+                                    <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 mb-4">
+                                        <h4 className="flex items-center gap-2 text-xs font-black uppercase text-indigo-700 mb-2">
+                                            <TableIcon size={14} /> Matrix Configuration
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            {/* Rows */}
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase">Rows (Statements)</label>
+                                                {activeQuestion.matrixRows?.map((row, idx) => (
+                                                    <div key={idx} className="flex gap-2">
+                                                        <Input 
+                                                            value={row} 
+                                                            className="h-8 text-xs font-bold bg-white" 
+                                                            onChange={(e) => {
+                                                                const newRows = [...(activeQuestion.matrixRows || [])];
+                                                                newRows[idx] = e.target.value;
+                                                                updateActiveQuestion({ matrixRows: newRows });
+                                                            }} 
+                                                        />
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-500" onClick={() => updateActiveQuestion({ matrixRows: activeQuestion.matrixRows?.filter((_, i) => i !== idx) })}><X size={14} /></Button>
+                                                    </div>
+                                                ))}
+                                                <Button size="sm" variant="outline" className="w-full border-dashed text-xs" onClick={() => updateActiveQuestion({ matrixRows: [...(activeQuestion.matrixRows || []), 'New Statement'] })}><Plus size={12} className="mr-1"/> Add Row</Button>
+                                            </div>
+
+                                            {/* Columns */}
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase">Columns (Scale)</label>
+                                                {activeQuestion.matrixCols?.map((col, idx) => (
+                                                    <div key={idx} className="flex gap-2">
+                                                        <Input 
+                                                            value={col} 
+                                                            className="h-8 text-xs font-bold bg-white" 
+                                                            onChange={(e) => {
+                                                                const newCols = [...(activeQuestion.matrixCols || [])];
+                                                                newCols[idx] = e.target.value;
+                                                                updateActiveQuestion({ matrixCols: newCols });
+                                                            }} 
+                                                        />
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-500" onClick={() => updateActiveQuestion({ matrixCols: activeQuestion.matrixCols?.filter((_, i) => i !== idx) })}><X size={14} /></Button>
+                                                    </div>
+                                                ))}
+                                                <Button size="sm" variant="outline" className="w-full border-dashed text-xs" onClick={() => updateActiveQuestion({ matrixCols: [...(activeQuestion.matrixCols || []), 'New Label'] })}><Plus size={12} className="mr-1"/> Add Column</Button>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
+                                    
+                                    {/* Preview */}
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 overflow-x-auto shadow-inner">
+                                        <table className="w-full text-xs">
+                                            <thead>
+                                                <tr>
+                                                    <th className="p-2 text-left text-slate-400 uppercase font-black">Statement</th>
+                                                    {activeQuestion.matrixCols?.map((col, idx) => (
+                                                        <th key={idx} className="p-2 text-center text-slate-700 font-bold">{col}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {activeQuestion.matrixRows?.map((row, rIdx) => (
+                                                    <tr key={rIdx} className="border-t border-slate-200">
+                                                        <td className="p-3 font-medium text-slate-600">{row}</td>
+                                                        {activeQuestion.matrixCols?.map((_, cIdx) => (
+                                                            <td key={cIdx} className="p-3 text-center">
+                                                                <div className="w-4 h-4 rounded-full border-2 border-slate-300 mx-auto" />
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Options Editor */}
+                            {['multiple_choice', 'multi_select'].includes(activeQuestion.type) && (
+                                <div className="space-y-4">
+                                    <label className="text-xs font-black text-slate-400 uppercase">Answer Options</label>
+                                    <div className="space-y-2">
+                                        {activeQuestion.options?.map((opt, idx) => (
+                                            <div key={opt.id} className="flex items-center gap-3 p-2 rounded-lg border border-transparent hover:border-slate-200 group">
+                                                <button 
+                                                    onClick={() => {
+                                                        const newOpts = activeQuestion.options?.map(o => 
+                                                            activeQuestion.type === 'multiple_choice'
+                                                                ? { ...o, is_correct: o.id === opt.id }
+                                                                : (o.id === opt.id ? { ...o, is_correct: !o.is_correct } : o)
+                                                        );
+                                                        updateActiveQuestion({ options: newOpts });
+                                                    }}
+                                                    className={cn(
+                                                        "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
+                                                        opt.is_correct ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-300 text-slate-300"
+                                                    )}
+                                                >
+                                                    {opt.is_correct && <CheckSquare size={14} />}
+                                                </button>
+                                                <Input 
+                                                    value={opt.text}
+                                                    onChange={(e) => {
+                                                        const newOpts = [...(activeQuestion.options || [])];
+                                                        newOpts[idx].text = e.target.value;
+                                                        updateActiveQuestion({ options: newOpts });
+                                                    }}
+                                                    className="flex-1"
+                                                />
+                                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100" onClick={() => {
+                                                    const newOpts = activeQuestion.options?.filter(o => o.id !== opt.id);
+                                                    updateActiveQuestion({ options: newOpts });
+                                                }}><X size={14}/></Button>
+                                            </div>
+                                        ))}
+                                        <Button variant="outline" size="sm" onClick={() => {
+                                            const newOpts = [...(activeQuestion.options || []), { id: `o${Date.now()}`, text: '', is_correct: false }];
+                                            updateActiveQuestion({ options: newOpts });
+                                        }} className="ml-11 border-dashed text-slate-500"><Plus size={14} className="mr-2"/> Add Option</Button>
+                                    </div>
+                                </div>
+                            )}
 
                                 {/* Points */}
                                 <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">

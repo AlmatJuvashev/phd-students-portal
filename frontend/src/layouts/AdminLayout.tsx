@@ -23,6 +23,7 @@ import {
   BarChart3,
   PhoneCall,
   CalendarClock,
+  ClipboardCheck,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -32,6 +33,7 @@ import { AdminNotificationCenter } from "@/components/AdminNotificationCenter";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 function SidebarNav({ collapsed }: { collapsed?: boolean }) {
   const { t } = useTranslation("common");
@@ -96,6 +98,18 @@ function SidebarNav({ collapsed }: { collapsed?: boolean }) {
         {!collapsed && (
           <span>{t("admin.sidebar.students_monitor", "Students Monitor")}</span>
         )}
+      </NavLink>
+      <NavLink
+        to="/admin/assessments"
+        className={cn(
+          "flex items-center gap-2 rounded px-3 py-2 hover:bg-muted",
+          isActive("/admin/assessments") && "bg-muted font-medium",
+          collapsed && "justify-center px-2"
+        )}
+        title="Assessments"
+      >
+        <ClipboardCheck className="h-4 w-4" />
+        {!collapsed && <span>Assessments</span>}
       </NavLink>
       <NavLink
         to="/admin/notifications"
@@ -320,6 +334,7 @@ export function AdminLayout() {
             <span className="font-medium">{user?.email}</span>
           </div>
           <div className="flex items-center gap-3">
+            <GlobalSearch />
             <TenantSwitcher />
             <LanguageSwitcher />
             <AdminNotificationCenter />

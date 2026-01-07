@@ -76,3 +76,37 @@ func TestAnalyticsService_GetMonitorMetrics(t *testing.T) {
 		assert.Equal(t, 25.0, metrics.StageMedianDays)
 	})
 }
+
+func TestAnalyticsService_HighRisk(t *testing.T) {
+	mockRepo := new(MockAnalyticsRepository)
+	service := NewAnalyticsService(mockRepo, nil, nil, nil)
+	ctx := context.Background()
+
+	t.Run("GetHighRiskStudents", func(t *testing.T) {
+		expected := []models.RiskSnapshot{{StudentID: "s1", RiskScore: 0.85}}
+		mockRepo.On("GetHighRiskStudents", ctx, 0.7).Return(expected, nil)
+
+		res, err := service.GetHighRiskStudents(ctx, 0.7)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+}
+
+func TestAnalyticsService_PassThroughs(t *testing.T) {
+	mockRepo := new(MockAnalyticsRepository)
+	service := NewAnalyticsService(mockRepo, nil, nil, nil)
+	ctx := context.Background()
+
+	mockRepo.On("GetStudentsByStage", ctx).Return([]models.StudentStageStats{}, nil)
+	mockRepo.On("GetAdvisorLoad", ctx).Return([]models.AdvisorLoadStats{}, nil)
+	mockRepo.On("GetOverdueTasks", ctx).Return([]models.OverdueTaskStats{}, nil)
+
+	_, err := service.GetStudentsByStage(ctx)
+	assert.NoError(t, err)
+
+	_, err = service.GetAdvisorLoad(ctx)
+	assert.NoError(t, err)
+
+	_, err = service.GetOverdueTasks(ctx)
+	assert.NoError(t, err)
+}
