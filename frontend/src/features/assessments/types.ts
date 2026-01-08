@@ -31,3 +31,45 @@ export interface AssessmentListFilters {
   status?: string;
   search?: string;
 }
+
+export type QuestionType = 'MCQ' | 'TRUE_FALSE' | 'TEXT' | 'MRQ' | 'LIKERT';
+
+export interface QuestionOption {
+  id: string;
+  text: string;
+  is_correct: boolean;
+  feedback?: string;
+}
+
+export interface Question {
+  id: string;
+  type: QuestionType;
+  stem: string;
+  options?: QuestionOption[];
+  sort_order: number;
+}
+
+export interface Attempt {
+  id: string;
+  user_id: string;
+  assessment_id: string;
+  status: 'IN_PROGRESS' | 'SUBMITTED' | 'GRADED';
+  started_at: string;
+  completed_at?: string;
+  score: number;
+  grade?: string;
+}
+
+export interface AttemptDetailsResponse {
+  assessment: Assessment;
+  questions: Question[];
+  attempt: Attempt;
+  responses: Array<{
+    id: string;
+    question_id: string;
+    selected_option_id?: string;
+    text_response?: string;
+    is_correct?: boolean;
+    score?: number;
+  }>;
+}
