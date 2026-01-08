@@ -950,22 +950,29 @@
     "nodes": "Nodes"
   },
   "curriculum": {
-    "programs": {
-      "title": "Active Curricula",
-      "subtitle": "Select a program to manage enrollments and cohorts.",
-      "search_placeholder": "Search programs...",
-      "no_programs": "No programs found. Use Studio to create and publish new curricula.",
-      "stats": {
-        "students": "Students",
-        "completion": "Completion"
+      "programs": {
+        "title": "Programs",
+        "subtitle": "Manage academic programs.",
+        "add": "Add Program",
+        "add_title": "Add New Program",
+        "name_placeholder": "Program name",
+        "create_success": "Program created",
+        "created": "Program created",
+        "create_error": "Failed to create program",
+        "updated": "Program updated",
+        "update_error": "Failed to update program",
+        "deleted": "Program deleted",
+        "delete_confirm": "Are you sure you want to delete this program?",
+        "empty": "No programs found.",
+        "edit_title": "Edit Program",
+        "search_placeholder": "Search programs...",
+        "status": {
+            "all": "All",
+            "active": "Active",
+            "draft": "Draft",
+            "archived": "Archived"
+        }
       },
-      "status": {
-        "all": "All",
-        "active": "Active",
-        "draft": "Draft",
-        "archived": "Archived"
-      }
-    },
     "inventory": {
       "title": "Course Inventory",
       "subtitle": "Available content modules for scheduling. Created in Studio.",
