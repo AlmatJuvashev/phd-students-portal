@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -352,4 +353,68 @@ func TestTeacherService_GetStudentActivity(t *testing.T) {
 	assert.Len(t, events, 2)
 	assert.Equal(t, "grade", events[0].Kind) // newer first
 	assert.Equal(t, "submission", events[1].Kind)
+}
+
+func TestTeacherService_GetGradebook(t *testing.T) {
+	mockGrading := new(MockGradingRepo)
+	svc := NewTeacherService(nil, nil, mockGrading, nil)
+
+	offeringID := "off-1"
+	expected := []models.GradebookEntry{
+		{StudentID: "s1", ActivityID: "a1", Score: 90},
+	}
+	mockGrading.On("ListEntries", mock.Anything, offeringID).Return(expected, nil)
+
+	result, err := svc.GetGradebook(context.Background(), offeringID)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
+func TestTeacherService_GetCourseAtRisk(t *testing.T) {
+	mockSched := new(MockSchedulerRepo)
+	mockLMS := new(MockLMSRepo)
+	mockGrading := new(MockGradingRepo)
+	mockContent := new(MockContentRepo) // Need content repo to avoid nil check in countOfferingWorkItems
+
+	svc := NewTeacherService(mockSched, mockLMS, mockGrading, mockContent)
+
+	offeringID := "off-1"
+
+	// 1. Roster
+	mockLMS.On("GetCourseRoster", mock.Anything, offeringID).Return([]models.CourseEnrollment{
+		{StudentID: "safe", StudentName: "Safe Student"},
+		{StudentID: "risk", StudentName: "Risky Student"},
+	}, nil)
+
+	// 2. Content (Total Items = 10)
+	mockSched.On("GetOffering", mock.Anything, offeringID).Return(&models.CourseOffering{CourseID: "c1"}, nil)
+	mockContent.On("ListModules", mock.Anything, "c1").Return([]models.CourseModule{{ID: "m1"}}, nil)
+	mockContent.On("ListLessons", mock.Anything, "m1").Return([]models.CourseLesson{{ID: "l1"}}, nil)
+	// 10 assignments
+	var acts []models.CourseActivity
+	for i := 0; i < 10; i++ {
+		acts = append(acts, models.CourseActivity{ID: fmt.Sprintf("a%d", i), Type: "assignment"})
+	}
+	mockContent.On("ListActivities", mock.Anything, "l1").Return(acts, nil)
+
+	// 3. Submissions
+	// Safe student: Submitted all 10
+	// Risky student: Submitted 0
+	var subs []models.ActivitySubmission
+	for i := 0; i < 10; i++ {
+		subs = append(subs, models.ActivitySubmission{StudentID: "safe", ActivityID: fmt.Sprintf("a%d", i), Status: "SUBMITTED", SubmittedAt: time.Now()})
+	}
+	mockLMS.On("ListSubmissions", mock.Anything, offeringID).Return(subs, nil)
+
+	// 4. Grades
+	mockGrading.On("ListEntries", mock.Anything, offeringID).Return([]models.GradebookEntry{}, nil)
+
+	// Run
+	profiles, err := svc.GetCourseAtRisk(context.Background(), offeringID)
+	assert.NoError(t, err)
+	
+	// Expect only "risk" student
+	assert.Len(t, profiles, 1)
+	assert.Equal(t, "risk", profiles[0].StudentID)
+	assert.Contains(t, []string{"high", "critical"}, profiles[0].RiskLevel)
 }

@@ -11,13 +11,18 @@ backend/tmp/
 backend/.gocache/
 backend/.env
 backend/uploads/
+backend/*.out
+backend/*.test
+backend/test_output.txt
+*.pkg
+*.zip
 
 # Mock data (development only)
 mocks/credentials.txt
 mocks/*.txt
 
 # UI examples and prototypes
-# ui-examples/
+ui-examples/
 
 # OS/editor
 .DS_Store

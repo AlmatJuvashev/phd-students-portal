@@ -78,3 +78,58 @@ func TestGovernanceService_ReviewProposal(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestGovernanceService_SubmitProposal(t *testing.T) {
+	mockRepo := new(MockGovernanceRepo)
+	svc := NewGovernanceService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("Submit Valid Proposal", func(t *testing.T) {
+		proposal := &models.Proposal{
+			Title: "New Policy",
+		}
+		
+		mockRepo.On("CreateProposal", ctx, mock.MatchedBy(func(p *models.Proposal) bool {
+			return p.Status == "pending" && p.CurrentStep == 1 && string(p.Data) == "{}"
+		})).Return(nil)
+
+		err := svc.SubmitProposal(ctx, proposal)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Submit Empty Title", func(t *testing.T) {
+		proposal := &models.Proposal{
+			Title: "",
+		}
+		err := svc.SubmitProposal(ctx, proposal)
+		assert.Error(t, err)
+		assert.Equal(t, "title is required", err.Error())
+	})
+}
+
+func TestGovernanceService_ReadOps(t *testing.T) {
+	mockRepo := new(MockGovernanceRepo)
+	svc := NewGovernanceService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("ListProposals", func(t *testing.T) {
+		mockRepo.On("ListProposals", ctx, "t1", "pending").Return([]models.Proposal{{ID: "p1"}}, nil)
+		res, err := svc.ListProposals(ctx, "t1", "pending")
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+	})
+
+	t.Run("GetProposal", func(t *testing.T) {
+		mockRepo.On("GetProposal", ctx, "p1").Return(&models.Proposal{ID: "p1"}, nil)
+		res, err := svc.GetProposal(ctx, "p1")
+		assert.NoError(t, err)
+		assert.Equal(t, "p1", res.ID)
+	})
+
+	t.Run("GetReviews", func(t *testing.T) {
+		mockRepo.On("ListReviews", ctx, "p1").Return([]models.ProposalReview{{ID: "r1"}}, nil)
+		res, err := svc.GetReviews(ctx, "p1")
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+	})
+}

@@ -118,6 +118,28 @@ func TestCourseContentHandler_CreateModule(t *testing.T) {
 
 	h.CreateModule(c)
 	assert.Equal(t, http.StatusCreated, w.Code)
+
+	// Error Cases
+	t.Run("BindError", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/modules", strings.NewReader(`invalid-json`))
+		h.CreateModule(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("ServiceError", func(t *testing.T) {
+		h, repo := setupCourseContentHandler()
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		body := `{"course_id":"c1", "title":"M1"}`
+		c.Request, _ = http.NewRequest("POST", "/modules", strings.NewReader(body))
+		
+		repo.On("CreateModule", mock.Anything, mock.Anything).Return(assert.AnError).Once()
+		
+		h.CreateModule(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }
 
 func TestCourseContentHandler_UpdateModule(t *testing.T) {
@@ -176,6 +198,28 @@ func TestCourseContentHandler_CreateLesson(t *testing.T) {
 
 	h.CreateLesson(c)
 	assert.Equal(t, http.StatusCreated, w.Code)
+
+	// Error Cases
+	t.Run("BindError", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/lessons", strings.NewReader(`invalid`))
+		h.CreateLesson(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("ServiceError", func(t *testing.T) {
+		h, repo := setupCourseContentHandler()
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		body := `{"module_id":"m1", "title":"L1"}`
+		c.Request, _ = http.NewRequest("POST", "/lessons", strings.NewReader(body))
+		
+		repo.On("CreateLesson", mock.Anything, mock.Anything).Return(assert.AnError).Once()
+		
+		h.CreateLesson(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }
 
 func TestCourseContentHandler_UpdateLesson(t *testing.T) {
@@ -234,6 +278,28 @@ func TestCourseContentHandler_CreateActivity(t *testing.T) {
 
 	h.CreateActivity(c)
 	assert.Equal(t, http.StatusCreated, w.Code)
+
+	// Error Cases
+	t.Run("BindError", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/activities", strings.NewReader(`invalid`))
+		h.CreateActivity(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("ServiceError", func(t *testing.T) {
+		h, repo := setupCourseContentHandler()
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		body := `{"lesson_id":"l1", "title":"A1", "type":"quiz"}`
+		c.Request, _ = http.NewRequest("POST", "/activities", strings.NewReader(body))
+		
+		repo.On("CreateActivity", mock.Anything, mock.Anything).Return(assert.AnError).Once()
+		
+		h.CreateActivity(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }
 
 func TestCourseContentHandler_UpdateActivity(t *testing.T) {

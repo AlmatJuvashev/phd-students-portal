@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/scheduler/solver"
+
 	// "github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository" // Interface is reused from code under test
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -120,6 +122,9 @@ type MockSchedResourceRepo struct {
 }
 func (m *MockSchedResourceRepo) GetRoom(ctx context.Context, id string) (*models.Room, error) {
 	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).(*models.Room), args.Error(1)
 }
 // Stubs
@@ -702,4 +707,111 @@ func TestSchedulerService_AutoSchedule(t *testing.T) {
 		assert.NotNil(t, solution)
 		assert.NotNil(t, solution.Assignments)
 	})
+}
+
+// TestSchedulerService_DepartmentConflict tests department mismatch
+func TestSchedulerService_DepartmentConflict(t *testing.T) {
+	mockRepo := new(MockSchedulerRepo)
+	mockResource := new(MockSchedResourceRepo)
+	mockCurriculum := new(MockCurriculumRepo)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, new(MockUserRepository), new(MockMailer))
+	ctx := context.Background()
+	
+	offeringID := "off-dept"
+	roomID := "room-dept"
+	courseID := "course-CS"
+	deptCS := "CS"
+	deptBio := "BIO"
+
+	mockRepo.On("GetOffering", ctx, offeringID).Return(&models.CourseOffering{ID: offeringID, CourseID: courseID, MaxCapacity: 20}, nil)
+	mockResource.On("GetRoom", ctx, roomID).Return(&models.Room{ID: roomID, Capacity: 30, DepartmentID: &deptBio}, nil)
+	mockCurriculum.On("GetCourse", ctx, courseID).Return(&models.Course{ID: courseID, DepartmentID: &deptCS}, nil)
+	
+	// No other conflicts
+	mockRepo.On("ListSessionsByRoom", ctx, roomID, mock.Anything, mock.Anything).Return([]models.ClassSession{}, nil)
+
+	// Mock passing attribute check
+	mockCurriculum.On("GetCourseRequirements", ctx, courseID).Return([]models.CourseRequirement{}, nil)
+
+	// Mock passing cohort check
+	mockRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
+
+	session := &models.ClassSession{CourseOfferingID: offeringID, Date: time.Now(), StartTime: "10:00", EndTime: "11:00", RoomID: &roomID}
+	
+	// Explicit SOFT constraint to expect warning
+	config := &solver.SolverConfig{DepartmentConstraint: "SOFT"}
+
+	warnings, err := svc.CheckConflicts(ctx, session, config)
+	assert.NoError(t, err)
+	if assert.NotEmpty(t, warnings) {
+		assert.Contains(t, warnings[0], "Department Mismatch")
+	}
+}
+
+// TestSchedulerService_AttributeConflict tests room attribute requirements
+func TestSchedulerService_AttributeConflict(t *testing.T) {
+	mockRepo := new(MockSchedulerRepo)
+	mockResource := new(MockSchedResourceRepo)
+	mockCurriculum := new(MockCurriculumRepo)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, new(MockUserRepository), new(MockMailer))
+	ctx := context.Background()
+
+	offeringID := "off-attr"
+	roomID := "room-attr"
+	courseID := "course-lab"
+
+	mockRepo.On("GetOffering", ctx, offeringID).Return(&models.CourseOffering{ID: offeringID, CourseID: courseID, MaxCapacity: 20}, nil)
+	mockResource.On("GetRoom", ctx, roomID).Return(&models.Room{ID: roomID, Capacity: 30}, nil)
+	mockRepo.On("ListSessionsByRoom", ctx, roomID, mock.Anything, mock.Anything).Return([]models.ClassSession{}, nil)
+	mockCurriculum.On("GetCourse", ctx, courseID).Return(nil, nil) // Dept check skip
+
+	// Requirements: Projector=True
+	mockCurriculum.On("GetCourseRequirements", ctx, courseID).Return([]models.CourseRequirement{{Key: "Projector", Value: "True"}}, nil)
+	// Room Attributes: None
+	mockResource.On("GetRoomAttributes", ctx, roomID).Return([]models.RoomAttribute{}, nil)
+
+	// Mock passing cohort check
+	mockRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{}, nil)
+
+	session := &models.ClassSession{CourseOfferingID: offeringID, Date: time.Now(), StartTime: "10:00", EndTime: "11:00", RoomID: &roomID}
+
+	warnings, err := svc.CheckConflicts(ctx, session, nil)
+	assert.NoError(t, err)
+	if assert.NotEmpty(t, warnings) {
+		assert.Contains(t, warnings[0], "Room missing required attribute")
+	}
+}
+
+// TestSchedulerService_CohortConflict tests cohort scheduling overlap
+func TestSchedulerService_CohortConflict(t *testing.T) {
+	mockRepo := new(MockSchedulerRepo)
+	mockResource := new(MockSchedResourceRepo)
+	mockCurriculum := new(MockCurriculumRepo)
+	svc := NewSchedulerService(mockRepo, mockResource, mockCurriculum, new(MockUserRepository), new(MockMailer))
+	ctx := context.Background()
+
+	offeringID := "off-cohort"
+	testDate := time.Now()
+	
+	mockRepo.On("GetOffering", ctx, offeringID).Return(&models.CourseOffering{ID: offeringID, MaxCapacity: 20}, nil)
+	// Skip Room/Instructor checks by not providing IDs or mocking basic success
+	session := &models.ClassSession{CourseOfferingID: offeringID, Date: testDate, StartTime: "10:00", EndTime: "11:00"}
+
+	// Cohorts
+	mockRepo.On("GetOfferingCohorts", ctx, offeringID).Return([]string{"cohort1"}, nil)
+	
+	// Existing session for cohort: 10:30-11:30 (Overlap!)
+	existing := []models.ClassSession{
+		{ID: "ex1", StartTime: "10:30", EndTime: "11:30"},
+	}
+	mockRepo.On("ListSessionsForCohorts", ctx, []string{"cohort1"}, testDate, testDate).Return(existing, nil)
+	
+	// Explicit SOFT constraint for Time (which controls cohort overlap logic in implementation)
+	config := &solver.SolverConfig{TimeConflictConstraint: "SOFT"}
+
+	warnings, err := svc.CheckConflicts(ctx, session, config)
+	assert.NoError(t, err)
+	if assert.NotEmpty(t, warnings) {
+		assert.Contains(t, warnings[0], "Scheduling conflict for Student Cohort(s)")
+	}
 }

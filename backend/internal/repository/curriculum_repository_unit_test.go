@@ -270,9 +270,10 @@ func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
 			ID: "nd1",
 			Title: "Updated",
 			Prerequisites: []string{"a"},
+			Slug: "node-1",
 		}
 		mock.ExpectExec("UPDATE program_version_node_definitions").
-			WithArgs("Updated", "", "", "", pq.Array([]string{"a"}), "", "", "nd1").
+			WithArgs("Updated", "", "", "", pq.Array([]string{"a"}), "", "", "node-1", nil, "nd1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 			
 		err := repo.UpdateNodeDefinition(ctx, nd)

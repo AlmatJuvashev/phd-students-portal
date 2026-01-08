@@ -2,9 +2,14 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
+)
+
+const (
+	PlatformTenantID = "00000000-0000-0000-0000-000000000000"
 )
 
 type TenantService struct {
@@ -52,10 +57,16 @@ func (s *TenantService) Create(ctx context.Context, t *models.Tenant) (string, e
 }
 
 func (s *TenantService) Update(ctx context.Context, id string, updates map[string]interface{}) (*models.Tenant, error) {
+	if id == PlatformTenantID {
+		return nil, fmt.Errorf("Superadmin Tenant is a reserved system resource and cannot be modified")
+	}
 	return s.repo.Update(ctx, id, updates)
 }
 
 func (s *TenantService) Delete(ctx context.Context, id string) error {
+	if id == PlatformTenantID {
+		return fmt.Errorf("Superadmin Tenant is a reserved system resource and cannot be deleted")
+	}
 	return s.repo.Delete(ctx, id)
 }
 

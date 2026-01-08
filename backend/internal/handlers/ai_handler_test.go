@@ -41,4 +41,26 @@ func TestAIHandler_DisabledState(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})
+
+	t.Run("GenerateSurvey", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		body, _ := json.Marshal(GenerateSurveyRequest{Topic: "Topic"})
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/generate-survey", bytes.NewBuffer(body))
+
+		h.GenerateSurvey(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("GenerateAssessmentItems", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		body, _ := json.Marshal(GenerateAssessmentItemsRequest{Topic: "Topic"})
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/generate-assessment-items", bytes.NewBuffer(body))
+
+		h.GenerateAssessmentItems(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
 }

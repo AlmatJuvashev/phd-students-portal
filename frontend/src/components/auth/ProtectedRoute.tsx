@@ -25,17 +25,24 @@ export function ProtectedRoute({ children, fallback, requiredRole, requiredAnyRo
     )
   }
 
-  // Backward-compat: requiredRole OR new requiredAnyRole
+  // Check against active_role if available, otherwise fallback to role
   if (requiredRole || (requiredAnyRole && requiredAnyRole.length > 0)) {
-    const allowed = new Set<Role>([ 'superadmin', 'admin' ])
-    if (requiredRole) allowed.add(requiredRole as Role)
+    const allowed = new Set<string>([ 'superadmin', 'admin' ])
+    if (requiredRole) allowed.add(requiredRole)
     if (requiredAnyRole) requiredAnyRole.forEach(r => allowed.add(r))
-    const roleOk = allowed.has(user.role)
+    
+    // Check active_role first
+    const currentRole = user.active_role || user.role
+    const roleOk = allowed.has(currentRole)
+    
     if (!roleOk) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-2">
           <h1 className="text-xl font-semibold">Доступ запрещён</h1>
-          <p className="text-sm text-muted-foreground">У вас нет прав для просмотра этой страницы</p>
+          <p className="text-sm text-muted-foreground">
+             Ваша текущая роль ({currentRole}) не имеет доступа к этой странице. 
+             {user.available_roles && user.available_roles.length > 1 && " Попробуйте переключить роль."}
+          </p>
         </div>
       )
     }

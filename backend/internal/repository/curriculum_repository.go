@@ -206,9 +206,9 @@ func (r *SQLCurriculumRepository) GetNodeDefinition(ctx context.Context, id stri
 func (r *SQLCurriculumRepository) UpdateNodeDefinition(ctx context.Context, nd *models.JourneyNodeDefinition) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE program_version_node_definitions 
-		SET title=$1, description=$2, coordinates=$3, config=$4, prerequisites=$5, module_key=$6, type=$7, updated_at=now()
-		WHERE id=$8`,
-		nd.Title, nd.Description, nd.Coordinates, nd.Config, pq.Array(nd.Prerequisites), nd.ModuleKey, nd.Type, nd.ID)
+		SET title=$1, description=$2, coordinates=$3, config=$4, prerequisites=$5, module_key=$6, type=$7, slug=$8, parent_node_id=$9, updated_at=now()
+		WHERE id=$10`,
+		nd.Title, nd.Description, nd.Coordinates, nd.Config, pq.Array(nd.Prerequisites), nd.ModuleKey, nd.Type, nd.Slug, nd.ParentNodeID, nd.ID)
 	return err
 }
 

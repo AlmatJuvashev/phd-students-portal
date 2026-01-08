@@ -9,98 +9,129 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockRubricRepo
-type MockRubricRepo struct {
-	mock.Mock
-}
-
-func (m *MockRubricRepo) CreateRubric(ctx context.Context, r *models.Rubric) error {
-	return m.Called(ctx, r).Error(0)
-}
-func (m *MockRubricRepo) GetRubric(ctx context.Context, id string) (*models.Rubric, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Rubric), args.Error(1)
-}
-func (m *MockRubricRepo) ListRubrics(ctx context.Context, courseID string) ([]models.Rubric, error) {
-	args := m.Called(ctx, courseID)
-	return args.Get(0).([]models.Rubric), args.Error(1)
-}
-func (m *MockRubricRepo) SubmitGrade(ctx context.Context, g *models.RubricGrade) error {
-	return m.Called(ctx, g).Error(0)
-}
-func (m *MockRubricRepo) GetGrade(ctx context.Context, submissionID string) (*models.RubricGrade, error) {
-	args := m.Called(ctx, submissionID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.RubricGrade), args.Error(1)
-}
-
 func TestRubricService_CreateRubric(t *testing.T) {
-	mockRepo := new(MockRubricRepo)
-	svc := NewRubricService(mockRepo)
+	repo := new(MockRubricRepository)
+	svc := NewRubricService(repo)
 	ctx := context.Background()
 
-	// 1. Fail if no criteria
-	r1 := &models.Rubric{Title: "Empty"}
-	_, err := svc.CreateRubric(ctx, r1)
-	assert.Error(t, err)
+	t.Run("Success", func(t *testing.T) {
+		r := &models.Rubric{
+			CourseOfferingID: "c1",
+			Title: "Essay Rubric",
+			Criteria: []models.RubricCriterion{{Title: "Grammar"}},
+		}
+		repo.On("CreateRubric", ctx, r).Return(nil)
+		
+		res, err := svc.CreateRubric(ctx, r)
+		assert.NoError(t, err)
+		assert.Equal(t, "Essay Rubric", res.Title)
+	})
 
-	// 2. Success
-	r2 := &models.Rubric{Title: "Valid", Criteria: []models.RubricCriterion{{Title: "C1"}}}
-	mockRepo.On("CreateRubric", ctx, r2).Return(nil)
-	
-	created, err := svc.CreateRubric(ctx, r2)
-	assert.NoError(t, err)
-	assert.Equal(t, "Valid", created.Title)
-	mockRepo.AssertExpectations(t)
+	t.Run("Empty Criteria", func(t *testing.T) {
+		r := &models.Rubric{
+			CourseOfferingID: "c1",
+			Title: "Empty",
+			Criteria: []models.RubricCriterion{},
+		}
+		
+		_, err := svc.CreateRubric(ctx, r)
+		assert.Error(t, err)
+		assert.Equal(t, "rubric must have criteria", err.Error())
+	})
 }
 
 func TestRubricService_SubmitGrade(t *testing.T) {
-	mockRepo := new(MockRubricRepo)
-	svc := NewRubricService(mockRepo)
+	repo := new(MockRubricRepository)
+	svc := NewRubricService(repo)
 	ctx := context.Background()
 
-	// Mock Rubric Structure
 	rubricID := "rubric-1"
-	critID := "crit-1"
-	levelID := "level-max" // 5 points
-
+	subID := "sub-1"
+	
+	// Prepare Rubric with Criteria and Levels
 	rubric := &models.Rubric{
 		ID: rubricID,
 		Criteria: []models.RubricCriterion{
 			{
-				ID: critID, 
-				Title: "Grammar", 
-				Weight: 1.0,
+				ID: "crit-1",
+				Title: "Content",
+				Weight: 1.0, 
 				Levels: []models.RubricLevel{
-					{ID: levelID, CriterionID: critID, Points: 5.0},
+					{ID: "lvl-low", Points: 0, Description: "Bad"},
+					{ID: "lvl-high", Points: 10, Description: "Good", CriterionID: "crit-1"},
 				},
 			},
 		},
 	}
 
-	mockRepo.On("GetRubric", ctx, rubricID).Return(rubric, nil)
+	t.Run("Success", func(t *testing.T) {
+		repo.ExpectedCalls = nil // Clear previous calls? Or just create new repo per test
+		// Using new repo for clean state
+		localRepo := new(MockRubricRepository)
+		localSvc := NewRubricService(localRepo)
 
-	// Input
-	input := GradeInput{
-		RubricID: rubricID,
-		SubmissionID: "sub-1",
-		Selections: []struct{CriterionID string `json:"criterion_id"`; LevelID string `json:"level_id"`}{
-			{CriterionID: critID, LevelID: levelID},
-		},
-	}
+		localRepo.On("GetRubric", ctx, rubricID).Return(rubric, nil)
+		localRepo.On("SubmitGrade", ctx, mock.MatchedBy(func(g *models.RubricGrade) bool {
+			return g.TotalScore == 10.0 && len(g.Items) == 1
+		})).Return(nil)
 
-	// Expect proper calculation: 5.0 points * 1.0 weight = 5.0
-	mockRepo.On("SubmitGrade", ctx, mock.MatchedBy(func(g *models.RubricGrade) bool {
-		return g.TotalScore == 5.0 && len(g.Items) == 1
-	})).Return(nil)
+		input := GradeInput{
+			RubricID: rubricID,
+			SubmissionID: subID,
+			GraderID: "grader-1",
+			Selections: []struct{
+				CriterionID string `json:"criterion_id"`
+				LevelID string `json:"level_id"`
+			}{
+				{CriterionID: "crit-1", LevelID: "lvl-high"},
+			},
+		}
 
-	graded, err := svc.SubmitGrade(ctx, input)
-	assert.NoError(t, err)
-	assert.Equal(t, 5.0, graded.TotalScore)
-	mockRepo.AssertExpectations(t)
+		grade, err := localSvc.SubmitGrade(ctx, input)
+		assert.NoError(t, err)
+		assert.Equal(t, 10.0, grade.TotalScore)
+	})
+
+	t.Run("Invalid Level Selection", func(t *testing.T) {
+		localRepo := new(MockRubricRepository)
+		localSvc := NewRubricService(localRepo)
+
+		localRepo.On("GetRubric", ctx, rubricID).Return(rubric, nil)
+
+		input := GradeInput{
+			RubricID: rubricID,
+			SubmissionID: subID,
+			Selections: []struct{
+				CriterionID string `json:"criterion_id"`
+				LevelID string `json:"level_id"`
+			}{
+				{CriterionID: "crit-1", LevelID: "lvl-non-existent"},
+			},
+		}
+
+		_, err := localSvc.SubmitGrade(ctx, input)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid level selection")
+	})
+	
+	t.Run("ListRubrics", func(t *testing.T) {
+		repo.On("ListRubrics", ctx, "c1").Return([]models.Rubric{{ID: rubricID}}, nil)
+		list, err := svc.ListRubrics(ctx, "c1")
+		assert.NoError(t, err)
+		assert.Len(t, list, 1)
+	})
+
+	t.Run("GetGrade", func(t *testing.T) {
+		repo.On("GetGrade", ctx, subID).Return(&models.RubricGrade{SubmissionID: subID}, nil)
+		res, err := svc.GetGrade(ctx, subID)
+		assert.NoError(t, err)
+		assert.Equal(t, subID, res.SubmissionID)
+	})
+
+	t.Run("GetRubric", func(t *testing.T) {
+		repo.On("GetRubric", ctx, rubricID).Return(&models.Rubric{ID: rubricID}, nil)
+		res, err := svc.GetRubric(ctx, rubricID)
+		assert.NoError(t, err)
+		assert.Equal(t, rubricID, res.ID)
+	})
 }

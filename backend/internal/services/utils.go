@@ -14,3 +14,7 @@ func IsDuplicateKeyError(err error) bool {
 	// Fallback string check if driver changes or wrapping occurs
 	return strings.Contains(err.Error(), "duplicate key value violates unique constraint")
 }
+// ToPtr returns a pointer to the given value
+func ToPtr[T any](v T) *T {
+	return &v
+}

@@ -58,6 +58,7 @@ func TestAuthService_Login(t *testing.T) {
 		}
 
 		mockRepo.On("GetByUsername", ctx, "student1").Return(user, nil).Once()
+		mockRepo.On("GetUserRoles", ctx, user.ID).Return([]string{"student"}, nil).Once()
 
 		resp, err := svc.Login(ctx, "student1", password, "")
 		
@@ -78,6 +79,8 @@ func TestAuthService_Login(t *testing.T) {
 		tenantID := "t1"
 
 		mockRepo.On("GetByUsername", ctx, "advisor1").Return(user, nil).Once()
+
+
 		mockRepo.On("GetTenantRoles", ctx, user.ID, tenantID).Return([]string{"advisor"}, nil).Once()
 
 		resp, err := svc.Login(ctx, "advisor1", password, tenantID)

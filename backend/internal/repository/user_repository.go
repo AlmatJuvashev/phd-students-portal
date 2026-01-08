@@ -34,6 +34,7 @@ type UserRepository interface {
 
 	// Multitenancy
 	GetTenantRoles(ctx context.Context, userID, tenantID string) ([]string, error)
+	GetUserRoles(ctx context.Context, userID string) ([]string, error)
 
 	// Student specific
 	LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error
@@ -371,6 +372,20 @@ func (r *SQLUserRepository) GetTenantRoles(ctx context.Context, userID, tenantID
 		return nil, ErrNotFound
 	}
 	return []string(roles), err
+}
+
+func (r *SQLUserRepository) GetUserRoles(ctx context.Context, userID string) ([]string, error) {
+	var roles []string
+	// NOTE: Table user_roles will be created in migration 0111
+	query := `SELECT role FROM user_roles WHERE user_id = $1`
+	err := r.db.SelectContext(ctx, &roles, query, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	return roles, nil
 }
 
 

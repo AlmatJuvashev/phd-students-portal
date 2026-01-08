@@ -78,6 +78,13 @@ func TestAuditService_Others(t *testing.T) {
 		assert.Len(t, res, 1)
 	})
 
+	t.Run("GetLearningOutcome", func(t *testing.T) {
+		repo.On("GetLearningOutcome", ctx, "lo1").Return(&models.LearningOutcome{ID: "lo1"}, nil)
+		res, err := svc.GetLearningOutcome(ctx, "lo1")
+		assert.NoError(t, err)
+		assert.Equal(t, "lo1", res.ID)
+	})
+
 	t.Run("DeleteLearningOutcome", func(t *testing.T) {
 		repo.On("GetLearningOutcome", ctx, "o1").Return(&models.LearningOutcome{ID: "o1"}, nil)
 		repo.On("DeleteLearningOutcome", ctx, "o1").Return(nil)
@@ -90,6 +97,13 @@ func TestAuditService_Others(t *testing.T) {
 		repo.On("LinkOutcomeToAssessment", ctx, "o1", "nd1", 1.0).Return(nil)
 		err := svc.LinkOutcomeToAssessment(ctx, "o1", "nd1", 1.0)
 		assert.NoError(t, err)
+	})
+
+	t.Run("GetOutcomeAssessments", func(t *testing.T) {
+		repo.On("GetOutcomeAssessments", ctx, "o1").Return([]models.OutcomeAssessment{{OutcomeID: "o1", NodeDefinitionID: "nd1"}}, nil)
+		res, err := svc.GetOutcomeAssessments(ctx, "o1")
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
 	})
 
 	t.Run("ListCurriculumChanges", func(t *testing.T) {

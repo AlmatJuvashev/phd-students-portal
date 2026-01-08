@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/dto"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/repository"
 	"github.com/stretchr/testify/mock"
@@ -286,7 +288,12 @@ func (m *MockUserRepository) DeletePasswordResetToken(ctx context.Context, token
 func (m *MockUserRepository) GetTenantRoles(ctx context.Context, userID, tenantID string) ([]string, error) { 
 	ret := m.Called(ctx, userID, tenantID)
 	if ret.Get(0) == nil { return nil, ret.Error(1) }
-	return ret.Get(0).([]string), ret.Error(1)
+	return ret.Get(0).([]string), ret.Error(1) 
+}
+func (m *MockUserRepository) GetUserRoles(ctx context.Context, userID string) ([]string, error) { 
+	ret := m.Called(ctx, userID)
+	if ret.Get(0) == nil { return nil, ret.Error(1) }
+	return ret.Get(0).([]string), ret.Error(1) 
 }
 func (m *MockUserRepository) LinkAdvisor(ctx context.Context, studentID, advisorID, tenantID string) error { return m.Called(ctx, studentID, advisorID, tenantID).Error(0) }
 func (m *MockUserRepository) ReplaceAdvisors(ctx context.Context, studentID string, advisorIDs []string, tenantID string) error { return m.Called(ctx, studentID, advisorIDs, tenantID).Error(0) }
@@ -548,4 +555,291 @@ func (m *MockGamificationRepository) AwardBadge(ctx context.Context, userID, bad
 }
 func (m *MockGamificationRepository) WithTransaction(ctx context.Context, fn func(repo repository.GamificationRepository) error) error {
 	return fn(m)
+}
+
+type MockJourneyRepository struct {
+	mock.Mock
+}
+
+func (m *MockJourneyRepository) GetJourneyState(ctx context.Context, userID, tenantID string) (map[string]string, error) {
+	args := m.Called(ctx, userID, tenantID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(map[string]string), args.Error(1)
+}
+
+type MockLMSRepository struct {
+	mock.Mock
+}
+
+func (m *MockLMSRepository) GetStudentEnrollments(ctx context.Context, studentID string) ([]models.CourseEnrollment, error) {
+	args := m.Called(ctx, studentID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseEnrollment), args.Error(1)
+}
+
+func (m *MockLMSRepository) CreateSubmission(ctx context.Context, sub *models.ActivitySubmission) error {
+	return m.Called(ctx, sub).Error(0)
+}
+
+func (m *MockLMSRepository) GetSubmissionByStudent(ctx context.Context, activityID, studentID string) (*models.ActivitySubmission, error) {
+	args := m.Called(ctx, activityID, studentID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.ActivitySubmission), args.Error(1)
+}
+
+type MockSchedulerRepository struct {
+	mock.Mock
+}
+
+func (m *MockSchedulerRepository) GetOffering(ctx context.Context, id string) (*models.CourseOffering, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseOffering), args.Error(1)
+}
+
+func (m *MockSchedulerRepository) ListStaff(ctx context.Context, offeringID string) ([]models.CourseStaff, error) {
+	args := m.Called(ctx, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseStaff), args.Error(1)
+}
+
+func (m *MockSchedulerRepository) ListSessions(ctx context.Context, offeringID string, startDate, endDate time.Time) ([]models.ClassSession, error) {
+	args := m.Called(ctx, offeringID, startDate, endDate)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.ClassSession), args.Error(1)
+}
+
+type MockGradingRepository struct {
+	mock.Mock
+}
+
+func (m *MockGradingRepository) ListStudentEntries(ctx context.Context, studentID string) ([]models.GradebookEntry, error) {
+	args := m.Called(ctx, studentID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.GradebookEntry), args.Error(1)
+}
+
+type MockCourseContentRepository struct {
+	mock.Mock
+}
+
+func (m *MockCourseContentRepository) GetModule(ctx context.Context, id string) (*models.CourseModule, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseModule), args.Error(1)
+}
+
+func (m *MockCourseContentRepository) GetLesson(ctx context.Context, id string) (*models.CourseLesson, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseLesson), args.Error(1)
+}
+
+func (m *MockCourseContentRepository) GetActivity(ctx context.Context, id string) (*models.CourseActivity, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.CourseActivity), args.Error(1)
+}
+
+func (m *MockCourseContentRepository) ListModules(ctx context.Context, courseID string) ([]models.CourseModule, error) {
+	args := m.Called(ctx, courseID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseModule), args.Error(1)
+}
+
+func (m *MockCourseContentRepository) ListLessons(ctx context.Context, moduleID string) ([]models.CourseLesson, error) {
+	args := m.Called(ctx, moduleID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseLesson), args.Error(1)
+}
+
+func (m *MockCourseContentRepository) ListActivities(ctx context.Context, lessonID string) ([]models.CourseActivity, error) {
+	args := m.Called(ctx, lessonID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseActivity), args.Error(1)
+}
+
+type MockAttendanceRepository struct {
+	mock.Mock
+}
+
+func (m *MockAttendanceRepository) RecordAttendance(ctx context.Context, sessionID string, record models.ClassAttendance) error {
+	return m.Called(ctx, sessionID, record).Error(0)
+}
+
+type MockStudentService struct {
+	mock.Mock
+}
+
+func (m *MockStudentService) GetDashboard(ctx context.Context, tenantID, userID string) (*dto.StudentDashboard, error) {
+	args := m.Called(ctx, tenantID, userID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*dto.StudentDashboard), args.Error(1)
+}
+
+func (m *MockStudentService) ListCourses(ctx context.Context, tenantID, userID string) ([]dto.StudentCourse, error) {
+	args := m.Called(ctx, tenantID, userID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]dto.StudentCourse), args.Error(1)
+}
+
+func (m *MockStudentService) ListAvailableCourses(ctx context.Context, tenantID string) ([]models.Course, error) {
+	args := m.Called(ctx, tenantID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.Course), args.Error(1)
+}
+
+func (m *MockStudentService) ListAssignments(ctx context.Context, tenantID, userID string) ([]dto.StudentAssignment, error) {
+	args := m.Called(ctx, tenantID, userID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]dto.StudentAssignment), args.Error(1)
+}
+
+func (m *MockStudentService) ListGrades(ctx context.Context, tenantID, userID string) ([]dto.StudentGradeEntry, error) {
+	args := m.Called(ctx, tenantID, userID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]dto.StudentGradeEntry), args.Error(1)
+}
+
+func (m *MockStudentService) GetCourseDetail(ctx context.Context, tenantID, userID, offeringID string) (*dto.StudentCourseDetail, error) {
+	args := m.Called(ctx, tenantID, userID, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*dto.StudentCourseDetail), args.Error(1)
+}
+
+func (m *MockStudentService) GetCourseModules(ctx context.Context, tenantID, userID, offeringID string) ([]models.CourseModule, error) {
+	args := m.Called(ctx, tenantID, userID, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseModule), args.Error(1)
+}
+
+func (m *MockStudentService) ListCourseAnnouncements(ctx context.Context, tenantID, userID, offeringID string) ([]dto.StudentAnnouncement, error) {
+	args := m.Called(ctx, tenantID, userID, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]dto.StudentAnnouncement), args.Error(1)
+}
+
+func (m *MockStudentService) ListCourseResources(ctx context.Context, tenantID, userID, offeringID string) ([]models.CourseActivity, error) {
+	args := m.Called(ctx, tenantID, userID, offeringID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.CourseActivity), args.Error(1)
+}
+
+func (m *MockStudentService) GetAssignmentDetail(ctx context.Context, tenantID, userID, activityID, courseOfferingID string) (*models.CourseActivity, *models.ActivitySubmission, string, error) {
+	args := m.Called(ctx, tenantID, userID, activityID, courseOfferingID)
+	var a *models.CourseActivity
+	if args.Get(0) != nil { a = args.Get(0).(*models.CourseActivity) }
+	var s *models.ActivitySubmission
+	if args.Get(1) != nil { s = args.Get(1).(*models.ActivitySubmission) }
+	return a, s, args.String(2), args.Error(3)
+}
+
+func (m *MockStudentService) SubmitAssignment(ctx context.Context, tenantID, userID, activityID, courseOfferingID string, content json.RawMessage, status string) (*models.ActivitySubmission, error) {
+	args := m.Called(ctx, tenantID, userID, activityID, courseOfferingID, content, status)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.ActivitySubmission), args.Error(1)
+}
+
+func (m *MockStudentService) CheckIn(ctx context.Context, tenantID, userID, sessionID, code string) error {
+	return m.Called(ctx, tenantID, userID, sessionID, code).Error(0)
+}
+
+// MockResourceRepository implements repository.ResourceRepository
+type MockResourceRepository struct {
+	mock.Mock
+}
+
+// Buildings
+func (m *MockResourceRepository) CreateBuilding(ctx context.Context, b *models.Building) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
+}
+func (m *MockResourceRepository) GetBuilding(ctx context.Context, id string) (*models.Building, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.Building), args.Error(1)
+}
+func (m *MockResourceRepository) ListBuildings(ctx context.Context, tenantID string) ([]models.Building, error) {
+	args := m.Called(ctx, tenantID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.Building), args.Error(1)
+}
+func (m *MockResourceRepository) UpdateBuilding(ctx context.Context, b *models.Building) error {
+	args := m.Called(ctx, b)
+	return args.Error(0)
+}
+func (m *MockResourceRepository) DeleteBuilding(ctx context.Context, id, userID string) error {
+	args := m.Called(ctx, id, userID)
+	return args.Error(0)
+}
+
+// Rooms
+func (m *MockResourceRepository) CreateRoom(ctx context.Context, r *models.Room) error {
+	args := m.Called(ctx, r)
+	return args.Error(0)
+}
+func (m *MockResourceRepository) GetRoom(ctx context.Context, id string) (*models.Room, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.Room), args.Error(1)
+}
+func (m *MockResourceRepository) ListRooms(ctx context.Context, tenantID, buildingID string) ([]models.Room, error) {
+	args := m.Called(ctx, tenantID, buildingID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.Room), args.Error(1)
+}
+func (m *MockResourceRepository) UpdateRoom(ctx context.Context, r *models.Room) error {
+	args := m.Called(ctx, r)
+	return args.Error(0)
+}
+func (m *MockResourceRepository) DeleteRoom(ctx context.Context, id, userID string) error {
+	args := m.Called(ctx, id, userID)
+	return args.Error(0)
+}
+
+// Availability
+func (m *MockResourceRepository) SetAvailability(ctx context.Context, avail *models.InstructorAvailability) error {
+	return m.Called(ctx, avail).Error(0)
+}
+func (m *MockResourceRepository) GetAvailability(ctx context.Context, instructorID string) ([]models.InstructorAvailability, error) {
+	args := m.Called(ctx, instructorID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.InstructorAvailability), args.Error(1)
+}
+
+// Attributes
+func (m *MockResourceRepository) SetRoomAttribute(ctx context.Context, attr *models.RoomAttribute) error {
+	return m.Called(ctx, attr).Error(0)
+}
+func (m *MockResourceRepository) GetRoomAttributes(ctx context.Context, roomID string) ([]models.RoomAttribute, error) {
+	args := m.Called(ctx, roomID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.RoomAttribute), args.Error(1)
+}
+
+// MockRubricRepository implements repository.RubricRepository
+type MockRubricRepository struct {
+	mock.Mock
+}
+
+func (m *MockRubricRepository) CreateRubric(ctx context.Context, r *models.Rubric) error {
+	return m.Called(ctx, r).Error(0)
+}
+func (m *MockRubricRepository) GetRubric(ctx context.Context, id string) (*models.Rubric, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.Rubric), args.Error(1)
+}
+func (m *MockRubricRepository) ListRubrics(ctx context.Context, courseID string) ([]models.Rubric, error) {
+	args := m.Called(ctx, courseID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).([]models.Rubric), args.Error(1)
+}
+func (m *MockRubricRepository) SubmitGrade(ctx context.Context, g *models.RubricGrade) error {
+	return m.Called(ctx, g).Error(0)
+}
+func (m *MockRubricRepository) GetGrade(ctx context.Context, submissionID string) (*models.RubricGrade, error) {
+	args := m.Called(ctx, submissionID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*models.RubricGrade), args.Error(1)
 }

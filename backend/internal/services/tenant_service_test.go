@@ -157,3 +157,24 @@ func TestTenantService_Management(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, fetched.IsActive)
 }
+
+func TestTenantService_ProtectedTenant(t *testing.T) {
+	db, teardown := testutils.SetupTestDB()
+	defer teardown()
+
+	repo := repository.NewSQLTenantRepository(db)
+	svc := services.NewTenantService(repo)
+	ctx := context.Background()
+
+	platformID := "00000000-0000-0000-0000-000000000000"
+
+	// 1. Try Update
+	_, err := svc.Update(ctx, platformID, map[string]interface{}{"name": "Hacked"})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "reserved system resource")
+
+	// 2. Try Delete
+	err = svc.Delete(ctx, platformID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "reserved system resource")
+}

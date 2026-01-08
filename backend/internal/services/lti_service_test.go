@@ -159,3 +159,26 @@ func TestLTIService_KeyManagement(t *testing.T) {
 		assert.Equal(t, "new", key.ID)
 	})
 }
+
+func TestLTIService_ListTools(t *testing.T) {
+	mockRepo := new(MockLTIRepository)
+	svc := services.NewLTIService(mockRepo, config.AppConfig{})
+	ctx := context.Background()
+
+	mockRepo.On("ListTools", ctx, "t1").Return([]models.LTITool{{ID: "t1"}}, nil)
+	
+	res, err := svc.ListTools(ctx, "t1")
+	assert.NoError(t, err)
+	assert.Len(t, res, 1)
+}
+
+func TestLTIService_ValidateLaunch(t *testing.T) {
+	mockRepo := new(MockLTIRepository)
+	svc := services.NewLTIService(mockRepo, config.AppConfig{})
+	ctx := context.Background()
+
+	// Current implementation is stubbed
+	_, err := svc.ValidateLaunch(ctx, "token")
+	assert.Error(t, err)
+	assert.Equal(t, "launch validation not implemented", err.Error())
+}

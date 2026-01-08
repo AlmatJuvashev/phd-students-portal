@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -417,5 +418,49 @@ func TestTeacherHandler_GetSubmissions(t *testing.T) {
 	mocks.LMS.On("ListSubmissions", mock.Anything, "c1").Return([]models.ActivitySubmission{{ID: "s1"}}, nil)
 
 	h.GetSubmissions(c)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestTeacherHandler_AddAnnotation(t *testing.T) {
+	h, mocks := setupTeacherHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/submissions/sub-1/annotations", bytes.NewBufferString(`{"content": "Good job", "coordinate_x": 10}`))
+	c.Params = gin.Params{{Key: "id", Value: "sub-1"}}
+	c.Set("claims", jwt.MapClaims{"sub": "inst-1"})
+
+	// Service handles filling SubmissionID and AuthorID
+	mocks.LMS.On("CreateAnnotation", mock.Anything, mock.MatchedBy(func(ann models.SubmissionAnnotation) bool {
+		return ann.SubmissionID == "sub-1" && ann.AuthorID == "inst-1" && ann.Content != nil && *ann.Content == "Good job"
+	})).Return(&models.SubmissionAnnotation{ID: "ann-1"}, nil)
+
+	h.AddAnnotation(c)
+	assert.Equal(t, http.StatusCreated, w.Code)
+}
+
+func TestTeacherHandler_GetAnnotations(t *testing.T) {
+	h, mocks := setupTeacherHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/submissions/sub-1/annotations", nil)
+	c.Params = gin.Params{{Key: "id", Value: "sub-1"}}
+
+	mocks.LMS.On("ListAnnotations", mock.Anything, "sub-1").Return([]models.SubmissionAnnotation{{ID: "ann-1"}}, nil)
+
+	h.GetAnnotations(c)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "ann-1")
+}
+
+func TestTeacherHandler_DeleteAnnotation(t *testing.T) {
+	h, mocks := setupTeacherHandler()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("DELETE", "/submissions/sub-1/annotations/ann-1", nil)
+	c.Params = gin.Params{{Key: "id", Value: "sub-1"}, {Key: "annId", Value: "ann-1"}}
+
+	mocks.LMS.On("DeleteAnnotation", mock.Anything, "ann-1").Return(nil)
+
+	h.DeleteAnnotation(c)
 	assert.Equal(t, http.StatusOK, w.Code)
 }

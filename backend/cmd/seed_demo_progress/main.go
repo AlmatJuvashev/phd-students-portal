@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	DefaultTenantID = "dd000000-0000-0000-0000-d00000000001"
+	DefaultTenantID = "00000000-0000-0000-0000-000000000001"
 )
 
 func main() {
@@ -278,7 +278,30 @@ func main() {
 		fmt.Printf("  Created chat group: %s with %d messages\n", group.name, len(group.messages))
 	}
 
-	fmt.Println("25 Demo students and 5 chat groups seeding completed successfully!")
+	// 7. Create Dean (Multi-Role User)
+	// Dean who is also an Instructor (e.g. teaches a course)
+	deanID := ensureUser(db, "demo.dean", "dean@test.kaznmu.kz", "Daulet", "Deanov", "dean", hashedPass)
+	
+	// Add secondary role: Instructor for the same tenant
+	_, err = db.Exec(`
+		UPDATE user_tenant_memberships 
+		SET roles = array_append(roles, 'instructor') 
+		WHERE user_id = $1 AND tenant_id = $2 AND NOT ('instructor' = ANY(roles))`, 
+		deanID, DefaultTenantID)
+	// Fallback if 'roles' column doesn't exist yet (migration might be pending/wip in repo structure?)
+	// The repo 'SQLUserRepository' GetTenantRoles selects 'roles' column implies it's an array.
+	// But ensureUser inserts with specific role (which might put it in array or single column).
+	// Let's check ensureUser impl.
+	if err != nil {
+		log.Printf("Warning: Failed to add instructor role to dean: %v", err)
+	} else {
+		fmt.Println("Created 'demo.dean' with roles: ['dean', 'instructor']")
+	}
+	
+	// Also create a "Super Admin" for platform management
+	ensureUser(db, "demo.admin", "admin@platform.com", "System", "Admin", "superadmin", hashedPass)
+
+	fmt.Println("25 Demo students, advisors, multi-role dean, and chat groups seeding completed successfully!")
 }
 
 func ensureUser(db *sqlx.DB, username, email, first, last, role, hash string) string {
@@ -290,13 +313,23 @@ func ensureUser(db *sqlx.DB, username, email, first, last, role, hash string) st
 		DO UPDATE SET first_name = $3, last_name = $4, email = $2, role = $5, password_hash = $6
 		RETURNING id`, username, email, first, last, role, hash).Scan(&id)
 	if err != nil {
-		err = db.Get(&id, "SELECT id FROM users WHERE username=$1", username)
+		// Try fetching
+		err2 := db.Get(&id, "SELECT id FROM users WHERE username=$1", username)
+		if err2 != nil {
+			log.Printf("ensureUser failed for %s: insert_err=%v, select_err=%v", username, err, err2)
+			return ""
+		}
 	}
 
-	_, _ = db.Exec(`
-		INSERT INTO user_tenant_memberships (user_id, tenant_id, role)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = EXCLUDED.role`, id, DefaultTenantID, role)
+	// Init roles array with primary role
+	_, err = db.Exec(`
+		INSERT INTO user_tenant_memberships (user_id, tenant_id, role, roles)
+		VALUES ($1, $2, $3, ARRAY[$4]::text[])
+		ON CONFLICT (user_id, tenant_id) DO UPDATE SET role = EXCLUDED.role, roles = array_append(user_tenant_memberships.roles, EXCLUDED.role::text)
+        WHERE NOT (EXCLUDED.role::text = ANY(user_tenant_memberships.roles))`, id, DefaultTenantID, role, role)
+	if err != nil {
+		log.Printf("ensureUser membership failed for %s (id=%s): %v", username, id, err)
+	}
 
 	return id
 }

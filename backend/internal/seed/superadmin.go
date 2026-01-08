@@ -24,9 +24,21 @@ func EnsureSuperAdmin(db *sqlx.DB, cfg config.AppConfig) (generated string, err 
 	// 1. Ensure platform tenant exists
 	_, err = db.Exec(`
 		INSERT INTO tenants (id, slug, name, tenant_type, is_active, enabled_services, app_name)
-		VALUES ($1, 'platform', 'Platform Administration', 'university', true, ARRAY['chat'], 'Platform Admin')
-		ON CONFLICT (id) DO NOTHING
+		VALUES ($1, 'superadmin', 'Superadmin Tenant', 'university', true, ARRAY['chat'], 'Superadmin Universe')
+		ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, slug=EXCLUDED.slug
 	`, PlatformTenantID)
+	if err != nil {
+		return "", err
+	}
+
+	// 2. Strip is_superadmin from all users first to ensure only one exists
+	_, err = db.Exec(`UPDATE users SET is_superadmin = false WHERE is_superadmin = true`)
+	if err != nil {
+		return "", err
+	}
+
+	// 3. Remove existing superadmin memberships in other tenants
+	_, err = db.Exec(`DELETE FROM user_tenant_memberships WHERE role = 'superadmin' OR 'superadmin' = ANY(roles)`)
 	if err != nil {
 		return "", err
 	}
@@ -38,14 +50,14 @@ func EnsureSuperAdmin(db *sqlx.DB, cfg config.AppConfig) (generated string, err 
 	}
 	hash, _ := auth.HashPassword(pw)
 
-	// 2. Upsert superadmin user by email
+	// 4. Upsert superadmin user by email
 	var id string
 	err = db.QueryRowx(`SELECT id FROM users WHERE email=$1`, email).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// insert new superadmin
 			username := strings.Split(email, "@")[0]
-			first := "Super"
+			first := "System"
 			last := "Admin"
 			err = db.QueryRow(`INSERT INTO users (username,email,first_name,last_name,role,password_hash,is_active,is_superadmin)
 				VALUES ($1,$2,$3,$4,'superadmin',$5,true,true) RETURNING id`, username, email, first, last, hash).Scan(&id)
@@ -56,20 +68,18 @@ func EnsureSuperAdmin(db *sqlx.DB, cfg config.AppConfig) (generated string, err 
 			return generated, err
 		}
 	} else {
-		// update password if provided
-		if cfg.AdminPassword != "" {
-			_, err = db.Exec(`UPDATE users SET password_hash=$1 WHERE id=$2`, hash, id)
-			if err != nil {
-				return generated, err
-			}
+		// update status and password
+		_, err = db.Exec(`UPDATE users SET is_superadmin=true, role='superadmin', password_hash=$1 WHERE id=$2`, hash, id)
+		if err != nil {
+			return generated, err
 		}
 	}
 
-	// 3. Ensure superadmin has membership in platform tenant
+	// 5. Ensure superadmin has membership in platform tenant
 	_, err = db.Exec(`
-		INSERT INTO user_tenant_memberships (user_id, tenant_id, role, is_primary)
-		VALUES ($1, $2, 'admin', true)
-		ON CONFLICT (user_id, tenant_id) DO NOTHING
+		INSERT INTO user_tenant_memberships (user_id, tenant_id, role, roles, is_primary)
+		VALUES ($1, $2, 'superadmin', ARRAY['superadmin']::text[], true)
+		ON CONFLICT (user_id, tenant_id) DO UPDATE SET role='superadmin', roles=ARRAY['superadmin']::text[]
 	`, id, PlatformTenantID)
 
 	return generated, err

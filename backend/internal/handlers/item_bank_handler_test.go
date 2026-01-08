@@ -253,8 +253,101 @@ func TestItemBankHandler_UpdateAndDeleteItem(t *testing.T) {
 		c.Set("tenant_id", "tenant-1")
 
 		h.DeleteItem(c)
-		// assert.Equal(t, http.StatusNoContent, w.Code)
 		assert.Contains(t, []int{http.StatusOK, http.StatusNoContent}, w.Code)
 		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("DeleteItem_Error", func(t *testing.T) {
+		mockRepo.On("GetQuestion", mock.Anything, "qErr").Return(&models.Question{ID: "qErr", BankID: "bank-1"}, nil)
+		mockRepo.On("DeleteQuestion", mock.Anything, "qErr").Return(assert.AnError)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("DELETE", "/item-banks/banks/bank-1/items/qErr", nil)
+		c.Params = gin.Params{{Key: "bankId", Value: "bank-1"}, {Key: "itemId", Value: "qErr"}}
+		c.Set("tenant_id", "tenant-1")
+
+		h.DeleteItem(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestItemBankHandler_DeleteBank_Error(t *testing.T) {
+	mockRepo := new(mockAssessmentRepoForItemBank)
+	svc := services.NewItemBankService(mockRepo)
+	h := NewItemBankHandler(svc)
+	gin.SetMode(gin.TestMode)
+
+	t.Run("DeleteBank_Error", func(t *testing.T) {
+		mockRepo.On("GetQuestionBank", mock.Anything, "bErr").Return(&models.QuestionBank{ID: "bErr", TenantID: "t1"}, nil)
+		mockRepo.On("DeleteQuestionBank", mock.Anything, "bErr").Return(assert.AnError)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("DELETE", "/item-banks/banks/bErr", nil)
+		c.Params = gin.Params{{Key: "bankId", Value: "bErr"}}
+		c.Set("tenant_id", "t1")
+
+		h.DeleteBank(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestItemBankHandler_CreateAndList(t *testing.T) {
+	mockRepo := new(mockAssessmentRepoForItemBank)
+	svc := services.NewItemBankService(mockRepo)
+	h := NewItemBankHandler(svc)
+
+	gin.SetMode(gin.TestMode)
+
+	t.Run("CreateBank", func(t *testing.T) {
+		mockRepo.On("CreateQuestionBank", mock.Anything, mock.Anything).Return(&models.QuestionBank{ID: "b1"}, nil)
+
+		body, _ := json.Marshal(models.QuestionBank{Title: "New Bank"})
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/item-banks/banks", bytes.NewBuffer(body))
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "u1")
+
+		h.CreateBank(c)
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
+
+	t.Run("ListBanks", func(t *testing.T) {
+		mockRepo.On("ListQuestionBanks", mock.Anything, "t1").Return([]models.QuestionBank{{ID: "b1"}}, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/item-banks/banks", nil)
+		c.Set("tenant_id", "t1")
+
+		h.ListBanks(c)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("CreateItem", func(t *testing.T) {
+		mockRepo.On("CreateQuestion", mock.Anything, mock.Anything).Return(&models.Question{ID: "q1"}, nil)
+
+		body, _ := json.Marshal(models.Question{Stem: "New Question"})
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/item-banks/banks/b1/items", bytes.NewBuffer(body))
+		c.Params = gin.Params{{Key: "bankId", Value: "b1"}}
+
+		h.CreateItem(c)
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
+
+	t.Run("ListItems", func(t *testing.T) {
+		mockRepo.On("ListQuestionsByBank", mock.Anything, "b1").Return([]models.Question{{ID: "q1"}}, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/item-banks/banks/b1/items", nil)
+		c.Params = gin.Params{{Key: "bankId", Value: "b1"}}
+
+		h.ListItems(c)
+		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }

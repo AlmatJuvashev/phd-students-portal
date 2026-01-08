@@ -96,6 +96,36 @@ func TestLTIHandler_RegisterTool(t *testing.T) {
 	})
 }
 
+func TestLTIHandler_ListTools(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockRepo := new(HMockLTIRepo)
+	cfg := config.AppConfig{}
+	svc := services.NewLTIService(mockRepo, cfg)
+	h := handlers.NewLTIHandler(svc, cfg)
+
+	t.Run("Success", func(t *testing.T) {
+		expected := []models.LTITool{{ID: "1", Name: "Tool 1"}}
+		mockRepo.On("ListTools", mock.Anything, "t1").Return(expected, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/lti/tools?tenant_id=t1", nil)
+
+		h.ListTools(c)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "Tool 1")
+	})
+
+	t.Run("Missing Tenant ID", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/lti/tools", nil)
+
+		h.ListTools(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
 func TestLTIHandler_LoginInit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockRepo := new(HMockLTIRepo)
@@ -162,4 +192,20 @@ func TestLTIHandler_GetJWKS(t *testing.T) {
 	h.GetJWKS(c)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "keys")
+}
+
+func TestLTIHandler_Launch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockRepo := new(HMockLTIRepo)
+	cfg := config.AppConfig{}
+	svc := services.NewLTIService(mockRepo, cfg)
+	h := handlers.NewLTIHandler(svc, cfg)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/lti/launch", nil)
+
+	h.Launch(c)
+	assert.Equal(t, http.StatusNotImplemented, w.Code)
+	assert.Contains(t, w.Body.String(), "launch validation not ready")
 }

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo } from 'react'
 import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { api } from '@/api/client'
 
-export type Role = 'student' | 'advisor' | 'secretary' | 'chair' | 'admin' | 'superadmin'
+export type Role = 'student' | 'advisor' | 'secretary' | 'chair' | 'admin' | 'superadmin' | 'instructor' | 'dean' | 'system_admin'
 
 export interface User {
   id: string
@@ -22,15 +22,17 @@ export interface User {
   program?: string
   specialty?: string
   department?: string
-  cohort?: string
+  available_roles?: string[]
+  active_role?: string
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
   token: string | null
-  login: (credentials: { username?: string; email?: string; password: string }) => Promise<{ role: string; is_superadmin: boolean }>
+  login: (credentials: { username?: string; email?: string; password: string }) => Promise<{ role: string; is_superadmin: boolean; active_role: string; available_roles: string[] }>
   logout: () => void
+  switchRole: (targetRole: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -59,7 +61,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Token is set in cookie by server
       // Refresh user info
       await qc.invalidateQueries({ queryKey: ['me'] })
-      return { role: res.role, is_superadmin: res.is_superadmin }
+      return { 
+        role: res.role, 
+        is_superadmin: res.is_superadmin,
+        active_role: res.active_role,
+        available_roles: res.available_roles 
+      }
+    },
+    switchRole: async (targetRole: string) => {
+      await api.post('/auth/switch-role', { target_role: targetRole })
+      await qc.invalidateQueries({ queryKey: ['me'] })
+      // Reload to ensure new layout takes effect
+      window.location.reload()
     },
     logout: async () => {
       console.log("[AuthContext] Logout initiated");

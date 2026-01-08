@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -198,6 +200,159 @@ func TestAuditHandler_ProgramSummaryReport(t *testing.T) {
 	c.Set("tenant_id", "t1")
 
 	h.ProgramSummaryReport(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuditHandler_GetProgram(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	curRepo := new(mockCurriculumRepo)
+	svc := services.NewAuditService(nil, curRepo)
+	curSvc := services.NewCurriculumService(curRepo)
+	h := NewAuditHandler(svc, curSvc)
+
+	curRepo.On("GetProgram", mock.Anything, "p1").Return(&models.Program{ID: "p1"}, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Params = []gin.Param{{Key: "id", Value: "p1"}}
+	c.Request, _ = http.NewRequest("GET", "/audit/programs/p1", nil)
+
+	h.GetProgram(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuditHandler_ListCourses(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	curRepo := new(mockCurriculumRepo)
+	svc := services.NewAuditService(nil, curRepo)
+	curSvc := services.NewCurriculumService(curRepo)
+	h := NewAuditHandler(svc, curSvc)
+
+	curRepo.On("ListCourses", mock.Anything, "t1", mock.Anything).Return([]models.Course{{ID: "c1"}}, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/audit/courses", nil)
+	c.Set("tenant_id", "t1")
+
+	h.ListCourses(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuditHandler_GetCourse(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	curRepo := new(mockCurriculumRepo)
+	svc := services.NewAuditService(nil, curRepo)
+	curSvc := services.NewCurriculumService(curRepo)
+	h := NewAuditHandler(svc, curSvc)
+
+	curRepo.On("GetCourse", mock.Anything, "c1").Return(&models.Course{ID: "c1"}, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Params = []gin.Param{{Key: "id", Value: "c1"}}
+	c.Request, _ = http.NewRequest("GET", "/audit/courses/c1", nil)
+
+	h.GetCourse(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuditHandler_ListOutcomes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := new(mockAuditRepo)
+	h := NewAuditHandler(services.NewAuditService(repo, nil), nil)
+
+	repo.On("ListLearningOutcomes", mock.Anything, "t1", mock.Anything, mock.Anything).Return([]models.LearningOutcome{{ID: "lo1"}}, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/audit/outcomes", nil)
+	c.Set("tenant_id", "t1")
+
+	h.ListOutcomes(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuditHandler_ListChangeLog(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := new(mockAuditRepo)
+	h := NewAuditHandler(services.NewAuditService(repo, nil), nil)
+
+	repo.On("ListCurriculumChanges", mock.Anything, mock.Anything).Return([]models.CurriculumChangeLog{{ID: "l1"}}, nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("GET", "/audit/changelog", nil)
+
+	h.ListChangeLog(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuditHandler_CreateOutcome(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := new(mockAuditRepo)
+	h := NewAuditHandler(services.NewAuditService(repo, nil), nil)
+
+	repo.On("CreateLearningOutcome", mock.Anything, mock.Anything).Return(nil)
+	repo.On("LogCurriculumChange", mock.Anything, mock.Anything).Return(nil)
+
+	body, _ := json.Marshal(models.LearningOutcome{Code: "PLO1", Title: "Outcome 1"})
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("POST", "/audit/outcomes", bytes.NewBuffer(body))
+	c.Set("tenant_id", "t1")
+	c.Set("userID", "u1")
+
+	h.CreateOutcome(c)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+}
+
+func TestAuditHandler_UpdateOutcome(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := new(mockAuditRepo)
+	h := NewAuditHandler(services.NewAuditService(repo, nil), nil)
+
+	repo.On("GetLearningOutcome", mock.Anything, "lo1").Return(&models.LearningOutcome{ID: "lo1"}, nil)
+	repo.On("UpdateLearningOutcome", mock.Anything, mock.Anything).Return(nil)
+	repo.On("LogCurriculumChange", mock.Anything, mock.Anything).Return(nil)
+
+	body, _ := json.Marshal(models.LearningOutcome{Code: "PLO1_v2", Title: "Outcome 1 v2"})
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Params = []gin.Param{{Key: "id", Value: "lo1"}}
+	c.Request, _ = http.NewRequest("PUT", "/audit/outcomes/lo1", bytes.NewBuffer(body))
+	c.Set("tenant_id", "t1")
+	c.Set("userID", "u1")
+
+	h.UpdateOutcome(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAuditHandler_DeleteOutcome(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := new(mockAuditRepo)
+	h := NewAuditHandler(services.NewAuditService(repo, nil), nil)
+
+	repo.On("GetLearningOutcome", mock.Anything, "lo1").Return(&models.LearningOutcome{ID: "lo1"}, nil)
+	repo.On("DeleteLearningOutcome", mock.Anything, "lo1").Return(nil)
+	repo.On("LogCurriculumChange", mock.Anything, mock.Anything).Return(nil)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Params = []gin.Param{{Key: "id", Value: "lo1"}}
+	c.Request, _ = http.NewRequest("DELETE", "/audit/outcomes/lo1", nil)
+	c.Set("tenant_id", "t1")
+	c.Set("userID", "u1")
+
+	h.DeleteOutcome(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }

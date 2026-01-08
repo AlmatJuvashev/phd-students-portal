@@ -14,7 +14,7 @@ import (
 // TestDeliveryFormat_Validation tests the CreateOffering delivery format validation
 func TestDeliveryFormat_Validation(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
-	mockResourceRepo := new(MockResourceRepo)
+	mockResourceRepo := new(MockResourceRepository)
 	mockCurriculumRepo := new(MockCurriculumRepo)
 	mockUserRepo := new(MockUserRepository)
 	mockMailer := new(MockMailer)
@@ -69,7 +69,7 @@ func TestDeliveryFormat_Validation(t *testing.T) {
 // TestDeliveryFormat_OnlineAsync_NoConstraints verifies ONLINE_ASYNC skips all scheduling constraints
 func TestDeliveryFormat_OnlineAsync_NoConstraints(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
-	mockResourceRepo := new(MockResourceRepo)
+	mockResourceRepo := new(MockResourceRepository)
 	mockCurriculumRepo := new(MockCurriculumRepo)
 	mockUserRepo := new(MockUserRepository)
 	mockMailer := new(MockMailer)
@@ -110,7 +110,7 @@ func TestDeliveryFormat_OnlineAsync_NoConstraints(t *testing.T) {
 // TestDeliveryFormat_OnlineSync_SkipsRoomChecks verifies ONLINE_SYNC skips room constraints but checks instructor
 func TestDeliveryFormat_OnlineSync_SkipsRoomChecks(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
-	mockResourceRepo := new(MockResourceRepo)
+	mockResourceRepo := new(MockResourceRepository)
 	mockCurriculumRepo := new(MockCurriculumRepo)
 	mockUserRepo := new(MockUserRepository)
 	mockMailer := new(MockMailer)
@@ -156,7 +156,7 @@ func TestDeliveryFormat_OnlineSync_SkipsRoomChecks(t *testing.T) {
 // TestDeliveryFormat_OnlineSync_InstructorConflict verifies ONLINE_SYNC still checks instructor conflicts
 func TestDeliveryFormat_OnlineSync_InstructorConflict(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
-	mockResourceRepo := new(MockResourceRepo)
+	mockResourceRepo := new(MockResourceRepository)
 	mockCurriculumRepo := new(MockCurriculumRepo)
 	mockUserRepo := new(MockUserRepository)
 	mockMailer := new(MockMailer)
@@ -198,7 +198,7 @@ func TestDeliveryFormat_OnlineSync_InstructorConflict(t *testing.T) {
 // TestDeliveryFormat_InPerson_FullConstraints verifies IN_PERSON applies all constraints
 func TestDeliveryFormat_InPerson_FullConstraints(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
-	mockResourceRepo := new(MockResourceRepo)
+	mockResourceRepo := new(MockResourceRepository)
 	mockCurriculumRepo := new(MockCurriculumRepo)
 	mockUserRepo := new(MockUserRepository)
 	mockMailer := new(MockMailer)
@@ -250,7 +250,7 @@ func TestDeliveryFormat_InPerson_FullConstraints(t *testing.T) {
 // TestDeliveryFormat_Hybrid_SessionOverride verifies HYBRID courses respect session-level format
 func TestDeliveryFormat_Hybrid_SessionOverride(t *testing.T) {
 	mockRepo := new(MockSchedulerRepo)
-	mockResourceRepo := new(MockResourceRepo)
+	mockResourceRepo := new(MockResourceRepository)
 	mockCurriculumRepo := new(MockCurriculumRepo)
 	mockUserRepo := new(MockUserRepository)
 	mockMailer := new(MockMailer)

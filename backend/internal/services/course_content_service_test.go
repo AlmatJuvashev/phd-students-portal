@@ -120,3 +120,133 @@ func TestCourseContentService_ValidateContent(t *testing.T) {
 	err = svc.CreateActivity(ctx, a3)
 	assert.NoError(t, err)
 }
+
+func TestCourseContentService_Modules(t *testing.T) {
+	mockRepo := new(MockCourseContentRepo)
+	svc := NewCourseContentService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("CreateModule Success", func(t *testing.T) {
+		m := &models.CourseModule{CourseID: "c1", Title: "M1"}
+		mockRepo.On("CreateModule", ctx, m).Return(nil)
+		err := svc.CreateModule(ctx, m)
+		assert.NoError(t, err)
+		assert.NotZero(t, m.CreatedAt)
+	})
+
+	t.Run("CreateModule Failure", func(t *testing.T) {
+		m := &models.CourseModule{CourseID: "c1"} // missing title
+		err := svc.CreateModule(ctx, m)
+		assert.Error(t, err)
+		assert.Equal(t, "title is required", err.Error())
+	})
+
+	t.Run("ListModules", func(t *testing.T) {
+		expected := []models.CourseModule{{ID: "m1"}}
+		mockRepo.On("ListModules", ctx, "c1").Return(expected, nil)
+		res, err := svc.ListModules(ctx, "c1")
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+
+	t.Run("UpdateModule", func(t *testing.T) {
+		m := &models.CourseModule{ID: "m1"}
+		mockRepo.On("UpdateModule", ctx, m).Return(nil)
+		err := svc.UpdateModule(ctx, m)
+		assert.NoError(t, err)
+		assert.NotZero(t, m.UpdatedAt)
+	})
+
+	t.Run("DeleteModule", func(t *testing.T) {
+		mockRepo.On("DeleteModule", ctx, "m1").Return(nil)
+		err := svc.DeleteModule(ctx, "m1")
+		assert.NoError(t, err)
+	})
+}
+
+func TestCourseContentService_Lessons(t *testing.T) {
+	mockRepo := new(MockCourseContentRepo)
+	svc := NewCourseContentService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("CreateLesson Success", func(t *testing.T) {
+		l := &models.CourseLesson{ModuleID: "m1", Title: "L1"}
+		mockRepo.On("CreateLesson", ctx, l).Return(nil)
+		err := svc.CreateLesson(ctx, l)
+		assert.NoError(t, err)
+		assert.NotZero(t, l.CreatedAt)
+	})
+
+	t.Run("CreateLesson Failure", func(t *testing.T) {
+		l := &models.CourseLesson{ModuleID: "m1"} // missing title
+		err := svc.CreateLesson(ctx, l)
+		assert.Error(t, err)
+		assert.Equal(t, "title is required", err.Error())
+	})
+
+	t.Run("ListLessons", func(t *testing.T) {
+		expected := []models.CourseLesson{{ID: "l1"}}
+		mockRepo.On("ListLessons", ctx, "m1").Return(expected, nil)
+		res, err := svc.ListLessons(ctx, "m1")
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+
+	t.Run("UpdateLesson", func(t *testing.T) {
+		l := &models.CourseLesson{ID: "l1"}
+		mockRepo.On("UpdateLesson", ctx, l).Return(nil)
+		err := svc.UpdateLesson(ctx, l)
+		assert.NoError(t, err)
+		assert.NotZero(t, l.UpdatedAt)
+	})
+
+	t.Run("DeleteLesson", func(t *testing.T) {
+		mockRepo.On("DeleteLesson", ctx, "l1").Return(nil)
+		err := svc.DeleteLesson(ctx, "l1")
+		assert.NoError(t, err)
+	})
+}
+
+func TestCourseContentService_Activities(t *testing.T) {
+	mockRepo := new(MockCourseContentRepo)
+	svc := NewCourseContentService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("CreateActivity Success", func(t *testing.T) {
+		a := &models.CourseActivity{LessonID: "l1", Title: "A1", Type: "url"}
+		mockRepo.On("CreateActivity", ctx, a).Return(nil)
+		err := svc.CreateActivity(ctx, a)
+		assert.NoError(t, err)
+		assert.NotZero(t, a.CreatedAt)
+		assert.Equal(t, "{}", a.Content)
+	})
+
+	t.Run("CreateActivity Failure Missing Fields", func(t *testing.T) {
+		a := &models.CourseActivity{Title: "A1", Type: "url"} // missing lesson_id
+		err := svc.CreateActivity(ctx, a)
+		assert.Error(t, err)
+		assert.Equal(t, "lesson_id is required", err.Error())
+	})
+
+	t.Run("ListActivities", func(t *testing.T) {
+		expected := []models.CourseActivity{{ID: "a1"}}
+		mockRepo.On("ListActivities", ctx, "l1").Return(expected, nil)
+		res, err := svc.ListActivities(ctx, "l1")
+		assert.NoError(t, err)
+		assert.Equal(t, expected, res)
+	})
+
+	t.Run("UpdateActivity", func(t *testing.T) {
+		a := &models.CourseActivity{ID: "a1", Type: "url"}
+		mockRepo.On("UpdateActivity", ctx, a).Return(nil)
+		err := svc.UpdateActivity(ctx, a)
+		assert.NoError(t, err)
+		assert.NotZero(t, a.UpdatedAt)
+	})
+
+	t.Run("DeleteActivity", func(t *testing.T) {
+		mockRepo.On("DeleteActivity", ctx, "a1").Return(nil)
+		err := svc.DeleteActivity(ctx, "a1")
+		assert.NoError(t, err)
+	})
+}

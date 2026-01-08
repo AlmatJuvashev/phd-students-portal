@@ -54,13 +54,46 @@ func (h *MeHandler) Me(c *gin.Context) {
 	// models.User definition doesn't show PasswordHash json tag usually or it's "-".
 	// Let's assume models.User is safe or we use a map/struct here to be exact.
 	// Original returned: id, username, email, first_name, last_name, role.
+	// Determine roles
+	var availableRoles []string
+	tenantID := c.GetString("tenant_id")
+	if tenantID != "" {
+		availableRoles, _ = h.userSvc.GetTenantRoles(c.Request.Context(), sub, tenantID)
+	} else {
+		availableRoles, _ = h.userSvc.GetUserRoles(c.Request.Context(), sub)
+	}
+
+	// Active role from JWT context
+	// AuthMiddleware puts "claims" in context.
+	var activeRole string
+	if claims, exists := c.Get("claims"); exists {
+		if mapClaims, ok := claims.(map[string]interface{}); ok {
+			if ar, ok := mapClaims["active_role"].(string); ok {
+				activeRole = ar
+			} else if r, ok := mapClaims["role"].(string); ok {
+				activeRole = r // Fallback
+			}
+		}
+	}
+    // If activeRole is still empty (e.g. not in token?), use user.Role or first available
+    if activeRole == "" {
+        activeRole = string(user.Role)
+    }
+    
+    // Ensure availableRoles isn't empty
+    if len(availableRoles) == 0 {
+		availableRoles = []string{string(user.Role)}
+    }
+
 	response := map[string]interface{}{
-		"id":         user.ID,
-		"username":   user.Username,
-		"email":      user.Email,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
-		"role":       user.Role,
+		"id":              user.ID,
+		"username":        user.Username,
+		"email":           user.Email,
+		"first_name":      user.FirstName,
+		"last_name":       user.LastName,
+		"role":            activeRole, // Return active role as primary role
+		"active_role":     activeRole,
+		"available_roles": availableRoles,
 	}
 
 	b, _ := json.Marshal(response)

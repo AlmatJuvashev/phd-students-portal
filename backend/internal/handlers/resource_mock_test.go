@@ -197,3 +197,84 @@ func TestResourceHandler_UpdateDeleteRoom(t *testing.T) {
 	handler.DeleteRoom(c2)
 	assert.Equal(t, http.StatusOK, w2.Code)
 }
+
+func TestResourceHandler_ErrorPaths(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, mock, _ := sqlmock.New()
+	defer db.Close()
+	sqlxDB := sqlx.NewDb(db, "sqlmock")
+	repo := repository.NewSQLResourceRepository(sqlxDB)
+	svc := services.NewResourceService(repo)
+	handler := NewResourceHandler(svc)
+
+	t.Run("CreateBuilding_BindError", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/api/resources/buildings", bytes.NewBufferString("invalid"))
+		handler.CreateBuilding(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("CreateBuilding_ServiceError", func(t *testing.T) {
+		mock.ExpectQuery(`INSERT INTO buildings`).WillReturnError(assert.AnError) // Repo error
+		
+		b := models.Building{Name: "B1"}
+		body, _ := json.Marshal(b)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/api/resources/buildings", bytes.NewBuffer(body))
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "u1")
+		
+		handler.CreateBuilding(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code) // Handler returns 400 on service error unfortunately? Let's check handler. Yes, line 56.
+	})
+
+	t.Run("ListBuildings_ServiceError", func(t *testing.T) {
+		mock.ExpectQuery(`SELECT`).WillReturnError(assert.AnError)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/api/resources/buildings", nil)
+		c.Set("tenant_id", "t1")
+		
+		handler.ListBuildings(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("GetBuilding_ServiceError", func(t *testing.T) {
+		mock.ExpectQuery(`SELECT`).WillReturnError(assert.AnError)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/api/resources/buildings/b1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "b1"}}
+		
+		handler.GetBuilding(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("UpdateBuilding_ServiceError", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE`).WillReturnError(assert.AnError)
+		b := models.Building{Name: "Upd"}
+		body, _ := json.Marshal(b)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("PUT", "/api/resources/buildings/b1", bytes.NewBuffer(body))
+		c.Params = gin.Params{{Key: "id", Value: "b1"}}
+		c.Set("userID", "u1")
+
+		handler.UpdateBuilding(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+	
+	t.Run("DeleteBuilding_ServiceError", func(t *testing.T) {
+		mock.ExpectExec(`UPDATE`).WillReturnError(assert.AnError)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("DELETE", "/api/resources/buildings/b1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "b1"}}
+		c.Set("userID", "u1")
+
+		handler.DeleteBuilding(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}

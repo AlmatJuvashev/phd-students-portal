@@ -19,10 +19,11 @@ func GenerateJWT(sub string, role string, secret []byte, expDays int) (string, e
 }
 
 // GenerateJWTWithTenant creates a signed JWT with tenant context for multitenancy.
-func GenerateJWTWithTenant(sub string, roles []string, tenantID string, isSuperadmin bool, secret []byte, expDays int) (string, error) {
+func GenerateJWTWithTenant(sub string, roles []string, activeRole string, tenantID string, isSuperadmin bool, secret []byte, expDays int) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":           sub,
 		"roles":         roles,
+		"active_role":   activeRole,
 		"tenant_id":     tenantID,
 		"is_superadmin": isSuperadmin,
 		"iat":           time.Now().Unix(),

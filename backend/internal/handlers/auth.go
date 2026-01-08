@@ -108,9 +108,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Build response with tenant info but WITHOUT token in body
 	response := gin.H{
-		"message":       "Login successful",
-		"role":          resp.Role,
-		"is_superadmin": resp.IsSuperadmin,
+		"message":         "Login successful",
+		"role":            resp.Role,
+		"is_superadmin":   resp.IsSuperadmin,
+		"active_role":     resp.ActiveRole,
+		"available_roles": resp.AvailableRoles,
 	}
 	if tenant != nil {
 		response["tenant"] = gin.H{

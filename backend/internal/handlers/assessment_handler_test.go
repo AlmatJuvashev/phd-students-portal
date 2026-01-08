@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
@@ -494,5 +495,316 @@ func TestAssessmentHandler_StartAttempt_Errors(t *testing.T) {
 		require.Equal(t, http.StatusConflict, w.Code)
 		assert.Contains(t, w.Body.String(), "MAX_ATTEMPTS_REACHED")
 	})
+
+	t.Run("AttemptInProgress", func(t *testing.T) {
+		mockRepo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{ID: "a1", TenantID: "t1"}, nil).Once()
+		mockRepo.On("ListAttemptsByAssessmentAndStudent", mock.Anything, "a1", "s1").Return([]models.AssessmentAttempt{{ID: "prev", Status: models.AttemptStatusInProgress}}, nil).Once()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/assessments/a1/attempts", nil)
+		c.Params = gin.Params{{Key: "id", Value: "a1"}}
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "s1")
+
+		h.StartAttempt(c)
+		require.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "ATTEMPT_IN_PROGRESS")
+	})
+
+	t.Run("CooldownActive", func(t *testing.T) {
+		settings, _ := json.Marshal(models.SecuritySettings{CooldownMinutes: 60})
+		mockRepo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{
+			ID:               "a1",
+			TenantID:         "t1",
+			SecuritySettings: types.JSONText(settings),
+		}, nil).Once()
+		
+		lastAttemptTime := time.Now().Add(-30 * time.Minute)
+		mockRepo.On("ListAttemptsByAssessmentAndStudent", mock.Anything, "a1", "s1").Return([]models.AssessmentAttempt{{ID: "prev", Status: models.AttemptStatusSubmitted, StartedAt: lastAttemptTime, FinishedAt: &lastAttemptTime}}, nil).Once()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/assessments/a1/attempts", nil)
+		c.Params = gin.Params{{Key: "id", Value: "a1"}}
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "s1")
+
+		h.StartAttempt(c)
+		require.Equal(t, http.StatusTooManyRequests, w.Code)
+		assert.Contains(t, w.Body.String(), "COOLDOWN_ACTIVE")
+	})
 }
 
+func TestAssessmentHandler_SubmitResponse_Errors(t *testing.T) {
+	mockRepo := new(mockAssessmentRepo)
+	svc := services.NewAssessmentService(mockRepo)
+	h := NewAssessmentHandler(svc)
+	gin.SetMode(gin.TestMode)
+
+	t.Run("AutoSubmitted", func(t *testing.T) {
+		timeLimit := 10
+		startTime := time.Now().Add(-15 * time.Minute)
+		mockRepo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{
+			ID: "at1", StudentID: "s1", AssessmentID: "a1", Status: models.AttemptStatusInProgress, StartedAt: startTime,
+		}, nil).Once()
+		mockRepo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{
+			ID: "a1", TenantID: "t1", TimeLimitMinutes: &timeLimit,
+		}, nil).Once()
+		
+		// Internal auto-submit calls
+		mockRepo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{ID: "at1", Status: models.AttemptStatusInProgress, AssessmentID: "a1"}, nil).Once()
+		mockRepo.On("GetAssessmentQuestions", mock.Anything, "a1").Return([]models.Question{}, nil)
+		mockRepo.On("ListResponses", mock.Anything, "at1").Return([]models.ItemResponse{}, nil)
+		mockRepo.On("CompleteAttempt", mock.Anything, "at1", 0.0).Return(nil)
+		mockRepo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{ID: "at1", Status: models.AttemptStatusSubmitted}, nil).Once()
+
+		body, _ := json.Marshal(map[string]any{"question_id": "q1", "option_id": "o1"})
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/response", bytes.NewBuffer(body))
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "s1")
+
+		h.SubmitResponse(c)
+		require.Equal(t, http.StatusConflict, w.Code)
+		assert.Contains(t, w.Body.String(), "ATTEMPT_AUTO_SUBMITTED")
+	})
+
+	t.Run("InvalidJSON", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/response", bytes.NewBufferString("invalid"))
+		h.SubmitResponse(c)
+		require.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("Forbidden", func(t *testing.T) {
+		mockRepo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{
+			ID: "at1", StudentID: "other-student", AssessmentID: "a1",
+		}, nil).Once()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/response", bytes.NewBufferString("{}"))
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "s1")
+
+		h.SubmitResponse(c)
+		require.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("ServiceError", func(t *testing.T) {
+		mockRepo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{
+			ID: "at1", StudentID: "s1", AssessmentID: "a1", Status: models.AttemptStatusInProgress,
+		}, nil).Once()
+		mockRepo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{
+			ID: "a1", TenantID: "t1",
+		}, nil).Once()
+		mockRepo.On("SaveItemResponse", mock.Anything, mock.Anything).Return(assert.AnError).Once()
+
+		body, _ := json.Marshal(map[string]any{"question_id": "q1", "option_id": "o1"})
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/response", bytes.NewBuffer(body))
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "s1")
+
+		h.SubmitResponse(c)
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}
+
+func TestAssessmentHandler_OtherForbidden(t *testing.T) {
+	mockRepo := new(mockAssessmentRepo)
+	svc := services.NewAssessmentService(mockRepo)
+	h := NewAssessmentHandler(svc)
+	gin.SetMode(gin.TestMode)
+
+	t.Run("GetAssessment_Forbidden", func(t *testing.T) {
+		mockRepo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{ID: "a1", TenantID: "t2"}, nil).Once()
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "id", Value: "a1"}}
+		c.Request, _ = http.NewRequest("GET", "/assessments/a1", nil)
+		c.Set("tenant_id", "t1")
+		h.GetAssessment(c)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("UpdateAssessment_Forbidden", func(t *testing.T) {
+		mockRepo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{ID: "a1", TenantID: "t2"}, nil).Once()
+		body, _ := json.Marshal(map[string]any{"title": "Updated"})
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "id", Value: "a1"}}
+		c.Request, _ = http.NewRequest("PUT", "/assessments/a1", bytes.NewBuffer(body))
+		c.Set("tenant_id", "t1")
+		h.UpdateAssessment(c)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+}
+
+
+func TestAssessmentHandler_ExtendedErrorPaths(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("LogProctoringEvent_BindError", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+		
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/log", bytes.NewBufferString("invalid json"))
+		h.LogProctoringEvent(c)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("LogProctoringEvent_Forbidden", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+		
+		repo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{ID: "at1", AssessmentID: "a1"}, nil)
+		repo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{ID: "a1", TenantID: "other-tenant"}, nil)
+		
+		body, _ := json.Marshal(map[string]any{"event_type": "TAB_SWITCH", "metadata": map[string]any{}})
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/log", bytes.NewBuffer(body))
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "u1")
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+
+		h.LogProctoringEvent(c)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("LogProctoringEvent_ServiceError", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+
+		repo.On("GetAttempt", mock.Anything, "at1").Return(nil, assert.AnError) // Repo failure
+		
+		body, _ := json.Marshal(map[string]any{"event_type": "TAB_SWITCH", "metadata": map[string]any{}})
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/log", bytes.NewBuffer(body))
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+
+		h.LogProctoringEvent(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("CompleteAttempt_Forbidden", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+		
+		repo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{ID: "at1", AssessmentID: "a1"}, nil)
+		repo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{ID: "a1", TenantID: "other"}, nil) // Tenant mismatch
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/complete", nil)
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "u1")
+
+		h.CompleteAttempt(c)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("CompleteAttempt_ServiceError", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+		
+		repo.On("GetAttempt", mock.Anything, "at1").Return(nil, assert.AnError)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("POST", "/attempts/at1/complete", nil)
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+
+		h.CompleteAttempt(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("ListMyAttempts_Forbidden", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+		
+		repo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{ID: "a1", TenantID: "other"}, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/assessments/a1/my-attempts", nil)
+		c.Params = gin.Params{{Key: "id", Value: "a1"}}
+		c.Set("tenant_id", "t1")
+
+		h.ListMyAttempts(c)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("ListMyAttempts_ServiceError", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+		
+		repo.On("GetAssessment", mock.Anything, "a1").Return(nil, assert.AnError)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/assessments/a1/my-attempts", nil)
+		c.Params = gin.Params{{Key: "id", Value: "a1"}}
+		c.Set("tenant_id", "t1")
+
+		h.ListMyAttempts(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+	
+	t.Run("GetAttemptDetails_Forbidden", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+
+		repo.On("GetAttempt", mock.Anything, "at1").Return(&models.AssessmentAttempt{ID: "at1", AssessmentID: "a1"}, nil)
+		repo.On("GetAssessment", mock.Anything, "a1").Return(&models.Assessment{ID: "a1", TenantID: "other"}, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/attempts/at1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+		c.Set("userID", "u1")
+
+		h.GetAttemptDetails(c)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("GetAttemptDetails_ServiceError", func(t *testing.T) {
+		repo := new(mockAssessmentRepo)
+		svc := services.NewAssessmentService(repo)
+		h := NewAssessmentHandler(svc)
+
+		repo.On("GetAttempt", mock.Anything, "at1").Return(nil, assert.AnError)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request, _ = http.NewRequest("GET", "/attempts/at1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "at1"}}
+		c.Set("tenant_id", "t1")
+
+		h.GetAttemptDetails(c)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+}

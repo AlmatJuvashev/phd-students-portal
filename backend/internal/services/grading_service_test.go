@@ -146,3 +146,30 @@ func TestGradingService_CreateSchema(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, "name is required", err.Error())
 }
+
+func TestGradingService_ReadOps(t *testing.T) {
+	mockRepo := new(MockGradingRepo)
+	svc := NewGradingService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("ListSchemas", func(t *testing.T) {
+		mockRepo.On("ListSchemas", ctx, "t1").Return([]models.GradingSchema{{ID: "s1"}}, nil)
+		res, err := svc.ListSchemas(ctx, "t1")
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+	})
+
+	t.Run("GetDefaultSchema", func(t *testing.T) {
+		mockRepo.On("GetDefaultSchema", ctx, "t1").Return(&models.GradingSchema{ID: "def"}, nil)
+		res, err := svc.GetDefaultSchema(ctx, "t1")
+		assert.NoError(t, err)
+		assert.Equal(t, "def", res.ID)
+	})
+
+	t.Run("ListStudentGrades", func(t *testing.T) {
+		mockRepo.On("ListStudentEntries", ctx, "stud-1").Return([]models.GradebookEntry{{ID: "e1"}}, nil)
+		res, err := svc.ListStudentGrades(ctx, "stud-1")
+		assert.NoError(t, err)
+		assert.Len(t, res, 1)
+	})
+}

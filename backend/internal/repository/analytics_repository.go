@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -284,17 +285,19 @@ func (r *SQLAnalyticsRepository) buildFilter(f models.FilterParams) ([]string, [
 func (r *SQLAnalyticsRepository) SaveRiskSnapshot(ctx context.Context, s *models.RiskSnapshot) error {
 	// Insert snapshot
 	s.CreatedAt = time.Now()
-	// Marshal RiskFactors for DB if needed, but model handles it?
-	// RiskSnapshot struct has RiskFactors (JSONB) and RawFactors?
-	// Let's assume passed struct has RawFactors populated if using that, or we assume RiskFactors is []byte.
-	// The model definition: RiskFactors types.JSONText `db:"risk_factors"`
+	
+	factorsJSON, err := json.Marshal(s.RiskFactors)
+	if err != nil {
+		return err
+	}
+	s.RawFactors = factorsJSON
 	
 	query := `
 		INSERT INTO student_risk_snapshots (student_id, risk_score, risk_factors, created_at)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id`
 	
-	err := r.db.QueryRowxContext(ctx, query, s.StudentID, s.RiskScore, s.RiskFactors, s.CreatedAt).Scan(&s.ID)
+	err = r.db.QueryRowxContext(ctx, query, s.StudentID, s.RiskScore, factorsJSON, s.CreatedAt).Scan(&s.ID)
 	return err
 }
 

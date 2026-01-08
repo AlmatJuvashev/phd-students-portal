@@ -75,8 +75,97 @@ func TestSolver_Solve_RecommendsCapacityOptimization(t *testing.T) {
 	t.Logf("Final Score: %f", solution.Score)
 }
 
+
 func TestSolver_Solve_FixesHardConflict(t *testing.T) {
-	// Setup: 2 Sessions, 1 Room. Hard Conflict over time.
-	// NOTE: Time mutation not implemented yet, so solver can only swap rooms.
-	// But if we have 2 rooms and 2 sessions at same time, it should split them.
+	// Setup: 2 Sessions, 2 Rooms. Overlap in time.
+	// Both sessions initially assigned to Room 101.
+	// Solver should move one to Room 102 to minimize conflict penalty (assuming hard constraint weight).
+
+	// Sessions at same time
+	start := time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)
+	s1 := SessionData{ID: "s1", DurationMins: 60, MaxStudents: 10, OriginalTime: start}
+	s2 := SessionData{ID: "s2", DurationMins: 60, MaxStudents: 10, OriginalTime: start}
+
+	// Rooms
+	r1 := models.Room{ID: "r1", Capacity: 20}
+	r2 := models.Room{ID: "r2", Capacity: 20}
+
+	instance := ProblemInstance{
+		Sessions: map[string]SessionData{"s1": s1, "s2": s2},
+		Rooms:    map[string]models.Room{"r1": r1, "r2": r2},
+	}
+
+	cfg := DefaultConfig()
+	cfg.MaxIterations = 1000
+	// Set high penalty for conflicts
+	cfg.WeightHardConflict = 10000.0
+
+	solver := NewSchedulerSolver(cfg)
+	// Seed/Initial solution might put them in different rooms by chance (random greedy).
+	// But we want to ensure *optimization* works.
+	// Since GenerateInitialSolution is random, we can just run Solve.
+	// If it fails to separate them, score will be high.
+
+	sol, err := solver.Solve(context.Background(), instance)
+	assert.NoError(t, err)
+
+	a1 := sol.Assignments["s1"]
+	a2 := sol.Assignments["s2"]
+
+	// They must be in different rooms since time matches
+	assert.NotEqual(t, a1.RoomID, a2.RoomID, "Sessions at same time must be in different rooms")
+}
+
+func TestSolver_Mutate(t *testing.T) {
+	s1 := SessionData{ID: "s1", DurationMins: 60, OriginalTime: time.Now()}
+	s2 := SessionData{ID: "s2", DurationMins: 60, OriginalTime: time.Now()}
+	r1 := models.Room{ID: "r1"}
+	r2 := models.Room{ID: "r2"}
+
+	instance := ProblemInstance{
+		Sessions: map[string]SessionData{"s1": s1, "s2": s2},
+		Rooms:    map[string]models.Room{"r1": r1, "r2": r2},
+	}
+	
+	sol := &Solution{
+		Assignments: map[string]Assignment{
+			"s1": {SessionID: "s1", RoomID: "r1"},
+			"s2": {SessionID: "s2", RoomID: "r1"},
+		},
+	}
+	
+	solver := NewSchedulerSolver(DefaultConfig())
+	
+	// Test correctness of mutation: It should produce a valid assignment for existing keys
+	// Since mutation is random (Strategy 0 or 1), we run it multiple times to catch potential panics or corruptions
+	for i := 0; i < 50; i++ {
+		mutated := solver.Mutate(sol, instance)
+		assert.NotNil(t, mutated)
+		assert.Equal(t, 2, len(mutated.Assignments))
+		assert.Contains(t, []string{"r1", "r2"}, mutated.Assignments["s1"].RoomID)
+		assert.Contains(t, []string{"r1", "r2"}, mutated.Assignments["s2"].RoomID)
+	}
+}
+
+func TestSolver_ContextCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cfg := DefaultConfig()
+	cfg.MaxIterations = 1000000 // Long run
+	solver := NewSchedulerSolver(cfg)
+
+	instance := ProblemInstance{
+		Sessions: map[string]SessionData{"s1": {ID: "s1"}},
+		Rooms:    map[string]models.Room{"r1": {ID: "r1"}},
+	}
+    
+	// Cancel immediately
+	cancel()
+	
+	start := time.Now()
+	_, err := solver.Solve(ctx, instance)
+	elapsed := time.Since(start)
+
+	assert.Error(t, err)
+	assert.Equal(t, context.Canceled, err)
+	assert.Less(t, elapsed, 100*time.Millisecond, "Solver should return immediately on cancelled context")
 }

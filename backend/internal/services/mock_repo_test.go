@@ -167,6 +167,7 @@ type HandwrittenMockUserRepository struct {
 	GetPasswordResetTokenFunc       func(ctx context.Context, tokenHash string) (string, time.Time, error)
 	DeletePasswordResetTokenFunc    func(ctx context.Context, tokenHash string) error
 	GetTenantRolesFunc               func(ctx context.Context, userID, tenantID string) ([]string, error)
+	GetUserRolesFunc                 func(ctx context.Context, userID string) ([]string, error)
 	LinkAdvisorFunc                 func(ctx context.Context, studentID, advisorID, tenantID string) error
 	CheckRateLimitFunc              func(ctx context.Context, userID, action string, window time.Duration) (int, error)
 	RecordRateLimitFunc             func(ctx context.Context, userID, action string) error
@@ -225,6 +226,9 @@ func (m *HandwrittenMockUserRepository) DeletePasswordResetToken(ctx context.Con
 func (m *HandwrittenMockUserRepository) GetTenantRoles(ctx context.Context, u, t string) ([]string, error) {
 	return m.GetTenantRolesFunc(ctx, u, t)
 }
+func (m *HandwrittenMockUserRepository) GetUserRoles(ctx context.Context, u string) ([]string, error) {
+	return m.GetUserRolesFunc(ctx, u)
+}
 func (m *HandwrittenMockUserRepository) LinkAdvisor(ctx context.Context, s, a, t string) error {
 	return m.LinkAdvisorFunc(ctx, s, a, t)
 }
@@ -273,6 +277,7 @@ func NewHandwrittenMockUserRepository() *HandwrittenMockUserRepository {
 		GetPasswordResetTokenFunc: func(ctx context.Context, h string) (string, time.Time, error) { return "", time.Time{}, nil },
 		DeletePasswordResetTokenFunc: func(ctx context.Context, h string) error { return nil },
 		GetTenantRolesFunc: func(ctx context.Context, u, t string) ([]string, error) { return nil, nil },
+		GetUserRolesFunc: func(ctx context.Context, u string) ([]string, error) { return nil, nil },
 		LinkAdvisorFunc: func(ctx context.Context, s, a, t string) error { return nil },
 		CheckRateLimitFunc: func(ctx context.Context, u, a string, w time.Duration) (int, error) { return 0, nil },
 		RecordRateLimitFunc: func(ctx context.Context, u, a string) error { return nil },

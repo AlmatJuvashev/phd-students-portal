@@ -29,10 +29,12 @@ func NewAuthService(repo repository.UserRepository, email EmailSender, cfg confi
 }
 
 type LoginResponse struct {
-	Token        string
-	Role         string
-	IsSuperadmin bool
-	UserID       string
+	Token          string
+	Role           string
+	IsSuperadmin   bool
+	UserID         string
+	ActiveRole     string
+	AvailableRoles []string
 }
 
 func (s *AuthService) Login(ctx context.Context, username, password string, tenantID string) (*LoginResponse, error) {
@@ -73,11 +75,30 @@ func (s *AuthService) Login(ctx context.Context, username, password string, tena
 		log.Printf("[AuthService.Login] Tenant access granted: roles=%v", roles)
 	} else {
 		// No tenant context (e.g. platform admin login? or just resolving user role)
-		roles = []string{string(user.Role)}
-		log.Printf("[AuthService.Login] No tenant context, using user global role=%v", roles)
+		// Fetch all roles from user_roles table
+		log.Printf("[AuthService.Login] No tenant context, fetching global roles for userID=%s", user.ID)
+		r, err := s.repo.GetUserRoles(ctx, user.ID)
+		if err != nil && err.Error() != "record not found" { 
+			// If error, fall back to user.Role?
+			// For TDD phase 1, we expect GetUserRoles to work or return empty.
+			// Existing user.Role is backup.
+			roles = []string{string(user.Role)}
+		} else {
+			roles = r
+			if len(roles) == 0 {
+				roles = []string{string(user.Role)} // Fallback if no roles in table
+			}
+		}
+		log.Printf("[AuthService.Login] User roles=%v", roles)
 	}
 
-	token, err := s.GenerateToken(user.ID, roles, tenantID, user.Role == "superadmin")
+	// Determine Active Role
+	activeRole := ""
+	if len(roles) > 0 {
+		activeRole = roles[0]
+	}
+
+	token, err := s.GenerateToken(user.ID, roles, activeRole, tenantID, user.Role == "superadmin")
 	if err != nil {
 		log.Printf("[AuthService.Login] Token generation failed: %v", err)
 		return nil, err
@@ -91,10 +112,12 @@ func (s *AuthService) Login(ctx context.Context, username, password string, tena
 	}
 
 	return &LoginResponse{
-		Token:        token,
-		UserID:       user.ID,
-		Role:         primaryRole, // Legacy field
-		IsSuperadmin: user.Role == "superadmin", 
+		Token:          token,
+		UserID:         user.ID,
+		Role:           primaryRole, // Active Role (legacy support)
+		IsSuperadmin:   user.Role == "superadmin",
+		ActiveRole:     primaryRole,
+		AvailableRoles: roles,
 	}, nil
 }
 
@@ -145,6 +168,33 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 	return s.repo.DeletePasswordResetToken(ctx, tokenHash)
 }
 
-func (s *AuthService) GenerateToken(userID string, roles []string, tenantID string, isSuperadmin bool) (string, error) {
-	return auth.GenerateJWTWithTenant(userID, roles, tenantID, isSuperadmin, []byte(s.cfg.JWTSecret), s.cfg.JWTExpDays)
+func (s *AuthService) SwitchRole(ctx context.Context, userID, targetRole string) (string, error) {
+	// 1. Get all available roles for user (global + tenant specific logic if needed)
+	// For Phase 1, we assume GetUserRoles returns all valid roles
+	roles, err := s.repo.GetUserRoles(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+
+	// 2. Verify target role is allowed
+	allowed := false
+	for _, r := range roles {
+		if r == targetRole {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return "", errors.New("access denied")
+	}
+
+	// 3. Generate new token with active role
+	// Note: We might need tenantID here if switching within a tenant context. 
+	// For now, passing empty tenantID implies global switch or purely role-based.
+	// TODO: Add tenantID support to SwitchRole if needed.
+	return s.GenerateToken(userID, roles, targetRole, "", false)
+}
+
+func (s *AuthService) GenerateToken(userID string, roles []string, activeRole string, tenantID string, isSuperadmin bool) (string, error) {
+	return auth.GenerateJWTWithTenant(userID, roles, activeRole, tenantID, isSuperadmin, []byte(s.cfg.JWTSecret), s.cfg.JWTExpDays)
 }

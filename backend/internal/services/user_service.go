@@ -138,6 +138,13 @@ func (s *UserService) UpdateUser(ctx context.Context, u *models.User) error {
 }
 
 
+func (s *UserService) GetUserRoles(ctx context.Context, userID string) ([]string, error) {
+	return s.repo.GetUserRoles(ctx, userID)
+}
+
+func (s *UserService) GetTenantRoles(ctx context.Context, userID, tenantID string) ([]string, error) {
+	return s.repo.GetTenantRoles(ctx, userID, tenantID)
+}
 
 func (s *UserService) ChangePassword(ctx context.Context, userID, currentPassword, newPassword string) error {
 	user, err := s.repo.GetByID(ctx, userID)

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/models"
+	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services"
 	"github.com/AlmatJuvashev/phd-students-portal/backend/internal/services/scheduler/solver"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -44,6 +45,9 @@ func (m *MockSchedulerService) ListOfferings(ctx context.Context, tenantID, term
 }
 func (m *MockSchedulerService) ScheduleSession(ctx context.Context, session *models.ClassSession) ([]string, error) {
 	args := m.Called(ctx, session)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]string), args.Error(1)
 }
 func (m *MockSchedulerService) ListSessions(ctx context.Context, offeringID string, start, end time.Time) ([]models.ClassSession, error) {
@@ -111,6 +115,32 @@ func TestSchedulerHandler_CreateOffering(t *testing.T) {
 
 	h.CreateOffering(c)
 	assert.Equal(t, http.StatusCreated, w.Code)
+}
+
+func TestSchedulerHandler_CreateOffering_Errors(t *testing.T) {
+	mockSvc := new(MockSchedulerService)
+	h := NewSchedulerHandler(mockSvc)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	// Invalid JSON
+	c.Request, _ = http.NewRequest("POST", "/offerings", bytes.NewBufferString("invalid json"))
+	h.CreateOffering(c)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// Service Error
+	offering := models.CourseOffering{TermID: "term-err", CourseID: "course-1"}
+	body, _ := json.Marshal(offering)
+	w2 := httptest.NewRecorder()
+	c2, _ := gin.CreateTestContext(w2)
+	c2.Request, _ = http.NewRequest("POST", "/offerings", bytes.NewBuffer(body))
+	
+	mockSvc.On("CreateOffering", mock.Anything, mock.MatchedBy(func(o *models.CourseOffering) bool {
+		return o.TermID == "term-err"
+	})).Return(assert.AnError)
+
+	h.CreateOffering(c2)
+	assert.Equal(t, http.StatusInternalServerError, w2.Code)
 }
 
 func TestSchedulerHandler_CreateSession(t *testing.T) {
@@ -214,4 +244,54 @@ func TestSchedulerHandler_ListTerms_Fallback(t *testing.T) {
 	h.ListTerms(c)
 	assert.Equal(t, http.StatusOK, w.Code)
 	mockSvc.AssertExpectations(t)
+}
+
+func TestSchedulerHandler_CreateSession_Conflict(t *testing.T) {
+	mockSvc := new(MockSchedulerService)
+	h := NewSchedulerHandler(mockSvc)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	session := models.ClassSession{CourseOfferingID: "off-conflict"}
+	body, _ := json.Marshal(session)
+	c.Request, _ = http.NewRequest("POST", "/sessions", bytes.NewBuffer(body))
+
+	mockSvc.On("ScheduleSession", mock.Anything, mock.Anything).Return(nil, &services.ConflictError{Reason: "overlap"})
+
+	h.CreateSession(c)
+	assert.Equal(t, http.StatusConflict, w.Code)
+	assert.Contains(t, w.Body.String(), "overlap")
+	assert.Contains(t, w.Body.String(), "CONFLICT")
+}
+
+func TestSchedulerHandler_CreateSession_Error(t *testing.T) {
+	mockSvc := new(MockSchedulerService)
+	h := NewSchedulerHandler(mockSvc)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	session := models.ClassSession{CourseOfferingID: "off-err"}
+	body, _ := json.Marshal(session)
+	c.Request, _ = http.NewRequest("POST", "/sessions", bytes.NewBuffer(body))
+
+	mockSvc.On("ScheduleSession", mock.Anything, mock.Anything).Return(nil, assert.AnError)
+
+	h.CreateSession(c)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestSchedulerHandler_ListOfferings(t *testing.T) {
+	mockSvc := new(MockSchedulerService)
+	h := NewSchedulerHandler(mockSvc)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	
+	c.Request, _ = http.NewRequest("GET", "/offerings?tenant_id=t1&term_id=term-1", nil)
+
+	expected := []models.CourseOffering{{ID: "off-1"}}
+	mockSvc.On("ListOfferings", mock.Anything, "t1", "term-1").Return(expected, nil)
+
+	h.ListOfferings(c)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "off-1")
 }

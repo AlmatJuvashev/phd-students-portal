@@ -16,7 +16,24 @@ const (
 	RoleSecretary      Role = "secretary"
 	RoleChair          Role = "chair"
 	RoleExternal       Role = "external" // External Examiner
+
+	// New roles for separation of concerns
+	RoleInstructor      Role = "instructor"       // Course teaching
+	RoleHRAdmin         Role = "hr_admin"         // User management
+	RoleFacilityManager Role = "facility_manager" // Rooms/equipment
+	RoleSchedulerAdmin  Role = "scheduler_admin"  // Scheduling
+	RoleDean            Role = "dean"             // Academic approval
+	RoleCommitteeMember Role = "committee_member" // Defense committees
 )
+
+// Role categories for UI grouping
+var RoleCategories = map[string][]Role{
+	"platform": {RoleSuperAdmin},
+	"admin":    {RoleAdmin, RoleITAdmin, RoleHRAdmin, RoleFacilityManager, RoleSchedulerAdmin, RoleContentMgr},
+	"academic": {RoleDean, RoleChair, RoleCommitteeMember, RoleRegistrar},
+	"teaching": {RoleInstructor, RoleAdvisor},
+	"student":  {RoleStudent, RoleExternal},
+}
 
 type User struct {
 	ID           string    `db:"id" json:"id"`

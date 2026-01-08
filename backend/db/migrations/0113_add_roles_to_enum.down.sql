@@ -1,0 +1,2 @@
+-- enum values cannot be removed easily in postgres
+-- empty down migration is acceptable for enum additions

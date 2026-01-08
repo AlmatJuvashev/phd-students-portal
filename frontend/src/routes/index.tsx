@@ -282,6 +282,15 @@ function IndexRoute() {
   return WithSuspense(<LandingPage />);
 }
 
+
+// New Layouts
+const InstructorLayout = lazy(() =>
+  import("@/layouts/InstructorLayout").then((m) => ({ default: m.InstructorLayout }))
+);
+const DeanLayout = lazy(() =>
+  import("@/layouts/DeanLayout").then((m) => ({ default: m.DeanLayout }))
+);
+
 export const router = createBrowserRouter([
   // App routes (constrained width via AppLayout)
   {
@@ -339,6 +348,10 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: <ProtectedRoute>{WithSuspense(<Dashboard />)}</ProtectedRoute>,
       },
+      
+      // === NEW ROLE-BASED ROUTES ===
+      
+      // Student Routes
       {
         path: "student",
         element: (
@@ -361,6 +374,40 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="dashboard" replace /> },
         ],
       },
+
+      // Instructor Routes
+      {
+        path: "teach",
+        element: (
+          <ProtectedRoute requiredAnyRole={["instructor", "advisor"]}>
+            {WithSuspense(<InstructorLayout />)}
+          </ProtectedRoute>
+        ),
+        children: [
+             { index: true, element: <Navigate to="courses" replace /> },
+             { path: "courses", element: WithSuspense(<TeacherCoursesPage />) },
+             { path: "courses/:courseId", element: WithSuspense(<TeacherCourseDetail />) },
+             { path: "courses/:courseId/tracker", element: WithSuspense(<StudentTracker />) },
+             { path: "courses/:courseId/attendance", element: WithSuspense(<TeacherAttendancePage />) },
+             { path: "grading", element: WithSuspense(<TeacherGradingPage />) },
+             { path: "dashboard", element: WithSuspense(<TeacherDashboard />) },
+        ]
+      },
+
+      // Dean/Academic Routes
+      {
+        path: "academic",
+        element: (
+            <ProtectedRoute requiredAnyRole={["dean", "chair"]}>
+                {WithSuspense(<DeanLayout />)}
+            </ProtectedRoute>
+        ),
+        children: [
+            { index: true, element: <div>Dean Dashboard (Coming Soon)</div> },
+            // Add dean specific pages here
+        ]
+      },
+
       {
         path: "profile",
         element: <ProtectedRoute>{WithSuspense(<ProfilePage />)}</ProtectedRoute>,
@@ -381,7 +428,7 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: (
-      <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
+      <ProtectedRoute requiredAnyRole={["admin", "system_admin"]}>
         {WithSuspense(<AdminLayout />)}
       </ProtectedRoute>
     ),
@@ -576,54 +623,11 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      {
-        path: "teacher/dashboard",
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
-            {WithSuspense(<TeacherDashboard />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "teacher/courses",
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
-            {WithSuspense(<TeacherCoursesPage />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "teacher/courses/:courseId",
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
-            {WithSuspense(<TeacherCourseDetail />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "teacher/courses/:courseId/tracker",
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
-            {WithSuspense(<StudentTracker />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "teacher/courses/:courseId/attendance",
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
-            {WithSuspense(<TeacherAttendancePage />)}
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "teacher/grading",
-        element: (
-          <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
-            {WithSuspense(<TeacherGradingPage />)}
-          </ProtectedRoute>
-        ),
-      },
+      // Moved Teacher dashboard logic to InstructorLayout block above, keeping admin access here?
+      // Actually, Admin might want to view Teacher layouts too? For now, removing dual references or keeping them based on route.
+      // Keeping these for Admin access specifically if they access /admin/...
+      // But standard teacher flow moves to /teach/...
+      
       {
         path: "assessments",
         element: (
