@@ -226,6 +226,12 @@ const LogsPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("@/features/superadmin/settings/SettingsPage").then((m) => ({ default: m.SettingsPage }))
 );
+const HRPage = lazy(() =>
+  import("@/pages/admin/HRPage").then((m) => ({ default: m.HRPage }))
+);
+const FacilitiesPage = lazy(() =>
+  import("@/pages/admin/FacilitiesPage").then((m) => ({ default: m.FacilitiesPage }))
+);
 
 
 const WithSuspense = (el: React.ReactNode) => (
@@ -641,6 +647,30 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredAnyRole={["admin", "advisor"]}>
             {WithSuspense(<QuizBuilderPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "hr",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<HRPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "facilities",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<FacilitiesPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "rooms",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<FacilitiesPage />)}
           </ProtectedRoute>
         ),
       },
