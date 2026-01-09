@@ -28,11 +28,13 @@ export function JourneyMap({
   locale = "ru",
   stateByNodeId = {},
   onStateChanged,
+  viewerRole,
 }: {
   playbook: Playbook;
   locale?: string;
   stateByNodeId?: Record<string, NodeVM["state"]>;
   onStateChanged?: () => void;
+  viewerRole?: string;
 }) {
   const { user } = useAuth();
   const { t: T } = useTranslation("common");
@@ -330,7 +332,7 @@ export function JourneyMap({
                       <div className="p-4">
                             <NodeDetails 
                                 node={selectedNode} 
-                                role={(user?.role as any) || 'student'}
+                                role={(viewerRole || user?.role || 'student') as any}
                                 onStateRefresh={onStateChanged} 
                                 onAdvance={(nextId) => handleNodeComplete(nextId || undefined)}
                             />

@@ -12,7 +12,10 @@ import {
 } from 'lucide-react';
 import { Button, Badge, Card, IconButton, Tabs } from '@/features/admin/components/AdminUI';
 import { cn } from '@/lib/utils';
-import { getProgram, getProgramVersionNodes, getProgramVersionMap } from './api';
+import { getProgram, getProgramVersionNodes, getProgramVersionMap, updateProgram, deleteProgram } from './api';
+import { ProgramModal } from './components/ProgramModal';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 // Helper for localization
 const parseLocalized = (val: any, lang: string): string => {
@@ -264,13 +267,41 @@ export const ProgramDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation('common');
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState('Journey Map');
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: program, isLoading: pLoading, isError } = useQuery({
     queryKey: ['curriculum', 'programs', id],
     queryFn: () => getProgram(id!),
     enabled: !!id,
   });
+
+  // Mutations
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => updateProgram(id!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curriculum', 'programs', id] });
+      toast.success('Program updated successfully');
+      setIsEditModalOpen(false);
+    },
+    onError: () => toast.error('Failed to update program')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteProgram(id!),
+    onSuccess: () => {
+      toast.success('Program deleted');
+      navigate('/admin/programs');
+    },
+    onError: () => toast.error('Failed to delete program')
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this program? This action cannot be undone.')) {
+      deleteMutation.mutate();
+    }
+  };
 
   // Fetch Journey Map (version metadata)
   const { data: journeyMap } = useQuery({
@@ -458,15 +489,26 @@ export const ProgramDetailPage: React.FC = () => {
                <p className="text-lg text-slate-500 max-w-2xl leading-relaxed">{description}</p>
             </div>
             <div className="flex gap-3">
+               <IconButton icon={Settings} onClick={() => setIsEditModalOpen(true)} className="bg-slate-50 border border-slate-200" />
                <Button variant="secondary" icon={ExternalLink}>Preview Portal</Button>
                <Button icon={Edit} onClick={() => navigate(`/admin/studio/programs/${id}/builder`)}>Edit Journey</Button>
             </div>
          </div>
       </div>
 
+      {/* Program Metadata Modal */}
+      <ProgramModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        initialData={program}
+        onSave={(data) => updateMutation.mutate(data)}
+        onDelete={handleDelete}
+        isLoading={updateMutation.isPending || deleteMutation.isPending}
+      />
+
       {/* Navigation Tabs */}
       <Tabs 
-         tabs={['Overview', 'Journey Map', 'Enrollments']} 
+         tabs={['Overview', 'Program Structure', 'Enrollments']} 
          activeTab={activeTab} 
          onChange={setActiveTab} 
       />
@@ -474,7 +516,7 @@ export const ProgramDetailPage: React.FC = () => {
       {/* Content Area */}
       <div className="min-h-[400px]">
          {activeTab === 'Overview' && <OverviewTab />}
-         {activeTab === 'Journey Map' && <JourneyMapTab />}
+         {activeTab === 'Program Structure' && <JourneyMapTab />}
          {activeTab === 'Enrollments' && <EnrollmentsTab />}
       </div>
     </div>

@@ -1,16 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Plus, Search, MoreVertical, FileText, Clock, Users, 
   GraduationCap, BookOpen, Layers, ArrowUpDown, LayoutTemplate, 
-  CheckCircle2, User as UserIcon, BarChart3, Loader2
+  CheckCircle2, User as UserIcon, BarChart3, Loader2, Edit2, Trash2
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button, Badge, Card, IconButton } from '@/features/admin/components/AdminUI';
 import { cn } from '@/lib/utils';
-import { getPrograms, getCourses } from './api';
+import { getPrograms, getCourses, createProgram, createCourse, updateProgram, deleteProgram, updateCourse, deleteCourse } from './api';
 import { Program, Course } from './types';
+import { ProgramModal } from './components/ProgramModal';
+import { CourseModal } from './components/CourseModal';
 
 // Templates Data
 const TEMPLATES = [
@@ -68,12 +71,95 @@ export const ProgramsPage: React.FC<ProgramsPageProps> = ({ initialTab = 'progra
   const [sortBy, setSortBy] = useState<'updated' | 'title'>('updated');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [editingProgram, setEditingProgram] = useState<Program | null>(null);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  
+  const queryClient = useQueryClient();
+
   // Load Data
   const { data: programs = [], isLoading: pLoading } = useQuery({ queryKey: ['curriculum', 'programs'], queryFn: getPrograms });
-  // FIX: use arrow function to avoid passing context as argument
   const { data: courses = [], isLoading: cLoading } = useQuery({ queryKey: ['curriculum', 'courses'], queryFn: () => getCourses() });
 
+  // Mutations
+  const createProgramMutation = useMutation({
+    mutationFn: createProgram,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curriculum', 'programs'] });
+      toast.success('Program created successfully');
+      setIsProgramModalOpen(false);
+    },
+    onError: () => toast.error('Failed to create program')
+  });
+
+  const updateProgramMutation = useMutation({
+    mutationFn: (data: any) => updateProgram(editingProgram!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curriculum', 'programs'] });
+      toast.success('Program updated');
+      setEditingProgram(null);
+    },
+    onError: () => toast.error('Failed to update program')
+  });
+
+  const deleteProgramMutation = useMutation({
+    mutationFn: (id: string) => deleteProgram(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curriculum', 'programs'] });
+      toast.success('Program deleted');
+    },
+    onError: () => toast.error('Failed to delete program')
+  });
+
+  const createCourseMutation = useMutation({
+    mutationFn: createCourse,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curriculum', 'courses'] });
+      toast.success('Course registered successfully');
+      setIsCourseModalOpen(false);
+    },
+    onError: () => toast.error('Failed to create course')
+  });
+
+  const updateCourseMutation = useMutation({
+    mutationFn: (data: any) => updateCourse(editingCourse!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curriculum', 'courses'] });
+      toast.success('Course updated');
+      setEditingCourse(null);
+    },
+    onError: () => toast.error('Failed to update course')
+  });
+
+  const deleteCourseMutation = useMutation({
+    mutationFn: (id: string) => deleteCourse(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['curriculum', 'courses'] });
+      toast.success('Course deleted');
+    },
+    onError: () => toast.error('Failed to delete course')
+  });
+
+  const handleDelete = (item: LibraryItem) => {
+    if (window.confirm(`Are you sure you want to delete this ${item.type}?`)) {
+      if (item.type === 'program') deleteProgramMutation.mutate(item.originalId);
+      else deleteCourseMutation.mutate(item.originalId);
+    }
+  };
+
+  const handleEdit = (item: LibraryItem) => {
+      if (item.type === 'program') {
+          const p = programs.find((p: Program) => p.id === item.originalId);
+          if (p) setEditingProgram(p);
+      } else {
+          const c = courses.find((c: Course) => c.id === item.originalId);
+          if (c) setEditingCourse(c);
+      }
+  };
+
   const items = useMemo(() => {
+    // ... rest of useMemo logic unchanged
     // Map Programs
     const pItems: LibraryItem[] = programs.map((p: Program) => ({
         id: p.id,
@@ -135,9 +221,9 @@ export const ProgramsPage: React.FC<ProgramsPageProps> = ({ initialTab = 'progra
 
   const handleCreate = () => {
     if (activeTab === 'course') {
-      navigate('/admin/studio/courses/new/builder');
+      setIsCourseModalOpen(true);
     } else {
-      navigate('/admin/studio/programs/new');
+      setIsProgramModalOpen(true);
     }
   };
 
@@ -376,7 +462,7 @@ export const ProgramsPage: React.FC<ProgramsPageProps> = ({ initialTab = 'progra
                  {item.type === 'program' ? (
                     <>
                       <Button onClick={() => navigate(`/admin/studio/programs/${item.originalId}/builder`)} className="w-full shadow-lg">
-                        Edit Journey Map
+                        Edit Program
                       </Button>
                       <Button variant="secondary" onClick={() => navigate(`/admin/programs/${item.originalId}`)} className="w-full bg-white flex items-center justify-center gap-2">
                         <BarChart3 size={16} /> View Ops
@@ -392,6 +478,15 @@ export const ProgramsPage: React.FC<ProgramsPageProps> = ({ initialTab = 'progra
                       </Button>
                     </>
                  )}
+                 
+                 <div className="h-px bg-slate-200 my-1 opacity-50" />
+                 
+                 <Button variant="secondary" onClick={() => handleEdit(item)} className="w-full bg-white flex items-center justify-center gap-2">
+                   <Edit2 size={16} /> Edit Metadata
+                 </Button>
+                 <Button variant="secondary" onClick={() => handleDelete(item)} className="w-full bg-white text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center gap-2">
+                   <Trash2 size={16} /> Delete Unit
+                 </Button>
                </div>
             </div>
           </Card>
@@ -409,6 +504,24 @@ export const ProgramsPage: React.FC<ProgramsPageProps> = ({ initialTab = 'progra
           </div>
         )}
       </div>
+
+      <ProgramModal 
+        isOpen={isProgramModalOpen || !!editingProgram}
+        onClose={() => { setIsProgramModalOpen(false); setEditingProgram(null); }}
+        initialData={editingProgram}
+        onSave={(data: any) => editingProgram ? updateProgramMutation.mutate(data) : createProgramMutation.mutate(data)}
+        onDelete={() => editingProgram && handleDelete({ type: 'program', originalId: editingProgram.id } as any)}
+        isLoading={createProgramMutation.isPending || updateProgramMutation.isPending || deleteProgramMutation.isPending}
+      />
+
+      <CourseModal 
+        isOpen={isCourseModalOpen || !!editingCourse}
+        onClose={() => { setIsCourseModalOpen(false); setEditingCourse(null); }}
+        initialData={editingCourse}
+        onSave={(data: any) => editingCourse ? updateCourseMutation.mutate(data) : createCourseMutation.mutate(data)}
+        onDelete={() => editingCourse && handleDelete({ type: 'course', originalId: editingCourse.id } as any)}
+        isLoading={createCourseMutation.isPending || updateCourseMutation.isPending || deleteCourseMutation.isPending}
+      />
 
     </div>
   );

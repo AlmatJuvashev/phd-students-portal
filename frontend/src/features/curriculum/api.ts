@@ -16,6 +16,9 @@ export const createProgramVersionNode = (programId: string, data: any) =>
 export const updateProgramVersionNode = (programId: string, nodeId: string, data: any) =>
   api.put(`/curriculum/programs/${programId}/builder/nodes/${nodeId}`, data);
 
+export const deleteProgramVersionNode = (programId: string, nodeId: string) =>
+  api.delete(`/curriculum/programs/${programId}/builder/nodes/${nodeId}`);
+
 export const updateProgramVersionMap = (programId: string, data: any) =>
   api.put(`/curriculum/programs/${programId}/builder/map`, data);
 

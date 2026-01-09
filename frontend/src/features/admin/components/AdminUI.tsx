@@ -141,3 +141,54 @@ export const Tooltip = ({ text, children }: { text: string, children?: React.Rea
     </div>
   </div>
 );
+
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+
+export const Modal = ({ isOpen, onClose, title, children, footer, maxWidth = 'max-w-lg' }: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  title: string, 
+  children: React.ReactNode, 
+  footer?: React.ReactNode,
+  maxWidth?: string
+}) => (
+  <AnimatePresence>
+    {isOpen && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col", maxWidth)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h3 className="font-black text-slate-800 tracking-tight text-lg">{title}</h3>
+            <button onClick={onClose} className="p-2 hover:bg-slate-200/50 rounded-full text-slate-400 transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            {children}
+          </div>
+          {footer && (
+            <div className="p-5 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+              {footer}
+            </div>
+          )}
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+);
+
+export const Textarea = ({ className, ...props }: any) => (
+    <textarea
+      className={cn(
+        "flex w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-shadow resize-none",
+        className
+      )}
+      {...props}
+    />
+  );

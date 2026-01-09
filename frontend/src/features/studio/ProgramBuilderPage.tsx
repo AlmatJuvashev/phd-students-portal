@@ -1,19 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProgramVersionMap, getProgramVersionNodes, updateProgramVersionMap, createProgramVersionNode, updateProgramVersionNode, deleteProgram } from '@/features/curriculum/api';
-import { FileText, Info, CheckSquare, Sparkles, Layout, Flag, Award, CreditCard, ClipboardList, Stamp, Calendar, Undo, Redo, AlertCircle, Share, Minimize2, Maximize2, ZoomIn, ZoomOut, GitMerge, GripVertical, Target, Map as MapIcon, Plus, Settings2, Trash2, ChevronRight, X, Loader2, BookOpen, CheckCircle2, Zap, List } from 'lucide-react';
+import { 
+  getProgramVersionMap, getProgramVersionNodes, updateProgramVersionMap, 
+  createProgramVersionNode, updateProgramVersionNode, deleteProgramVersionNode, deleteProgram 
+} from '@/features/curriculum/api';
+import { 
+  FileText, Info, CheckSquare, Sparkles, Layout, Flag, Award, CreditCard, ClipboardList, 
+  Stamp, Calendar, Undo, Redo, AlertCircle, Share, Minimize2, Maximize2, ZoomIn, ZoomOut, 
+  GitMerge, GripVertical, Target, Map as MapIcon, Plus, Settings2, Trash2, ChevronRight, X, 
+  Loader2, BookOpen, CheckCircle2, Zap, List, ExternalLink 
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Reorder } from 'framer-motion';
 import { Button, Input, IconButton, Switch } from '@/features/admin/components/AdminUI';
 import { useHistory } from '@/features/admin/hooks/useHistory';
 import { WorldSettingsModal } from '@/features/admin/components/WorldSettingsModal';
+import { StepInspector } from './components/StepInspector';
+import { JourneyMap } from '@/components/map/JourneyMap';
 import { cn } from '@/lib/utils';
+import { ProgramVersionNode, ProgramPhase, ProgramNodeType as NodeType, FlowEdge } from './types';
 
 
-// --- Types & Constants ---
-// Helper for localization
+
+// Helper for localization (Moved to top for scope)
 const parseLocalized = (val: any, lang: string = 'en'): string => {
   if (!val) return '';
   if (typeof val === 'string') {
@@ -32,31 +44,38 @@ const parseLocalized = (val: any, lang: string = 'en'): string => {
   return String(val);
 };
 
+// Helper to transform Builder State to Playbook for Preview
+const builderStateToPlaybook = (worlds: World[], nodes: ProgramVersionNode[], edges: FlowEdge[]): any => {
+  return {
+    id: "preview-playbook",
+    title: "Preview Program",
+    worlds: worlds.map(w => ({
+      id: w.id,
+      title: parseLocalized(w.title),
+      nodes: nodes
+        .filter(n => n.module_key === w.id)
+        .sort((a, b) => a.coordinates.y - b.coordinates.y) // Simple sort by Y for sequence
+        .map(n => ({
+          ...n.config, // Spread config first so specific props can override if needed, or vice versa. Usually specific props like 'id' are safer after.
+          id: n.id,
+          type: n.type,
+          title: parseLocalized(n.title) || n.slug || "Untitled Step",
+          status: "active", // Active state for better preview visibility
+          description: parseLocalized(n.description) || "",
+          points: n.points || 0,
+          who_can_complete: ["student", "advisor", "admin"] // Allow all for preview
+        }))
+    }))
+  };
+};
+
+
+// --- Types & Constants ---
+// --- Types & Constants ---
+
+
 interface JourneyBuilderProps {
   onNavigate?: (path: string) => void;
-}
-
-type NodeType = 'form' | 'confirmTask' | 'info' | 'checklist' | 'milestone' | 'course' | 'meeting' | 'approval' | 'payment' | 'survey' | 'sync_ops';
-
-interface FlowNodeData {
-  id: string;
-  worldId?: string; // Grouping
-  x: number;
-  y: number;
-  title: string;
-  description?: string;
-  type: NodeType;
-  points?: number; // Experience Points
-  icon?: any; // Legacy override
-  requirements?: any; // The form structure or upload config
-  status?: 'draft' | 'published' | 'archived'; // Safety status
-}
-
-interface FlowEdge {
-  id: string;
-  from: string;
-  to: string;
-  type: 'solid' | 'dashed';
 }
 
 interface World {
@@ -78,7 +97,7 @@ interface World {
 
 interface JourneyState {
   worlds: World[];
-  nodes: FlowNodeData[];
+  nodes: ProgramVersionNode[];
   edges: FlowEdge[];
 }
 
@@ -89,12 +108,12 @@ const INITIAL_WORLDS: World[] = [
   { id: 'w3', title: 'III — Defense', order: 3, color: '#f59e0b', collapsed: true, condition: null, x: 50, y: 850 } 
 ];
 
-const INITIAL_NODES: FlowNodeData[] = [
-  { id: 'n1', worldId: 'w1', x: 100, y: 120, title: "Student Profile", type: 'form', points: 50, requirements: { fields: [] }, status: 'published' },
-  { id: 'n2', worldId: 'w1', x: 380, y: 120, title: "Research Methodology", type: 'course', points: 100, requirements: { courseId: 'c1' }, status: 'published' },
-  { id: 'n3', worldId: 'w1', x: 660, y: 120, title: "Advisor Assignment", type: 'sync_ops', points: 0, requirements: { action: 'assign_advisor' }, status: 'published' },
-  { id: 'n4', worldId: 'w2', x: 100, y: 520, title: "Anti-Plagiarism Fee", type: 'payment', points: 20, requirements: { amount: 5000, currency: 'KZT' }, status: 'published' },
-  { id: 'n5', worldId: 'w2', x: 380, y: 520, title: "Department Approval", type: 'approval', points: 0, requirements: { role: 'advisor' }, status: 'published' },
+const INITIAL_NODES: ProgramVersionNode[] = [
+  { id: 'n1', module_key: 'w1', coordinates: { x: 100, y: 120 }, title: "Student Profile", type: 'form', points: 50, config: { fields: [] }, slug: 'n1' },
+  { id: 'n2', module_key: 'w1', coordinates: { x: 380, y: 120 }, title: "Research Methodology", type: 'course', points: 100, config: { courseId: 'c1' }, slug: 'n2' },
+  { id: 'n3', module_key: 'w1', coordinates: { x: 660, y: 120 }, title: "Advisor Assignment", type: 'sync_ops', points: 0, config: { action: 'assign_advisor' }, slug: 'n3' },
+  { id: 'n4', module_key: 'w2', coordinates: { x: 100, y: 520 }, title: "Anti-Plagiarism Fee", type: 'payment', points: 20, config: { amount: 5000, currency: 'KZT' }, slug: 'n4' },
+  { id: 'n5', module_key: 'w2', coordinates: { x: 380, y: 520 }, title: "Department Approval", type: 'approval', points: 0, config: { role: 'advisor' }, slug: 'n5' },
 ];
 
 const INITIAL_EDGES: FlowEdge[] = [
@@ -127,20 +146,20 @@ const generateId = (prefix: string) => `${prefix}_${Math.random().toString(36).s
     }
   };
 
-const validateNode = (node: FlowNodeData): string[] => {
+const validateNode = (node: ProgramVersionNode): string[] => {
   const errors = [];
   if (!node.title.trim()) errors.push("Title is required");
-  if (node.type === 'course' && !node.requirements?.courseId) errors.push("Linked Course is missing");
-  if (node.type === 'payment' && !node.requirements?.amount) errors.push("Payment amount missing");
+  if (node.type === 'course' && !node.config?.courseId) errors.push("Linked Course is missing");
+  if (node.type === 'payment' && !node.config?.amount) errors.push("Payment amount missing");
   return errors;
 };
 
 // --- Node Component (Map View) ---
 
-const FlowNode = ({ id, title, type, active, onClick, onMouseDown, worldId, worlds, validationErrors, onAddNext, points }: any) => {
+const FlowNode = ({ id, title, type, active, onClick, onMouseDown, module_key, worlds, validationErrors, onAddNext, points }: any) => {
   const { t } = useTranslation();
-  const world = worlds.find((w: World) => w.id === worldId);
-  const visuals = getNodeVisuals(type, t);
+  const world = worlds.find((w: World) => w.id === module_key);
+  const visuals = getNodeVisuals(type as any, t);
   const Icon = visuals.icon;
   const hasErrors = validationErrors && validationErrors.length > 0;
 
@@ -203,7 +222,7 @@ const ListView = ({ worlds, nodes, selectedNodeId, onSelectNode, onAddNode, onAd
     <div className="flex-1 overflow-y-auto bg-slate-50 p-8 space-y-8">
       {worlds.map((world: World) => {
         // Get nodes for this world
-        const worldNodes = nodes.filter((n: FlowNodeData) => n.worldId === world.id);
+        const worldNodes = nodes.filter((n: ProgramVersionNode) => n.module_key === world.id);
         
         return (
           <div key={world.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -235,8 +254,8 @@ const ListView = ({ worlds, nodes, selectedNodeId, onSelectNode, onAddNode, onAd
                   values={worldNodes} 
                   onReorder={(newOrder) => onReorderNodes(world.id, newOrder)}
                 >
-                  {worldNodes.map((node: FlowNodeData) => {
-                     const visuals = getNodeVisuals(node.type, t);
+                  {worldNodes.map((node: ProgramVersionNode) => {
+                     const visuals = getNodeVisuals(node.type as any, t);
                      const Icon = visuals.icon;
                      return (
                         <Reorder.Item key={node.id} value={node}>
@@ -315,32 +334,66 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
     }
   };
 
-
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
+  const [isPanning, setIsPanning] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('map'); 
   const [isZenMode, setIsZenMode] = useState(false);
   const [editingWorld, setEditingWorld] = useState<World | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   
+  // Preview Mode State
+  const [isPreview, setIsPreview] = useState(false);
+
   // --- Data Fetching ---
-  const { data: mapData, isLoading: isLoadingMap, error: mapError } = useQuery({
+  const { data: mapData, isLoading: isLoadingMap } = useQuery({
     queryKey: ['programMap', programId],
     queryFn: () => getProgramVersionMap(programId!),
     enabled: !!programId
   });
 
-  const { data: nodesData, isLoading: isLoadingNodes, error: nodesError } = useQuery({
+  const { data: nodesData, isLoading: isLoadingNodes } = useQuery({
     queryKey: ['programNodes', programId],
     queryFn: () => getProgramVersionNodes(programId!),
     enabled: !!programId
   });
 
-  // Debug Logging
-  useEffect(() => {
-    if (mapData) console.log('Loaded Map Data:', mapData);
-    if (mapError) console.error('Map Load Error:', mapError);
-    if (nodesData) console.log('Loaded Nodes Data:', nodesData);
-    if (nodesError) console.error('Nodes Load Error:', nodesError);
-  }, [mapData, mapError, nodesData, nodesError]);
+  // --- Mutations ---
+  const createNodeMutation = useMutation({
+    mutationFn: (data: any) => createProgramVersionNode(programId!, data),
+    onSuccess: (newNode: any) => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success("Step created");
+      setSelectedNodeId(newNode.id);
+    },
+    onError: () => toast.error("Failed to create step")
+  });
+
+  const updateNodeMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => updateProgramVersionNode(programId!, id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+    },
+    onError: () => toast.error("Failed to update step")
+  });
+
+  const deleteNodeMutation = useMutation({
+    mutationFn: (nodeId: string) => deleteProgramVersionNode(programId!, nodeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success("Step removed");
+      setSelectedNodeId(null);
+    },
+    onError: () => toast.error("Failed to delete step")
+  });
+
+  const updateMapMutation = useMutation({
+    mutationFn: (data: any) => updateProgramVersionMap(programId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programMap', programId] });
+      toast.success("Phase configuration saved");
+    },
+    onError: () => toast.error("Failed to save phases")
+  });
 
   // History Management
   const { 
@@ -358,54 +411,41 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
 
   // Hydrate State
   useEffect(() => {
-    if (mapData) {
-        console.log("Hydrating State...", { mapData, nodesData });
+    if (mapData && nodesData) {
+        console.log("Hydrating Builder State...", { mapData, nodesData });
         const safeMapData = mapData as any;
         
         let loadedWorlds: World[] = [];
-        // Map data config usually exists, but GetJourneyMap might return phases directly
         const rawWorlds = safeMapData.phases || []; 
-        console.log("Raw Worlds extracted:", rawWorlds);
         
-            loadedWorlds = rawWorlds.map((w: any) => ({
-                id: String(w.id || `w_${Math.random()}`),
-                title: parseLocalized(w.title),
-                order: Number(w.order) || 0,
-                color: w.color || '#6366f1',
-                description: parseLocalized(w.description),
-                collapsed: !!w.collapsed,
-                condition: w.condition,
-                x: Number(w.position?.x || w.x) || 0, 
-                y: Number(w.position?.y || w.y) || 0
-            }));
+        loadedWorlds = rawWorlds.map((w: any) => ({
+            id: String(w.id || `w_${Math.random()}`),
+            title: parseLocalized(w.title),
+            order: Number(w.order) || 0,
+            color: w.color || '#6366f1',
+            description: parseLocalized(w.description),
+            collapsed: !!w.collapsed,
+            condition: w.condition,
+            x: Number(w.position?.x || w.x) || 0, 
+            y: Number(w.position?.y || w.y) || 0
+        }));
         
-        // Nodes can come from nodesData OR mapData.nodes
         const rawNodes = Array.isArray(nodesData) ? nodesData : (safeMapData.nodes || []);
-        console.log("Raw Nodes extracted:", rawNodes);
         
-        const loadedNodes: FlowNodeData[] = (rawNodes as any[]).map(n => {
-            // Backend BuilderNode coords/config are already objects if JSON was valid
-            const coords = typeof n.coordinates === 'string' ? JSON.parse(n.coordinates || '{}') : (n.coordinates || {});
-            const requirements = typeof n.config === 'string' ? JSON.parse(n.config || '{}') : (n.config || {});
-            
-            return {
-                id: n.id || n.slug,
-                worldId: n.module_key || loadedWorlds[0]?.id || 'w1', 
-                title: parseLocalized(n.title), 
-                description: parseLocalized(n.description),
-                type: n.type as NodeType,
-                status: 'published',
-                x: Number(coords.x) || 100,
-                y: Number(coords.y) || 100,
-                requirements: requirements
-            };
-        });
-
-        console.log("Final Loaded Data:", { loadedWorlds, loadedNodes });
+        const loadedNodes: ProgramVersionNode[] = (rawNodes as any[]).map(n => ({
+            id: n.id,
+            slug: n.slug || n.id,
+            module_key: n.module_key || loadedWorlds[0]?.id || 'w1', 
+            title: parseLocalized(n.title), 
+            description: parseLocalized(n.description),
+            type: n.type as NodeType,
+            coordinates: typeof n.coordinates === 'string' ? JSON.parse(n.coordinates || '{}') : (n.coordinates || { x: 100, y: 100 }),
+            config: typeof n.config === 'string' ? JSON.parse(n.config || '{}') : (n.config || {}),
+            points: n.points || 0
+        }));
 
         if (loadedWorlds.length === 0 && loadedNodes.length > 0) {
-            console.log("No worlds found, generating from node module_keys");
-            const uniqueKeys = Array.from(new Set(loadedNodes.map(n => n.worldId)));
+            const uniqueKeys = Array.from(new Set(loadedNodes.map(n => n.module_key)));
             loadedWorlds = uniqueKeys.map((key, idx) => ({
                 id: String(key || `generated_${idx}`),
                 title: `Phase ${key}`, 
@@ -416,166 +456,88 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
             }));
         }
 
-        if (loadedWorlds.length > 0 || loadedNodes.length > 0) {
-            setJourneyState({
-                worlds: loadedWorlds.length > 0 ? loadedWorlds : INITIAL_WORLDS,
-                nodes: loadedNodes.length > 0 ? loadedNodes : INITIAL_NODES,
-                edges: [] 
-            });
-        }
+        setJourneyState({
+            worlds: loadedWorlds.length > 0 ? loadedWorlds : INITIAL_WORLDS,
+            nodes: loadedNodes.length > 0 ? loadedNodes : INITIAL_NODES,
+            edges: [] 
+        });
     }
   }, [mapData, nodesData, setJourneyState]);
 
   const { worlds, nodes, edges } = journeyState;
-
-  // --- Save Handler ---
-  const handleSave = async () => {
-    if (!programId) return;
-    setIsSaving(true);
-    try {
-        // 1. Save Map Config (Worlds)
-        await updateProgramVersionMap(programId, {
-            config: JSON.stringify(worlds)
-        });
-
-        // 2. Save Nodes (Diffing is hard, so for now just loop update/create - SIMPLIFIED)
-        // In a real app we would track dirtiness or use a bulk endpoint.
-        // For this demo repair, we will rely on key interactions saving separately OR just notify "Saved layout".
-        // Better: We should create a bulk sync endpoint or iterate. For 20 nodes it's fine.
-        /*
-        for (const node of nodes) {
-            const payload = {
-                title: JSON.stringify({ en: node.title }), // Ensure JSONB
-                type: node.type,
-                module_key: node.worldId,
-                coordinates: JSON.stringify({ x: node.x, y: node.y }),
-                config: JSON.stringify(node.requirements)
-            };
-            // Check if node exists (by ID format). If it generates a temporary ID (node_...), it's new.
-            // But checking vs original loadedNodes is safer.
-            // Assumption: we are just ensuring Layout is saved for now.
-        }
-        */
-       toast.success("Layout and configuration saved");
-    } catch (e) {
-        toast.error("Failed to save");
-    } finally {
-        setIsSaving(false);
-    }
-  };
-
-  // --- Interaction State ---
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
-  const [isPanning, setIsPanning] = useState(false);
   
   // Dragging State
   const [dragNodeId, setDragNodeId] = useState<string | null>(null);
   const [dragWorldId, setDragWorldId] = useState<string | null>(null);
   
   const canvasRef = useRef<HTMLDivElement>(null);
-
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
 
-  // Keyboard Shortcuts for Deletion
+  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if user is typing in an input field
       const target = e.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
-
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedNodeId) {
-          handleDeleteNode(selectedNodeId);
-        }
+        if (selectedNodeId) handleDeleteNode(selectedNodeId);
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, nodes, edges]);
+  }, [selectedNodeId]);
 
   // Zoom via wheel
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-
       const rect = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-
       setTransform(prev => {
-        // Sensitivity for wheel vs trackpad
         const sensitivity = e.ctrlKey ? 0.01 : 0.002; 
         const delta = -e.deltaY * sensitivity;
         const zoomFactor = 1 + delta;
-        
         const newScale = Math.min(Math.max(0.2, prev.scale * zoomFactor), 4);
-        
-        // Calculate new position to zoom towards mouse
         const newX = mouseX - (mouseX - prev.x) * (newScale / prev.scale);
         const newY = mouseY - (mouseY - prev.y) * (newScale / prev.scale);
-
         return { x: newX, y: newY, scale: newScale };
       });
     };
-
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, []);
 
-  // Sync internal state setters
-  const setNodes = (newNodes: FlowNodeData[] | ((prev: FlowNodeData[]) => FlowNodeData[])) => {
-    setJourneyState(prev => ({
-      ...prev,
-      nodes: typeof newNodes === 'function' ? newNodes(prev.nodes) : newNodes
-    }));
-  };
-
   const handleAddNode = (targetWorldId?: string, insertAfterNodeId?: string) => {
-    const worldId = targetWorldId || worlds[0].id;
-    const world = worlds.find(w => w.id === worldId);
-    let x = (world?.x || 50) + 50, y = (world?.y || 50) + 70;
+    const module_key = targetWorldId || worlds[0].id;
+    const world = worlds.find(w => w.id === module_key);
+    let coords = { x: (world?.x || 50) + 50, y: (world?.y || 50) + 70 };
 
     if (insertAfterNodeId) {
       const prevNode = nodes.find(n => n.id === insertAfterNodeId);
-      if (prevNode) { x = prevNode.x + 300; y = prevNode.y; }
+      if (prevNode) { coords = { x: prevNode.coordinates.x + 300, y: prevNode.coordinates.y }; }
     } else {
-      const worldNodes = nodes.filter(n => n.worldId === worldId);
+      const worldNodes = nodes.filter(n => n.module_key === module_key);
       const lastNode = worldNodes[worldNodes.length - 1];
-      if (lastNode) { x = lastNode.x + 300; y = lastNode.y; }
+      if (lastNode) { coords = { x: lastNode.coordinates.x + 300, y: lastNode.coordinates.y }; }
     }
 
-    const newNode: FlowNodeData = {
-      id: generateId('node'),
-      worldId: worldId,
-      x,
-      y,
-      title: 'New Step',
+    createNodeMutation.mutate({
+      slug: generateId('node'),
+      module_key: module_key,
+      coordinates: JSON.stringify(coords),
+      title: JSON.stringify({ en: 'New Step' }),
       type: 'form',
       points: 0,
-      requirements: { fields: [] },
-      status: 'draft'
-    };
-    
-    setJourneyState(prev => ({
-       ...prev,
-       nodes: [...prev.nodes, newNode],
-       edges: insertAfterNodeId ? [...prev.edges, { id: generateId('edge'), from: insertAfterNodeId, to: newNode.id, type: 'solid' }] : prev.edges
-    }));
-    setSelectedNodeId(newNode.id);
+      config: JSON.stringify({ fields: [] })
+    });
   };
 
   const handleDeleteNode = (id: string) => {
-    setJourneyState(prev => ({
-      ...prev,
-      nodes: prev.nodes.filter(n => n.id !== id),
-      edges: prev.edges.filter(e => e.from !== id && e.to !== id)
-    }));
-    if (selectedNodeId === id) setSelectedNodeId(null);
+    if (confirm("Delete this step?")) {
+      deleteNodeMutation.mutate(id);
+    }
   };
 
   const handleAddWorld = () => {
@@ -602,35 +564,40 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
   };
 
   const handleUpdateWorld = (updatedWorld: World) => {
+    const nextWorlds = worlds.map(w => w.id === updatedWorld.id ? updatedWorld : w);
     setJourneyState(prev => ({
       ...prev,
-      worlds: prev.worlds.map(w => w.id === updatedWorld.id ? updatedWorld : w)
+      worlds: nextWorlds
     }));
+    updateMapMutation.mutate({
+        config: JSON.stringify(nextWorlds)
+    });
     setEditingWorld(null);
   };
 
   const handleDeleteWorld = (worldId: string) => {
-    if (confirm("Are you sure you want to delete this phase? All its steps will also be removed.")) {
+    if (confirm("Delete this phase and all its steps?")) {
       setJourneyState(prev => ({
         ...prev,
         worlds: prev.worlds.filter(w => w.id !== worldId),
-        nodes: prev.nodes.filter(n => n.worldId !== worldId),
-        edges: prev.edges.filter(e => {
-           // Remove edges connected to deleted nodes
-           const remainingNodeIds = new Set(prev.nodes.filter(n => n.worldId !== worldId).map(n => n.id));
-           return remainingNodeIds.has(e.from) && remainingNodeIds.has(e.to);
-        })
+        nodes: prev.nodes.filter(n => n.module_key !== worldId),
       }));
+      updateMapMutation.mutate({
+          config: JSON.stringify(worlds.filter(w => w.id !== worldId))
+      });
       setEditingWorld(null);
     }
   };
 
-  const handleReorderNodes = (worldId: string, reorderedWorldNodes: FlowNodeData[]) => {
-    // Merge the reordered nodes of this world with nodes from other worlds
-    const otherNodes = nodes.filter(n => n.worldId !== worldId);
+  const handleReorderNodes = (worldId: string, newOrder: ProgramVersionNode[]) => {
+    const worldNodes = nodes.filter(n => n.module_key === worldId);
+    const otherNodes = nodes.filter(n => n.module_key !== worldId);
+    
+    // In a vertical list, the X stays same, but we could auto-space Y if desired.
+    // For now we just update the order for the List View.
     setJourneyState(prev => ({
-      ...prev,
-      nodes: [...otherNodes, ...reorderedWorldNodes]
+       ...prev,
+       nodes: [...otherNodes, ...newOrder]
     }));
   };
 
@@ -640,24 +607,61 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragNodeId) {
-      setNodes(prev => prev.map(node => node.id === dragNodeId ? { ...node, x: node.x + e.movementX/transform.scale, y: node.y + e.movementY/transform.scale } : node));
-    } else if (dragWorldId) {
-      // Move World AND its contained nodes together
-      const dx = e.movementX / transform.scale;
-      const dy = e.movementY / transform.scale;
-      
-      setJourneyState(prev => ({
+    if (isPanning) {
+      setTransform(prev => ({
         ...prev,
-        worlds: prev.worlds.map(w => w.id === dragWorldId ? { ...w, x: w.x + dx, y: w.y + dy } : w),
-        nodes: prev.nodes.map(n => n.worldId === dragWorldId ? { ...n, x: n.x + dx, y: n.y + dy } : n)
+        x: prev.x + e.movementX,
+        y: prev.y + e.movementY,
       }));
-    } else if (isPanning) {
-      setTransform(prev => ({ ...prev, x: prev.x + e.movementX, y: prev.y + e.movementY }));
+    } else if (dragNodeId) {
+       setJourneyState(prev => ({
+         ...prev,
+         nodes: prev.nodes.map(n => n.id === dragNodeId ? {
+           ...n,
+           coordinates: {
+                x: n.coordinates.x + (e.movementX / transform.scale),
+                y: n.coordinates.y + (e.movementY / transform.scale)
+           }
+         } : n)
+       }));
+    } else if (dragWorldId) {
+        setJourneyState(prev => ({
+            ...prev,
+            worlds: prev.worlds.map(w => w.id === dragWorldId ? {
+                ...w,
+                x: w.x + (e.movementX / transform.scale),
+                y: w.y + (e.movementY / transform.scale)
+            } : w),
+            // Move nodes with the world
+            nodes: prev.nodes.map(n => n.module_key === dragWorldId ? {
+                ...n,
+                coordinates: {
+                    x: n.coordinates.x + (e.movementX / transform.scale),
+                    y: n.coordinates.y + (e.movementY / transform.scale)
+                }
+            } : n)
+        }));
     }
   };
 
   const handleMouseUp = () => {
+    if (dragNodeId) {
+        const node = nodes.find(n => n.id === dragNodeId);
+        if (node) {
+            updateNodeMutation.mutate({ 
+                id: node.id, 
+                data: { coordinates: JSON.stringify(node.coordinates) } 
+            });
+        }
+    }
+    if (dragWorldId) {
+        const world = worlds.find(w => w.id === dragWorldId);
+        if (world) {
+            updateMapMutation.mutate({
+                config: JSON.stringify(worlds)
+            });
+        }
+    }
     setIsPanning(false);
     setDragNodeId(null);
     setDragWorldId(null);
@@ -672,10 +676,10 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
     const toNode = nodes.find(n => n.id === edge.to);
     if (!fromNode || !toNode) return '';
 
-    const startX = fromNode.x + 260; 
-    const startY = fromNode.y + 40; 
-    const endX = toNode.x; 
-    const endY = toNode.y + 40;
+    const startX = fromNode.coordinates.x + 260; 
+    const startY = fromNode.coordinates.y + 40; 
+    const endX = toNode.coordinates.x; 
+    const endY = toNode.coordinates.y + 40;
     
     const controlPointX = (startX + endX) / 2;
     return `M ${startX} ${startY} C ${controlPointX} ${startY}, ${controlPointX} ${endY}, ${endX} ${endY}`;
@@ -730,14 +734,50 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
             className={cn(isZenMode && "bg-indigo-100 text-indigo-700")}
             title="Toggle Zen Mode"
           />
-          <Button variant="primary" icon={Share} size="sm" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
+          <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Live Sync</span>
+          </div>
+
+          <div className="h-6 w-px bg-slate-200" />
+
+          {/* Preview Toggle */}
+           <Button 
+            variant={isPreview ? "primary" : "secondary"} 
+            icon={isPreview ? X : ExternalLink} 
+            onClick={() => setIsPreview(!isPreview)}
+          >
+            {isPreview ? 'Close Preview' : 'Preview Portal'}
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden relative">
-        
+      {/* PREVIEW OVERLAY (Portal to Body) */}
+      {isPreview && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+           {/* Close Button Floating */}
+           <div className="fixed top-4 right-4 z-[10000]">
+              <Button onClick={() => setIsPreview(false)} variant="secondary" className="shadow-xl border-slate-200">
+                <X size={16} className="mr-2" /> Close Preview
+              </Button>
+           </div>
+           
+           <div className="py-12 min-h-screen bg-slate-50/50">
+              <JourneyMap 
+                playbook={builderStateToPlaybook(worlds, nodes, edges)}
+                locale="en"
+                onStateChanged={() => {}} 
+                viewerRole="student"
+                stateByNodeId={nodes.reduce((acc, n) => ({ ...acc, [n.id]: 'active' }), {})}
+              />
+           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* EDIT MODE CONTENT (Hidden when preview is active to preserve state) */}
+      <div className={cn("flex-1 flex overflow-hidden relative", isPreview && "hidden")}>
+         
         {/* VIEW: MAP */}
         {viewMode === 'map' && (
           <div className="flex-1 relative overflow-hidden bg-slate-50">
@@ -762,12 +802,12 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
                <div style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`, transformOrigin: '0 0', width: '100%', height: '100%' }}>
                   {/* World Backgrounds */}
                   {worlds.map((world, idx) => {
-                     const worldNodes = nodes.filter(n => n.worldId === world.id);
+                     const worldNodes = nodes.filter(n => n.module_key === world.id);
                      // Calculate height based on nodes or default
                      let height = 200;
                      if (worldNodes.length > 0) {
-                        const minY = Math.min(...worldNodes.map(n => n.y));
-                        const maxY = Math.max(...worldNodes.map(n => n.y)) + 120;
+                        const minY = Math.min(...worldNodes.map(n => n.coordinates.y));
+                        const maxY = Math.max(...worldNodes.map(n => n.coordinates.y)) + 120;
                         height = Math.max(200, maxY - world.y); // Keep minimum height
                      }
 
@@ -811,7 +851,7 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
 
                   {/* Nodes */}
                   {nodes.map(node => (
-                     <div key={node.id} style={{ position: 'absolute', left: node.x, top: node.y }}>
+                     <div key={node.id} style={{ position: 'absolute', left: node.coordinates.x, top: node.coordinates.y }}>
                         <FlowNode 
                           {...node} 
                           active={selectedNodeId === node.id} 
@@ -819,7 +859,7 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
                           onMouseDown={(e: any) => setDragNodeId(node.id)}
                           worlds={worlds}
                           validationErrors={validateNode(node)}
-                          onAddNext={() => handleAddNode(node.worldId, node.id)} 
+                          onAddNext={() => handleAddNode(node.module_key, node.id)} 
                           points={node.points}
                         />
                      </div>
@@ -867,265 +907,24 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
           />
         )}
 
-        {/* 3. Inspector Panel (Shared) */}
-        <div className={cn("w-80 bg-white border-l border-slate-200 flex flex-col z-20 shadow-xl transition-all", !selectedNode && "translate-x-full absolute right-0 h-full")}>
-          {selectedNode && (
-            <>
-              <div className="p-6 border-b border-slate-100 flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{t('builder.inspector.properties', 'Properties')}</div>
-                  <Input 
-                    value={selectedNode.title} 
-                    onChange={(e: any) => setJourneyState(prev => ({...prev, nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, title: e.target.value } : n)}))}
-                    className="font-bold text-lg border-transparent px-0 focus:bg-slate-50 focus:px-2 transition-all w-full" 
-                  />
-                </div>
-                <IconButton icon={X} onClick={() => setSelectedNodeId(null)} className="ml-2" />
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                 {/* Type Selection Groups */}
-                 <div className="space-y-4">
-                    <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.inspector.step_function', 'Step Function')}</label>
-                    {NODE_TYPE_GROUPS.map((group, idx) => (
-                       <div key={idx} className="space-y-2">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">{group.label}</div>
-                          <div className="grid grid-cols-2 gap-2">
-                             {group.types.map(t => (
-                                <button 
-                                  key={t}
-                                  onClick={() => setJourneyState(prev => ({...prev, nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, type: t as NodeType } : n)}))}
-                                  className={cn(
-                                    "p-2 rounded-lg text-xs font-bold text-left capitalize border transition-all truncate",
-                                    selectedNode.type === t ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                  )}
-                                  title={t.replace('_', ' ')}
-                                >
-                                   {t.replace('_', ' ')}
-                                </button>
-                             ))}
-                          </div>
-                       </div>
-                    ))}
-                 </div>
-
-                 <div className="h-px bg-slate-100" />
-
-                 {/* XP Configuration */}
-                 <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2"><Award size={14} className="text-amber-500" /> {t('builder.inspector.experience_points', 'Experience Points')}</label>
-                    <div className="relative">
-                       <Input 
-                         type="number" 
-                         value={selectedNode.points || 0} 
-                         onChange={(e: any) => setJourneyState(prev => ({...prev, nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, points: parseInt(e.target.value) || 0 } : n)}))}
-                         className="pl-3 font-mono font-bold text-slate-900 bg-slate-50 border-slate-200 focus:bg-white"
-                       />
-                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">{t('builder.inspector.xp', 'XP')}</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400">{t('builder.inspector.xp_hint', 'Points awarded upon completion.')}</p>
-                 </div>
-
-                 <div className="h-px bg-slate-100" />
-
-                 {/* Specific Configs */}
-                 {selectedNode.type === 'form' && (
-                    <div className="space-y-4 animate-in fade-in">
-                        <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.inspector.form_config', 'Form Configuration')}</label>
-                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-3">
-                           <div className="flex items-center gap-2 text-blue-800 font-bold text-sm">
-                              <FileText size={16} /> {t('builder.nodeTypes.form', 'Data Collection')}
-                           </div>
-                           <p className="text-xs text-blue-700">
-                              {t('builder.inspector.fields_configured', { count: selectedNode.requirements?.fields?.length || 0, defaultValue: '{{count}} fields configured.' })}
-                           </p>
-                           <Button 
-                             size="sm" 
-                             onClick={() => handleNavigate(`/admin/studio/programs/form/${selectedNode.id}/builder`)}
-                             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                           >
-                              {t('builder.inspector.launch_builder', 'Launch Form Builder')}
-                           </Button>
-                        </div>
-                    </div>
-                 )}
-
-                 {selectedNode.type === 'checklist' && (
-                    <div className="space-y-4 animate-in fade-in">
-                        <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.inspector.checklist_config', 'Checklist Configuration')}</label>
-                        <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl space-y-3">
-                           <div className="flex items-center gap-2 text-orange-800 font-bold text-sm">
-                              <CheckSquare size={16} /> {t('builder.inspector.requirement_list', 'Requirement List')}
-                           </div>
-                           <p className="text-xs text-orange-700">
-                              {t('builder.inspector.checklist_hint', 'Define step-by-step tasks for students.')}
-                           </p>
-                           <Button 
-                             size="sm" 
-                             onClick={() => handleNavigate(`/admin/studio/programs/checklist/${selectedNode.id}/builder`)}
-                             className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                           >
-                              {t('builder.inspector.launch_checklist', 'Launch Checklist Studio')}
-                           </Button>
-                        </div>
-                    </div>
-                 )}
-
-                 {selectedNode.type === 'confirmTask' && (
-                    <div className="space-y-4 animate-in fade-in">
-                        <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.inspector.task_config', 'Task Configuration')}</label>
-                        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-3">
-                           <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-                              <CheckCircle2 size={16} /> {t('builder.nodeTypes.confirmTask', 'Confirmation Step')}
-                           </div>
-                           <p className="text-xs text-emerald-700">
-                              {t('builder.inspector.task_hint', 'Configure uploads, templates, and approval flow.')}
-                           </p>
-                           <Button 
-                             size="sm" 
-                             onClick={() => handleNavigate(`/admin/studio/programs/confirm-task/${selectedNode.id}/builder`)}
-                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                           >
-                              {t('builder.inspector.launch_task', 'Launch Task Studio')}
-                           </Button>
-                        </div>
-                    </div>
-                 )}
-
-                 {selectedNode.type === 'survey' && (
-                    <div className="space-y-4 animate-in fade-in">
-                        <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.inspector.survey_settings', 'Survey Settings')}</label>
-                        <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl space-y-3">
-                           <div className="flex items-center gap-2 text-teal-800 font-bold text-sm">
-                              <ClipboardList size={16} /> {t('builder.nodeTypes.survey', 'Feedback')}
-                           </div>
-                           <p className="text-xs text-teal-700">
-                              {t('builder.inspector.survey_hint', 'Collect user feedback and sentiment.')}
-                           </p>
-                           <Button 
-                             size="sm" 
-                             onClick={() => handleNavigate(`/admin/studio/programs/survey/${selectedNode.id}/builder`)}
-                             className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-                           >
-                              {t('builder.inspector.open_survey', 'Open Survey Studio')}
-                           </Button>
-                        </div>
-                    </div>
-                 )}
-
-                 {selectedNode.type === 'approval' && (
-                    <div className="space-y-4 animate-in fade-in">
-                        <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.nodeTypes.approval', 'Approval Gate')}</label>
-                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-                           <div className="space-y-1">
-                              <label className="text-[10px] font-black text-slate-400 uppercase">{t('builder.inspector.approver_role', 'Approver Role')}</label>
-                              <select 
-                                className="w-full h-8 bg-white border border-slate-200 rounded-lg text-xs px-2 outline-none"
-                                value={selectedNode.requirements?.role || ''}
-                                onChange={(e) => setJourneyState(prev => ({...prev, nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, requirements: { ...n.requirements, role: e.target.value } } : n)}))}
-                              >
-                                 <option value="">{t('builder.inspector.select_role', 'Select role...')}</option>
-                                 <option value="advisor">{t('builder.roles.advisor', 'Scientific Advisor')}</option>
-                                 <option value="secretary">{t('builder.roles.secretary', 'Academic Secretary')}</option>
-                                 <option value="dean">{t('builder.roles.dean', 'Dean of School')}</option>
-                                 <option value="admin">{t('builder.roles.admin', 'System Admin')}</option>
-                              </select>
-                           </div>
-                        </div>
-                    </div>
-                 )}
-
-                 {(selectedNode.type === 'milestone' || selectedNode.type === 'info') && (
-                    <div className="space-y-4 animate-in fade-in">
-                       <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.inspector.content', 'Content')}</label>
-                       <textarea 
-                          className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none resize-none h-32"
-                          placeholder={t('builder.inspector.content_placeholder', 'Enter description or instructions...')}
-                          value={selectedNode.description || ''}
-                          onChange={(e) => setJourneyState(prev => ({...prev, nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, description: e.target.value } : n)}))}
-                       />
-                    </div>
-                 )}
-
-                 {selectedNode.type === 'sync_ops' && (
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-3 animate-in fade-in">
-                       <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-                          <Sparkles size={16} /> {t('builder.nodeTypes.sync_ops', 'Ops Automation')}
-                       </div>
-                       <p className="text-xs text-emerald-700 leading-relaxed">
-                          {t('builder.inspector.ops_hint', 'This step triggers an automated workflow in the Scheduling Studio.')}
-                       </p>
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-emerald-600 uppercase">{t('builder.inspector.trigger_action', 'Trigger Action')}</label>
-                          <select 
-                            className="w-full bg-white border border-emerald-200 rounded-lg text-xs p-2 text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20"
-                            value={selectedNode.requirements?.action || ''}
-                            onChange={(e) => setJourneyState(prev => ({...prev, nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, requirements: { ...n.requirements, action: e.target.value } } : n)}))}
-                          >
-                              <option value="">{t('builder.inspector.select_action', 'Select action...')}</option>
-                             <option value="assign_advisor">{t('builder.actions.assign_advisor', 'Assign Advisor')}</option>
-                             <option value="unlock_cohort">{t('builder.actions.unlock_cohort', 'Unlock Next Cohort')}</option>
-                             <option value="generate_invoice">{t('builder.actions.generate_invoice', 'Generate Invoice')}</option>
-                             <option value="notify_registrar">{t('builder.actions.notify_registrar', 'Notify Registrar')}</option>
-                          </select>
-                       </div>
-                    </div>
-                 )}
-
-                 {selectedNode.type === 'course' && (
-                    <div className="space-y-4 animate-in fade-in">
-                       <label className="text-xs font-bold text-slate-500 uppercase">{t('builder.inspector.linked_curriculum', 'Linked Curriculum')}</label>
-                       <div className="p-3 border border-slate-200 rounded-xl bg-slate-50 flex items-center gap-3">
-                          <BookOpen size={16} className="text-purple-600" />
-                          <div className="flex-1 min-w-0">
-                             <div className="text-sm font-bold text-slate-900 truncate">Research Methodology</div>
-                             <div className="text-[10px] text-slate-500">RES-101</div>
-                          </div>
-                          <Button size="sm" variant="ghost">{t('common.edit', 'Edit')}</Button>
-                       </div>
-                    </div>
-                 )}
-
-                 {selectedNode.type === 'payment' && (
-                    <div className="space-y-4 animate-in fade-in">
-                       <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl space-y-3">
-                          <h4 className="text-sm font-bold text-amber-900 flex items-center gap-2">
-                             <CreditCard size={16} /> {t('builder.nodeTypes.payment', 'Payment Gateway')}
-                          </h4>
-                          <div className="grid grid-cols-2 gap-2">
-                             <div>
-                                <label className="text-[10px] font-black text-amber-700 uppercase">{t('builder.inspector.amount', 'Amount')}</label>
-                                <Input 
-                                  type="number" 
-                                  className="h-8 text-xs bg-white" 
-                                  value={selectedNode.requirements?.amount || ''}
-                                  onChange={(e: any) => setJourneyState(prev => ({...prev, nodes: prev.nodes.map(n => n.id === selectedNode.id ? { ...n, requirements: { ...n.requirements, amount: e.target.value } } : n)}))}
-                                />
-                             </div>
-                             <div>
-                                <label className="text-[10px] font-black text-amber-700 uppercase">{t('builder.inspector.currency', 'Currency')}</label>
-                                <select className="w-full h-8 bg-white border border-slate-200 rounded-lg text-xs px-2 outline-none">
-                                   <option>KZT</option>
-                                   <option>USD</option>
-                                </select>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                 )}
-              </div>
-
-              <div className="p-4 border-t border-slate-100 bg-slate-50">
-                 <button 
-                   onClick={() => handleDeleteNode(selectedNode.id)}
-                   className="w-full py-3 bg-white border border-slate-200 text-red-500 font-bold rounded-xl text-xs hover:bg-red-50 hover:border-red-100 transition-colors flex items-center justify-center gap-2"
-                 >
-                    <Trash2 size={14} /> {t('builder.inspector.delete_step', 'Delete Step')}
-                 </button>
-              </div>
-            </>
-          )}
-        </div>
+        {/* Step Inspector Sidebar */}
+        {selectedNode && (
+          <StepInspector 
+            node={selectedNode}
+            phases={worlds as any}
+            onUpdate={(updates) => {
+              const updatedNode = { ...selectedNode, ...updates };
+              setJourneyState(prev => ({
+                ...prev,
+                nodes: prev.nodes.map(n => n.id === selectedNode.id ? updatedNode : n)
+              }));
+              updateNodeMutation.mutate({ id: selectedNode.id, data: updates });
+            }}
+            onDelete={handleDeleteNode}
+            onClose={() => setSelectedNodeId(null)}
+            onNavigate={handleNavigate}
+          />
+        )}
 
         {/* World Settings Modal */}
         {editingWorld && (
