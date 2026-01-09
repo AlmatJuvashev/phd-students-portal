@@ -68,7 +68,7 @@ export const TeacherCourseDetail: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="space-y-4">
         <button
-          onClick={() => navigate('/admin/teacher/courses')}
+          onClick={() => navigate('/teach/courses')}
           className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-700 transition-colors"
         >
           <ArrowLeft size={16} /> {t('teacher.detail.back')}
@@ -93,16 +93,16 @@ export const TeacherCourseDetail: React.FC = () => {
               <ExternalLink className="mr-2 h-4 w-4" />
               {t('teacher.detail.edit_content')}
             </Button>
-            <Button variant="secondary" onClick={() => navigate(`/admin/teacher/courses/${offeringId}/tracker`)}>
+            <Button variant="secondary" onClick={() => navigate(`/teach/courses/${offeringId}/tracker`)}>
               {t('teacher.detail.open_tracker')}
             </Button>
-            <Button variant="secondary" onClick={() => navigate(`/admin/teacher/courses/${offeringId}/attendance`)}>
+            <Button variant="secondary" onClick={() => navigate(`/teach/courses/${offeringId}/attendance`)}>
               {t('teacher.detail.open_attendance')}
             </Button>
             <Button variant="secondary" onClick={() => navigate(`/forums/course/${offeringId}`)}>
               {t('teacher.detail.open_forums')}
             </Button>
-            <Button onClick={() => navigate('/admin/teacher/grading')}>{t('teacher.detail.open_grading')}</Button>
+            <Button onClick={() => navigate('/teach/grading')}>{t('teacher.detail.open_grading')}</Button>
           </div>
         </div>
 

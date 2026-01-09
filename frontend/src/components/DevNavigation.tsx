@@ -36,10 +36,10 @@ export const DevNavigation = ({ onNavigate }: { onNavigate: (path: string) => vo
                 </div>
               </button>
 
-              <button onClick={() => nav('/teacher/dashboard')} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 transition-colors text-left group">
+              <button onClick={() => nav('/teach/dashboard')} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 transition-colors text-left group">
                 <PenTool size={16} className="text-amber-400" />
                 <div className="flex-1">
-                  <div className="text-xs font-bold text-slate-200">Teacher Dashboard</div>
+                  <div className="text-xs font-bold text-slate-200">Instructor Portal</div>
                 </div>
               </button>
 

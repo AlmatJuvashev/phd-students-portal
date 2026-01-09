@@ -971,11 +971,19 @@
             "active": "Active",
             "draft": "Draft",
             "archived": "Archived"
-        }
+        },
+        "open_studio": "Open Studio Hub",
+        "open_builder": "Builder",
+        "stats": {
+            "students": "Students enrolled",
+            "completion": "Avg. Completion"
+        },
+        "no_programs": "No programs found"
       },
     "inventory": {
       "title": "Course Inventory",
       "subtitle": "Available content modules for scheduling. Created in Studio.",
+      "open_hub": "Open Studio Hub",
       "search_placeholder": "Search inventory...",
       "no_courses": "No courses found in inventory.",
       "table": {
@@ -1070,235 +1078,385 @@
       "assignment": "Assignment"
     }
   },
-  "student": {
-    "dashboard": {
-      "welcome": "Welcome back, {{name}}!",
-      "subtitle": "Your next steps are in the Journey.",
-      "default_program": "My Program",
-      "program_type": "doctoral",
-      "current_focus": "Current Focus",
-      "complete": "Complete",
-      "overdue": "Overdue",
-      "up_next": "Up Next",
-      "up_next_title": "Continue your Journey",
-      "up_next_time": "15 mins",
-      "continue": "Continue",
-      "your_programs": "Your Programs",
-      "program_hint": "This is a demo dashboard. Program enrollment will be wired later.",
-      "upcoming_tasks": "Upcoming Tasks",
-      "view_all_tasks": "View All Tasks",
-      "notice_title": "Demo Mode",
-      "notice_body": "Some student portal modules are still being migrated from v11.",
-      "tasks": [
-        { "title": "Submit Research Proposal", "due": "Tomorrow" },
-        { "title": "Ethics Committee Review", "due": "In 3 days" },
-        { "title": "Data Analysis Quiz", "due": "In 5 days" }
-      ]
+
+"teacher": {
+  "dashboard": {
+    "title": "Instructor Dashboard",
+    "subtitle": "Manage your classes, grading, and student progress",
+    "view_full_schedule": "View Full Schedule",
+    "stats": {
+      "to_grade": "To Grade",
+      "pending_grading_subtitle": "Pending Submissions",
+      "active_courses": "Active Courses",
+      "active_courses_subtitle": "Current Semester",
+      "today_classes": "Today's Classes",
+      "today_classes_subtitle": "Sessions Remaining",
+      "next_class": "Next Class",
+      "next_class_none": "No more classes today",
+      "students_at_risk": "Students At Risk",
+      "at_risk_subtitle": "Needs Attention"
+    },
+    "schedule": {
+      "title": "Today's Schedule",
+      "no_next_class": "No classes scheduled for today.",
+      "empty": "No classes scheduled."
+    },
+    "submissions": {
+      "title": "Recent Submissions",
+      "view_all": "View All"
+    },
+    "active_classes": {
+      "title": "Active Classes",
+      "students_count": "{{count}} Students"
+    },
+    "insight": {
+      "title": "AI Insight",
+      "placeholder_title": "Course Engagement Alert",
+      "placeholder_body": "Attendance in 'Advanced Research Methods' dropped by 15% this week. Consider sending a broadcast message.",
+      "review_analytics": "Review Analytics"
     }
   },
-  "teacher": {
-    "dashboard": {
-      "title": "Teacher Dashboard",
-      "subtitle": "Here's what's happening in your classes today.",
-      "view_full_schedule": "View Full Schedule",
-      "stats": {
-        "to_grade": "To Grade",
-        "pending_grading_subtitle": "Pending submissions to review",
-        "active_courses": "Active Courses",
-        "active_courses_subtitle": "Courses you teach",
-        "today_classes": "Today's Classes",
-        "today_classes_subtitle": "Sessions scheduled today",
-        "next_class": "Next Class",
-        "next_class_none": "No upcoming sessions",
-        "total_students": "Total Students",
-        "at_risk": "At Risk",
-        "upcoming": "Upcoming",
-        "urgent_prefix": "{{count}} Urgent"
-      },
-      "schedule": {
-        "title": "Today's Schedule",
-        "live_now": "Live Now",
-        "no_next_class": "No upcoming sessions scheduled.",
-        "empty": "No sessions scheduled for today."
-      },
-      "submissions": {
-        "title": "Recent Submissions",
-        "view_all": "View All"
-      },
-      "active_classes": {
-        "title": "Active Classes",
-        "students_count": "{{count}} Students",
-        "progress": "Progress"
-      },
-      "insight": {
-        "title": "Insight",
-        "placeholder_title": "Teaching insights will appear here.",
-        "placeholder_body": "Connect analytics to surface cohort trends and grading hotspots.",
-        "review_analytics": "Review Analytics"
-      }
+  "courses": {
+    "title": "My Courses",
+    "subtitle": "Manage your active courses and curriculum",
+    "search_placeholder": "Search courses...",
+    "open_scheduler": "Open Scheduler",
+    "enrolled": "Enrolled",
+    "open": "Open Course",
+    "empty": "No courses found."
+  },
+  "detail": {
+    "not_found": "Course not found",
+    "back": "Back to Courses",
+    "edit_content": "Edit Content",
+    "open_tracker": "Open Tracker",
+    "open_attendance": "Attendance",
+    "open_forums": "Forums",
+    "open_grading": "Grading",
+    "stats": {
+      "enrolled": "Enrolled Students",
+      "roster": "View Roster",
+      "gradebook": "Gradebook",
+      "avg": "Class Average"
     },
-    "courses": {
-      "title": "My Classes",
-      "subtitle": "Manage your active teaching sections.",
-      "search_placeholder": "Search courses...",
-      "open_scheduler": "Scheduler",
-      "enrolled": "{{count}} enrolled",
-      "open": "Open",
-      "empty": "No courses found.",
-      "new_section": "New Section",
-      "schedule_new": "Schedule New Course",
-      "edit_course": "Edit Course",
-      "schedule_course": "Schedule Course",
-      "fields": {
-        "code": "Code",
-        "section": "Section",
-        "title": "Course Title",
-        "schedule": "Schedule",
-        "room": "Room",
-        "status": "Status"
-      },
-      "status": {
-        "active": "Active",
-        "upcoming": "Upcoming",
-        "archived": "Archived"
-      },
-      "detail": {
-        "roster": "Student Roster",
-        "sessions": "Sessions",
-        "analytics": "Analytics",
-        "settings": "Settings",
-        "no_students": "No students enrolled yet.",
-        "add_student": "Enroll Student",
-        "message_all": "Message All",
-        "attendance": "Attendance",
-        "last_active": "Last Active"
-      },
-      "grading": {
-        "title": "Gradebook",
-        "subtitle": "Review and grade student submissions.",
-        "pending": "Pending",
-        "graded": "Graded",
-        "all": "All Submissions",
-        "no_submissions": "No submissions found.",
-        "grade_now": "Grade Now",
-        "feedback": "Feedback",
-        "score": "Score",
-        "save_grade": "Save Grade"
-      }
+    "tabs": {
+      "overview": "Overview",
+      "roster": "Roster",
+      "gradebook": "Gradebook"
     },
-    "detail": {
-      "not_found": "Course not found.",
-      "back": "Back to Courses",
-      "edit_content": "Edit Content",
-      "open_tracker": "Student Tracker",
-      "open_attendance": "Attendance",
-      "open_forums": "Forums",
-      "open_grading": "Grade Submissions",
-      "stats": {
-        "enrolled": "Enrolled",
-        "roster": "Roster",
-        "gradebook": "Gradebook",
-        "avg": "Avg"
-      },
-      "tabs": {
-        "overview": "Overview",
-        "roster": "Roster",
-        "gradebook": "Gradebook"
-      },
-      "overview_title": "Overview",
-      "overview_body": "Course analytics and assignments will be migrated next.",
-      "table": {
-        "student": "Student",
-        "email": "Email",
-        "status": "Status"
-      },
-      "no_students": "No students enrolled yet.",
-      "gradebook": {
-        "activity": "Activity",
-        "student": "Student",
-        "score": "Score",
-        "grade": "Grade",
-        "empty": "No grades yet."
-      }
+    "overview_title": "Course Overview",
+    "overview_body": "Course content and modules will appear here.",
+    "table": {
+      "student": "Student",
+      "email": "Email",
+      "status": "Status"
     },
-    "tracker": {
-      "title": "Student Progress Tracker",
-      "subtitle": "Tracking progress for {{course}}",
-      "back": "Back to Course",
-      "open_grading": "Grade Submissions",
-      "not_found": "Course not found.",
-      "search_placeholder": "Search students...",
-      "days_ago": "{{count}} days ago",
-      "stats": {
-        "total": "Students",
-        "at_risk": "At Risk",
-        "on_track": "On Track"
-      },
-      "filters": {
-        "all": "All",
-        "at_risk": "At Risk",
-        "critical": "Critical",
-        "high": "High",
-        "medium": "Medium",
-        "low": "Low"
-      },
-      "table": {
-        "student": "Student",
-        "progress": "Progress",
-        "grade": "Grade",
-        "last_active": "Last Active",
-        "status": "Status"
-      },
-      "risk": {
-        "low": "On Track",
-        "medium": "Needs Help",
-        "high": "At Risk",
-        "critical": "Critical"
-      },
-      "empty": "No students found.",
-      "api_hint": "API check: {{count}} students returned by /at-risk endpoint.",
-      "drawer": {
-        "progress": "{{percent}}% • {{completed}}/{{total}} completed",
-        "avg": "Average",
-        "last": "Last Active",
-        "factors": "Risk Factors",
-        "no_factors": "No risk factors.",
-        "actions": "Suggested Actions",
-        "no_actions": "No suggested actions.",
-        "activity": "Recent Activity",
-        "no_activity": "No activity yet."
-      }
-    },
-    "grading": {
-      "title": "Grading",
-      "subtitle": "Review and grade student submissions.",
-      "search_placeholder": "Search student or activity...",
-      "filters": {
-        "all": "All",
-        "submitted": "Submitted",
-        "graded": "Graded"
-      },
-      "table": {
-        "student": "Student",
-        "activity": "Activity",
-        "submitted": "Submitted",
-        "status": "Status",
-        "action": "Action"
-      },
-      "grade_now": "Grade Now",
-      "no_submissions": "No submissions found.",
-      "modal": {
-        "submission": "Submission",
-        "preview_title": "Submission Preview",
-        "preview_body": "Preview/download will be enabled after file uploads are migrated.",
-        "download": "Download Original"
-      },
+    "no_students": "No students enrolled.",
+    "gradebook": {
+      "activity": "Activity",
+      "student": "Student",
       "score": "Score",
-      "rubric": "Rubric",
-      "rubric_placeholder": "Rubric grading is coming soon.",
-      "feedback": "Feedback",
-      "feedback_placeholder": "Enter comments for the student…",
-      "save_grade": "Save Grade"
+      "grade": "Grade",
+      "empty": "No grades recorded."
+    }
+  },
+  "grading": {
+    "title": "Grading",
+    "subtitle": "Review and grade student submissions.",
+    "search_placeholder": "Search student or activity...",
+    "filters": {
+      "all": "All",
+      "submitted": "Submitted",
+      "graded": "Graded"
+    },
+    "table": {
+      "student": "Student",
+      "activity": "Activity",
+      "submitted": "Submitted",
+      "status": "Status",
+      "action": "Action"
+    },
+    "grade_now": "Grade Now",
+    "no_submissions": "No submissions found.",
+    "modal": {
+      "submission": "Submission",
+      "preview_title": "Submission Preview",
+      "preview_body": "Preview/download will be enabled after file uploads are migrated.",
+      "download": "Download Original"
+    },
+    "score": "Score",
+    "rubric": "Rubric",
+    "rubric_placeholder": "Rubric grading is coming soon.",
+    "feedback": "Feedback",
+    "feedback_placeholder": "Enter comments for the student…",
+    "save_grade": "Save Grade"
+  },
+  "tracker": {
+    "title": "Student Progress Tracker",
+    "subtitle": "Tracking progress for {{course}}",
+    "back": "Back to Course",
+    "open_grading": "Grade Submissions",
+    "not_found": "Course not found.",
+    "search_placeholder": "Search students...",
+    "days_ago": "{{count}} days ago",
+    "stats": {
+      "total": "Students",
+      "at_risk": "At Risk",
+      "on_track": "On Track"
+    },
+    "filters": {
+      "all": "All",
+      "at_risk": "At Risk",
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "table": {
+      "student": "Student",
+      "progress": "Progress",
+      "grade": "Grade",
+      "last_active": "Last Active",
+      "status": "Status"
+    },
+    "risk": {
+      "low": "On Track",
+      "medium": "Needs Help",
+      "high": "At Risk",
+      "critical": "Critical"
+    },
+    "empty": "No students found.",
+    "api_hint": "API check: {{count}} students returned by /at-risk endpoint.",
+    "drawer": {
+      "progress": "{{percent}}% • {{completed}}/{{total}} completed",
+      "avg": "Average",
+      "last": "Last Active",
+      "factors": "Risk Factors",
+      "no_factors": "No risk factors.",
+      "actions": "Suggested Actions",
+      "no_actions": "No suggested actions.",
+      "activity": "Recent Activity",
+      "no_activity": "No activity yet."
+    }
+  }
+},
+"student": {
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}!",
+    "subtitle": "Here is what's happening today.",
+    "default_program": "Your Program",
+    "program_type": "PhD Program",
+    "due_soon": "Due Soon",
+    "current_focus": "Current Focus",
+    "complete": "Complete",
+    "overdue": "Overdue",
+    "up_next": "Up Next",
+    "up_next_title": "Department Seminar",
+    "up_next_time": "Today, 14:00 PM",
+    "continue": "Continue",
+    "your_programs": "Your Programs",
+    "program_hint": "Select to view details",
+    "upcoming_tasks": "Upcoming Tasks",
+    "view_all_tasks": "View All",
+    "load_error": "Failed to load dashboard data.",
+    "notice_title": "Important Notice",
+    "notice_body": "Registration for Fall 2025 is now open. verify your schedule.",
+    "tasks": {
+      "0": {
+        "title": "Submit Research Proposal",
+        "due": "Due Tomorrow"
+      },
+      "1": {
+        "title": "Ethics Committee Review",
+        "due": "In 3 days"
+      },
+      "2": {
+        "title": "Annual Progress Report",
+        "due": "Next Week"
+      }
+    }
+  }
+},
+"edustudio": {
+  "title": "EduStudio Hub",
+  "subtitle": "Manage your academic lifecycle from one place",
+  "cat": {
+    "assessment": "Course & Assessment",
+    "curriculum": "Curriculum & Scheduling",
+    "quick": "Quick Access",
+    "operations": "Operations"
+  },
+  "btn": {
+    "multiselect": {
+      "label": "Multi-Select Question",
+      "desc": "Create a new multi-select question"
+    },
+    "short": {
+      "label": "Short Answer Question",
+      "desc": "Create a new short answer question"
+    },
+    "osce": {
+      "label": "OSCE Checklist",
+      "desc": "Create a new OSCE checklist"
+    },
+    "course": {
+      "label": "Course Studio",
+      "desc": "Manage courses and modules"
+    },
+    "program": {
+      "label": "Program Studio",
+      "desc": "Design academic programs"
+    },
+    "student": {
+      "label": "Student Portal",
+      "desc": "View student dashboard"
+    },
+    "instructor": {
+      "label": "Instructor Portal",
+      "desc": "Manage courses and grading"
+    },
+    "hr": {
+      "label": "HR Management",
+      "desc": "Manage faculty and staff"
+    },
+    "facilities": {
+      "label": "Facilities",
+      "desc": "Manage rooms and resources"
+    }
+  }
+},
+"layouts": {
+  "instructor": {
+    "title": "Instructor Portal",
+    "dashboard": "Dashboard",
+    "courses": "My Courses",
+    "grading": "Grading",
+    "attendance": "Attendance"
+  },
+  "student": {
+    "title": "Student Portal",
+    "dashboard": "Dashboard",
+    "learning": "My Learning",
+    "schedule": "Schedule",
+    "grades": "Grades"
+  }
+
+}
+  ,
+  "builder": {
+    "inspector": {
+      "properties": "Properties",
+      "step_function": "Step Function",
+      "experience_points": "Experience Points",
+      "xp": "XP",
+      "xp_hint": "Points awarded for completion.",
+      "form_config": "Form Configuration",
+      "fields_configured": "{{count}} fields configured.",
+      "launch_builder": "Launch Form Builder",
+      "checklist_config": "Checklist Configuration",
+      "requirement_list": "Requirement List",
+      "checklist_hint": "Define step-by-step tasks for students.",
+      "launch_checklist": "Launch Checklist Studio",
+      "task_config": "Task Configuration",
+      "task_hint": "Configure uploads, templates, and approval flow.",
+      "launch_task": "Launch Task Studio",
+      "survey_settings": "Survey Settings",
+      "survey_hint": "Collect feedback and user sentiment.",
+      "open_survey": "Open Survey Studio",
+      "approver_role": "Approver Role",
+      "select_role": "Select role...",
+      "content": "Content",
+      "content_placeholder": "Enter description or instructions...",
+      "ops_hint": "This step triggers an automated backend process in the Schedule Studio.",
+      "trigger_action": "Trigger Action",
+      "select_action": "Select action...",
+      "linked_curriculum": "Linked Curriculum",
+      "amount": "Amount",
+      "currency": "Currency",
+      "delete_step": "Delete Step"
+    },
+    "nodeTypes": {
+      "course": "Course Event",
+      "payment": "Financial Gateway",
+      "sync_ops": "Ops Automation",
+      "approval": "Admin Gateway",
+      "form": "Data Collection",
+      "meeting": "Synchronous Event",
+      "checklist": "Requirement",
+      "milestone": "Milestone",
+      "info": "Information",
+      "survey": "Feedback Loop",
+      "confirmTask": "Confirmation",
+      "processStep": "Process Step"
+    },
+    "roles": {
+      "advisor": "Advisor",
+      "secretary": "Secretary",
+      "dean": "Dean",
+      "admin": "Admin"
+    },
+    "actions": {
+      "assign_advisor": "Assign Advisor",
+      "unlock_cohort": "Unlock Cohort",
+      "generate_invoice": "Generate Invoice",
+      "notify_registrar": "Notify Registrar"
+    },
+    "world": {
+      "create_title": "Create Phase",
+      "edit_title": "Edit Phase",
+      "tabs": { "general": "General", "logic": "Flow & Logic" },
+      "fields": { "title": "Phase Title", "description": "Description", "color": "Theme Color" },
+      "description_placeholder": "Briefly describe the purpose of this phase...",
+      "logic": {
+          "conditional_visibility": "Conditional Visibility",
+          "hint": "Hide this phase until criteria met...",
+          "enable": "Enable Logic Rule",
+          "based_on": "Based on Form Step",
+          "select_form": "Select a source form...",
+          "field_key": "Field Key",
+          "operator": "Operator",
+          "value": "Matching Value",
+          "operators": { "equals": "Equals", "not_equals": "Does Not Equal", "contains": "Contains" }
+      },
+      "delete_phase": "Delete Phase",
+      "save_changes": "Save Changes"
+    },
+    "course": {
+        "default_title": "Course",
+        "title": "Course Builder",
+        "status": { "draft": "Draft", "published": "Published" },
+        "actions": {
+            "undo": "Undo (Cmd+Z)",
+            "redo": "Redo (Cmd+Shift+Z)",
+            "preview": "Preview",
+            "saving": "Saving...",
+            "save_changes": "Save Changes",
+            "add_module": "Add Module",
+            "add_lesson": "Add Lesson",
+            "insert_activity": "Insert Activity",
+            "add_activity": "Add Activity"
+        },
+        "structure": { "title": "Course Structure", "no_lessons": "No lessons yet" },
+        "defaults": { "module": "New Module", "lesson": "New Lesson", "activity": "New Activity", "untitled_activity": "Untitled Activity" },
+        "validation": { "title_required": "Title is required", "video_required": "Video URL missing" },
+        "activity_types": {
+            "text": "Text / Article", "text_desc": "Readings and documentation",
+            "video": "Video Lesson", "video_desc": "YouTube, Vimeo or upload",
+            "quiz": "Quiz", "quiz_desc": "Assessments and checks",
+            "survey": "Survey", "survey_desc": "Feedback and sentiment",
+            "assignment": "Assignment", "assignment_desc": "File submissions"
+        },
+        "editor": {
+            "insert_link": "Insert Link",
+            "insert_image": "Insert Image",
+            "preview": "Preview",
+            "preview_placeholder": "Content preview will appear here.",
+            "placeholder": "# Write your lesson content here...",
+            "supported": "supported",
+            "chars": "{{count}} chars"
+        },
+        "success": "Course content saved",
+        "error": "Failed to save"
     }
   }
 }

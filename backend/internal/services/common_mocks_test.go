@@ -492,9 +492,7 @@ func (m *MockAssessmentRepository) GetAssessmentQuestions(ctx context.Context, a
 	return args.Get(0).([]models.Question), args.Error(1)
 }
 
-func ToPtr[T any](v T) *T {
-	return &v
-}
+
 
 // MockGamificationRepository implements repository.GamificationRepository
 type MockGamificationRepository struct {

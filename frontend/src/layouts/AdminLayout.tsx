@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { DropdownMenu, DropdownItem } from "@/components/ui/dropdown-menu";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -102,10 +103,9 @@ export function AdminLayout() {
       >
         {/* Org/Studio Selector */}
         <div className="h-20 flex items-center px-4 border-b border-slate-100">
-           <div className="relative w-full group/studio">
+           <DropdownMenu position="right" trigger={
                 <button 
                     className="flex items-center gap-3 w-full p-2 hover:bg-slate-50 rounded-xl transition-colors text-left"
-                    onClick={() => { /* Could toggle a dropdown here */ }}
                 >
                     <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white font-black shadow-sm flex-shrink-0", currentStudio.color)}>
                         <currentStudio.icon size={20} />
@@ -118,19 +118,14 @@ export function AdminLayout() {
                     )}
                     {!collapsed && <ChevronDown size={14} className="text-slate-400" />}
                 </button>
-                
-                {/* Simple Hover Dropdown for Demo purposes - in prod use a proper Popover */}
-                <div className="absolute top-full left-0 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-2 mt-2 hidden group-hover/studio:block z-50">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase px-2 py-1">Switch Studio</div>
-                    {studios.map(s => (
-                        <button 
-                            key={s.id}
-                            onClick={() => setActiveStudio(s.id)}
-                            className={cn(
-                                "flex items-center gap-3 w-full p-2 rounded-lg hover:bg-slate-50 transition-colors text-left",
-                                activeStudio === s.id && "bg-slate-50"
-                            )}
-                        >
+           }>
+                <div className="text-[10px] font-bold text-slate-400 uppercase px-3 py-1">Switch Studio</div>
+                {studios.map(s => (
+                    <DropdownItem 
+                        key={s.id}
+                        onClick={() => setActiveStudio(s.id)}
+                    >
+                        <div className="flex items-center gap-3">
                             <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0", s.color)}>
                                 <s.icon size={16} />
                             </div>
@@ -138,10 +133,11 @@ export function AdminLayout() {
                                 <div className="text-sm font-bold text-slate-900">{s.name}</div>
                                 <div className="text-[10px] text-slate-500">{s.desc}</div>
                             </div>
-                        </button>
-                    ))}
-                </div>
-           </div>
+                            {activeStudio === s.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                        </div>
+                    </DropdownItem>
+                ))}
+           </DropdownMenu>
         </div>
 
         {/* Nav Content based on Active Studio */}

@@ -13,7 +13,7 @@ type Program struct {
 	Code        string    `db:"code" json:"code"`
 	Name        string    `db:"name" json:"name"`   // Legacy/Internal name
 	Title       string    `db:"title" json:"title"` // JSONB localized title
-	Description string    `db:"description" json:"description"` // JSONB
+	Description *string    `db:"description" json:"description"` // JSONB
 	Credits     int       `db:"credits" json:"credits"`
 	DurationMonths int    `db:"duration_months" json:"duration_months"`
 	IsActive    bool      `db:"is_active" json:"is_active"`
@@ -29,7 +29,7 @@ type Course struct {
 	DepartmentID *string  `db:"department_id" json:"department_id,omitempty"` // Owning Department
 	Code        string    `db:"code" json:"code"`
 	Title       string    `db:"title" json:"title"` // JSONB
-	Description string    `db:"description" json:"description"` // JSONB
+	Description *string   `db:"description" json:"description"` // JSONB
 	Credits     int       `db:"credits" json:"credits"`
 	WorkloadHours int     `db:"workload_hours" json:"workload_hours"` // Total hours
 	Attributes  []CourseRequirement `db:"-" json:"attributes"` // New Requirements
@@ -66,7 +66,7 @@ type JourneyNodeDefinition struct {
 	Slug         string         `db:"slug" json:"slug"` // stable key like "VI_attestation_file"
 	Type         string         `db:"type" json:"type"` // task, milestone, form, upload, gateway, etc.
 	Title        string         `db:"title" json:"title"` // JSONB
-	Description  string         `db:"description" json:"description"` // JSONB
+	Description  *string        `db:"description" json:"description"` // JSONB
 	ModuleKey    string         `db:"module_key" json:"module_key"` // e.g. "I", "II"
 	Coordinates  string         `db:"coordinates" json:"coordinates"` // JSON {x,y} for UI
 	Config       string         `db:"config" json:"config"` // JSONB for specific node logic (mime types, forms)

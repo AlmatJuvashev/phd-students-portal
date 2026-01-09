@@ -170,6 +170,12 @@ const CourseBuilder = lazy(() =>
 const ProgramBuilderPage = lazy(() =>
   import("@/features/studio/ProgramBuilderPage").then((m) => ({ default: m.ProgramBuilderPage }))
 );
+// Studio Builders
+const FormBuilder = lazy(() => import("@/features/studio/builders/FormBuilder").then(m => ({ default: m.FormBuilder })));
+const ChecklistBuilder = lazy(() => import("@/features/studio/builders/ChecklistBuilder").then(m => ({ default: m.ChecklistBuilder })));
+const ConfirmTaskBuilder = lazy(() => import("@/features/studio/builders/ConfirmTaskBuilder").then(m => ({ default: m.ConfirmTaskBuilder })));
+const SurveyBuilder = lazy(() => import("@/features/studio/builders/SurveyBuilder").then(m => ({ default: m.SurveyBuilder })));
+const QuizBuilder = lazy(() => import("@/features/studio/builders/QuizBuilder").then(m => ({ default: m.QuizBuilder })));
 const TeacherDashboard = lazy(() =>
   import("@/features/teacher/TeacherDashboard").then((m) => ({ default: m.TeacherDashboard }))
 );
@@ -419,6 +425,10 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute>{WithSuspense(<ProfilePage />)}</ProtectedRoute>,
       },
       {
+        path: "teacher/dashboard",
+        element: <Navigate to="/teach/dashboard" replace />,
+      },
+      {
         path: "calendar",
         element: (
           <ProtectedRoute>
@@ -629,11 +639,96 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      // Moved Teacher dashboard logic to InstructorLayout block above, keeping admin access here?
-      // Actually, Admin might want to view Teacher layouts too? For now, removing dual references or keeping them based on route.
-      // Keeping these for Admin access specifically if they access /admin/...
-      // But standard teacher flow moves to /teach/...
-      
+      // --- Studio Inner Builders ---
+      {
+        path: "studio/programs/:programId/form/:nodeId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<FormBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/programs/:programId/checklist/:nodeId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ChecklistBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/programs/:programId/confirm-task/:nodeId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ConfirmTaskBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/programs/:programId/survey/:nodeId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<SurveyBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/courses/:courseId/quiz/:nodeId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<QuizBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/courses/:courseId/survey/:nodeId/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<SurveyBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      // Teacher Dashboard Access for Admins
+      {
+        path: "teacher/dashboard",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "instructor", "advisor"]}>
+            {WithSuspense(<TeacherDashboard />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/courses",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "instructor", "advisor"]}>
+            {WithSuspense(<TeacherCoursesPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/courses/:courseId",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "instructor", "advisor"]}>
+            {WithSuspense(<TeacherCourseDetail />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/courses/:courseId/tracker",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "instructor", "advisor"]}>
+            {WithSuspense(<StudentTracker />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teacher/grading",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin", "instructor", "advisor"]}>
+            {WithSuspense(<TeacherGradingPage />)}
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "assessments",
         element: (

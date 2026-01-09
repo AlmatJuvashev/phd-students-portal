@@ -114,8 +114,6 @@ func main() {
         }
         log.Printf("Created default tenant: %s", tenantID)
     } else if err != nil {
-         // It might be that tenants table doesn't exist or other error.
-         // Assuming it exists because programs has tenant_id FK.
          log.Fatalf("Failed to query tenants: %v", err)
     }
 
@@ -123,7 +121,7 @@ func main() {
     var programID string
     titleJson := `{"en": "PhD Program", "ru": "PhD Программа"}`
     
-    // Check if program exists
+    // Check if program exists by code
     err = tx.QueryRowContext(ctx, "SELECT id FROM programs WHERE code = $1", playbook.PlaybookID).Scan(&programID)
     if err == sql.ErrNoRows {
         // Insert
@@ -144,71 +142,32 @@ func main() {
         log.Printf("Found and updated existing Program: %s", programID)
     }
 
-    // 4. Ensure Program Version (aka Journey Map) exists
-    var programVersionID string
+    // 4. Ensure Journey Map (program_version) exists
+    // Targeting 'journey_maps' table
+    var journeyMapID string
     mapTitleJson := `{"en": "Doctoral Journey Map", "ru": "Карта докторского пути"}`
     
-    // Prepare Config (Phases)
-    // Map Worlds to Phases for Builder
-    type Phase struct {
-        ID       string                 `json:"id"`
-        Title    string                 `json:"title"` // simplified for now, or LocalizedString
-        Order    int                    `json:"order"`
-        Color    string                 `json:"color,omitempty"`
-        Position map[string]float64     `json:"position"`
-    }
-    
-    phases := []Phase{}
-    xPos := 0.0
-    for _, w := range playbook.Worlds {
-         // Best effort localization
-         title := ""
-         if t, ok := w.Title["en"]; ok { title = t } else if t, ok := w.Title["ru"]; ok { title = t }
-         
-         phases = append(phases, Phase{
-             ID: w.ID,
-             Title: title,
-             Order: w.Order,
-             Color: "#6366f1", // Default color
-             Position: map[string]float64{"x": float64(xPos), "y": 50},
-         })
-         xPos += 400 // space them out
-    }
-    
-    mapConfig := map[string]interface{}{
-        "phases": phases,
-    }
-    mapConfigJson, _ := json.Marshal(mapConfig)
-
     // Check if map exists
-    err = tx.QueryRowContext(ctx, "SELECT id FROM program_versions WHERE program_id = $1 AND version = $2", programID, playbook.Version).Scan(&programVersionID)
+    err = tx.QueryRowContext(ctx, "SELECT id FROM journey_maps WHERE program_id = $1 AND version = $2", programID, playbook.Version).Scan(&journeyMapID)
     if err == sql.ErrNoRows {
-        programVersionID = uuid.New().String()
+        journeyMapID = uuid.New().String()
         _, err = tx.ExecContext(ctx, `
-            INSERT INTO program_versions (id, program_id, title, version, config, is_active, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
-        `, programVersionID, programID, mapTitleJson, playbook.Version, mapConfigJson)
+            INSERT INTO journey_maps (id, program_id, title, version, is_active, created_at)
+            VALUES ($1, $2, $3, $4, true, NOW())
+        `, journeyMapID, programID, mapTitleJson, playbook.Version)
         if err != nil {
              log.Fatalf("Failed to insert journey map: %v", err)
         }
-        log.Printf("Inserted new Program Version: %s", programVersionID)
+        log.Printf("Inserted new Journey Map: %s", journeyMapID)
     } else if err != nil {
         log.Fatalf("Failed to query journey map: %v", err)
     } else {
-        log.Printf("Found existing Program Version: %s", programVersionID)
-         // Update config
-        _, err = tx.ExecContext(ctx, "UPDATE program_versions SET config = $2, updated_at = NOW() WHERE id = $1", programVersionID, mapConfigJson)
-        if err != nil {
-             log.Printf("Warning: Failed to update map config: %v", err)
-        }
+        log.Printf("Found existing Journey Map: %s", journeyMapID)
     }
-    log.Printf("Program Version ID: %s", programVersionID)
-
-    // 5. Delete existing nodes for this map version to ensure clean slate (or we can upsert one by one)
-    // Upsert is safer to preserve IDs if we were using consistent UUIDs, but here we generate new UUIDs unless we have a mapping.
-    // However, the text says "Use original ID as slug".
-    // Let's just UPSERT based on (program_version_id, slug).
-
+    
+    // 5. Upsert Nodes into journey_node_definitions
+    // Columns: id, journey_map_id, slug, type, title, description, module_key, coordinates, config, prerequisites
+    
     count := 0
     for _, world := range playbook.Worlds {
         for _, node := range world.Nodes {
@@ -225,29 +184,30 @@ func main() {
             }
             configJSON, _ := json.Marshal(configData)
             titleJSON, _ := json.Marshal(node.Title)
-
+            
             // Prepare prerequisites array
             prereqs := node.Prerequisites
             if prereqs == nil {
                 prereqs = []string{}
             }
             
+            // We use node.ID as slug
+            
             // Upsert Node
-            // Note: program_version_node_definitions uses unique constraint on (program_version_id, slug)
+            // Note: journey_node_definitions uses unique constraint on (journey_map_id, slug)
             _, err := tx.ExecContext(ctx, `
-                INSERT INTO program_version_node_definitions 
-                (id, program_version_id, slug, type, title, module_key, config, prerequisites, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-                ON CONFLICT (program_version_id, slug) DO UPDATE SET
+                INSERT INTO journey_node_definitions 
+                (id, journey_map_id, slug, type, title, module_key, config, prerequisites, coordinates, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '{"x":0,"y":0}'::jsonb, NOW())
+                ON CONFLICT (journey_map_id, slug) DO UPDATE SET
                     type = EXCLUDED.type,
                     title = EXCLUDED.title,
                     module_key = EXCLUDED.module_key,
                     config = EXCLUDED.config,
-                    prerequisites = EXCLUDED.prerequisites,
-                    updated_at = NOW()
+                    prerequisites = EXCLUDED.prerequisites
             `, 
                 uuid.New().String(), 
-                programVersionID, 
+                journeyMapID, 
                 node.ID, 
                 node.Type, 
                 titleJSON, 
@@ -256,19 +216,7 @@ func main() {
                 pq.Array(prereqs), 
             )
             
-            // Wait, standard pgx/sql driver doesn't support array types automatically without special handling or pq (which I imported via jackc adapter?)
-            // Actually I'm using "github.com/jackc/pgx/v5/stdlib".
-            // Arrays in standard sql can be tricky. Let's assume the column is text[] or jsonb?
-            // Migration script usually uses `text[]`.
-            // For pgx stdlib, passing []string usually works if driver handles it, or I might need `pq.Array`.
-            // Let's try passing the slice directly first. If it fails, I'll switch to JSON string if column is JSONB, or use pq.Array if I import lib/pq.
-            // I'll add a helper `toJsonArray` to be safe if it's JSONB, or just try raw.
-            // Wait, looking at current `go.mod`, do we have `lib/pq`?
-            // The migration guide used `pq.Array`. I should check if I can use it.
-            // I'll stick to `pq` import if available, or just standard slice.
-            
             if err != nil {
-                 // Try again with different array handling if needed, but for now log fatal
                  log.Fatalf("Failed to upsert node %s: %v", node.ID, err)
             }
             count++
@@ -279,11 +227,5 @@ func main() {
         log.Fatalf("Failed to commit transaction: %v", err)
     }
 
-    log.Printf("Successfully migrated %d nodes to database.", count)
-}
-
-func toJsonArray(arr []string) interface{} {
-    // If the driver supports []string for text[], return it.
-    // pgx generally does.
-    return arr
+    log.Printf("Successfully migrated %d nodes to database (Journey Map ID: %s).", count, journeyMapID)
 }

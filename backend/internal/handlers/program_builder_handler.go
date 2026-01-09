@@ -143,7 +143,7 @@ func (h *ProgramBuilderHandler) CreateNode(c *gin.Context) {
 		Slug:          payload.Slug,
 		Type:          payload.Type,
 		Title:         string(payload.Title),
-		Description:   string(payload.Description),
+		Description:   services.ToPtr(string(payload.Description)),
 		ModuleKey:     payload.ModuleKey,
 		Coordinates:   string(payload.Coordinates),
 		Config:        string(payload.Config),
@@ -220,7 +220,7 @@ func (h *ProgramBuilderHandler) UpdateNode(c *gin.Context) {
 		node.Title = string(*payload.Title)
 	}
 	if payload.Description != nil {
-		node.Description = string(*payload.Description)
+		node.Description = services.ToPtr(string(*payload.Description))
 	}
 	if payload.ModuleKey != nil {
 		node.ModuleKey = *payload.ModuleKey

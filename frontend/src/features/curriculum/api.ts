@@ -37,3 +37,17 @@ export const createCourse = (data: Partial<Course>) => api.post('/curriculum/cou
 export const updateCourse = (id: string, data: Partial<Course>) => 
   api.put(`/curriculum/courses/${id}`, data);
 export const deleteCourse = (id: string) => api.delete(`/curriculum/courses/${id}`);
+
+// Course Content (Modules, Lessons, Activities)
+export const getCourseModules = (courseId: string) => api.get(`/curriculum/courses/${courseId}/modules`);
+export const createCourseModule = (courseId: string, data: any) => api.post(`/curriculum/courses/${courseId}/modules`, data);
+export const updateCourseModule = (id: string, courseId: string, data: any) => api.put(`/curriculum/courses/${courseId}/modules/${id}`, data);
+export const deleteCourseModule = (id: string, courseId: string) => api.delete(`/curriculum/courses/${courseId}/modules/${id}`);
+
+export const createCourseLesson = (moduleId: string, courseId: string, data: any) => api.post(`/curriculum/courses/${courseId}/modules/${moduleId}/lessons`, data);
+export const updateCourseLesson = (id: string, moduleId: string, courseId: string, data: any) => api.put(`/curriculum/courses/${courseId}/modules/${moduleId}/lessons/${id}`, data);
+export const deleteCourseLesson = (id: string, moduleId: string, courseId: string) => api.delete(`/curriculum/courses/${courseId}/modules/${moduleId}/lessons/${id}`);
+
+export const createCourseActivity = (lessonId: string, moduleId: string, courseId: string, data: any) => api.post(`/curriculum/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/activities`, data);
+export const updateCourseActivity = (id: string, lessonId: string, moduleId: string, courseId: string, data: any) => api.put(`/curriculum/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/activities/${id}`, data);
+export const deleteCourseActivity = (id: string, lessonId: string, moduleId: string, courseId: string) => api.delete(`/curriculum/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/activities/${id}`);

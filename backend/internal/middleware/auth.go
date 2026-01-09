@@ -76,11 +76,13 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		val, ok := c.Get("claims")
 		if !ok {
+			log.Printf("[RequireRoles] Failed: No claims in context for path=%s", c.Request.URL.Path)
 			c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
 			return
 		}
 		
 		claims := val.(jwt.MapClaims)
+		log.Printf("[RequireRoles] Checking roles for user sub=%s, claims=%+v", claims["sub"], claims)
 		var userRoles []string
 
 		// 1. Try 'roles' array (new multi-role support)

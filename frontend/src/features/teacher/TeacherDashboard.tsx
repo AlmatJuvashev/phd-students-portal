@@ -101,7 +101,7 @@ export const TeacherDashboard: React.FC = () => {
           sub={t('teacher.dashboard.stats.pending_grading_subtitle')}
           icon={CheckCircle2}
           color="bg-indigo-50 text-indigo-600"
-          onClick={() => navigate('/admin/teacher/grading')}
+          onClick={() => navigate('/teach/grading')}
         />
         <StatWidget
           index={1}
@@ -110,7 +110,7 @@ export const TeacherDashboard: React.FC = () => {
           sub={t('teacher.dashboard.stats.active_courses_subtitle')}
           icon={Play}
           color="bg-emerald-50 text-emerald-600"
-          onClick={() => navigate('/admin/teacher/courses')}
+          onClick={() => navigate('/teach/courses')}
         />
         <StatWidget
           index={2}
@@ -137,7 +137,7 @@ export const TeacherDashboard: React.FC = () => {
           sub={t('teacher.dashboard.stats.at_risk_subtitle') || 'Requires attention'}
           icon={AlertTriangle}
           color="bg-red-50 text-red-600"
-          onClick={() => navigate('/admin/teacher/students')}
+          onClick={() => navigate('/teach/students')}
         />
       </div>
 
@@ -196,7 +196,7 @@ export const TeacherDashboard: React.FC = () => {
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-bold text-slate-900 text-lg">{t('teacher.dashboard.submissions.title')}</h3>
-              <Button size="sm" variant="ghost" onClick={() => navigate('/admin/teacher/grading')}>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/teach/grading')}>
                 {t('teacher.dashboard.submissions.view_all')}
               </Button>
             </div>
@@ -205,7 +205,7 @@ export const TeacherDashboard: React.FC = () => {
                 <div
                   key={sub.id}
                   className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer"
-                  onClick={() => navigate('/admin/teacher/grading')}
+                  onClick={() => navigate('/teach/grading')}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-200">
@@ -244,7 +244,7 @@ export const TeacherDashboard: React.FC = () => {
                   <div
                     key={offering.id}
                     className="p-4 rounded-2xl border border-slate-100 hover:border-slate-300 transition-all cursor-pointer group"
-                    onClick={() => navigate(`/admin/teacher/courses/${offering.id}`)}
+                    onClick={() => navigate(`/teach/courses/${offering.id}`)}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>

@@ -942,5 +942,420 @@
     "progress": "Прогресс",
     "xp_earned": "Жиналған XP",
     "nodes": "Кезеңдер"
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "Оқытушы тақтасы",
+      "subtitle": "Сабақтарды, бағаларды және студенттердің үлгерімін басқару",
+      "view_full_schedule": "Толық кестені көру",
+      "stats": {
+        "to_grade": "Тексеруге",
+        "pending_grading_subtitle": "Бағалауды күтуде",
+        "active_courses": "Белсенді курстар",
+        "active_courses_subtitle": "Ағымдағы семестр",
+        "today_classes": "Бүгінгі сабақтар",
+        "today_classes_subtitle": "Қалған сессиялар",
+        "next_class": "Келесі сабақ",
+        "next_class_none": "Бүгінге сабақ жоқ",
+        "students_at_risk": "Тәуекел аймағында",
+        "at_risk_subtitle": "Назар аударуды қажет етеді"
+      },
+      "schedule": {
+        "title": "Бүгінгі кесте",
+        "no_next_class": "Бүгінге сабақ жоқ.",
+        "empty": "Жоспарланған сабақтар жоқ."
+      },
+      "submissions": {
+        "title": "Соңғы жұмыстар",
+        "view_all": "Барлығын көру"
+      },
+      "active_classes": {
+        "title": "Белсенді топтар",
+        "students_count": "{{count}} Студент"
+      },
+      "insight": {
+        "title": "AI Инсайт",
+        "placeholder_title": "Белсенділікті талдау",
+        "placeholder_body": "'Зерттеу әдістері' курсына қатысу 15%-ға төмендеді. Хабарлама жіберген жөн.",
+        "review_analytics": "Аналитиканы шолу"
+      }
+    },
+    "courses": {
+      "title": "Менің курстарым",
+      "subtitle": "Белсенді курстар мен бағдарламаны басқару",
+      "search_placeholder": "Курстарды іздеу...",
+      "open_scheduler": "Кесте",
+      "enrolled": "Жазылған",
+      "open": "Курсты ашу",
+      "empty": "Курстар табылмады."
+    },
+    "detail": {
+      "not_found": "Курс табылмады",
+      "back": "Курстар тізіміне",
+      "edit_content": "Өңдеу",
+      "open_tracker": "Трекер",
+      "open_attendance": "Қатысу",
+      "open_forums": "Форумдар",
+      "open_grading": "Бағалау",
+      "stats": {
+        "enrolled": "Жазылған студенттер",
+        "roster": "Топ тізімі",
+        "gradebook": "Бағалау журналы",
+        "avg": "Орташа балл"
+      },
+      "tabs": {
+        "overview": "Шолу",
+        "roster": "Тізім",
+        "gradebook": "Журнал"
+      },
+      "overview_title": "Курсқа шолу",
+      "overview_body": "Курс мазмұны мен модульдер осында пайда болады.",
+      "table": {
+        "student": "Студент",
+        "email": "Email",
+        "status": "Статус"
+      },
+      "no_students": "Жазылған студенттер жоқ.",
+      "gradebook": {
+        "activity": "Тапсырма",
+        "student": "Студент",
+        "score": "Балл",
+        "grade": "Баға",
+        "empty": "Әзірге бағалар жоқ."
+      }
+    },
+    "grading": {
+      "title": "Бағалау",
+      "subtitle": "Студенттердің жұмыстарын тексеру және бағалау.",
+      "search_placeholder": "Студентті немесе тапсырманы іздеу...",
+      "filters": {
+        "all": "Барлығы",
+        "submitted": "Тапсырылды",
+        "graded": "Бағаланды"
+      },
+      "table": {
+        "student": "Студент",
+        "activity": "Тапсырма",
+        "submitted": "Тапсырылды",
+        "status": "Статус",
+        "action": "Әрекет"
+      },
+      "grade_now": "Бағалау",
+      "no_submissions": "Жұмыстар табылмады.",
+      "modal": {
+        "submission": "Жұмыс",
+        "preview_title": "Жұмысты қарау",
+        "preview_body": "Файлдарды көшіру аяқталған соң қарау және жүктеу қолжетімді болады.",
+        "download": "Түпнұсқаны жүктеу"
+      },
+      "score": "Балл",
+      "rubric": "Рубрика",
+      "rubric_placeholder": "Рубрика бойынша бағалау жақын арада қосылады.",
+      "feedback": "Кері байланыс",
+      "feedback_placeholder": "Студентке пікір жазыңыз...",
+      "save_grade": "Бағаны сақтау"
+    },
+    "tracker": {
+      "title": "Прогресс трекері",
+      "subtitle": "{{course}} бойынша прогресті бақылау",
+      "back": "Курсқа оралу",
+      "open_grading": "Бағалау",
+      "not_found": "Курс табылмады.",
+      "search_placeholder": "Студенттерді іздеу...",
+      "days_ago": "{{count}} күн бұрын",
+      "stats": {
+        "total": "Студент",
+        "at_risk": "Тәуекел аймағында",
+        "on_track": "Қалыпты"
+      },
+      "filters": {
+        "all": "Барлығы",
+        "at_risk": "Тәуекел аймағында",
+        "critical": "Критикалық",
+        "high": "Жоғары",
+        "medium": "Орташа",
+        "low": "Төмен"
+      },
+      "table": {
+        "student": "Студент",
+        "progress": "Прогресс",
+        "grade": "Баға",
+        "last_active": "Белсенділік",
+        "status": "Статус"
+      },
+      "risk": {
+        "low": "Қалыпты",
+        "medium": "Көмек қажет",
+        "high": "Тәуекел аймағында",
+        "critical": "Критикалық"
+      },
+      "empty": "Студенттер табылмады.",
+      "api_hint": "API тексеру: {{count}} студент.",
+      "drawer": {
+        "progress": "{{percent}}% • {{completed}}/{{total}} аяқталды",
+        "avg": "Орташа",
+        "last": "Соңғы белсенділік",
+        "factors": "Тәуекел факторлары",
+        "no_factors": "Тәуекел факторлары жоқ.",
+        "actions": "Ұсынылатын әрекеттер",
+        "no_actions": "Ұсыныстар жоқ.",
+        "activity": "Соңғы белсенділік",
+        "no_activity": "Әзірге белсенділік жоқ."
+      }
+    }
+  },
+  "student": {
+    "dashboard": {
+      "welcome": "Қайта оралуыңызбен, {{name}}!",
+      "subtitle": "Бүгін сізді не күтіп тұр.",
+      "default_program": "Менің бағдарламам",
+      "program_type": "PhD Бағдарламасы",
+      "due_soon": "Мерзімі жақын",
+      "current_focus": "Ағымдағы фокус",
+      "complete": "Дайын",
+      "overdue": "Мерзімі өтті",
+      "up_next": "Келесі",
+      "up_next_title": "Кафедра семинары",
+      "up_next_time": "Бүгін, 14:00",
+      "continue": "Жалғастыру",
+      "your_programs": "Сіздің бағдарламаларыңыз",
+      "program_hint": "Толығырақ көру үшін таңдаңыз",
+      "upcoming_tasks": "Алдағы тапсырмалар",
+      "view_all_tasks": "Барлық тапсырмалар",
+      "load_error": "Деректерді жүктеу қатесі.",
+      "notice_title": "Маңызды хабарлама",
+      "notice_body": "Күзгі 2025 тіркелу ашық. Кестеңізді тексеріңіз.",
+      "tasks": {
+        "0": {
+          "title": "Зерттеу жоспарын тапсыру",
+          "due": "Ертең"
+        },
+        "1": {
+          "title": "Этикалық комитет",
+          "due": "3 күннен кейін"
+        },
+        "2": {
+          "title": "Жылдық есеп",
+          "due": "Келесі аптада"
+        }
+      }
+    }
+  },
+  "edustudio": {
+    "title": "EduStudio Hub",
+    "subtitle": "Академиялық оқу процесін бір жерден басқару",
+    "cat": {
+      "assessment": "Курстар және Бағалау",
+      "curriculum": "Оқу жоспары және Кесте",
+      "quick": "Жылдам қолжетімділік",
+      "operations": "Операциялар"
+    },
+    "btn": {
+      "multiselect": {
+        "label": "Көп жауапты сұрақ",
+        "desc": "Жаңа көп жауапты сұрақ құру"
+      },
+      "short": {
+        "label": "Қысқа жауап",
+        "desc": "Қысқа жауапты сұрақ құру"
+      },
+      "osce": {
+        "label": "OSCE чеклисті",
+        "desc": "Жаңа OSCE чеклистін құру"
+      },
+      "course": {
+        "label": "Курстар студиясы",
+        "desc": "Курстар мен модульдерді басқару"
+      },
+      "program": {
+        "label": "Бағдарламалар студиясы",
+        "desc": "Академиялық бағдарламаларды жобалау"
+      },
+      "student": {
+        "label": "Студент порталы",
+        "desc": "Студент тақтасын көру"
+      },
+      "instructor": {
+        "label": "Оқытушы порталы",
+        "desc": "Курстар мен бағаларды басқару"
+      },
+      "hr": {
+        "label": "HR Басқару",
+        "desc": "Персоналды басқару"
+      },
+      "facilities": {
+        "label": "Ресурстар",
+        "desc": "Аудиториялар мен ресурстарды басқару"
+      }
+    }
+  },
+  "layouts": {
+    "instructor": {
+      "title": "Оқытушы порталы",
+      "dashboard": "Тақта",
+      "courses": "Менің курстарым",
+      "grading": "Бағалау",
+      "attendance": "Қатысу"
+    },
+    "student": {
+      "title": "Студент порталы",
+      "dashboard": "Тақта",
+      "learning": "Оқу",
+      "schedule": "Кесте",
+      "grades": "Бағалар"
+    }
+  },
+  "curriculum": {
+    "programs": {
+      "title": "Бағдарламалар",
+      "subtitle": "Академиялық бағдарламаларды басқару.",
+      "search_placeholder": "Бағдарламаларды іздеу...",
+      "open_studio": "Бағдарлама студиясы",
+      "open_builder": "Құрастырушы",
+      "stats": {
+        "students": "Студенттер",
+        "completion": "Орт. аяқталу"
+      },
+      "no_programs": "Бағдарламалар табылмады",
+      "status": {
+          "all": "Барлығы",
+          "active": "Белсенді",
+          "draft": "Жоба",
+          "archived": "Мұрағат"
+      }
+    },
+    "inventory": {
+      "title": "Курстар тізілімі",
+      "subtitle": "Жоспарлауға қолжетімді контент модульдері.",
+      "open_hub": "Студияны ашу",
+      "search_placeholder": "Тізілім бойынша іздеу...",
+      "no_courses": "Курстар табылмады.",
+      "table": {
+        "code": "Код",
+        "title": "Атауы",
+        "category": "Санат",
+        "credits": "Кредиттер",
+        "duration": "Ұзақтығы",
+        "source": "Дереккөз",
+        "view_studio": "Студияда ашу"
+      }
+    }
+  }
+  ,
+  "builder": {
+    "inspector": {
+      "properties": "Қасиеттер",
+      "step_function": "Қадам функциясы",
+      "experience_points": "Тәжірибе ұпайлары",
+      "xp": "XP",
+      "xp_hint": "Аяқтаған үшін берілетін ұпайлар.",
+      "form_config": "Форма баптаулары",
+      "fields_configured": "{{count}} өріс бапталды.",
+      "launch_builder": "Форма құрастырушыны қосу",
+      "checklist_config": "Чеклист баптаулары",
+      "requirement_list": "Талаптар тізімі",
+      "checklist_hint": "Студенттерге арналған қадамдық тапсырмаларды анықтаңыз.",
+      "launch_checklist": "Чеклист студиясын қосу",
+      "task_config": "Тапсырма баптаулары",
+      "task_hint": "Жүктемелерді, шаблондарды және бекіту процесін баптаңыз.",
+      "launch_task": "Тапсырма студиясын қосу",
+      "survey_settings": "Сауалнама баптаулары",
+      "survey_hint": "Кері байланыс пен пікірлерді жинау.",
+      "open_survey": "Сауалнама студиясын ашу",
+      "approver_role": "Бекітуші рөлі",
+      "select_role": "Рөлді таңдаңыз...",
+      "content": "Мазмұны",
+      "content_placeholder": "Сипаттама немесе нұсқауларды енгізіңіз...",
+      "ops_hint": "Бұл қадам Кесте студиясында автоматтандырылған процессті іске қосады.",
+      "trigger_action": "Триггер әрекеті",
+      "select_action": "Әрекетті таңдаңыз...",
+      "linked_curriculum": "Байланысты оқу жоспары",
+      "amount": "Молшері",
+      "currency": "Валюта",
+      "delete_step": "Қадамды өшіру"
+    },
+    "nodeTypes": {
+      "course": "Оқу оқиғасы",
+      "payment": "Қаржылық шлюз",
+      "sync_ops": "Операцияларды автоматтандыру",
+      "approval": "Админ. шлюз",
+      "form": "Деректер жинау",
+      "meeting": "Синхронды оқиға",
+      "checklist": "Талап",
+      "milestone": "Веха",
+      "info": "Ақпарат",
+      "survey": "Кері байланыс",
+      "confirmTask": "Растау",
+      "processStep": "Процесс қадамы"
+    },
+    "roles": {
+      "advisor": "Ғылыми жетекші",
+      "secretary": "Ғалым хатшы",
+      "dean": "Мектеп деканы",
+      "admin": "Жүйелік әкімші"
+    },
+    "actions": {
+      "assign_advisor": "Жетекшіні тағайындау",
+      "unlock_cohort": "Келесі ағынды ашу",
+      "generate_invoice": "Шот жасау",
+      "notify_registrar": "Тіркеушіге хабарлау"
+    },
+    "world": {
+      "create_title": "Кезең құру",
+      "edit_title": "Кезеңді өңдеу",
+      "tabs": { "general": "Жалпы", "logic": "Ағым және Логика" },
+      "fields": { "title": "Кезең атауы", "description": "Сипаттама", "color": "Тақырып түсі" },
+      "description_placeholder": "Осы кезеңнің мақсатын қысқаша сипаттаңыз...",
+      "logic": {
+          "conditional_visibility": "Шартты көріну",
+          "hint": "Белгіленген критерийлер орындалғанша бұл кезеңді жасыру...",
+          "enable": "Логика ережесін қосу",
+          "based_on": "Форма қадамына негізделген",
+          "select_form": "Бастапқы форманы таңдаңыз...",
+          "field_key": "Өріс кілті",
+          "operator": "Оператор",
+          "value": "Сәйкестік мәні",
+          "operators": { "equals": "Тең", "not_equals": "Тең емес", "contains": "Құрамында бар" }
+      },
+      "delete_phase": "Кезеңді өшіру",
+      "save_changes": "Өзгерістерді сақтау"
+    },
+    "course": {
+          "default_title": "Курс",
+          "title": "Курс Құрастырушы",
+          "status": { "draft": "Жоба", "published": "Жарияланды" },
+          "actions": {
+              "undo": "Болдырмау (Cmd+Z)",
+              "redo": "Қайталау (Cmd+Shift+Z)",
+              "preview": "Алдын ала қарау",
+              "saving": "Сақталуда...",
+              "save_changes": "Сақтау",
+              "add_module": "Модуль қосу",
+              "add_lesson": "Сабақ қосу",
+              "insert_activity": "Белсенділік кірістіру",
+              "add_activity": "Белсенділік қосу"
+          },
+          "structure": { "title": "Курс Құрылымы", "no_lessons": "Сабақтар жоқ" },
+          "defaults": { "module": "Жаңа Модуль", "lesson": "Жаңа Сабақ", "activity": "Жаңа Белсенділік", "untitled_activity": "Атаусыз Белсенділік" },
+          "validation": { "title_required": "Тақырып қажет", "video_required": "Бейне URL-ы жоқ" },
+          "activity_types": {
+              "text": "Мәтін / Мақала", "text_desc": "Оқу және құжаттама",
+              "video": "Бейне сабақ", "video_desc": "YouTube, Vimeo немесе жүктеу",
+              "quiz": "Тест", "quiz_desc": "Бағалау және тексеру",
+              "survey": "Сауалнама", "survey_desc": "Кері байланыс",
+              "assignment": "Тапсырма", "assignment_desc": "Файлдарды жүктеу"
+          },
+          "editor": {
+              "insert_link": "Сілтеме кірістіру",
+              "insert_image": "Сурет кірістіру",
+              "preview": "Алдын ала қарау",
+              "preview_placeholder": "Мазмұнды алдын ала қарау осында пайда болады.",
+              "placeholder": "# Сабақ мазмұнын осында жазыңыз...",
+              "supported": "қолдау көрсетіледі",
+              "chars": "{{count}} таңба"
+          },
+          "success": "Курс мазмұны сақталды",
+          "error": "Сақтау қатесі"
+      }
   }
 }

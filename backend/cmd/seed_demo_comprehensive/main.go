@@ -59,6 +59,22 @@ func main() {
 		log.Printf("Superadmin created with password: %s", gen)
 	}
 
+	// --- 2.5 Ensure Superadmin has all roles in Demo Tenant (for demo purposes) ---
+	var saID string
+	_ = db.Get(&saID, "SELECT id FROM users WHERE email=$1", cfg.AdminEmail)
+	if saID != "" {
+		fmt.Println("Granting all roles to Superadmin in Demo Tenant...")
+		// Ensure basic membership first if not exists
+		_, _ = db.Exec(`INSERT INTO user_tenant_memberships (user_id, tenant_id, role, roles)
+		VALUES ($1, $2, 'admin', ARRAY['admin']::text[]) ON CONFLICT (user_id, tenant_id) DO NOTHING`, saID, DemoTenantID)
+		
+		ensureRole(db, saID, "admin", DemoTenantID)
+		ensureRole(db, saID, "instructor", DemoTenantID)
+		ensureRole(db, saID, "student", DemoTenantID)
+		ensureRole(db, saID, "advisor", DemoTenantID)
+		ensureRole(db, saID, "dean", DemoTenantID)
+	}
+
 	// --- 3. Cleanup KazNMU (No users except admins) ---
 	fmt.Println("Cleaning up KazNMU (Admin ready, no demo users)...")
 	cleanupKazNMU(db)
@@ -77,6 +93,10 @@ func main() {
 		log.Fatalf("Failed to ensure active playbook for Demo: %v", err)
 	}
 	versionID := mgr.VersionID
+
+	// --- 4.5 Ensure Journey Map for Builder (Synced from Playbook) ---
+	phdProgID := ensureProgram(db, "PHD-CS", "PhD Computer Science", DemoTenantID)
+	ensureJourneyFromPlaybook(db, phdProgID, pbPath)
 
 	// --- 5. Departments (Demo University) ---
 	depts := []string{"Public Health", "Anatomy", "Pharmacology", "Epidemiology", "Health Policy"}
@@ -152,16 +172,53 @@ func main() {
 	b1 := ensureBuilding(db, "Science Block A", "Tole Bi 94", DemoTenantID)
 	ensureRoom(db, b1, "Anatomy Lab 101", "lab", 30)
 	
-	courseID := ensureCourse(db, "Advanced Anatomy", "PH-ANAT", DemoTenantID)
+	// Seed multiple courses
+	courses := []struct{Title, Code string}{
+		{"Advanced Anatomy", "PH-ANAT"},
+		{"Medical Ethics", "PH-ETH"},
+		{"Biostatistics", "PH-BIO"},
+		{"Research Methodology", "PH-RES"},
+		{"Molecular Biology", "PH-MOL"},
+	}
+	
+	courseIDs := make([]string, 0)
+	offeringIDs := make([]string, 0)
+
 	termID := ensureTerm(db, "Winter 2025", "W25", time.Now(), time.Now().AddDate(0, 3, 0), DemoTenantID)
-	offeringID := ensureOffering(db, courseID, termID, "A", teachers[0], DemoTenantID)
+
+	for _, c := range courses {
+		cid := ensureCourse(db, c.Title, c.Code, DemoTenantID)
+		courseIDs = append(courseIDs, cid)
+		oid := ensureOffering(db, cid, termID, "A", teachers[rand.Intn(len(teachers))], DemoTenantID)
+		offeringIDs = append(offeringIDs, oid)
+	}
 
 	for i := 1; i <= 100; i++ {
 		sid := ensureUser(db, fmt.Sprintf("ug.student%d", i), fmt.Sprintf("ug%d@demo.kaznmu.kz", i), "UG Student", fmt.Sprintf("%d", i), "student", hashedPass, DemoTenantID)
-		ensureEnrollment(db, sid, offeringID, "ENROLLED")
+		// Enroll in random 3 courses
+		for j := 0; j < 3; j++ {
+			oid := offeringIDs[rand.Intn(len(offeringIDs))]
+			ensureEnrollment(db, sid, oid, "ENROLLED")
+		}
 		seedGamification(db, sid, DemoTenantID, i)
 		if i % 15 == 0 { seedRisk(db, sid, 75.0, "Low attendance", "Academic difficulty") }
+
+		// Seed some activity for Teacher Dashboard Risk Calculation
+		// Good Students (First 10)
+		if i <= 10 {
+			seedSubmission(db, sid, offeringIDs[0], "project_1", "Project 1", "SUBMITTED", time.Now().Add(-1*time.Hour), DemoTenantID)
+			seedGrade(db, sid, offeringIDs[0], "project_1", 95.0, 100.0, DemoTenantID)
+		} else if i <= 30 && i > 20 {
+			// Struggling Students (Next 10): Low Grades
+			seedSubmission(db, sid, offeringIDs[0], "project_1", "Project 1", "GRADED", time.Now().Add(-2*time.Hour), DemoTenantID)
+			seedGrade(db, sid, offeringIDs[0], "project_1", 55.0, 100.0, DemoTenantID)
+		}
 	}
+    
+    // Seed Sessions for the first course (Anatomy)
+    seedSession(db, offeringIDs[0], "Anatomy Lecture", "LECTURE", time.Now().Add(2*time.Hour), time.Now().Add(3*time.Hour), b1, DemoTenantID)
+    seedSession(db, offeringIDs[0], "Anatomy Lab", "LAB", time.Now().Add(26*time.Hour), time.Now().Add(28*time.Hour), b1, DemoTenantID)
+
 
 	// --- 10. Workflows & Notifications (Demo University) ---
 	seedWorkflows(db, DemoTenantID, deanID, chairAnatomy, teachers[0])

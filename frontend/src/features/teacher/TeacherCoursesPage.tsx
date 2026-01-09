@@ -69,7 +69,7 @@ export const TeacherCoursesPage: React.FC = () => {
           return (
             <button
               key={offering.id}
-              onClick={() => navigate(`/admin/teacher/courses/${offering.id}`)}
+              onClick={() => navigate(`/teach/courses/${offering.id}`)}
               className="group bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all overflow-hidden flex flex-col h-full relative cursor-pointer text-left"
             >
               <div className="h-24 bg-slate-100 relative overflow-hidden">

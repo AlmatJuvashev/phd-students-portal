@@ -232,8 +232,9 @@ func (s *ProgramBuilderService) CreateNode(ctx context.Context, journeyMapID str
 		titleBytes, _ := json.Marshal("Untitled")
 		nodeDef.Title = string(titleBytes)
 	}
-	if strings.TrimSpace(nodeDef.Description) == "" {
-		nodeDef.Description = "null"
+	if nodeDef.Description == nil || strings.TrimSpace(*nodeDef.Description) == "" {
+		s := "null"
+		nodeDef.Description = &s
 	}
 	if strings.TrimSpace(nodeDef.Coordinates) == "" {
 		nodeDef.Coordinates = `{"x":0,"y":0}`
@@ -251,8 +252,9 @@ func (s *ProgramBuilderService) UpdateNode(ctx context.Context, nodeDef *models.
 	if strings.TrimSpace(nodeDef.Title) == "" {
 		nodeDef.Title = "null"
 	}
-	if strings.TrimSpace(nodeDef.Description) == "" {
-		nodeDef.Description = "null"
+	if nodeDef.Description == nil || strings.TrimSpace(*nodeDef.Description) == "" {
+		s := "null"
+		nodeDef.Description = &s
 	}
 	if strings.TrimSpace(nodeDef.Coordinates) == "" {
 		nodeDef.Coordinates = `{"x":0,"y":0}`
@@ -290,6 +292,10 @@ func normalizeJSONObject(value string, defaultJSON string) json.RawMessage {
 }
 
 func toBuilderNode(n models.JourneyNodeDefinition) BuilderNode {
+	desc := ""
+	if n.Description != nil {
+		desc = *n.Description
+	}
 	return BuilderNode{
 		ID:              n.ID,
 		ProgramVersionID: n.JourneyMapID,
@@ -298,7 +304,7 @@ func toBuilderNode(n models.JourneyNodeDefinition) BuilderNode {
 		Slug:          n.Slug,
 		Type:          n.Type,
 		Title:         normalizeJSONValue(n.Title),
-		Description:   normalizeJSONValue(n.Description),
+		Description:   normalizeJSONValue(desc),
 		ModuleKey:     n.ModuleKey,
 		Coordinates:   normalizeJSONObject(n.Coordinates, `{"x":0,"y":0}`),
 		Config:        normalizeJSONObject(n.Config, `{}`),

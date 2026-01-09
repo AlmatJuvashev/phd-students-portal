@@ -25,7 +25,7 @@ type Room struct {
 	Capacity     int             `db:"capacity" json:"capacity" binding:"required,min=1"`
 	Floor        int             `db:"floor" json:"floor"`
 	DepartmentID *string         `db:"department_id" json:"department_id,omitempty"` // Restrict to specific department
-	Type         string          `db:"type" json:"type" binding:"required,oneof=lecture_hall lab office classroom seminar_room"`
+	Type         string          `db:"type" json:"type" binding:"required,oneof=lecture_hall lab office classroom seminar_room simulation_center conference_room study_hall computer_lab medical_clinic"`
 	Features     string          `db:"features" json:"features"` // Legacy JSONB, migrating to Attributes
 	Attributes   []RoomAttribute `db:"-" json:"attributes"`      // New Key/Value attributes
 	IsActive     bool            `db:"is_active" json:"is_active"`

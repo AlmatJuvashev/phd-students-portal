@@ -301,7 +301,7 @@ func BuildAPI(r *gin.Engine, db *sqlx.DB, cfg config.AppConfig, playbookManager 
 	{
 		// Student Portal
 		student := protected.Group("/student")
-		student.Use(middleware.RequireRoles("student"))
+		student.Use(middleware.RequireRoles("student", "admin", "superadmin"))
 		{
 			student.GET("/dashboard", studentHandler.GetDashboard)
 			student.GET("/catalog", studentHandler.ListAvailableCourses)

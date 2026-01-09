@@ -24,6 +24,8 @@ func newTestCurriculumRepo(t *testing.T) (*SQLCurriculumRepository, sqlmock.Sqlm
 	return repo, mock, func() { db.Close() }
 }
 
+
+
 func TestSQLCurriculumRepository_Programs(t *testing.T) {
 	repo, mock, teardown := newTestCurriculumRepo(t)
 	defer teardown()
@@ -35,7 +37,7 @@ func TestSQLCurriculumRepository_Programs(t *testing.T) {
 			Code:           "PHD-CS",
 			Name:           "PHD-CS",
 			Title:          "PhD Computer Science",
-			Description:    "Desc",
+			Description:    strPtr("Desc"),
 			Credits:        180,
 			DurationMonths: 48,
 			IsActive:       true,
@@ -81,7 +83,7 @@ func TestSQLCurriculumRepository_Programs(t *testing.T) {
 			ID:             "p1",
 			Code:           "PHD-CS-V2",
 			Title:          "Updated Title",
-			Description:    "New Desc",
+			Description:    strPtr("New Desc"),
 			Credits:        240,
 			DurationMonths: 60,
 			IsActive:       false,
@@ -115,7 +117,7 @@ func TestSQLCurriculumRepository_Courses(t *testing.T) {
 			DepartmentID:  nil,
 			Code:          "CS101",
 			Title:         "Intro",
-			Description:   "Desc",
+			Description:   strPtr("Desc"),
 			Credits:       6,
 			WorkloadHours: 120,
 			IsActive:      true,
@@ -157,7 +159,7 @@ func TestSQLCurriculumRepository_Courses(t *testing.T) {
 			ID:          "c1",
 			Code:        "CS101-V2",
 			Title:       "Updated",
-			Description: "Desc",
+			Description: strPtr("Desc"),
 		}
 		mock.ExpectExec("UPDATE courses SET").
 			WithArgs(nil, nil, "CS101-V2", "Updated", "Desc", 0, 0, false, "c1").
@@ -230,7 +232,7 @@ func TestSQLCurriculumRepository_NodeDefinitions(t *testing.T) {
 			Slug:          "node-1",
 			Type:          "task",
 			Title:         "Node 1",
-			Description:   "Desc",
+			Description:   strPtr("Desc"),
 			ModuleKey:     "I",
 			Coordinates:   `{"x":0,"y":0}`,
 			Config:        "{}",

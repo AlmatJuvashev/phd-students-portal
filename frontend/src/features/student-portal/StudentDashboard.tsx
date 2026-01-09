@@ -156,7 +156,7 @@ export const StudentDashboard: React.FC = () => {
 
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-            <h3 className="font-bold text-slate-900 text-lg mb-4">Quick Actions</h3>
+            <h3 className="font-bold text-slate-900 text-lg mb-4">{t('student.dashboard.quick_actions', { defaultValue: 'Quick Actions' })}</h3>
             <div className="grid grid-cols-2 gap-3">
               <button 
                 onClick={() => navigate('/student/achievements')}
@@ -165,7 +165,7 @@ export const StudentDashboard: React.FC = () => {
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-sm">
                     <Trophy size={20} />
                 </div>
-                <span className="text-xs font-bold text-indigo-900">My Badges</span>
+                <span className="text-xs font-bold text-indigo-900">{t('student.dashboard.my_badges', { defaultValue: 'My Badges' })}</span>
               </button>
               <button 
                 onClick={() => setCheckInOpen(true)}
@@ -174,7 +174,7 @@ export const StudentDashboard: React.FC = () => {
                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm">
                     <QrCode size={20} />
                 </div>
-                <span className="text-xs font-bold text-emerald-900">Check In</span>
+                <span className="text-xs font-bold text-emerald-900">{t('student.dashboard.check_in', { defaultValue: 'Check In' })}</span>
               </button>
             </div>
           </div>

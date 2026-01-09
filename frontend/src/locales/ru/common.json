@@ -945,5 +945,420 @@
     "progress": "Прогресс",
     "xp_earned": "Заработано XP",
     "nodes": "Этапы"
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "Панель преподавателя",
+      "subtitle": "Управление курсами, оценками и прогрессом студентов",
+      "view_full_schedule": "Полное расписание",
+      "stats": {
+        "to_grade": "На проверку",
+        "pending_grading_subtitle": "Ожидают оценки",
+        "active_courses": "Активные курсы",
+        "active_courses_subtitle": "Текущий семестр",
+        "today_classes": "Занятия сегодня",
+        "today_classes_subtitle": "Осталось сессий",
+        "next_class": "Следующее занятие",
+        "next_class_none": "Занятий больше нет",
+        "students_at_risk": "В зоне риска",
+        "at_risk_subtitle": "Требуют внимания"
+      },
+      "schedule": {
+        "title": "Расписание на сегодня",
+        "no_next_class": "На сегодня занятий нет.",
+        "empty": "Нет запланированных занятий."
+      },
+      "submissions": {
+        "title": "Последние работы",
+        "view_all": "Все работы"
+      },
+      "active_classes": {
+        "title": "Активные группы",
+        "students_count": "{{count}} Студентов"
+      },
+      "insight": {
+        "title": "AI Инсайт",
+        "placeholder_title": "Анализ вовлеченности",
+        "placeholder_body": "Посещаемость курса 'Методы исследований' упала на 15%. Рекомендуем сделать рассылку.",
+        "review_analytics": "Обзор аналитики"
+      }
+    },
+    "courses": {
+      "title": "Мои курсы",
+      "subtitle": "Управление активными курсами и программой",
+      "search_placeholder": "Поиск курсов...",
+      "open_scheduler": "Расписание",
+      "enrolled": "Записано",
+      "open": "Открыть курс",
+      "empty": "Курсы не найдены."
+    },
+    "detail": {
+      "not_found": "Курс не найден",
+      "back": "К списку курсов",
+      "edit_content": "Редактировать",
+      "open_tracker": "Трекер",
+      "open_attendance": "Посещаемость",
+      "open_forums": "Форумы",
+      "open_grading": "Оценки",
+      "stats": {
+        "enrolled": "Записано студентов",
+        "roster": "Список группы",
+        "gradebook": "Журнал оценок",
+        "avg": "Средний балл"
+      },
+      "tabs": {
+        "overview": "Обзор",
+        "roster": "Список",
+        "gradebook": "Журнал"
+      },
+      "overview_title": "Обзор курса",
+      "overview_body": "Контент курса и модули появятся здесь.",
+      "table": {
+        "student": "Студент",
+        "email": "Email",
+        "status": "Статус"
+      },
+      "no_students": "Нет записанных студентов.",
+      "gradebook": {
+        "activity": "Задание",
+        "student": "Студент",
+        "score": "Балл",
+        "grade": "Оценка",
+        "empty": "Оценок пока нет."
+      }
+    },
+    "grading": {
+      "title": "Оценивание",
+      "subtitle": "Проверка и оценка работ студентов.",
+      "search_placeholder": "Поиск студента или задания...",
+      "filters": {
+        "all": "Все",
+        "submitted": "Сдано",
+        "graded": "Оценено"
+      },
+      "table": {
+        "student": "Студент",
+        "activity": "Задание",
+        "submitted": "Сдано",
+        "status": "Статус",
+        "action": "Действие"
+      },
+      "grade_now": "Оценить",
+      "no_submissions": "Работы не найдены.",
+      "modal": {
+        "submission": "Работа",
+        "preview_title": "Просмотр работы",
+        "preview_body": "Просмотр и скачивание будут доступны после миграции файлов.",
+        "download": "Скачать оригинал"
+      },
+      "score": "Балл",
+      "rubric": "Рубрика",
+      "rubric_placeholder": "Оценка по рубрикам скоро появится.",
+      "feedback": "Обратная связь",
+      "feedback_placeholder": "Введите комментарии для студента...",
+      "save_grade": "Сохранить оценку"
+    },
+    "tracker": {
+      "title": "Трекер прогресса",
+      "subtitle": "Отслеживание прогресса для {{course}}",
+      "back": "Назад к курсу",
+      "open_grading": "Оценки",
+      "not_found": "Курс не найден.",
+      "search_placeholder": "Поиск студентов...",
+      "days_ago": "{{count}} дн. назад",
+      "stats": {
+        "total": "Студентов",
+        "at_risk": "В зоне риска",
+        "on_track": "В норме"
+      },
+      "filters": {
+        "all": "Все",
+        "at_risk": "В зоне риска",
+        "critical": "Критично",
+        "high": "Высокий",
+        "medium": "Средний",
+        "low": "Низкий"
+      },
+      "table": {
+        "student": "Студент",
+        "progress": "Прогресс",
+        "grade": "Оценка",
+        "last_active": "Активность",
+        "status": "Статус"
+      },
+      "risk": {
+        "low": "В норме",
+        "medium": "Нужна помощь",
+        "high": "В зоне риска",
+        "critical": "Критично"
+      },
+      "empty": "Студенты не найдены.",
+      "api_hint": "API проверка: {{count}} студентов.",
+      "drawer": {
+        "progress": "{{percent}}% • {{completed}}/{{total}} завершено",
+        "avg": "Среднее",
+        "last": "Последняя активность",
+        "factors": "Факторы риска",
+        "no_factors": "Нет факторов риска.",
+        "actions": "Предлагаемые действия",
+        "no_actions": "Нет предложений.",
+        "activity": "Недавняя активность",
+        "no_activity": "Активности пока нет."
+      }
+    }
+  },
+  "student": {
+    "dashboard": {
+      "welcome": "С возвращением, {{name}}!",
+      "subtitle": "Вот что происходит сегодня.",
+      "default_program": "Моя программа",
+      "program_type": "PhD Программа",
+      "due_soon": "Скоро сдача",
+      "current_focus": "Текущий фокус",
+      "complete": "Готово",
+      "overdue": "Просрочено",
+      "up_next": "Далее",
+      "up_next_title": "Семинар кафедры",
+      "up_next_time": "Сегодня, 14:00",
+      "continue": "Продолжить",
+      "your_programs": "Ваши программы",
+      "program_hint": "Выберите для просмотра деталей",
+      "upcoming_tasks": "Предстоящие задачи",
+      "view_all_tasks": "Все задачи",
+      "load_error": "Ошибка загрузки данных.",
+      "notice_title": "Важное уведомление",
+      "notice_body": "Регистрация на осень 2025 открыта. Проверьте расписание.",
+      "tasks": {
+        "0": {
+          "title": "Сдать план исследования",
+          "due": "Завтра"
+        },
+        "1": {
+          "title": "Этический комитет",
+          "due": "Через 3 дня"
+        },
+        "2": {
+          "title": "Годовой отчет",
+          "due": "На след. неделе"
+        }
+      }
+    }
+  },
+  "edustudio": {
+    "title": "EduStudio Hub",
+    "subtitle": "Управление академическим процессом в одном месте",
+    "cat": {
+      "assessment": "Курсы и Оценивание",
+      "curriculum": "Учебный план и Расписание",
+      "quick": "Быстрый доступ",
+      "operations": "Операции"
+    },
+    "btn": {
+      "multiselect": {
+        "label": "Множественный выбор",
+        "desc": "Создать вопрос с множественным выбором"
+      },
+      "short": {
+        "label": "Короткий ответ",
+        "desc": "Создать вопрос с коротким ответом"
+      },
+      "osce": {
+        "label": "Чек-лист OSCE",
+        "desc": "Создать новый чек-лист OSCE"
+      },
+      "course": {
+        "label": "Студия курсов",
+        "desc": "Управление курсами и модулями"
+      },
+      "program": {
+        "label": "Студия программ",
+        "desc": "Дизайн академических программ"
+      },
+      "student": {
+        "label": "Портал студента",
+        "desc": "Просмотр панели студента"
+      },
+      "instructor": {
+        "label": "Портал преподавателя",
+        "desc": "Управление курсами и оценками"
+      },
+      "hr": {
+        "label": "HR Управление",
+        "desc": "Управление персоналом"
+      },
+      "facilities": {
+        "label": "Ресурсы",
+        "desc": "Управление аудиториями и ресурсами"
+      }
+    }
+  },
+  "layouts": {
+    "instructor": {
+      "title": "Портал преподавателя",
+      "dashboard": "Панель",
+      "courses": "Мои курсы",
+      "grading": "Оценки",
+      "attendance": "Посещаемость"
+    },
+    "student": {
+      "title": "Портал студента",
+      "dashboard": "Панель",
+      "learning": "Обучение",
+      "schedule": "Расписание",
+      "grades": "Оценки"
+    }
+  },
+  "curriculum": {
+    "programs": {
+      "title": "Программы",
+      "subtitle": "Управление академическими программами.",
+      "search_placeholder": "Поиск программ...",
+      "open_studio": "Студия программ",
+      "open_builder": "Конструктор",
+      "stats": {
+        "students": "Записано студентов",
+        "completion": "Сред. завершение"
+      },
+      "no_programs": "Программы не найдены",
+      "status": {
+          "all": "Все",
+          "active": "Активные",
+          "draft": "Черновик",
+          "archived": "Архивировано"
+      }
+    },
+    "inventory": {
+      "title": "Реестр курсов",
+      "subtitle": "Доступные модули контента для планирования.",
+      "open_hub": "Открыть Студию",
+      "search_placeholder": "Поиск по реестру...",
+      "no_courses": "Курсы не найдены.",
+      "table": {
+        "code": "Код",
+        "title": "Название",
+        "category": "Категория",
+        "credits": "Кредиты",
+        "duration": "Длительность",
+        "source": "Источник",
+        "view_studio": "Открыть в студии"
+      }
+    }
+  }
+  ,
+  "builder": {
+    "inspector": {
+      "properties": "Свойства",
+      "step_function": "Функция шага",
+      "experience_points": "Очки опыта",
+      "xp": "Опыт",
+      "xp_hint": "Очки, начисляемые за завершение.",
+      "form_config": "Настройка формы",
+      "fields_configured": "{{count}} полей настроено.",
+      "launch_builder": "Запустить конструктор форм",
+      "checklist_config": "Настройка чеклиста",
+      "requirement_list": "Список требований",
+      "checklist_hint": "Определите пошаговые задачи для студентов.",
+      "launch_checklist": "Запустить студию чеклистов",
+      "task_config": "Настройка задачи",
+      "task_hint": "Настройте загрузки, шаблоны и процесс утверждения.",
+      "launch_task": "Запустить студию задач",
+      "survey_settings": "Настройки опроса",
+      "survey_hint": "Сбор обратной связи и мнений пользователей.",
+      "open_survey": "Открыть студию опросов",
+      "approver_role": "Роль утверждающего",
+      "select_role": "Выберите роль...",
+      "content": "Содержание",
+      "content_placeholder": "Введите описание или инструкции...",
+      "ops_hint": "Этот шаг запускает автоматизированный процесс в Студии расписания.",
+      "trigger_action": "Действие триггера",
+      "select_action": "Выберите действие...",
+      "linked_curriculum": "Связанный учебный план",
+      "amount": "Сумма",
+      "currency": "Валюта",
+      "delete_step": "Удалить шаг"
+    },
+    "nodeTypes": {
+      "course": "Учебное событие",
+      "payment": "Финансовый шлюз",
+      "sync_ops": "Автоматизация операций",
+      "approval": "Админ. шлюз",
+      "form": "Сбор данных",
+      "meeting": "Синхр. событие",
+      "checklist": "Требование",
+      "milestone": "Веха",
+      "info": "Информация",
+      "survey": "Обратная связь",
+      "confirmTask": "Подтверждение",
+      "processStep": "Шаг процесса"
+    },
+    "roles": {
+      "advisor": "Научный руководитель",
+      "secretary": "Ученый секретарь",
+      "dean": "Декан школы",
+      "admin": "Системный администратор"
+    },
+    "actions": {
+      "assign_advisor": "Назначить руководителя",
+      "unlock_cohort": "Разблокировать следующую когорту",
+      "generate_invoice": "Сгенерировать счет",
+      "notify_registrar": "Уведомить регистратуру"
+    },
+    "world": {
+      "create_title": "Создать фазу",
+      "edit_title": "Редактировать фазу",
+      "tabs": { "general": "Общее", "logic": "Поток и Логика" },
+      "fields": { "title": "Название фазы", "description": "Описание", "color": "Цвет темы" },
+      "description_placeholder": "Кратко опишите цель этой фазы...",
+      "logic": {
+          "conditional_visibility": "Условная видимость",
+          "hint": "Скройте эту фазу, пока не будут выполнены определенные критерии...",
+          "enable": "Включить правило логики",
+          "based_on": "На основе шага формы",
+          "select_form": "Выберите исходную форму...",
+          "field_key": "Ключ поля",
+          "operator": "Оператор",
+          "value": "Значение совпадения",
+          "operators": { "equals": "Равно", "not_equals": "Не равно", "contains": "Содержит" }
+      },
+      "delete_phase": "Удалить фазу",
+      "save_changes": "Сохранить изменения"
+    },
+    "course": {
+          "default_title": "Курс",
+          "title": "Конструктор курсов",
+          "status": { "draft": "Черновик", "published": "Опубликован" },
+          "actions": {
+              "undo": "Отменить (Cmd+Z)",
+              "redo": "Повторить (Cmd+Shift+Z)",
+              "preview": "Предпросмотр",
+              "saving": "Сохранение...",
+              "save_changes": "Сохранить",
+              "add_module": "Добавить модуль",
+              "add_lesson": "Добавить урок",
+              "insert_activity": "Вставить активность",
+              "add_activity": "Добавить активность"
+          },
+          "structure": { "title": "Структура курса", "no_lessons": "Нет уроков" },
+          "defaults": { "module": "Новый модуль", "lesson": "Новый урок", "activity": "Новая активность", "untitled_activity": "Активность без названия" },
+          "validation": { "title_required": "Требуется название", "video_required": "URL видео отсутствует" },
+          "activity_types": {
+              "text": "Текст / Статья", "text_desc": "Чтение и документация",
+              "video": "Видео урок", "video_desc": "YouTube, Vimeo или загрузка",
+              "quiz": "Тест", "quiz_desc": "Оценки и проверки",
+              "survey": "Опрос", "survey_desc": "Обратная связь",
+              "assignment": "Задание", "assignment_desc": "Загрузка файлов"
+          },
+          "editor": {
+              "insert_link": "Вставить ссылку",
+              "insert_image": "Вставить изображение",
+              "preview": "Предпросмотр",
+              "preview_placeholder": "Предпросмотр контента появится здесь.",
+              "placeholder": "# Напишите содержание урока здесь...",
+              "supported": "поддерживается",
+              "chars": "{{count}} символов"
+          },
+          "success": "Контент курса сохранен",
+          "error": "Ошибка сохранения"
+      }
   }
 }
