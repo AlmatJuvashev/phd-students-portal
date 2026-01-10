@@ -7,6 +7,11 @@ import {
 import { Button, Input, Switch, Badge, IconButton, AvatarGroup } from '@/features/admin/components/AdminUI';
 import { cn } from '@/lib/utils';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getProgramVersionNodes, updateProgramVersionNode } from '@/features/curriculum/api';
+import { api } from '@/api/client';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 const ACTIVE_DESIGNERS = [
   { initials: 'JS', color: 'bg-emerald-500' },
@@ -30,18 +35,85 @@ interface ConfirmConfig {
 export const ConfirmTaskBuilder: React.FC = () => {
   const navigate = useNavigate();
   const { programId, nodeId } = useParams();
-  const onNavigate = (path: string) => navigate(path);
+  const queryClient = useQueryClient();
 
   const [config, setConfig] = useState<ConfirmConfig>({
-    title: 'Thesis Final Submission',
-    intro: 'Please upload your final thesis document and the signed approval form.',
+    title: 'Confirm Task Designer',
+    intro: '',
     buttonText: 'Confirm Submission',
     reviewer: 'advisor',
     templates: [],
-    uploads: [
-      { id: 'u1', label: 'Final Thesis PDF', required: true }
-    ]
+    uploads: []
   });
+
+  // --- API Connectivity ---
+  const { data: nodesData, isLoading } = useQuery({
+    queryKey: ['programNodes', programId],
+    queryFn: () => getProgramVersionNodes(programId!),
+    enabled: !!programId
+  });
+
+  const updateNodeMutation = useMutation({
+    mutationFn: (config: any) => updateProgramVersionNode(programId!, nodeId!, { config: JSON.stringify(config) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success('Task configuration published');
+    },
+    onError: () => toast.error('Failed to publish task')
+  });
+
+  const createNodeMutation = useMutation({
+    mutationFn: (data: any) => api.post(`/curriculum/programs/${programId}/builder/nodes`, data),
+    onSuccess: (response: any) => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success('New task step created');
+      const newNodeId = response.data.id;
+      navigate(`/admin/studio/programs/${programId}/confirm-task/${newNodeId}/builder`, { replace: true });
+    },
+    onError: () => toast.error('Failed to create task step')
+  });
+
+  // Hydrate from API
+  useEffect(() => {
+    if (nodeId && nodesData && Array.isArray(nodesData)) {
+      const node = (nodesData as any[]).find(n => n.id === nodeId);
+      if (node) {
+        const nodeConfig = typeof node.config === 'string' ? JSON.parse(node.config || '{}') : (node.config || {});
+        setConfig({
+          title: node.title || 'Confirm Task Designer',
+          intro: nodeConfig.intro || '',
+          buttonText: nodeConfig.buttonText || 'Confirm Submission',
+          reviewer: nodeConfig.reviewer || 'advisor',
+          templates: nodeConfig.templates || [],
+          uploads: nodeConfig.uploads || []
+        });
+      }
+    } else if (!nodeId && programId) {
+      // Creation mode
+      setConfig({
+        title: 'New Confirm Task Step',
+        intro: '',
+        buttonText: 'Confirm Submission',
+        reviewer: 'advisor',
+        templates: [],
+        uploads: []
+      });
+    }
+  }, [nodesData, nodeId]);
+
+  const handleSave = () => {
+    if (nodeId) {
+      updateNodeMutation.mutate(config);
+    } else {
+      createNodeMutation.mutate({
+        title: config.title,
+        type: 'confirmTask',
+        config: JSON.stringify(config),
+        module_key: 'I',
+        coordinates: { x: 400, y: 300 }
+      });
+    }
+  };
 
   const addUpload = () => {
     setConfig({ ...config, uploads: [...config.uploads, { id: Date.now().toString(), label: 'New Document', required: true }] });
@@ -63,7 +135,7 @@ export const ConfirmTaskBuilder: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-50 font-sans overflow-hidden">
       <div className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0 z-30 shadow-sm">
         <div className="flex items-center gap-6">
-          <IconButton icon={ArrowLeft} onClick={() => onNavigate(`/admin/studio/programs/${programId}/builder`)} />
+          <IconButton icon={ArrowLeft} onClick={() => navigate(`/admin/studio/programs/${programId}/builder`)} />
           <div>
              <div className="flex items-center gap-2 mb-1">
                 <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full tracking-widest border border-emerald-100">Task Studio</span>
@@ -77,7 +149,9 @@ export const ConfirmTaskBuilder: React.FC = () => {
         </div>
         <div className="flex items-center gap-6">
           <AvatarGroup users={ACTIVE_DESIGNERS} />
-          <Button variant="primary" icon={Save} onClick={() => alert('Saved!')}>Publish Task</Button>
+          <Button variant="primary" icon={Save} onClick={handleSave} disabled={updateNodeMutation.isPending}>
+            {updateNodeMutation.isPending ? 'Publishing...' : 'Publish Task'}
+          </Button>
         </div>
       </div>
 

@@ -301,7 +301,7 @@ export function JourneyMap({
                         </div>
                         <div>
                             <h3 className="text-lg font-bold leading-tight">
-                                {t(selectedNode.title, "")}
+                                {t(selectedNode.title || "", "")}
                             </h3>
                              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                                 {selectedNode.type}

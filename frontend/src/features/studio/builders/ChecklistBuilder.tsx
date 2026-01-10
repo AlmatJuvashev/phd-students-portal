@@ -8,6 +8,11 @@ import {
 import { Button, Input, Switch, Badge, IconButton, AvatarGroup } from '@/features/admin/components/AdminUI';
 import { cn } from '@/lib/utils';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getProgramVersionNodes, updateProgramVersionNode } from '@/features/curriculum/api';
+import { api } from '@/api/client';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 const ACTIVE_DESIGNERS = [
   { initials: 'AR', color: 'bg-indigo-600' },
@@ -30,19 +35,91 @@ interface ChecklistConfig {
 export const ChecklistBuilder: React.FC = () => {
   const navigate = useNavigate();
   const { programId, nodeId } = useParams();
-  const onNavigate = (path: string) => navigate(path);
+  const queryClient = useQueryClient();
 
-  const [items, setItems] = useState<ChecklistItem[]>([
-    { id: '1', text: 'Submit application form', required: true },
-    { id: '2', text: 'Upload ID copy', required: true }
-  ]);
+  const [items, setItems] = useState<ChecklistItem[]>([]);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [config, setConfig] = useState<ChecklistConfig>({
-    title: 'Document Verification',
-    intro: 'Please ensure all items are completed before submission.',
-    reviewer: 'secretary',
+    title: 'Checklist Designer',
+    intro: '',
+    reviewer: 'advisor',
     templates: []
   });
+
+  // --- API Connectivity ---
+  const { data: nodesData, isLoading } = useQuery({
+    queryKey: ['programNodes', programId],
+    queryFn: () => getProgramVersionNodes(programId!),
+    enabled: !!programId
+  });
+
+  const updateNodeMutation = useMutation({
+    mutationFn: (config: any) => updateProgramVersionNode(programId!, nodeId!, { config: JSON.stringify(config) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success('Checklist published successfully');
+    },
+    onError: () => toast.error('Failed to publish checklist')
+  });
+
+  const createNodeMutation = useMutation({
+    mutationFn: (data: any) => api.post(`/curriculum/programs/${programId}/builder/nodes`, data),
+    onSuccess: (response: any) => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success('New checklist step created');
+      const newNodeId = response.data.id;
+      navigate(`/admin/studio/programs/${programId}/checklist/${newNodeId}/builder`, { replace: true });
+    },
+    onError: () => toast.error('Failed to create checklist step')
+  });
+
+  // Hydrate from API
+  useEffect(() => {
+    if (nodeId && nodesData && Array.isArray(nodesData)) {
+      const node = (nodesData as any[]).find(n => n.id === nodeId);
+      if (node) {
+        const nodeConfig = typeof node.config === 'string' ? JSON.parse(node.config || '{}') : (node.config || {});
+        setItems(nodeConfig.items || []);
+        setConfig({
+          title: node.title || 'Checklist Designer',
+          intro: nodeConfig.intro || '',
+          reviewer: nodeConfig.reviewer || 'advisor',
+          templates: nodeConfig.templates || []
+        });
+        if (nodeConfig.items?.length > 0 && !activeItemId) {
+          setActiveItemId(nodeConfig.items[0].id);
+        }
+      }
+    } else if (!nodeId && programId) {
+      // Creation mode
+      setItems([]);
+      setConfig({
+        title: 'New Checklist Step',
+        intro: '',
+        reviewer: 'advisor',
+        templates: []
+      });
+    }
+  }, [nodesData, nodeId]);
+
+  const handleSave = () => {
+    const payload = {
+      ...config,
+      items
+    };
+    
+    if (nodeId) {
+      updateNodeMutation.mutate(payload);
+    } else {
+      createNodeMutation.mutate({
+        title: config.title,
+        type: 'checklist',
+        config: JSON.stringify(payload),
+        module_key: 'I',
+        coordinates: { x: 400, y: 300 }
+      });
+    }
+  };
 
   const addItem = () => {
     const newItem = { id: Date.now().toString(), text: 'New Item', required: true };
@@ -67,7 +144,7 @@ export const ChecklistBuilder: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-50 font-sans overflow-hidden">
       <div className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0 z-30 shadow-sm">
         <div className="flex items-center gap-6">
-          <IconButton icon={ArrowLeft} onClick={() => onNavigate(`/admin/studio/programs/${programId}/builder`)} />
+          <IconButton icon={ArrowLeft} onClick={() => navigate(`/admin/studio/programs/${programId}/builder`)} />
           <div>
              <div className="flex items-center gap-2 mb-1">
                 <span className="text-[9px] font-black uppercase text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full tracking-widest border border-orange-100">Checklist Studio</span>
@@ -81,7 +158,9 @@ export const ChecklistBuilder: React.FC = () => {
         </div>
         <div className="flex items-center gap-6">
           <AvatarGroup users={ACTIVE_DESIGNERS} />
-          <Button variant="primary" icon={Save} onClick={() => alert('Saved!')}>Publish Checklist</Button>
+          <Button variant="primary" icon={Save} onClick={handleSave} disabled={updateNodeMutation.isPending}>
+            {updateNodeMutation.isPending ? 'Publishing...' : 'Publish Checklist'}
+          </Button>
         </div>
       </div>
 

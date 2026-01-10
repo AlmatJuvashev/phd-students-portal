@@ -44,7 +44,96 @@ type NodeBase struct {
 
 // --- Seeder ---
 
-// Run reads backend/playbooks/playbook.json and seeds programs/versions/nodes.
+// ExtractString handles both simple strings and localized objects {"ru": "...", "kz": "...", "en": "..."}
+func ExtractString(msg json.RawMessage, lang string) string {
+	if len(msg) == 0 {
+		return ""
+	}
+	var s string
+	if err := json.Unmarshal(msg, &s); err == nil {
+		return s
+	}
+	var m map[string]string
+	if err := json.Unmarshal(msg, &m); err == nil {
+		if val, ok := m[lang]; ok && val != "" {
+			return val
+		}
+		// Fallbacks
+		for _, l := range []string{"ru", "kz", "kk", "en"} {
+			if val, ok := m[l]; ok && val != "" {
+				return val
+			}
+		}
+	}
+	return ""
+}
+
+// FlattenJSON recursively replaces localized objects with strings for a target language.
+func FlattenJSON(data interface{}, lang string) interface{} {
+	if data == nil {
+		return nil
+	}
+	switch v := data.(type) {
+	case map[string]interface{}:
+		if len(v) == 0 {
+			// If it's an empty map, it might be a missing label in Playbook
+			// Returning "" is safer for UI rendering than {}
+			return ""
+		}
+
+		// Check if this map is a localized object itself
+		hasLangKeys := false
+		for _, l := range []string{"ru", "kk", "kz", "en"} {
+			if _, ok := v[l]; ok {
+				hasLangKeys = true
+				break
+			}
+		}
+
+		if hasLangKeys {
+			// Extract specific lang or fallback
+			if val, ok := v[lang]; ok && val != nil {
+				if s, ok := val.(string); ok { return s }
+			}
+			for _, l := range []string{"ru", "kk", "kz", "en"} {
+				if val, ok := v[l]; ok && val != nil {
+					if s, ok := val.(string); ok { return s }
+				}
+			}
+			return "" // Localized but no string found
+		}
+
+		// Recurse into map
+		for k, val := range v {
+			v[k] = FlattenJSON(val, lang)
+		}
+		return v
+	case []interface{}:
+		for i, val := range v {
+			v[i] = FlattenJSON(val, lang)
+		}
+		return v
+	default:
+		return v
+	}
+}
+
+// langID generates a deterministic UUID based on a base ID and a language suffix.
+func langID(baseID, lang string) string {
+	// Simple mapping for seeding consistency
+	switch lang {
+	case "ru":
+		return baseID[:len(baseID)-2] + "01"
+	case "kk":
+		return baseID[:len(baseID)-2] + "02"
+	case "en":
+		return baseID[:len(baseID)-2] + "03"
+	default:
+		return baseID
+	}
+}
+
+// Run reads backend/playbooks/playbook.json and seeds programs/versions/nodes for three languages.
 func Run(db *sqlx.DB) error {
 	// 1. Locate and Read Playbook
 	here, _ := os.Getwd()
@@ -68,114 +157,145 @@ func Run(db *sqlx.DB) error {
 	defer tx.Rollback()
 
 	tenantID := "dd000000-0000-0000-0000-d00000000001" // Demo Tenant
-
-	// 2. Ensure Program Exists (Target the DEMO PROGRAM ID)
-	programID := "dd200009-0000-0000-0009-000000000009" 
-	programName := "PhD Doctoral Journey"
 	
-	emptyJSON := []byte("{}")
-	
-	var existingID string
-	err = tx.Get(&existingID, "SELECT id FROM programs WHERE name=$1", programName)
-	if err == nil {
-		programID = existingID
-		fmt.Printf("Updating existing program %s (%s)\n", programName, programID)
-		_, err = tx.Exec(`
-			UPDATE programs SET 
-				updated_at = NOW(),
-				is_active = true
-			WHERE id = $1
-		`, programID)
-	} else {
-		_, err = tx.Exec(`
-			INSERT INTO programs (id, tenant_id, name, code, title, description, is_active, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW())
-			ON CONFLICT (id) DO UPDATE SET name = $3
-		`, programID, tenantID, programName, "PHD_JOURNEY", emptyJSON, emptyJSON)
+	languages := []struct {
+		Code string
+		Name string
+	}{
+		{"ru", "PhD Программа (Русский)"},
+		{"kk", "PhD Программа (Қазақ)"},
+		{"en", "PhD Program (English)"},
 	}
 
-	if err != nil {
-		return fmt.Errorf("failed to upsert program: %w", err)
-	}
-
-	// 3. Upsert Program Version
-	configMap := map[string]interface{}{
-		"worlds":     pb.Worlds,
-		"roles":      pb.Roles,
-		"conditions": pb.Conditions,
-		"ui":         pb.UI,
-		"metadata":   pb.Metadata,
-	}
-	configJSON, _ := json.Marshal(configMap)
-
-	var versionID string
-	err = tx.QueryRow(`
-		INSERT INTO program_versions (program_id, version, is_active, config, created_at, updated_at)
-		VALUES ($1, $2, true, $3, NOW(), NOW())
-		ON CONFLICT (program_id, version) 
-		DO UPDATE SET config = $3, is_active = true, updated_at = NOW()
-		RETURNING id
-	`, programID, pb.Version, configJSON).Scan(&versionID)
-	if err != nil {
-		return fmt.Errorf("failed to upsert program version: %w", err)
-	}
-
-	// 4. Upsert Nodes
-	_, err = tx.Exec("DELETE FROM program_version_node_definitions WHERE program_version_id = $1", versionID)
-	if err != nil {
-		return fmt.Errorf("failed to clear old nodes: %w", err)
-	}
-
-	for _, world := range pb.Worlds {
-		worldID := world.ID
-		for j, rawNode := range world.Nodes {
-			var base NodeBase
-			if err := json.Unmarshal(rawNode, &base); err != nil {
-				continue
-			}
-
-			var full map[string]interface{}
-			json.Unmarshal(rawNode, &full)
-
-			delete(full, "id")
-			delete(full, "type")
-			delete(full, "title")
-			delete(full, "description")
-			delete(full, "prerequisites")
-			delete(full, "module_key") 
-
-			x := (world.Order - 1) * 420 + 60
-			y := 180 + (j * 160)
-			coords := map[string]int{"x": x, "y": y}
-			coordsJSON, _ := json.Marshal(coords)
-
-			titleJSON := base.Title
-			if len(titleJSON) == 0 { titleJSON = []byte(`{"en": "Untitled"}`) }
-			descJSON := base.Description
-			if len(descJSON) == 0 { descJSON = []byte(`{}`) }
-			
-			configDetails, _ := json.Marshal(full)
-
+	for _, lang := range languages {
+		// 2. Ensure Program Exists (Deterministic ID per language)
+		baseProgramID := "dd200009-0000-0000-0009-000000000009"
+		programID := langID(baseProgramID, lang.Code)
+		programName := lang.Name
+		programCode := "PHD_JOURNEY_" + lang.Code
+		
+		var existingID string
+		err = tx.Get(&existingID, "SELECT id FROM programs WHERE code=$1", programCode)
+		if err == nil {
+			programID = existingID
+			fmt.Printf("Updating existing program %s (%s)\n", programName, programID)
 			_, err = tx.Exec(`
-				INSERT INTO program_version_node_definitions
-				(program_version_id, slug, type, title, description, module_key, coordinates, config, prerequisites, created_at, updated_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-			`, versionID, base.ID, base.Type, titleJSON, descJSON, worldID, coordsJSON, configDetails, pq.Array(base.Prerequisites))
-			
-			if err != nil {
-				return fmt.Errorf("failed to insert node %s: %w", base.ID, err)
+				UPDATE programs SET 
+					updated_at = NOW(),
+					is_active = true,
+					name = $2
+				WHERE id = $1
+			`, programID, programName)
+		} else {
+			_, err = tx.Exec(`
+				INSERT INTO programs (id, tenant_id, name, code, title, description, is_active, created_at, updated_at)
+				VALUES ($1, $2, $3, $4, '{}', '{}', true, NOW(), NOW())
+				ON CONFLICT (id) DO UPDATE SET name = $3
+			`, programID, tenantID, programName, programCode)
+		}
+
+		if err != nil {
+			return fmt.Errorf("failed to upsert program %s: %w", lang.Code, err)
+		}
+
+		// 3. Upsert Program Version
+		// Strip localized labels from config for this specific version if needed, 
+		// but typically config is generic or contains the worlds/roles.
+		// However, World titles are localized. Let's flatten them in the config.
+		
+		flattenedWorlds := make([]map[string]any, len(pb.Worlds))
+		for i, w := range pb.Worlds {
+			flattenedWorlds[i] = map[string]any{
+				"id":    w.ID,
+				"title": ExtractString(w.Title, lang.Code),
+				"order": w.Order,
 			}
 		}
-	}
-	
-	// Legacy Module Support
-	for _, w := range pb.Worlds {
-		_, err = tx.Exec(`
-			INSERT INTO checklist_modules (code, title, sort_order, tenant_id)
-			VALUES ($1, $2, $3, $4)
-			ON CONFLICT (code) DO NOTHING
-		`, w.ID, string(w.Title), w.Order, tenantID)
-		if err != nil { /* ignore legacy errors */ }
+
+		configMap := map[string]interface{}{
+			"worlds":     flattenedWorlds,
+			"roles":      pb.Roles,
+			"conditions": pb.Conditions,
+			"ui":         pb.UI,
+			"metadata":   pb.Metadata,
+		}
+		configJSON, _ := json.Marshal(configMap)
+
+		var versionID string
+		err = tx.QueryRow(`
+			INSERT INTO program_versions (program_id, version, is_active, config, created_at, updated_at)
+			VALUES ($1, $2, true, $3, NOW(), NOW())
+			ON CONFLICT (program_id, version) 
+			DO UPDATE SET config = $3, is_active = true, updated_at = NOW()
+			RETURNING id
+		`, programID, pb.Version, configJSON).Scan(&versionID)
+		if err != nil {
+			return fmt.Errorf("failed to upsert program version for %s: %w", lang.Code, err)
+		}
+
+		// 4. Upsert Nodes
+		_, err = tx.Exec("DELETE FROM program_version_node_definitions WHERE program_version_id = $1", versionID)
+		if err != nil {
+			return fmt.Errorf("failed to clear old nodes for %s: %w", lang.Code, err)
+		}
+
+		for _, world := range pb.Worlds {
+			worldID := world.ID
+			for j, rawNode := range world.Nodes {
+				var base NodeBase
+				if err := json.Unmarshal(rawNode, &base); err != nil {
+					continue
+				}
+
+				var full map[string]interface{}
+				json.Unmarshal(rawNode, &full)
+
+				delete(full, "id")
+				delete(full, "type")
+				delete(full, "title")
+				delete(full, "description")
+				delete(full, "prerequisites")
+				delete(full, "module_key") 
+
+				x := (world.Order - 1) * 420 + 60
+				y := 180 + (j * 160)
+				coords := map[string]int{"x": x, "y": y}
+				coordsJSON, _ := json.Marshal(coords)
+
+				// Flatten title and description to STRINGS
+				titleStr := ExtractString(base.Title, lang.Code)
+				if titleStr == "" { titleStr = "Untitled" }
+				descStr := ExtractString(base.Description, lang.Code)
+				
+				titleJSON, _ := json.Marshal(titleStr)
+				descJSON, _ := json.Marshal(descStr)
+
+				// Flatten config too
+				flattenedConfig := FlattenJSON(full, lang.Code)
+				configDetails, _ := json.Marshal(flattenedConfig)
+
+				_, err = tx.Exec(`
+					INSERT INTO program_version_node_definitions
+					(program_version_id, slug, type, title, description, module_key, coordinates, config, prerequisites, created_at, updated_at)
+					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+				`, versionID, base.ID, base.Type, titleJSON, descJSON, worldID, coordsJSON, configDetails, pq.Array(base.Prerequisites))
+				
+				if err != nil {
+					return fmt.Errorf("failed to insert node %s for %s: %w", base.ID, lang.Code, err)
+				}
+			}
+		}
+		
+		// Legacy Module Support
+		for _, w := range pb.Worlds {
+			worldTitle := ExtractString(w.Title, lang.Code)
+			_, err = tx.Exec(`
+				INSERT INTO checklist_modules (code, title, sort_order, tenant_id)
+				VALUES ($1, $2, $3, $4)
+				ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title
+			`, w.ID+"_"+lang.Code, worldTitle, w.Order, tenantID)
+			if err != nil { /* ignore legacy errors */ }
+		}
 	}
 
 	// 5. Seed Course Content

@@ -4,11 +4,16 @@ import { Reorder, motion } from 'framer-motion';
 import { 
   ArrowLeft, Plus, Save, Settings, Trash2, 
   GripVertical, CheckSquare, FileText, X,
-  Type, Hash, List, Calendar, UploadCloud, Info, Layers, Globe
+  Type, Hash, List, Calendar, UploadCloud, Info, Layers, Globe, ChevronDown
 } from 'lucide-react';
 import { Button, Input, Switch, Badge, IconButton, AvatarGroup } from '@/features/admin/components/AdminUI';
 import { cn } from '@/lib/utils';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getProgramVersionNodes, updateProgramVersionNode } from '@/features/curriculum/api';
+import { api } from '@/api/client';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 const ACTIVE_DESIGNERS = [
   { initials: 'AR', color: 'bg-indigo-600' },
@@ -49,12 +54,98 @@ const FIELD_TYPES = [
 export const FormBuilder: React.FC = () => {
   const navigate = useNavigate();
   const { programId, nodeId } = useParams();
+  const queryClient = useQueryClient();
   
-  const [fields, setFields] = useState<FormField[]>([
-    { id: 'f1', key: 'full_name', type: 'text', label: 'Full Name', required: true, placeholder: 'Enter name' }
-  ]);
+  const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [title, setTitle] = useState('Student Profile Form');
+  const [title, setTitle] = useState('Form Designer');
+
+  // --- API Connectivity ---
+  const { data: nodesData, isLoading } = useQuery({
+    queryKey: ['programNodes', programId],
+    queryFn: () => getProgramVersionNodes(programId!),
+    enabled: !!programId
+  });
+
+  const updateNodeMutation = useMutation({
+    mutationFn: (config: any) => updateProgramVersionNode(programId!, nodeId!, { config: JSON.stringify(config) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success('Form changes saved');
+    },
+    onError: () => toast.error('Failed to save form')
+  });
+
+  const createNodeMutation = useMutation({
+    mutationFn: (data: any) => api.post(`/curriculum/programs/${programId}/builder/nodes`, data),
+    onSuccess: (response: any) => {
+      queryClient.invalidateQueries({ queryKey: ['programNodes', programId] });
+      toast.success('New form step created');
+      const newNodeId = response.data.id;
+      navigate(`/admin/studio/programs/${programId}/form/${newNodeId}/builder`, { replace: true });
+    },
+    onError: () => toast.error('Failed to create form step')
+  });
+
+const parseLocalizedLocal = (val: any) => {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    if (val.trim() === 'null') return '';
+    if (val.startsWith('{') || (val.startsWith('"') && val.endsWith('"'))) {
+      try {
+        const parsed = JSON.parse(val);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return parsed.ru || parsed.kk || parsed.kz || parsed.en || '';
+        }
+        return String(parsed);
+      } catch { return val; }
+    }
+    return val;
+  }
+  if (typeof val === 'object') {
+     return val.ru || val.kk || val.kz || val.en || '';
+  }
+  return String(val);
+};
+
+// Hydrate from API
+useEffect(() => {
+  if (nodeId && nodesData && Array.isArray(nodesData)) {
+    const node = (nodesData as any[]).find(n => n.id === nodeId);
+    if (node) {
+      const config = typeof node.config === 'string' ? JSON.parse(node.config || '{}') : (node.config || {});
+      if (config.fields) {
+        setFields(config.fields.map((f: any) => ({
+          ...f,
+          id: f.id || `f_${Math.random().toString(36).substr(2, 5)}`,
+          label: parseLocalizedLocal(f.label)
+        })));
+      }
+      setTitle(parseLocalizedLocal(node.title) || 'Form Designer');
+    }
+  } else if (!nodeId) {
+    // Creation mode: Reset state
+    setFields([]);
+    setTitle('New Form Step');
+  }
+}, [nodesData, nodeId]);
+
+  const handleSave = () => {
+    const config = { fields };
+    
+    if (nodeId) {
+      updateNodeMutation.mutate(config);
+    } else {
+      // Create new node
+      createNodeMutation.mutate({
+        title: title,
+        type: 'form',
+        config: JSON.stringify(config),
+        module_key: 'I', // Default to first phase
+        coordinates: { x: 400, y: 300 } // Default center-ish position
+      });
+    }
+  };
 
   const selectedField = fields.find(f => f.id === selectedFieldId);
 
@@ -101,7 +192,9 @@ export const FormBuilder: React.FC = () => {
         </div>
         <div className="flex items-center gap-6">
           <AvatarGroup users={ACTIVE_DESIGNERS} />
-          <Button variant="primary" icon={Save} onClick={() => alert('Saved!')}>Publish Form</Button>
+          <Button variant="primary" icon={Save} onClick={handleSave} disabled={updateNodeMutation.isPending}>
+            {updateNodeMutation.isPending ? 'Saving...' : 'Publish Form'}
+          </Button>
         </div>
       </div>
 
@@ -147,22 +240,61 @@ export const FormBuilder: React.FC = () => {
                             </div>
                             
                             {/* Visual Preview based on type */}
-                            {field.type === 'text' && <div className="h-10 bg-slate-50 border border-slate-200 rounded-xl w-full" />}
-                            
-                            {field.type === 'select' && (
-                                <div className="h-10 bg-slate-50 border border-slate-200 rounded-xl w-full flex items-center justify-between px-3 text-slate-400">
-                                    <span className="text-xs">{field.dictionaryKey ? `[Dictionary: ${field.dictionaryKey}]` : 'Select option...'}</span>
-                                    <List size={14}/>
-                                </div>
+                            {field.type === 'text' && (
+                                <Input 
+                                    className="h-10 bg-slate-50 border-slate-200 rounded-xl w-full pointer-events-none" 
+                                    placeholder={field.placeholder || 'Text input placeholder...'} 
+                                />
+                            )}
+
+                            {field.type === 'number' && (
+                                <Input 
+                                    type="number"
+                                    className="h-10 bg-slate-50 border-slate-200 rounded-xl w-full pointer-events-none font-mono" 
+                                    placeholder={field.placeholder || '0'} 
+                                />
                             )}
                             
-                            {field.type === 'upload' && (
-                                <div className="h-12 bg-slate-50 border border-slate-200 border-dashed rounded-xl w-full flex items-center justify-center text-slate-400">
-                                    <UploadCloud size={16} className="mr-2" /> Upload File
+                            {field.type === 'select' && (
+                                <div className="h-10 bg-slate-50 border border-slate-200 rounded-xl w-full flex items-center justify-between px-3 text-slate-700">
+                                    <span className="text-xs font-medium">
+                                        {field.dictionaryKey 
+                                            ? `[Dictionary: ${field.dictionaryKey}]` 
+                                            : (field.options && field.options.length > 0 ? field.options[0].label : 'Select option...')}
+                                    </span>
+                                    <ChevronDown size={14} className="text-slate-400" />
                                 </div>
                             )}
 
-                            {field.help_text && <p className="text-xs text-slate-400">{field.help_text}</p>}
+                            {field.type === 'boolean' && (
+                                <div className="flex items-center gap-2 py-1">
+                                    <div className="w-5 h-5 rounded border-2 border-slate-300 flex-shrink-0" />
+                                    <span className="text-xs text-slate-500 italic">Checkbox selection</span>
+                                </div>
+                            )}
+                            
+                            {field.type === 'date' && (
+                                <div className="h-10 bg-slate-50 border border-slate-200 rounded-xl w-full flex items-center justify-between px-3 text-slate-400">
+                                    <span className="text-xs">Pick a date...</span>
+                                    <Calendar size={14}/>
+                                </div>
+                            )}
+
+                            {field.type === 'upload' && (
+                                <div className="h-14 bg-slate-50 border border-slate-200 border-dashed rounded-xl w-full flex flex-col items-center justify-center text-slate-400 gap-1">
+                                    <UploadCloud size={16} />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Click to upload files</span>
+                                </div>
+                            )}
+
+                            {field.type === 'note' && (
+                                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3 flex gap-3">
+                                    <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                                    <p className="text-xs text-blue-800 leading-relaxed font-medium">{field.placeholder || 'Instructional text for the student...'}</p>
+                                </div>
+                            )}
+
+                            {field.help_text && <p className="text-[10px] text-slate-400 italic px-1">{field.help_text}</p>}
                          </div>
                          <button onClick={(e) => { e.stopPropagation(); removeField(field.id); }} className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500"><Trash2 size={18} /></button>
                       </motion.div>

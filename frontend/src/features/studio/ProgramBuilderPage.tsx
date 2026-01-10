@@ -29,14 +29,20 @@ import { ProgramVersionNode, ProgramPhase, ProgramNodeType as NodeType, FlowEdge
 const parseLocalized = (val: any, lang: string = 'en'): string => {
   if (!val) return '';
   if (typeof val === 'string') {
-    if (val.trim() === 'null') return '';
-    try {
-        if (val.trim().startsWith('{')) {
-            const parsed = JSON.parse(val);
-            return parsed[lang] || parsed.kk || parsed.kz || parsed.en || parsed.ru || val;
+    const trimmed = val.trim();
+    if (trimmed === 'null') return '';
+    if (trimmed.startsWith('{') || (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return parsed[lang] || parsed.kk || parsed.kz || parsed.en || parsed.ru || '';
         }
+        return String(parsed);
+      } catch {
         return val;
-    } catch { return val; }
+      }
+    }
+    return val;
   }
   if (typeof val === 'object') {
      return val[lang] || val.kk || val.kz || val.en || val.ru || '';
@@ -46,26 +52,37 @@ const parseLocalized = (val: any, lang: string = 'en'): string => {
 
 // Helper to transform Builder State to Playbook for Preview
 const builderStateToPlaybook = (worlds: World[], nodes: ProgramVersionNode[], edges: FlowEdge[], lang: string = 'en'): any => {
+  const normalizedLang = lang.split('-')[0];
   return {
-    id: "preview-playbook",
-    title: "Preview Program",
-    worlds: worlds.map(w => ({
-      id: w.id,
-      title: parseLocalized(w.title, lang),
-      nodes: nodes
-        .filter(n => n.module_key === w.id)
-        .sort((a, b) => a.coordinates.y - b.coordinates.y)
-        .map(n => ({
-          ...n.config,
-          id: n.id,
-          type: n.type,
-          title: parseLocalized(n.title, lang) || n.slug || "Untitled Step",
-          status: "active", // Active state for better preview visibility
-          description: parseLocalized(n.description, lang) || "",
-          points: n.points || 0,
-          who_can_complete: ["student", "advisor", "admin"] // Allow all for preview
-        }))
-    }))
+    playbook_id: "preview-playbook",
+    version: "1.0.0",
+    worlds: [...worlds]
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map(w => ({
+        id: w.id,
+        title: w.title, // Already flattened string
+        order: w.order || 0,
+        nodes: nodes
+          .filter(n => n.module_key === w.id)
+          .sort((a, b) => (a.coordinates?.y || 0) - (b.coordinates?.y || 0))
+          .map(n => ({
+            id: n.id,
+            type: n.type,
+            slug: n.slug,
+            title: n.title, // Already flattened string
+            description: n.description,
+            points: n.points || 0,
+            who_can_complete: ["student", "advisor", "admin"],
+            requirements: n.config || {}, // Ensure it's at least an empty object
+            next: edges.filter(e => e.from === n.id).map(e => e.to)
+          }))
+      })),
+    // Add roles for components that check T("roles.xxx")
+    roles: [
+      { id: "student", label: { ru: "Докторант", kz: "Докторант", en: "Student" } },
+      { id: "advisor", label: { ru: "Научный руководитель", kz: "Ғылыми жетекші", en: "Advisor" } },
+      { id: "admin", label: { ru: "Администратор", kz: "Әкімші", en: "Admin" } }
+    ]
   };
 };
 
@@ -101,27 +118,8 @@ interface JourneyState {
   edges: FlowEdge[];
 }
 
-// --- Mock Initial Data ---
-const INITIAL_WORLDS: World[] = [
-  { id: 'w1', title: 'I — Preparation', order: 1, color: '#6366f1', description: 'Initial profile setup.', collapsed: false, condition: null, x: 50, y: 50 }, 
-  { id: 'w2', title: 'II — Pre-examination', order: 2, color: '#10b981', collapsed: false, condition: null, x: 50, y: 450 }, 
-  { id: 'w3', title: 'III — Defense', order: 3, color: '#f59e0b', collapsed: true, condition: null, x: 50, y: 850 } 
-];
-
-const INITIAL_NODES: ProgramVersionNode[] = [
-  { id: 'n1', module_key: 'w1', coordinates: { x: 100, y: 120 }, title: "Student Profile", type: 'form', points: 50, config: { fields: [] }, slug: 'n1' },
-  { id: 'n2', module_key: 'w1', coordinates: { x: 380, y: 120 }, title: "Research Methodology", type: 'course', points: 100, config: { courseId: 'c1' }, slug: 'n2' },
-  { id: 'n3', module_key: 'w1', coordinates: { x: 660, y: 120 }, title: "Advisor Assignment", type: 'sync_ops', points: 0, config: { action: 'assign_advisor' }, slug: 'n3' },
-  { id: 'n4', module_key: 'w2', coordinates: { x: 100, y: 520 }, title: "Anti-Plagiarism Fee", type: 'payment', points: 20, config: { amount: 5000, currency: 'KZT' }, slug: 'n4' },
-  { id: 'n5', module_key: 'w2', coordinates: { x: 380, y: 520 }, title: "Department Approval", type: 'approval', points: 0, config: { role: 'advisor' }, slug: 'n5' },
-];
-
-const INITIAL_EDGES: FlowEdge[] = [
-  { id: 'e1', from: 'n1', to: 'n2', type: 'solid' },
-  { id: 'e2', from: 'n2', to: 'n3', type: 'solid' },
-  { id: 'e3', from: 'n3', to: 'n4', type: 'dashed' }, // Phase transition
-  { id: 'e4', from: 'n4', to: 'n5', type: 'solid' }
-];
+// --- Types & Constants ---
+// --- Types & Constants ---
 
 const generateId = (prefix: string) => `${prefix}_${Math.random().toString(36).substr(2, 5)}`;
 
@@ -404,8 +402,8 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
     canUndo,
     canRedo
   } = useHistory<JourneyState>({
-    worlds: INITIAL_WORLDS,
-    nodes: INITIAL_NODES,
+    worlds: [],
+    nodes: [],
     edges: []
   });
 
@@ -435,14 +433,33 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
         const loadedNodes: ProgramVersionNode[] = (rawNodes as any[]).map(n => ({
             id: n.id,
             slug: n.slug || n.id,
-            module_key: n.module_key || loadedWorlds[0]?.id || 'w1', 
+            module_key: n.module_key || (loadedWorlds.length > 0 ? loadedWorlds[0].id : ''), 
             title: parseLocalized(n.title), 
             description: parseLocalized(n.description),
             type: n.type as NodeType,
             coordinates: typeof n.coordinates === 'string' ? JSON.parse(n.coordinates || '{}') : (n.coordinates || { x: 100, y: 100 }),
             config: typeof n.config === 'string' ? JSON.parse(n.config || '{}') : (n.config || {}),
-            points: n.points || 0
+            points: n.points || 0,
+            prerequisites: Array.isArray(n.prerequisites) ? n.prerequisites : []
         }));
+
+        // Derive edges from prerequisites
+        const derivedEdges: FlowEdge[] = [];
+        loadedNodes.forEach(n => {
+            if (n.prerequisites?.length) {
+                n.prerequisites.forEach(prereqId => {
+                    const fromNode = loadedNodes.find(ln => ln.id === prereqId || ln.slug === prereqId);
+                    if (fromNode) {
+                        derivedEdges.push({
+                            id: `e_${fromNode.id}_${n.id}`,
+                            from: fromNode.id,
+                            to: n.id,
+                            type: 'solid'
+                        });
+                    }
+                });
+            }
+        });
 
         if (loadedWorlds.length === 0 && loadedNodes.length > 0) {
             const uniqueKeys = Array.from(new Set(loadedNodes.map(n => n.module_key)));
@@ -457,9 +474,9 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
         }
 
         setJourneyState({
-            worlds: loadedWorlds.length > 0 ? loadedWorlds : INITIAL_WORLDS,
-            nodes: loadedNodes.length > 0 ? loadedNodes : INITIAL_NODES,
-            edges: [] 
+            worlds: loadedWorlds,
+            nodes: loadedNodes,
+            edges: derivedEdges
         });
     }
   }, [mapData, nodesData, setJourneyState]);
@@ -913,6 +930,7 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
           <StepInspector 
             node={selectedNode}
             phases={worlds as any}
+            programId={programId}
             onUpdate={(updates) => {
               const updatedNode = { ...selectedNode, ...updates };
               setJourneyState(prev => ({

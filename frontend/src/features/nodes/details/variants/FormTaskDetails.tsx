@@ -230,7 +230,7 @@ export function FormTaskDetails({
             <div className="space-y-4">
                 {node.requirements?.notes && (
                 <p className="text-sm text-muted-foreground">
-                    {node.requirements.notes}
+                    {pbT(node.requirements.notes, "")}
                 </p>
                 )}
 

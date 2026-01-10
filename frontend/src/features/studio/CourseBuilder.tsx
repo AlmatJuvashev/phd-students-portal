@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { getCourse, getCourseModules, createCourseModule, updateCourseModule, createCourseLesson, updateCourseLesson, createCourseActivity, updateCourseActivity } from '@/features/curriculum/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCourse, getCourseModules, createCourseModule, updateCourseModule, deleteCourseModule, createCourseLesson, updateCourseLesson, deleteCourseLesson, createCourseActivity, updateCourseActivity, deleteCourseActivity } from '@/features/curriculum/api';
 import { toast } from 'sonner';
 import { 
   Save, 
@@ -78,6 +78,24 @@ import { cn } from '@/lib/utils';
 interface CourseBuilderProps {
   onNavigate?: (path: string) => void;
 }
+
+const parseLocalized = (val: any, lang: string = 'en'): string => {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    if (val.trim() === 'null') return '';
+    try {
+        if (val.trim().startsWith('{')) {
+            const parsed = JSON.parse(val);
+            return parsed[lang] || parsed.kk || parsed.kz || parsed.en || parsed.ru || val;
+        }
+        return val;
+    } catch { return val; }
+  }
+  if (typeof val === 'object') {
+     return val[lang] || val.kk || val.kz || val.en || val.ru || '';
+  }
+  return String(val);
+};
 
 // --- Extended Types ---
 type ActivityType = 'text' | 'video' | 'quiz' | 'survey' | 'assignment' | 'resource' | 'live';
@@ -171,43 +189,6 @@ interface Module {
 }
 
 // ACTIVITY_TYPES moved inside component for translation
-
-const INITIAL_MODULES: Module[] = [
-    {
-      id: 'm1',
-      title: 'Module 1: Introduction',
-      isOpen: true,
-      lessons: [
-        {
-          id: 'l1',
-          title: 'Welcome to the Course',
-          activities: [
-             { id: 'a1', title: 'Course Overview', type: 'video', points: 0, content: 'Introduction video...', videoUrls: ['https://youtube.com/watch?v=123'], videoDescription: 'A brief welcome from the Dean.' },
-             { id: 'a2', title: 'Syllabus Review', type: 'text', points: 0, content: '# Course Syllabus\n\nPlease read the following document carefully.\n\n## Grading\n1. Attendance: 10%\n2. Assignments: 40%\n3. Final Project: 50%\n\n> "Education is the passport to the future, for tomorrow belongs to those who prepare for it today." - Malcolm X' }
-          ]
-        },
-        {
-          id: 'l2',
-          title: 'Basic Concepts',
-          activities: [
-             { 
-               id: 'a3', 
-               title: 'Knowledge Check', 
-               type: 'quiz', 
-               points: 10,
-               quizConfig: {
-                 timeLimitMinutes: 15,
-                 passingScore: 70,
-                 shuffleQuestions: true,
-                 showResults: true,
-                 questions: []
-               }
-             }
-          ]
-        }
-      ]
-    }
-  ];
 
 // --- Markdown Components ---
 
@@ -636,7 +617,7 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
       }
   }, [modulesData]);
 
-  const [selectedActivityId, setSelectedActivityId] = useState<string>('a1');
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [courseStatus, setCourseStatus] = useState<'draft' | 'published'>('draft');
   const [isSaving, setIsSaving] = useState(false);
   
@@ -644,6 +625,81 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
   const [saveStatus, setSaveStatus] = useState<AutosaveStatus>('saved');
   const [lastSaved, setLastSaved] = useState<Date | null>(new Date());
   const saveTimeoutRef = useRef<any>(null);
+
+  const queryClient = useQueryClient();
+
+  // Mutations
+  const createModuleMutation = useMutation({
+    mutationFn: (data: any) => createCourseModule(courseId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+      toast.success(t('builder.course.module_created', 'Module created'));
+    }
+  });
+
+  const updateModuleMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => updateCourseModule(id, courseId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+    }
+  });
+
+  const deleteModuleMutation = useMutation({
+    mutationFn: (id: string) => deleteCourseModule(id, courseId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+      toast.success(t('builder.course.module_deleted', 'Module deleted'));
+    }
+  });
+
+  const createLessonMutation = useMutation({
+    mutationFn: (moduleId: string) => createCourseLesson(moduleId, courseId!, { title: t('builder.course.defaults.lesson', 'New Lesson'), sort_order: 99 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+    }
+  });
+
+  const updateLessonMutation = useMutation({
+    mutationFn: ({ id, moduleId, data }: { id: string, moduleId: string, data: any }) => updateCourseLesson(id, moduleId, courseId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+    }
+  });
+
+  const deleteLessonMutation = useMutation({
+    mutationFn: ({ id, moduleId }: { id: string, moduleId: string }) => deleteCourseLesson(id, moduleId, courseId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+      toast.success(t('builder.course.lesson_deleted', 'Lesson deleted'));
+    }
+  });
+
+  const createActivityMutation = useMutation({
+    mutationFn: ({ lessonId, moduleId }: { lessonId: string, moduleId: string }) => 
+      createCourseActivity(lessonId, moduleId, courseId!, { title: t('builder.course.defaults.activity', 'New Activity'), type: 'text', sort_order: 99, content: JSON.stringify({ text: '' }) }),
+    onSuccess: (newAct: any) => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+      setSelectedActivityId(newAct.id);
+    }
+  });
+
+  const updateActivityMutation = useMutation({
+    mutationFn: ({ id, lessonId, moduleId, data }: { id: string, lessonId: string, moduleId: string, data: any }) => 
+      updateCourseActivity(id, lessonId, moduleId, courseId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+    }
+  });
+
+  const deleteActivityMutation = useMutation({
+    mutationFn: ({ id, lessonId, moduleId }: { id: string, lessonId: string, moduleId: string }) => 
+      deleteCourseActivity(id, lessonId, moduleId, courseId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courseModules', courseId] });
+      toast.success(t('builder.course.activity_deleted', 'Activity deleted'));
+      setSelectedActivityId(null);
+    }
+  });
 
   // Manual Save (Iterative)
   const handleSave = async () => {
@@ -696,60 +752,34 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Actions
   const addModule = () => {
-    const newId = `m${Date.now()}`;
-    setModules(prev => [...prev, { id: newId, title: t('builder.course.defaults.module', 'New Module'), lessons: [], isOpen: true }]);
-    notifyChange();
+    createModuleMutation.mutate({ title: t('builder.course.defaults.module', 'New Module'), sort_order: 99 });
   };
 
   const addLesson = (moduleId: string) => {
-    const newId = `l${Date.now()}`;
-    setModules(prev => prev.map(m => {
-        if (m.id === moduleId) {
-            return { 
-                ...m, 
-                lessons: [...m.lessons, { id: newId, title: t('builder.course.defaults.lesson', 'New Lesson'), activities: [] }],
-                isOpen: true
-            };
-        }
-        return m;
-    }));
-    notifyChange();
+    createLessonMutation.mutate(moduleId);
   };
 
-  const addActivity = (lessonId: string, insertIndex?: number) => {
-    const newId = `a${Date.now()}`;
-    const newActivity: Activity = {
-        id: newId,
-        title: t('builder.course.defaults.activity', 'New Activity'),
-        type: 'text',
-        points: 0,
-        content: '',
-        videoUrls: [],
-        attachments: [],
-        citations: []
-    };
+  const addActivity = (lessonId: string, moduleId: string) => {
+    createActivityMutation.mutate({ lessonId, moduleId });
+  };
 
-    setModules(prev => prev.map(m => ({
-        ...m,
-        lessons: m.lessons.map(l => {
-            if (l.id === lessonId) {
-                const newActivities = [...l.activities];
-                if (insertIndex !== undefined) {
-                    newActivities.splice(insertIndex + 1, 0, newActivity);
-                } else {
-                    newActivities.push(newActivity);
-                }
-                return { ...l, activities: newActivities };
-            }
-            return l;
-        })
-    })));
-    
-    // Auto-select the new activity
-    setSelectedActivityId(newId);
-    notifyChange();
+  const deleteModule = (id: string) => {
+    if (confirm(t('builder.course.confirm_delete_module', 'Delete this module and all its contents?'))) {
+      deleteModuleMutation.mutate(id);
+    }
+  };
+
+  const deleteLesson = (id: string, moduleId: string) => {
+    if (confirm(t('builder.course.confirm_delete_lesson', 'Delete this lesson?'))) {
+      deleteLessonMutation.mutate({ id, moduleId });
+    }
+  };
+
+  const deleteActivity = (id: string, lessonId: string, moduleId: string) => {
+    if (confirm(t('builder.course.confirm_delete_activity', 'Delete this activity?'))) {
+      deleteActivityMutation.mutate({ id, lessonId, moduleId });
+    }
   };
 
   const toggleModule = (id: string) => {
@@ -757,7 +787,8 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
   };
 
   // Helper to find activity
-  const findActivity = (id: string) => {
+  const findActivity = (id: string | null) => {
+    if (!id) return null;
     for (const m of modules) {
       for (const l of m.lessons) {
         const a = l.activities.find(act => act.id === id);
@@ -770,14 +801,20 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
   const activeActivity = findActivity(selectedActivityId);
 
   const handleUpdateActivity = (id: string, updates: Partial<Activity>) => {
-    setModules(prev => prev.map(m => ({
-      ...m,
-      lessons: m.lessons.map(l => ({
-        ...l,
-        activities: l.activities.map(a => a.id === id ? { ...a, ...updates } : a)
-      }))
-    })));
-    notifyChange();
+    // Find lesson and module for this activity
+    let lessonId = '';
+    let moduleId = '';
+    for (const m of modules) {
+        for (const l of m.lessons) {
+            if (l.activities.some(a => a.id === id)) {
+                lessonId = l.id;
+                moduleId = m.id;
+                break;
+            }
+        }
+    }
+    
+    updateActivityMutation.mutate({ id, lessonId, moduleId, data: updates });
   };
 
   // Handlers for specific lists
@@ -844,7 +881,7 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                 <div className="flex flex-col">
 
                     <h2 className="font-bold text-slate-800 leading-none">
-                        {courseData?.title ? (courseData.title.startsWith('{') ? JSON.parse(courseData.title).en || t('builder.course.default_title', 'Course') : courseData.title) : t('common.loading', 'Loading...')}
+                        {courseData?.title ? parseLocalized(courseData.title) : t('common.loading', 'Loading...')}
                     </h2>
                     <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">{t('builder.course.title', 'Course Builder')}</span>
@@ -896,15 +933,33 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                                     onClick={() => toggleModule(module.id)}
                                 >
                                     <Folder size={16} className={module.isOpen ? "text-indigo-500" : "text-slate-400"} /> 
-                                    <span className="truncate">{module.title}</span>
+                                    <input 
+                                        value={module.title}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                            // Local update for UI responsiveness
+                                            // In a real app we might want a localized input here too
+                                            updateModuleMutation.mutate({ id: module.id, data: { title: e.target.value } });
+                                        }}
+                                        className="bg-transparent border-none focus:ring-1 focus:ring-indigo-200 rounded px-1 -ml-1 flex-1 truncate font-bold text-slate-800"
+                                    />
                                 </div>
-                                <button 
-                                    onClick={() => addLesson(module.id)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded"
-                                    title={t('builder.course.actions.add_lesson', 'Add Lesson')}
-                                >
-                                    <Plus size={14} />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button 
+                                        onClick={() => addLesson(module.id)}
+                                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+                                        title={t('builder.course.actions.add_lesson', 'Add Lesson')}
+                                    >
+                                        <Plus size={14} />
+                                    </button>
+                                    <button 
+                                        onClick={() => deleteModule(module.id)}
+                                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                        title={t('builder.course.actions.delete_module', 'Delete Module')}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Lessons List */}
@@ -912,8 +967,20 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                                 <div className="pl-4 space-y-4 border-l border-slate-200 ml-2">
                                     {module.lessons.map(lesson => (
                                         <div key={lesson.id} className="space-y-1">
-                                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 pl-2 flex items-center gap-2">
-                                                {lesson.title}
+                                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 pl-2 flex items-center justify-between group/lesson">
+                                                <input 
+                                                    value={lesson.title}
+                                                    onChange={(e) => {
+                                                        updateLessonMutation.mutate({ id: lesson.id, moduleId: module.id, data: { title: e.target.value } });
+                                                    }}
+                                                    className="bg-transparent border-none focus:ring-1 focus:ring-indigo-200 rounded px-1 -ml-1 flex-1 truncate font-bold text-slate-500"
+                                                />
+                                                <button 
+                                                    onClick={() => deleteLesson(lesson.id, module.id)}
+                                                    className="opacity-0 group-hover/lesson:opacity-100 p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
                                             </div>
                                             
                                             {/* Activity Items */}
@@ -941,14 +1008,22 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                                                                 {activity.type === 'assignment' && <GraduationCap size={14} />}
                                                             </div>
                                                             <span className="truncate flex-1">{activity.title || t('builder.course.defaults.untitled_activity', 'Untitled Activity')}</span>
-                                                            {errors.length > 0 && <AlertCircle size={12} className="text-red-500" />}
+                                                            <div className="flex items-center gap-1">
+                                                                {errors.length > 0 && <AlertCircle size={12} className="text-red-500" />}
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); deleteActivity(activity.id, lesson.id, module.id); }}
+                                                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                                >
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            </div>
                                                         </button>
                                                         
                                                         {/* Insertion Zone */}
                                                         <div className="h-2 relative group/insert z-10 flex items-center justify-center -my-1">
                                                             <div className="absolute inset-x-0 h-full flex items-center justify-center opacity-0 group-hover/insert:opacity-100 transition-opacity">
                                                                 <button 
-                                                                    onClick={() => addActivity(lesson.id, aIdx)}
+                                                                    onClick={() => addActivity(lesson.id, module.id)}
                                                                     className="bg-indigo-600 text-white rounded-full p-0.5 shadow-sm transform scale-75 hover:scale-100 transition-transform"
                                                                     title={t('builder.course.actions.insert_activity', 'Insert Activity')}
                                                                 >
@@ -962,12 +1037,12 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                                             
                                             {/* Add Activity Button (if empty or at end) */}
                                             {lesson.activities.length === 0 && (
-                                                <button 
-                                                    onClick={() => addActivity(lesson.id)}
-                                                    className="w-full py-2 text-[10px] font-bold text-slate-400 hover:text-indigo-600 border border-dashed border-slate-200 hover:border-indigo-300 hover:bg-slate-50 rounded-lg flex items-center justify-center gap-1 mt-2 transition-all"
-                                                >
-                                                    <Plus size={12} /> {t('builder.course.actions.add_activity', 'Add Activity')}
-                                                </button>
+                                                    <button 
+                                                        onClick={() => addActivity(lesson.id, module.id)}
+                                                        className="w-full py-2 text-[10px] font-bold text-slate-400 hover:text-indigo-600 border border-dashed border-slate-200 hover:border-indigo-300 hover:bg-slate-50 rounded-lg flex items-center justify-center gap-1 mt-2 transition-all"
+                                                    >
+                                                        <Plus size={12} /> {t('builder.course.actions.add_activity', 'Add Activity')}
+                                                    </button>
                                             )}
                                         </div>
                                     ))}
@@ -1148,7 +1223,7 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                                                 </p>
                                             </div>
                                             <Button 
-                                                onClick={() => handleNavigate(`/admin/studio/courses/c1/quiz/${activeActivity.id}/builder`)} 
+                                                onClick={() => handleNavigate(`/admin/studio/courses/${courseId}/quiz/${activeActivity.id}/builder`)} 
                                                 icon={ExternalLink} 
                                                 size="lg"
                                                 className="shadow-xl shadow-indigo-200"
@@ -1171,7 +1246,7 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                                                 </p>
                                             </div>
                                             <Button 
-                                                onClick={() => handleNavigate(`/admin/studio/courses/c1/survey/${activeActivity.id}/builder`)} 
+                                                onClick={() => handleNavigate(`/admin/studio/courses/${courseId}/survey/${activeActivity.id}/builder`)} 
                                                 icon={ExternalLink} 
                                                 size="lg"
                                                 className="shadow-xl shadow-rose-200 bg-rose-600 hover:bg-rose-700"
@@ -1194,7 +1269,7 @@ export const CourseBuilder: React.FC<CourseBuilderProps> = ({ onNavigate }) => {
                                                 </p>
                                             </div>
                                             <Button 
-                                                onClick={() => handleNavigate(`/admin/studio/courses/c1/assignment/${activeActivity.id}/builder`)} 
+                                                onClick={() => handleNavigate(`/admin/studio/courses/${courseId}/assignment/${activeActivity.id}/builder`)} 
                                                 icon={ExternalLink} 
                                                 size="lg"
                                                 className="shadow-xl shadow-indigo-200"

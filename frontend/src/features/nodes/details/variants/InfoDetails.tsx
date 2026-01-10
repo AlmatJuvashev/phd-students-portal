@@ -45,12 +45,14 @@ export default function InfoDetails({
               <div className="space-y-4">
                 {notes.map((f, idx) => {
                   const raw = t(f.label, f.key);
-                  const [first, ...rest] = raw;
+                  // Fix: String indexing/spread
+                  const first = [...raw][0] || "";
+                  const rest = [...raw].slice(1).join("");
                   const leadingIcon =
                     first && /[\p{Emoji}\p{Extended_Pictographic}]/u.test(first)
                       ? first
                       : "";
-                  const body = leadingIcon ? rest.join("") : raw;
+                  const body = leadingIcon ? rest : raw;
                   return (
                     <div key={f.key} className="space-y-3">
                       <div className="flex items-start gap-3">

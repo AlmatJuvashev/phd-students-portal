@@ -138,6 +138,11 @@ export function NodeDetails({
         </div>
       ) : (
         <>
+          <div className="flex flex-col mb-4">
+             <h2 className="text-xl font-bold tracking-tight text-foreground">
+                {t(node.title, "")}
+             </h2>
+          </div>
           {!roleAllowed && (
             <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm mb-3">
               <div className="font-medium mb-1">Доступ ограничен</div>

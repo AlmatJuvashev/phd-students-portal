@@ -94,9 +94,14 @@ func main() {
 	}
 	versionID := mgr.VersionID
 
-	// --- 4.5 Ensure Journey Map for Builder (Synced from Playbook) ---
-	phdProgID := ensureProgram(db, "PHD-CS", "PhD Computer Science", DemoTenantID)
-	ensureJourneyFromPlaybook(db, phdProgID, pbPath)
+	// --- 4.5 Ensure Journey Maps for Builder (Synced from Playbook for each language) ---
+	langs := []string{"ru", "kk", "en"}
+	for _, lang := range langs {
+		progCode := "PHD-STUDENT-" + lang
+		progName := "PhD Student (" + lang + ")"
+		phdProgID := ensureProgram(db, progCode, progName, DemoTenantID)
+		ensureJourneyFromPlaybook(db, phdProgID, pbPath, lang)
+	}
 
 	// --- 5. Departments (Demo University) ---
 	depts := []string{"Public Health", "Anatomy", "Pharmacology", "Epidemiology", "Health Policy"}

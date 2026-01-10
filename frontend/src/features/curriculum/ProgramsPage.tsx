@@ -39,21 +39,28 @@ interface LibraryItem {
 }
 
 // Helper to parse localized strings
-const parseLocalized = (val: any, lang: string): string => {
-    if (!val) return '';
-    if (typeof val === 'string') {
-        try {
-            if (val.startsWith('{')) {
-                const parsed = JSON.parse(val);
-                return parsed[lang] || parsed.en || val;
-            }
-            return val;
-        } catch { return val; }
+const parseLocalized = (val: any, lang: string = 'en'): string => {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed === 'null') return '';
+    if (trimmed.startsWith('{') || (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return parsed[lang] || parsed.kk || parsed.kz || parsed.en || parsed.ru || '';
+        }
+        return String(parsed);
+      } catch {
+        return val;
+      }
     }
-    if (typeof val === 'object') {
-       return val[lang] || val.en || JSON.stringify(val);
-    }
-    return String(val);
+    return val;
+  }
+  if (typeof val === 'object') {
+     return val[lang] || val.kk || val.kz || val.en || val.ru || '';
+  }
+  return String(val);
 };
 
 interface ProgramsPageProps {

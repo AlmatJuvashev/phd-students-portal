@@ -16,6 +16,7 @@ interface StepInspectorProps {
   onDelete: (id: string) => void;
   onClose: () => void;
   onNavigate: (path: string) => void;
+  programId?: string;
 }
 
 const NODE_TYPE_GROUPS = [
@@ -54,7 +55,8 @@ export const StepInspector: React.FC<StepInspectorProps> = ({
   onUpdate, 
   onDelete, 
   onClose, 
-  onNavigate 
+  onNavigate,
+  programId
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('GENERAL');
@@ -197,7 +199,7 @@ export const StepInspector: React.FC<StepInspectorProps> = ({
                   </Badge>
                   <Button 
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
-                    onClick={() => onNavigate(`/admin/studio/programs/form/${node.id}/builder`)}
+                    onClick={() => onNavigate(`/admin/studio/programs/${programId}/form/${node.id}/builder`)}
                   >
                     Launch Form Designer
                   </Button>
@@ -257,7 +259,7 @@ export const StepInspector: React.FC<StepInspectorProps> = ({
                   <Button 
                     variant="primary" 
                     className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
-                    onClick={() => onNavigate(`/admin/studio/programs/confirm-task/${node.id}/builder`)}
+                    onClick={() => onNavigate(`/admin/studio/programs/${programId}/confirm-task/${node.id}/builder`)}
                   >
                     Open Task Studio
                   </Button>
@@ -295,6 +297,50 @@ export const StepInspector: React.FC<StepInspectorProps> = ({
                       </select>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {node.type === 'survey' && (
+              <div className="space-y-4">
+                <div className="p-5 bg-teal-50 border border-teal-100 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-teal-600">
+                      <ClipboardList size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-teal-900 text-sm">Feedback Session</h4>
+                      <p className="text-[10px] text-teal-700 font-medium">Design student surveys & feedback.</p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200"
+                    onClick={() => onNavigate(`/admin/studio/programs/${programId}/survey/${node.id}/builder`)}
+                  >
+                    Launch Survey Designer
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {node.type === 'checklist' && (
+              <div className="space-y-4">
+                <div className="p-5 bg-orange-50 border border-orange-100 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-orange-600">
+                      <CheckSquare size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-orange-900 text-sm">Requirement List</h4>
+                      <p className="text-[10px] text-orange-700 font-medium">Manage checklist items & criteria.</p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-orange-200"
+                    onClick={() => onNavigate(`/admin/studio/programs/${programId}/checklist/${node.id}/builder`)}
+                  >
+                    Open Checklist Studio
+                  </Button>
                 </div>
               </div>
             )}

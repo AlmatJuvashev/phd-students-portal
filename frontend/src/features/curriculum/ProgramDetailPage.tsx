@@ -18,19 +18,26 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 // Helper for localization
-const parseLocalized = (val: any, lang: string): string => {
+const parseLocalized = (val: any, lang: string = 'en'): string => {
   if (!val) return '';
   if (typeof val === 'string') {
-    try {
-        if (val.startsWith('{')) {
-            const parsed = JSON.parse(val);
-            return parsed[lang] || parsed.en || parsed.ru || val;
+    const trimmed = val.trim();
+    if (trimmed === 'null') return '';
+    if (trimmed.startsWith('{') || (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return parsed[lang] || parsed.kk || parsed.kz || parsed.en || parsed.ru || '';
         }
+        return String(parsed);
+      } catch {
         return val;
-    } catch { return val; }
+      }
+    }
+    return val;
   }
   if (typeof val === 'object') {
-     return val[lang] || val.en || val.ru || JSON.stringify(val);
+     return val[lang] || val.kk || val.kz || val.en || val.ru || '';
   }
   return String(val);
 };

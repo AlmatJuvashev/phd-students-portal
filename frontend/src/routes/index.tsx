@@ -641,10 +641,26 @@ export const router = createBrowserRouter([
       },
       // --- Studio Inner Builders ---
       {
+        path: "studio/programs/:programId/form/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<FormBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "studio/programs/:programId/form/:nodeId/builder",
         element: (
           <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<FormBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/programs/:programId/checklist/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ChecklistBuilder />)}
           </ProtectedRoute>
         ),
       },
@@ -657,10 +673,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "studio/programs/:programId/confirm-task/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<ConfirmTaskBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "studio/programs/:programId/confirm-task/:nodeId/builder",
         element: (
           <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<ConfirmTaskBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/programs/:programId/survey/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<SurveyBuilder />)}
           </ProtectedRoute>
         ),
       },
@@ -673,10 +705,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "studio/courses/:courseId/quiz/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<QuizBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "studio/courses/:courseId/quiz/:nodeId/builder",
         element: (
           <ProtectedRoute requiredAnyRole={["admin"]}>
             {WithSuspense(<QuizBuilder />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "studio/courses/:courseId/survey/builder",
+        element: (
+          <ProtectedRoute requiredAnyRole={["admin"]}>
+            {WithSuspense(<SurveyBuilder />)}
           </ProtectedRoute>
         ),
       },

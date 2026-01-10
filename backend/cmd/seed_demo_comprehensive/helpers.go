@@ -44,8 +44,93 @@ func ensureProgram(db *sqlx.DB, code, name, tid string) string {
 	return id
 }
 
+// ExtractString handles both simple strings and localized objects
+func ExtractString(msg any, lang string) string {
+	if msg == nil {
+		return ""
+	}
+	
+	// If it's already a string, return it
+	if s, ok := msg.(string); ok {
+		return s
+	}
+
+	// If it's a map (from JSON unmarshal to map[string]interface{})
+	if m, ok := msg.(map[string]interface{}); ok {
+		if val, ok := m[lang]; ok && val != nil {
+			if s, ok := val.(string); ok {
+				return s
+			}
+		}
+		// Fallbacks
+		for _, l := range []string{"ru", "kz", "kk", "en"} {
+			if val, ok := m[l]; ok && val != nil {
+				if s, ok := val.(string); ok {
+					return s
+				}
+			}
+		}
+	}
+	
+	// If it's a map[string]string (from a more specific unmarshal)
+	if m, ok := msg.(map[string]string); ok {
+		if val, ok := m[lang]; ok && val != "" {
+			return val
+		}
+		for _, l := range []string{"ru", "kz", "kk", "en"} {
+			if val, ok := m[l]; ok && val != "" {
+				return val
+			}
+		}
+	}
+
+	return ""
+}
+
+// FlattenJSON recursively replaces localized objects with strings for a target language.
+func FlattenJSON(data interface{}, lang string) interface{} {
+	if data == nil {
+		return nil
+	}
+	switch v := data.(type) {
+	case map[string]interface{}:
+		if len(v) == 0 {
+			return ""
+		}
+		hasLangKeys := false
+		for _, l := range []string{"ru", "kk", "kz", "en"} {
+			if _, ok := v[l]; ok {
+				hasLangKeys = true
+				break
+			}
+		}
+		if hasLangKeys {
+			if val, ok := v[lang]; ok && val != nil {
+				if s, ok := val.(string); ok { return s }
+			}
+			for _, l := range []string{"ru", "kk", "kz", "en"} {
+				if val, ok := v[l]; ok && val != nil {
+					if s, ok := val.(string); ok { return s }
+				}
+			}
+			return ""
+		}
+		for k, val := range v {
+			v[k] = FlattenJSON(val, lang)
+		}
+		return v
+	case []interface{}:
+		for i, val := range v {
+			v[i] = FlattenJSON(val, lang)
+		}
+		return v
+	default:
+		return v
+	}
+}
+
 // ensureJourneyFromPlaybook loads playbook.json and creates a JourneyMap + Nodes attached to a Program
-func ensureJourneyFromPlaybook(db *sqlx.DB, programID, pbPath string) {
+func ensureJourneyFromPlaybook(db *sqlx.DB, programID, pbPath, lang string) {
 	raw, err := os.ReadFile(pbPath)
 	if err != nil {
 		log.Printf("Failed to read playbook: %v", err)
@@ -57,12 +142,12 @@ func ensureJourneyFromPlaybook(db *sqlx.DB, programID, pbPath string) {
 		Worlds  []struct {
 			ID    string `json:"id"`
 			Order int    `json:"order"` 
-			Title map[string]string `json:"title"`
+			Title interface{} `json:"title"`
 			Nodes []struct {
 				ID            string            `json:"id"`
-				Title         map[string]string `json:"title"`
+				Title         interface{}       `json:"title"`
 				Type          string            `json:"type"`
-				Description   map[string]string `json:"description"`
+				Description   interface{}       `json:"description"`
 				Requirements  interface{}       `json:"requirements"`
 				Prerequisites []string          `json:"prerequisites"`
 			} `json:"nodes"`
@@ -79,9 +164,18 @@ func ensureJourneyFromPlaybook(db *sqlx.DB, programID, pbPath string) {
 	// Check if exists for this program
 	err = db.Get(&jmID, "SELECT id FROM program_versions WHERE program_id=$1", programID)
 	if err != nil {
-		// Create
-		worldsConfig, _ := json.Marshal(pb.Worlds)
-		titleJSON := `{"en": "PhD Process (Standard)", "ru": "PhD Процесс (Стандарт)"}`
+		// Flatten worlds for config
+		flattenedWorlds := make([]map[string]any, len(pb.Worlds))
+		for i, w := range pb.Worlds {
+			flattenedWorlds[i] = map[string]any{
+				"id":    w.ID,
+				"title": ExtractString(w.Title, lang),
+				"order": w.Order,
+			}
+		}
+		
+		worldsConfig, _ := json.Marshal(flattenedWorlds)
+		titleJSON := fmt.Sprintf(`"PhD Process (%s)"`, lang)
 		
 		// Note: is_active constraint might fail if one already exists, but for seed it's okay
 		err = db.QueryRow(`INSERT INTO program_versions (program_id, title, version, config, is_active) 
@@ -90,15 +184,22 @@ func ensureJourneyFromPlaybook(db *sqlx.DB, programID, pbPath string) {
 			log.Printf("Failed to create program version: %v", err)
 			return
 		}
-		fmt.Printf("Created Program Version: %s\n", jmID)
+		fmt.Printf("Created Program Version: %s (%s)\n", jmID, lang)
 	}
 
 	// 2. Create Nodes
 	for _, w := range pb.Worlds {
 		for _, n := range w.Nodes {
-			titleBytes, _ := json.Marshal(n.Title)
-			descBytes, _ := json.Marshal(n.Description)
-			configBytes, _ := json.Marshal(n.Requirements)
+			titleStr := ExtractString(n.Title, lang)
+			if titleStr == "" { titleStr = "Untitled" }
+			descStr := ExtractString(n.Description, lang)
+			
+			titleJSON, _ := json.Marshal(titleStr)
+			descJSON, _ := json.Marshal(descStr)
+
+			// Flatten config (requirements) too
+			flattenedConfig := FlattenJSON(n.Requirements, lang)
+			configBytes, _ := json.Marshal(flattenedConfig)
 			
 			// Upsert Node
 			_, err := db.Exec(`INSERT INTO program_version_node_definitions (
@@ -109,12 +210,12 @@ func ensureJourneyFromPlaybook(db *sqlx.DB, programID, pbPath string) {
 				description=EXCLUDED.description,
 				config=EXCLUDED.config,
 				prerequisites=EXCLUDED.prerequisites
-			`, jmID, n.ID, n.Type, string(titleBytes), string(descBytes), w.ID, string(configBytes), pq.Array(n.Prerequisites))
+			`, jmID, n.ID, n.Type, string(titleJSON), string(descJSON), w.ID, string(configBytes), pq.Array(n.Prerequisites))
 			
 			if err != nil {
 				log.Printf("Failed to seed node %s: %v", n.ID, err)
 			}
 		}
 	}
-	fmt.Printf("Seeded nodes from playbook version %s\n", pb.Version)
+	fmt.Printf("Seeded nodes for %s from playbook version %s\n", lang, pb.Version)
 }

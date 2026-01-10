@@ -52,8 +52,14 @@ const rules: Array<{ match: (s: string, id: string) => boolean; tag: string }> =
   ];
 
 export function assetsForNode(node: NodeVM): PublicAsset[] {
-  const titles = node.title ? Object.values(node.title).join(" ") : "";
-  const s = `${titles}`.toLowerCase();
+  const titleVal = node.title;
+  let titles = "";
+  if (typeof titleVal === "string") {
+    titles = titleVal;
+  } else if (titleVal) {
+    titles = Object.values(titleVal).join(" ");
+  }
+  const s = titles.toLowerCase();
   const id = node.id.toLowerCase();
   const tag = rules.find((r) => r.match(s, id))?.tag;
   if (!tag) return [];
