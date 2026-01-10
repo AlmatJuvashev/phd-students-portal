@@ -45,23 +45,23 @@ const parseLocalized = (val: any, lang: string = 'en'): string => {
 };
 
 // Helper to transform Builder State to Playbook for Preview
-const builderStateToPlaybook = (worlds: World[], nodes: ProgramVersionNode[], edges: FlowEdge[]): any => {
+const builderStateToPlaybook = (worlds: World[], nodes: ProgramVersionNode[], edges: FlowEdge[], lang: string = 'en'): any => {
   return {
     id: "preview-playbook",
     title: "Preview Program",
     worlds: worlds.map(w => ({
       id: w.id,
-      title: parseLocalized(w.title),
+      title: parseLocalized(w.title, lang),
       nodes: nodes
         .filter(n => n.module_key === w.id)
-        .sort((a, b) => a.coordinates.y - b.coordinates.y) // Simple sort by Y for sequence
+        .sort((a, b) => a.coordinates.y - b.coordinates.y)
         .map(n => ({
-          ...n.config, // Spread config first so specific props can override if needed, or vice versa. Usually specific props like 'id' are safer after.
+          ...n.config,
           id: n.id,
           type: n.type,
-          title: parseLocalized(n.title) || n.slug || "Untitled Step",
+          title: parseLocalized(n.title, lang) || n.slug || "Untitled Step",
           status: "active", // Active state for better preview visibility
-          description: parseLocalized(n.description) || "",
+          description: parseLocalized(n.description, lang) || "",
           points: n.points || 0,
           who_can_complete: ["student", "advisor", "admin"] // Allow all for preview
         }))
@@ -320,7 +320,7 @@ const ListView = ({ worlds, nodes, selectedNodeId, onSelectNode, onAddNode, onAd
 };
 
 export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { programId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -764,10 +764,11 @@ export const ProgramBuilderPage: React.FC<JourneyBuilderProps> = ({ onNavigate }
            
            <div className="py-12 min-h-screen bg-slate-50/50">
               <JourneyMap 
-                playbook={builderStateToPlaybook(worlds, nodes, edges)}
-                locale="en"
+                playbook={builderStateToPlaybook(worlds, nodes, edges, i18n.language)}
+                locale={i18n.language}
                 onStateChanged={() => {}} 
                 viewerRole="student"
+                isPreview={true}
                 stateByNodeId={nodes.reduce((acc, n) => ({ ...acc, [n.id]: 'active' }), {})}
               />
            </div>

@@ -16,21 +16,28 @@ export function NodeDetails({
   onStateRefresh,
   onAdvance,
   closeOnComplete = false,
+  isPreview = false,
 }: {
   node: NodeVM;
   role?: "student" | "advisor" | "secretary" | "chair" | "admin";
   onStateRefresh?: () => void;
   onAdvance?: (nextNodeId: string | null, currentNodeId: string | null) => void;
   closeOnComplete?: boolean;
+  isPreview?: boolean;
 }) {
   const { t: T } = useTranslation("common");
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleRef = useRef<HTMLDivElement | null>(null);
-  const { submission, isLoading, save, refetch } = useSubmission(
-    node?.id || null,
-  );
+  
+  // Conditionally use submission hook (or pass null/skip)
+  const realSubmission = useSubmission(isPreview ? null : (node?.id || null));
+  
+  const submission = isPreview ? { state: 'not_started', slots: [] } : realSubmission.submission;
+  const isLoading = isPreview ? false : realSubmission.isLoading;
+  const save = isPreview ? { mutateAsync: async () => {} } : realSubmission.save;
+  const refetch = isPreview ? async () => {} : realSubmission.refetch;
 
   useFocusOnOpen(titleRef, node?.id ?? null);
 

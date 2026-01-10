@@ -29,12 +29,14 @@ export function JourneyMap({
   stateByNodeId = {},
   onStateChanged,
   viewerRole,
+  isPreview,
 }: {
   playbook: Playbook;
   locale?: string;
   stateByNodeId?: Record<string, NodeVM["state"]>;
   onStateChanged?: () => void;
   viewerRole?: string;
+  isPreview?: boolean;
 }) {
   const { user } = useAuth();
   const { t: T } = useTranslation("common");
@@ -334,6 +336,7 @@ export function JourneyMap({
                                 node={selectedNode} 
                                 role={(viewerRole || user?.role || 'student') as any}
                                 onStateRefresh={onStateChanged} 
+                                isPreview={isPreview}
                                 onAdvance={(nextId) => handleNodeComplete(nextId || undefined)}
                             />
                       </div>

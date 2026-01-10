@@ -87,9 +87,22 @@ function humanizeKey(key: string) {
   return s.replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 }
 
-export const t = (obj?: Record<string, string>, fallback = "") => {
+export const t = (obj?: Record<string, string> | string, fallback = "") => {
+  if (typeof obj === 'string') {
+    // If it looks like a JSON object, try parsing it for localization
+    if (obj.trim().startsWith('{')) {
+        try {
+            const parsed = JSON.parse(obj);
+            const lang = (i18n?.language as "ru" | "kz" | "en") || "ru";
+            const val = parsed[lang] ?? parsed.en ?? parsed.ru ?? parsed.kz;
+            if (val) return val;
+        } catch (e) { /* ignore */ }
+    }
+    return obj;
+  }
+  
   const lang = (i18n?.language as "ru" | "kz" | "en") || "ru";
-  const val = obj?.[lang] ?? obj?.en ?? obj?.ru ?? obj?.kz;
+  const val = (obj as any)?.[lang] ?? (obj as any)?.en ?? (obj as any)?.ru ?? (obj as any)?.kz;
   if (val) return val;
   // Try i18n dictionary fallback for field keys: fields.<key>
   if (fallback) {
